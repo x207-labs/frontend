@@ -8,8 +8,9 @@ import { QueryState } from '../components/QueryState'
 import { TxResult } from '../components/TxResult'
 import { useSelectedEpoch } from '../epoch'
 import { formatCredit, shortAccount } from '../lib/format'
+import { NEAR_NETWORK } from '../config'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
-import { settleTx } from '../wallet/transactions'
+import { claimTx, settleTx } from '../wallet/transactions'
 
 function useNow(intervalMs = 1000): number {
   const [now, setNow] = useState(() => Date.now())
@@ -74,6 +75,51 @@ function DueRow({ item, account }: { item: SettlementItem; account: string }) {
   )
 }
 
+const EXPLORER = NEAR_NETWORK === 'mainnet' ? 'https://nearblocks.io/txns/' : 'https://testnet.nearblocks.io/txns/'
+
+// FE-010: saldo kreditor per epoch; klaim hanya setelah finalize_epoch (ADR-24).
+function ClaimRow({ item, account }: { item: SettlementItem; account: string }) {
+  const { state, sign } = useSignTransaction()
+  const client = useQueryClient()
+  const [claimed, setClaimed] = useState(false)
+  const signing = state.kind === 'signing'
+  const claimable = item.status === 'claimable'
+
+  async function claim(destination: 'near' | 'intents') {
+    if (await sign(claimTx(item.epoch, destination))) {
+      await client.invalidateQueries({ queryKey: ['member-settlements', account] })
+      setClaimed(true)
+    }
+  }
+
+  return (
+    <li className="claim">
+      <p>
+        Epoch {item.epoch}: saldo <strong>{formatCredit(item.amount)}</strong> credit, status <code>{item.status}</code>
+        {item.status === 'claimed' && item.destination && <> ke <code>{item.destination}</code></>}
+        {item.status === 'claimed' && item.txHash && (
+          <> (<a href={`${EXPLORER}${item.txHash}`} target="_blank" rel="noreferrer">{item.txHash}</a>)</>
+        )}
+      </p>
+      {claimable && item.claimableNow === false && <p className="state">Menunggu finalize_epoch sebelum bisa diklaim.</p>}
+      {claimable && (
+        <div>
+          <button type="button" onClick={() => void claim('near')} disabled={!item.claimableNow || signing}>
+            Klaim ke akun NEAR
+          </button>{' '}
+          <button type="button" onClick={() => void claim('intents')} disabled={!item.claimableNow || signing}>
+            Klaim ke saldo Intents
+          </button>
+        </div>
+      )}
+      {claimable && claimed && item.claimableNow && state.kind === 'done' && (
+        <p className="state state-error" role="alert">Transfer gagal, saldo dipulihkan. Anda bisa mengklaim lagi.</p>
+      )}
+      <TxResult state={state} />
+    </li>
+  )
+}
+
 function MyDues() {
   const { account } = useWallet()
   const query = useQuery({
@@ -87,16 +133,36 @@ function MyDues() {
     <QueryState
       query={query}
       loadingLabel="Memuat tagihan"
-      isEmpty={(d) => d.items.filter((i) => i.role === 'debtor').length === 0}
+      isEmpty={(d) => d.items.length === 0}
       empty="Tidak ada tagihan."
     >
-      {(data) => (
-        <ul className="dues">
-          {data.items.filter((i) => i.role === 'debtor').map((item) => (
-            <DueRow key={`${item.epoch}`} item={item} account={account} />
-          ))}
-        </ul>
-      )}
+      {(data) => {
+        const debts = data.items.filter((i) => i.role === 'debtor')
+        const credits = data.items.filter((i) => i.role === 'creditor')
+        return (
+          <>
+            {debts.length === 0 ? (
+              <p className="state">Tidak ada tagihan.</p>
+            ) : (
+              <ul className="dues">
+                {debts.map((item) => (
+                  <DueRow key={`${item.epoch}`} item={item} account={account} />
+                ))}
+              </ul>
+            )}
+            <h3>Saldo untuk diklaim</h3>
+            {credits.length === 0 ? (
+              <p className="state">Tidak ada saldo untuk diklaim.</p>
+            ) : (
+              <ul className="claims">
+                {credits.map((item) => (
+                  <ClaimRow key={`${item.epoch}`} item={item} account={account} />
+                ))}
+              </ul>
+            )}
+          </>
+        )
+      }}
     </QueryState>
   )
 }

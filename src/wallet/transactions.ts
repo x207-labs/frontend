@@ -52,3 +52,16 @@ export function settleTx(epoch: number, amount: string): FunctionCallTx {
     deposit: ONE_YOCTO,
   }
 }
+
+const CLAIM_MIN_GAS = 100n * TGAS
+
+/** `claim(epoch, destination)`: deposit 1 yoctoNEAR, gas minimal 100 TGas (ADR-19, ADR-24). */
+export function claimTx(epoch: number, destination: 'near' | 'intents'): FunctionCallTx {
+  return {
+    receiverId: CONTRACT_ID,
+    methodName: 'claim',
+    args: { epoch, destination },
+    gas: CLAIM_MIN_GAS.toString(),
+    deposit: ONE_YOCTO,
+  }
+}
