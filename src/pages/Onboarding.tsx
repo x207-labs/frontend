@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { api } from '../api/client'
-import { useMembers } from '../api/queries'
+import { useMember, useMembers } from '../api/queries'
 import { DepositBranch } from '../components/DepositBranch'
-import { QueryState } from '../components/QueryState'
+import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { TxResult } from '../components/TxResult'
 import { CIRCLE } from '../config'
+import { ApiError } from '../api/client'
+import { formatCredit } from '../lib/format'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { ftWithdrawTx, joinTx, stakeTx } from '../wallet/transactions'
 import type { FunctionCallTx } from '../wallet/types'
@@ -117,20 +117,39 @@ function JoinForm({ registered }: { registered: boolean }) {
   )
 }
 
-function useRegistered(account: string | null): boolean {
-  const query = useQuery({
-    queryKey: ['member', account],
-    queryFn: () => api.member(account!),
-    enabled: account !== null,
-    retry: false,
-  })
-  return Boolean(query.data)
+// FE-005: status onboarding dari read API; diperbarui oleh polling QueryClient tanpa reload manual.
+function StatusPanel({ account }: { account: string }) {
+  const member = useMember(account)
+  if (member.data === undefined) {
+    if (member.error instanceof ApiError && member.error.code === 'member_not_found') {
+      return (
+        <p className="state">
+          Akun {account} belum terdaftar. <a href="#bergabung">Isi form bergabung di bawah</a>.
+        </p>
+      )
+    }
+    if (member.isError) return <ErrorNotice error={member.error} onRetry={() => member.refetch()} />
+  }
+  const m = member.data
+  const cell = (value: string | undefined) => (m ? formatCredit(value) : <Loading label="Memuat" />)
+  return (
+    <dl className="status-panel" aria-label="Status onboarding">
+      <dt>Status</dt>
+      <dd>{m ? <code>{m.status}</code> : <Loading label="Memuat" />}</dd>
+      <dt>Stake</dt>
+      <dd>{cell(m?.stake)}</dd>
+      <dt>Limit kredit</dt>
+      <dd>{cell(m?.limit)}</dd>
+      <dt>Headroom</dt>
+      <dd>{cell(m?.headroom)}</dd>
+    </dl>
+  )
 }
 
 export function Onboarding() {
   const members = useMembers()
   const { account } = useWallet()
-  const registered = useRegistered(account)
+  const registered = Boolean(useMember(account).data)
   return (
     <>
       <QueryState query={members} loadingLabel="Memuat anggota">
@@ -140,7 +159,8 @@ export function Onboarding() {
           </p>
         )}
       </QueryState>
-      <h2>Bergabung</h2>
+      {account && <StatusPanel account={account} />}
+      <h2 id="bergabung">Bergabung</h2>
       <JoinForm registered={registered} />
     </>
   )

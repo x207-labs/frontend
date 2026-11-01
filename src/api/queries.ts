@@ -3,6 +3,13 @@ import { api } from './client'
 import type { ObligationStage } from './types'
 
 export const useEpochs = () => useQuery({ queryKey: ['epochs'], queryFn: api.epochs })
+export const useMember = (account: string | null) =>
+  useQuery({
+    queryKey: ['member', account],
+    queryFn: () => api.member(account!),
+    enabled: account !== null,
+    retry: false,
+  })
 export const useMembers = () => useQuery({ queryKey: ['members'], queryFn: api.members })
 export const useParams = () => useQuery({ queryKey: ['params'], queryFn: api.params })
 export const useParamsHistory = () =>
