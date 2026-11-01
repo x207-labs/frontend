@@ -41,3 +41,14 @@ export function stakeTx(amount: string): FunctionCallTx {
     deposit: ONE_YOCTO,
   }
 }
+
+/** `ft_transfer_call` USDT ke kontrak lingkaran dengan `msg` settle epoch (SD-014, Spec Antarmuka Kontrak 4.1). */
+export function settleTx(epoch: number, amount: string): FunctionCallTx {
+  return {
+    receiverId: USDT_ID,
+    methodName: 'ft_transfer_call',
+    args: { receiver_id: CONTRACT_ID, amount, msg: JSON.stringify({ action: 'settle', epoch }) },
+    gas: (100n * TGAS).toString(),
+    deposit: ONE_YOCTO,
+  }
+}
