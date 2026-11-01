@@ -111,3 +111,13 @@ button.quiet:hover:not(:disabled) { color: #fff; }
 .form input { width: 100%; }
 .form input:disabled { background: transparent; border-color: var(--line); }
 a { color: var(--s202); overflow-wrap: anywhere; }
+.member-suspended { color: var(--s409); font-weight: 700; }
+
+.report-head { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 1.5rem 2rem; }
+.stamp { display: inline-block; padding: 0 0.375rem; border: 2px solid currentColor; border-radius: 3px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.4; transform: rotate(-3deg); }
+.stamp-200 { color: var(--s200); }
+.stamp-402 { color: var(--s402); }
+.stamp-202 { color: var(--s202); }
+.stamp-409 { color: var(--s409); }
+.stamp-207 { color: var(--ink); font-size: clamp(2.5rem, 8vw, 4.5rem); padding: 0 0.75rem; border-width: 4px; border-radius: 6px; }
+@media (max-width: 30rem) { .report-head { grid-template-columns: minmax(0, 1fr); } .stamp-207 { justify-self: start; } }
