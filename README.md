@@ -1,6 +1,6 @@
 # x207 frontend
 
-Dashboard x207 (modul M8): onboarding, grafik kewajiban, statistik kliring, laporan 207, settlement, risiko, dan tata kelola. React + Vite + TypeScript.
+Dashboard x207 (modul M8), fitur F1, F3, F4, F6, F7: onboarding, grafik kewajiban, statistik kliring, laporan 207, settlement, risiko, dan tata kelola. React + Vite + TypeScript. Bagian dari [`x207-labs/x207`](https://github.com/x207-labs/x207).
 
 ## Menjalankan
 
