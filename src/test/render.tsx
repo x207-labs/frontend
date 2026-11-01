@@ -12,10 +12,12 @@ export function apiError(status: number, code: string, message = code): FixtureR
 }
 
 // Merender seluruh aplikasi dengan read API tiruan; kembalian mencatat path yang dipanggil.
-export function renderApp(route: string, override?: Override) {
+export function renderApp(route: string, override?: Override, pollMs: number | false = false) {
   const fetchMock = vi.fn(fixtureFetch(override))
   vi.stubGlobal('fetch', fetchMock)
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, refetchInterval: pollMs } },
+  })
   const view = render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[route]}>

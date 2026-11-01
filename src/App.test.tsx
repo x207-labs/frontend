@@ -66,7 +66,7 @@ describe('kerangka dashboard', () => {
     const { calls } = renderApp('/statistik', (p) =>
       p === EPOCHS_PATH ? { status: 200, body: { items: [], nextCursor: null } } : undefined,
     )
-    expect(await screen.findByText(/Belum ada epoch/)).toBeInTheDocument()
+    expect(await screen.findByText('Belum ada epoch di lingkaran ini.')).toBeInTheDocument()
     expect(calls().filter((c) => /\/epochs\/\d+/.test(c))).toEqual([])
   })
 })
