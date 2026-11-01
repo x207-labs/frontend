@@ -4,3 +4,6 @@ export const API_URL: string = env.VITE_X207_API_URL ?? 'http://localhost:8787'
 export const CIRCLE: string = env.VITE_X207_CIRCLE ?? 'agents-main'
 export const POLL_MS = Number(env.VITE_X207_POLL_MS ?? 5000)
 export const USE_FIXTURES = env.VITE_X207_USE_FIXTURES === 'true'
+export const NEAR_NETWORK: 'testnet' | 'mainnet' =
+  env.VITE_NEAR_NETWORK === 'mainnet' ? 'mainnet' : 'testnet'
+export const CONTRACT_ID: string = env.VITE_X207_CONTRACT_ID ?? 'x207-circle.testnet'

@@ -4,6 +4,7 @@ import { EpochProvider, useEpochSelection } from '../epoch'
 import { pages } from '../routes'
 import { EpochPicker } from './EpochPicker'
 import { PhaseStrip } from './PhaseStrip'
+import { WalletButton } from './WalletButton'
 
 function Header() {
   const { pathname } = useLocation()
@@ -13,7 +14,10 @@ function Header() {
     <header className="page-head">
       <div className="page-title">
         <h1>{page?.title}</h1>
-        <EpochPicker />
+        <div className="page-tools">
+          <EpochPicker />
+          <WalletButton />
+        </div>
       </div>
       {page?.perEpoch && selected && <PhaseStrip phase={selected.phase} />}
     </header>

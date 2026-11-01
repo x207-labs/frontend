@@ -98,3 +98,16 @@ th { font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
 
 tr[aria-current='true'] td { font-weight: 700; }
 code.plain { font-weight: 400; color: var(--ink-soft); }
+
+.page-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; }
+.wallet { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
+.wallet-account { font-weight: 600; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wallet-error { color: var(--s409); font-size: 0.875rem; }
+button.quiet { color: var(--ink); background: transparent; border-color: var(--ink-soft); }
+button.quiet:hover:not(:disabled) { color: #fff; }
+
+.form { display: grid; gap: 0.75rem; max-width: 36rem; }
+.form label { display: grid; gap: 0.25rem; font-weight: 600; }
+.form input { width: 100%; }
+.form input:disabled { background: transparent; border-color: var(--line); }
+a { color: var(--s202); overflow-wrap: anywhere; }
