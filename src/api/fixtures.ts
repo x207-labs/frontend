@@ -176,11 +176,11 @@ export function fixtureReply(path: string): FixtureReply {
   return notFound('not_found', `Tidak ada data contoh untuk ${path}`)
 }
 
-export function fixtureFetch(overrides: (path: string) => FixtureReply | undefined = () => undefined) {
-  return async (input: string | URL | Request): Promise<Response> => {
+export function fixtureFetch(overrides: (path: string, init?: RequestInit) => FixtureReply | undefined = () => undefined) {
+  return async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const url = new URL(String(input))
     const path = url.pathname + url.search
-    const reply = overrides(path) ?? fixtureReply(path)
+    const reply = overrides(path, init) ?? fixtureReply(path)
     if (reply.delayMs) await new Promise((r) => setTimeout(r, reply.delayMs))
     return new Response(JSON.stringify(reply.body), {
       status: reply.status,

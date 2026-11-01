@@ -7,7 +7,7 @@ import { App } from '../App'
 import { WalletProvider } from '../wallet/WalletContext'
 import { createMockWallet, type MockWallet } from './walletMock'
 
-export type Override = (path: string) => FixtureReply | undefined
+export type Override = (path: string, init?: RequestInit) => FixtureReply | undefined
 
 export function apiError(status: number, code: string, message = code): FixtureReply {
   return { status, body: { error: { code, message } } }
@@ -30,5 +30,6 @@ export function renderApp(route: string, override?: Override, pollMs: number | f
     </QueryClientProvider>,
   )
   const calls = () => fetchMock.mock.calls.map(([input]) => String(input))
-  return { ...view, calls, client, wallet }
+  const requests = () => fetchMock.mock.calls.map(([input, init]) => ({ path: String(input), method: init?.method ?? 'GET', body: init?.body ? JSON.parse(String(init.body)) : undefined }))
+  return { ...view, calls, requests, client, wallet }
 }

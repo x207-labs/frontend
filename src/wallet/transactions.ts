@@ -15,3 +15,29 @@ export function joinTx(pubkeyVoucher: string, termsHash: string): FunctionCallTx
     deposit: JOIN_STORAGE_DEPOSIT,
   }
 }
+
+const USDT_ID = 'usdt.tether-token.near'
+const INTENTS_ID = 'intents.near'
+const ONE_YOCTO = '1'
+
+/** `ft_withdraw` USDT dari `intents.near` ke akun NEAR tanpa `msg` (ADR-19). */
+export function ftWithdrawTx(receiverId: string, amount: string): FunctionCallTx {
+  return {
+    receiverId: INTENTS_ID,
+    methodName: 'ft_withdraw',
+    args: { token: USDT_ID, receiver_id: receiverId, amount },
+    gas: (50n * TGAS).toString(),
+    deposit: ONE_YOCTO,
+  }
+}
+
+/** `ft_transfer_call` USDT ke kontrak lingkaran dengan `msg` stake. */
+export function stakeTx(amount: string): FunctionCallTx {
+  return {
+    receiverId: USDT_ID,
+    methodName: 'ft_transfer_call',
+    args: { receiver_id: CONTRACT_ID, amount, msg: JSON.stringify({ action: 'stake' }) },
+    gas: (100n * TGAS).toString(),
+    deposit: ONE_YOCTO,
+  }
+}

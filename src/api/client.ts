@@ -1,6 +1,9 @@
 import { API_URL, CIRCLE } from '../config'
 import type {
   ClearingReport,
+  DepositQuote,
+  DepositQuoteRequest,
+  Job,
   EpochItem,
   EpochMetrics,
   MemberResponse,
@@ -40,6 +43,23 @@ async function get<T>(path: string): Promise<T> {
   )
 }
 
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (res.ok) return res.json() as Promise<T>
+  const payload = await res.json().catch(() => null)
+  const error = payload?.error
+  throw new ApiError(
+    res.status,
+    error?.code ?? 'http_error',
+    error?.message ?? `Read API menjawab HTTP ${res.status}`,
+    error?.details,
+  )
+}
+
 const circle = `/x207/circles/${encodeURIComponent(CIRCLE)}`
 
 export const api = {
@@ -59,4 +79,6 @@ export const api = {
   metrics: (epoch: number) => get<EpochMetrics>(`${circle}/epochs/${epoch}/metrics`),
   params: () => get<ParamsResponse>(`${circle}/params`),
   paramsHistory: () => get<ParamsHistory>(`${circle}/params/history`),
+  depositQuote: (body: DepositQuoteRequest) => post<DepositQuote>('/x207/settlement/deposit/quote', body),
+  job: (jobId: string) => get<Job>(`/x207/settlement/jobs/${encodeURIComponent(jobId)}`),
 }

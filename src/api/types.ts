@@ -134,3 +134,52 @@ export type ParamsHistoryItem = {
   blockHeight: number
 }
 export type ParamsHistory = { items: ParamsHistoryItem[]; nextCursor: string | null }
+
+// POST /x207/settlement/deposit/quote dan GET /x207/settlement/jobs/{jobId} (Spec API Backend 6.2, 6.5).
+export type DepositQuoteRequest = {
+  purpose: 'stake' | 'settle'
+  circle: string
+  account: string
+  amount?: string
+  epoch?: number
+  originAsset: string
+  refundType: 'INTENTS' | 'ORIGIN_CHAIN'
+  refundTo: string
+  dry: boolean
+}
+export type JobStatus =
+  | 'waiting_deposit'
+  | 'processing'
+  | 'ready_withdraw'
+  | 'completed'
+  | 'refunded'
+  | 'failed'
+  | 'expired'
+export type DepositQuote = Amounts & {
+  jobId: string
+  status: JobStatus
+  purpose: 'stake' | 'settle'
+  originAsset: string
+  destinationAsset: string
+  amountIn: string
+  amountOut: string
+  recipient: string
+  recipientType: 'INTENTS'
+  depositAddress: string
+  quoteDeadline: string
+  timeEstimateSeconds: number
+  paymentDeadline?: string
+  warnings: string[]
+  nextSteps: string[]
+}
+export type Job = {
+  jobId: string
+  kind: string
+  status: JobStatus
+  oneClickStatus: string
+  account: string
+  epoch?: number | null
+  depositAddress?: string
+  amountOut?: string
+  updatedAt: string
+}

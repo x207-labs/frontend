@@ -12,6 +12,8 @@ const noPoll = false
 async function fillJoin(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByRole('textbox', { name: /pubkey_voucher/ }), PUBKEY)
   await user.type(screen.getByRole('textbox', { name: /terms_hash/ }), HASH)
+  await user.click(screen.getByRole('checkbox', { name: /menyetujui syarat/ }))
+  await user.type(screen.getByRole('textbox', { name: /Jumlah stake/ }), '50')
 }
 
 describe('NEAR Connect', () => {
@@ -34,7 +36,7 @@ describe('NEAR Connect', () => {
     renderApp('/onboarding', undefined, noPoll, createMockWallet('a.testnet', 'a.testnet'))
     await user.click(await screen.findByRole('button', { name: 'Keluar' }))
     expect(screen.queryByText('a.testnet')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Tanda tangani join' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Tanda tangani join dan stake' })).toBeDisabled()
   })
 
   it('TC-FE-003-06 transaksi join memuat network, receiver, gas, dan deposit', async () => {
@@ -43,9 +45,9 @@ describe('NEAR Connect', () => {
     renderApp('/onboarding', undefined, noPoll, wallet)
     await screen.findByText('a.testnet')
     await fillJoin(user)
-    await user.click(screen.getByRole('button', { name: 'Tanda tangani join' }))
-    expect(await screen.findByRole('link', { name: 'hash1' })).toHaveAttribute('href', expect.stringContaining('hash1'))
-    expect(wallet.txs).toEqual([
+    await user.click(screen.getByRole('button', { name: 'Tanda tangani join dan stake' }))
+    expect(await screen.findByRole('link', { name: 'hash2' })).toHaveAttribute('href', expect.stringContaining('hash2'))
+    expect(wallet.txs.slice(0, 1)).toEqual([
       {
         signerId: 'a.testnet',
         network: 'testnet',
@@ -57,6 +59,9 @@ describe('NEAR Connect', () => {
       },
     ])
     expect(BigInt(wallet.txs[0].deposit)).toBe(10n ** 22n)
+    // Halaman onboarding dan settlement memakai helper tanda tangan yang sama: stake ikut mengisi network, receiver, dan gas.
+    expect(wallet.txs[1]).toMatchObject({ network: 'testnet', methodName: 'ft_transfer_call', receiverId: 'usdt.tether-token.near' })
+    expect(wallet.txs[1].gas).not.toBe('')
   })
 
   it('TC-FE-003-04 wallet menolak: pesan dibatalkan, tanpa transaksi', async () => {
@@ -66,7 +71,7 @@ describe('NEAR Connect', () => {
     renderApp('/onboarding', undefined, noPoll, wallet)
     await screen.findByText('a.testnet')
     await fillJoin(user)
-    await user.click(screen.getByRole('button', { name: 'Tanda tangani join' }))
+    await user.click(screen.getByRole('button', { name: 'Tanda tangani join dan stake' }))
     expect(await screen.findByText(/Dibatalkan pengguna/)).toBeInTheDocument()
     expect(wallet.txs).toEqual([])
   })
@@ -77,6 +82,6 @@ describe('NEAR Connect', () => {
     await screen.findByText('a.testnet')
     await user.type(screen.getByRole('textbox', { name: /pubkey_voucher/ }), 'bukan-kunci')
     await user.type(screen.getByRole('textbox', { name: /terms_hash/ }), HASH)
-    expect(screen.getByRole('button', { name: 'Tanda tangani join' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Tanda tangani join dan stake' })).toBeDisabled()
   })
 })

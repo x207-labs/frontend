@@ -90,14 +90,17 @@ export type SignState =
 export function useSignTransaction() {
   const { send } = useWallet()
   const [state, setState] = useState<SignState>({ kind: 'idle' })
+  // Mengembalikan true bila transaksi terkirim, supaya urutan beberapa transaksi berhenti di kegagalan pertama.
   const sign = useCallback(
-    async (tx: FunctionCallTx) => {
+    async (tx: FunctionCallTx): Promise<boolean> => {
       setState({ kind: 'signing' })
       try {
         const { hash } = await send(tx)
         setState({ kind: 'done', hash })
+        return true
       } catch (e) {
         setState(isUserRejection(e) ? { kind: 'cancelled' } : { kind: 'failed', message: describe(e) })
+        return false
       }
     },
     [send],
