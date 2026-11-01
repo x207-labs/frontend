@@ -97,3 +97,4 @@ th { font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
 .tooltip { position: absolute; transform: translate(-50%, calc(-100% - 12px)); width: max-content; max-width: 14rem; padding: 0.25rem 0.5rem; background: var(--ink); color: #fff; font-size: 0.875rem; border-radius: 4px; pointer-events: none; z-index: 1; }
 
 tr[aria-current='true'] td { font-weight: 700; }
+code.plain { font-weight: 400; color: var(--ink-soft); }
