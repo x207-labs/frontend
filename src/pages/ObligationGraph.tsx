@@ -1,24 +1,177 @@
+import { useMemo } from 'react'
+import { ApiError } from '../api/client'
 import { useObligations } from '../api/queries'
+import type { ObligationEdge, Obligations } from '../api/types'
 import { QueryState } from '../components/QueryState'
 import { useSelectedEpoch } from '../epoch'
-import { formatCredit } from '../lib/format'
+import { decomposeCycles } from '../lib/cycles'
+import { formatCredit, shortAccount } from '../lib/format'
+
+const SIZE = 280
+const CENTER = SIZE / 2
+const RADIUS = 100
+
+function positions(nodes: string[]): Map<string, { x: number; y: number }> {
+  return new Map(
+    nodes.map((node, i) => {
+      const angle = (2 * Math.PI * i) / Math.max(nodes.length, 1) - Math.PI / 2
+      return [node, { x: CENTER + RADIUS * Math.cos(angle), y: CENTER + RADIUS * Math.sin(angle) }]
+    }),
+  )
+}
+
+type Mode = 'live' | 'before' | 'after'
+
+function Graph({ title, edges, nodes, mode }: { title: string; edges: ObligationEdge[]; nodes: string[]; mode: Mode }) {
+  const at = positions(nodes)
+  return (
+    <figure className="graph">
+      <figcaption>{title}</figcaption>
+      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label={`${title}, ${edges.length} sisi`}>
+        <defs>
+          <marker id={`arrow-${mode}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
+          </marker>
+        </defs>
+        {edges.map((e) => {
+          const a = at.get(e.debtor)!
+          const b = at.get(e.creditor)!
+          const gone = mode === 'after' && e.remaining === '0'
+          return (
+            <line
+              key={`${e.debtor}>${e.creditor}`}
+              data-testid={`edge-${mode}-${shortAccount(e.debtor)}-${shortAccount(e.creditor)}`}
+              className={gone ? 'edge edge-dim' : 'edge'}
+              x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+              markerEnd={`url(#arrow-${mode})`}
+            />
+          )
+        })}
+        {nodes.map((n) => {
+          const p = at.get(n)!
+          return (
+            <g key={n}>
+              <circle className="node" cx={p.x} cy={p.y} r={5} />
+              <text className="tick" x={p.x} y={p.y - 10} textAnchor="middle">
+                {shortAccount(n)}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+    </figure>
+  )
+}
+
+function EdgeTable({ edges, staged }: { edges: ObligationEdge[]; staged: boolean }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Debtor</th>
+          <th>Kreditor</th>
+          <th>Nilai</th>
+          {staged && <th>Terhapus</th>}
+          {staged && <th>Sisa</th>}
+        </tr>
+      </thead>
+      <tbody>
+        {edges.map((e) => (
+          <tr key={`${e.debtor}>${e.creditor}`}>
+            <td>{shortAccount(e.debtor)}</td>
+            <td>{shortAccount(e.creditor)}</td>
+            <td>{formatCredit(e.amount)}</td>
+            {staged && <td>{formatCredit(e.cleared)}</td>}
+            {staged && <td>{formatCredit(e.remaining)}</td>}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+const ERROR_TEXT: Record<string, string> = {
+  epoch_not_closed: 'Epoch ini belum ditutup, jadi kliring belum ada.',
+  epoch_not_found: 'Epoch tidak ditemukan.',
+}
+
+function Cleared({ live, cleared }: { live: Obligations; cleared: Obligations }) {
+  const nodes = useMemo(
+    () => [...new Set([...live.edges, ...cleared.edges].flatMap((e) => [e.debtor, e.creditor]))].sort(),
+    [live, cleared],
+  )
+  const totalCleared = cleared.edges.reduce((sum, e) => sum + BigInt(e.cleared ?? '0'), 0n)
+  const cycles = useMemo(
+    () => decomposeCycles(cleared.edges.map((e) => ({ debtor: e.debtor, creditor: e.creditor, cleared: BigInt(e.cleared ?? '0') }))),
+    [cleared],
+  )
+  return (
+    <>
+      <p>
+        Nilai terhapus: <strong>{formatCredit(totalCleared.toString())}</strong> credit.
+      </p>
+      <div className="graph-pair">
+        <Graph title="Sebelum kliring" edges={live.edges} nodes={nodes} mode="before" />
+        <Graph title="Sesudah kliring" edges={cleared.edges} nodes={nodes} mode="after" />
+      </div>
+      {cycles.length > 0 && (
+        <section aria-label="Siklus terhapus">
+          <h3>Siklus terhapus</h3>
+          <ul>
+            {cycles.map((c, i) => (
+              <li key={i}>
+                {c.path.map(shortAccount).join(' → ')}: {formatCredit(c.amount.toString())} per sisi
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <EdgeTable edges={cleared.edges} staged />
+    </>
+  )
+}
 
 export function ObligationGraph() {
   const epoch = useSelectedEpoch()
-  const obligations = useObligations(epoch, 'live')
+  const live = useObligations(epoch, 'live')
+  const cleared = useObligations(epoch, 'cleared')
   if (epoch === null) return null
   return (
-    <QueryState
-      query={obligations}
-      loadingLabel="Memuat kewajiban"
-      isEmpty={(d) => d.edges.length === 0}
-      empty="Belum ada kewajiban terdaftar di epoch ini."
-    >
-      {(data) => (
-        <p>
-          {data.edgeCount} kewajiban senilai {formatCredit(data.totalObligation)} credit.
-        </p>
+    <>
+      <QueryState
+        query={live}
+        loadingLabel="Memuat kewajiban"
+        isEmpty={(d) => d.edges.length === 0}
+        empty="Belum ada kewajiban terdaftar di epoch ini."
+      >
+        {(data) => (
+          <>
+            <p>
+              {data.edgeCount} kewajiban senilai {formatCredit(data.totalObligation)} credit.
+            </p>
+            <Graph
+              title="Epoch berjalan"
+              edges={data.edges}
+              nodes={[...new Set(data.edges.flatMap((e) => [e.debtor, e.creditor]))].sort()}
+              mode="live"
+            />
+            <EdgeTable edges={data.edges} staged={false} />
+          </>
+        )}
+      </QueryState>
+      <h2>Sebelum dan sesudah kliring</h2>
+      {cleared.error instanceof ApiError && ERROR_TEXT[cleared.error.code] ? (
+        <p className="state" role="status">{ERROR_TEXT[cleared.error.code]}</p>
+      ) : (
+        <QueryState
+          query={cleared}
+          loadingLabel="Memuat hasil kliring"
+          isEmpty={(d) => d.edges.length === 0}
+          empty="Kliring belum diterapkan untuk epoch ini."
+        >
+          {(data) => (live.data ? <Cleared live={live.data} cleared={data} /> : null)}
+        </QueryState>
       )}
-    </QueryState>
+    </>
   )
 }
