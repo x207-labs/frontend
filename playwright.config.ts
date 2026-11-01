@@ -8,5 +8,6 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:5207',
     reuseExistingServer: true,
+    env: { VITE_X207_API_URL: 'http://localhost:8787', VITE_X207_USE_FIXTURES: 'false' },
   },
 })
