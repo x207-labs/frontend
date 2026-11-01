@@ -11,7 +11,7 @@ const credit = (extra: object = {}) => ({
 })
 const mine = (items: unknown[]) => (path: string) =>
   path.includes(`/members/${GPU}/settlements`) ? { status: 200, body: { unit: 'credit', decimals: 6, items, nextCursor: null } } : undefined
-const open = (wallet = createMockWallet(GPU, GPU), override?: ReturnType<typeof mine>) => renderApp('/settlement?epoch=42', override, false, wallet)
+const open = (wallet = createMockWallet(GPU, GPU), override?: Parameters<typeof renderApp>[1]) => renderApp('/settlement?epoch=42', override, false, wallet)
 
 describe('settlement kreditor', () => {
   it('TC-FE-010-01 claimable dengan claimableNow false: tombol nonaktif menunggu finalize_epoch', async () => {
