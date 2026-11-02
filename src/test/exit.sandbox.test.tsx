@@ -11,7 +11,20 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import type { FunctionCallTx, WalletPort } from '../wallet/types'
 
+declare const process: { env: Record<string, string | undefined>; stderr: { write(text: string): void }; cwd(): string }
 const enabled = process.env.X207_SANDBOX === '1'
+// Jalur ke repo saudara dalam variabel: tsc frontend tidak boleh ikut memeriksa backend dan sdk (aturan sintaks TS yang berbeda); tipenya `any`.
+// vitest jalan dari folder frontend; umbrella = satu tingkat di atasnya
+const UMBRELLA = process.cwd().replace(/\/frontend$/, '')
+const SIBLINGS = {
+  sandbox: `${UMBRELLA}/sdk/test-support/sandbox.ts`,
+  circle: `${UMBRELLA}/sdk/test-support/circle.ts`,
+  core: `${UMBRELLA}/sdk/packages/core/src/index.ts`,
+  backend: `${UMBRELLA}/backend/src/index.ts`,
+  keeper: `${UMBRELLA}/scripts/lib/keeper.mjs`,
+} as const
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const load = (path: string): Promise<any> => import(/* @vite-ignore */ `/@fs${path}`)
 
 describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox', () => {
   const cleanup: Array<() => Promise<void> | void> = []
@@ -20,12 +33,12 @@ describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox
   })
 
   it('TC-FE-018-08 request_exit lalu withdraw_stake dari tombol UI, stake kembali dan status exited', async (ctx) => {
-    const { sandboxAvailable } = await import('../../../sdk/test-support/sandbox.ts')
+    const { sandboxAvailable } = await load(SIBLINGS.sandbox)
     if (!sandboxAvailable) return ctx.skip()
-    const { deployCircle, TERMS_HASH } = await import('../../../sdk/test-support/circle.ts')
-    const core = await import('../../../sdk/packages/core/src/index.ts')
-    const backend = await import('../../../backend/src/index.ts')
-    const { keeperPass } = await import('../../../scripts/lib/keeper.mjs')
+    const { deployCircle, TERMS_HASH } = await load(SIBLINGS.circle)
+    const core = await load(SIBLINGS.core)
+    const backend = await load(SIBLINGS.backend)
+    const { keeperPass } = await load(SIBLINGS.keeper)
 
     const fx = await deployCircle()
     cleanup.push(() => fx.stop())
@@ -35,7 +48,7 @@ describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox
     const view = core.createCircleViewFn({ circleContract: contract, rpcUrls: [fx.sandbox.rpcUrl] })
     await core.onboardMember(
       {
-        sendCall: async (c: import('../../../sdk/packages/core/src/index.ts').ContractCall) => {
+        sendCall: async (c: unknown) => {
           const r = await account.call(c)
           if (r.failures.length > 0) throw new Error(r.failures.join('; '))
           return r.value
@@ -44,7 +57,7 @@ describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox
       },
       { circleContract: contract, circleId: fx.circleId, accountId: account.accountId, termsHash: TERMS_HASH, stakeAmount: '50000000', usdtTokenId: fx.usdt.accountId },
     )
-    const usdt = async () => BigInt((await fx.sandbox.view<string>(fx.usdt.accountId, 'ft_balance_of', { account_id: account.accountId })) as string)
+    const usdt = async () => BigInt((await fx.sandbox.view(fx.usdt.accountId, 'ft_balance_of', { account_id: account.accountId })) as string)
     const usdtBefore = await usdt()
 
     // read API nyata: indexer atas kontrak di near-sandbox
@@ -60,7 +73,7 @@ describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox
       api.closeAllConnections?.()
       api.close()
     })
-    const apiUrl = `http://127.0.0.1:${(api.address() as import('node:net').AddressInfo).port}`
+    const apiUrl = `http://127.0.0.1:${(api.address() as { port: number }).port}`
     const drainer = setInterval(() => void indexer.drain().catch(() => undefined), 500)
     cleanup.push(() => clearInterval(drainer))
 
@@ -102,7 +115,7 @@ describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox
       </QueryClientProvider>,
     )
     const user = userEvent.setup()
-    const memberView = () => fx.sandbox.view<{ status: string; stake: string; exit_requested_epoch: number | null }>(contract, 'member', { account_id: account.accountId })
+    const memberView = () => fx.sandbox.view(contract, 'member', { account_id: account.accountId }) as Promise<{ status: string; stake: string; exit_requested_epoch: number | null }>
 
     // 1. request_exit dari tombol
     await user.click(await screen.findByRole('button', { name: 'Minta keluar', hidden: false }, { timeout: 60_000 }))
@@ -122,7 +135,7 @@ describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox
           return r.hash
         },
       }) as Promise<Array<{ method: string; epoch: number }>>
-    const epochView = (epoch: number) => fx.sandbox.view<Record<string, string | null>>(contract, 'get_epoch', { epoch })
+    const epochView = (epoch: number) => fx.sandbox.view(contract, 'get_epoch', { epoch }) as Promise<Record<string, string | null>>
     for (const deadline of ['cutoff_at', 'proposal_deadline', 'payment_deadline']) {
       await fx.sandbox.advanceTo(Number(BigInt((await epochView(1))[deadline]!) / 1_000_000n) + 1_000)
       await new Promise((r) => setTimeout(r, 3_000))
