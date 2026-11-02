@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   base58Decode, base58Encode, cancelListingMessage, listingHash, offerHash, serializeListing, serializeOffer, signCancelListing,
-  signListing, signOffer, signMessageWithVoucher, voucherSeed, type Listing, type Offer,
+  serializeBundleTerms, signListing, signOffer, signMessageWithVoucher, termsHash, voucherSeed, type Listing, type Offer,
 } from './barter'
 
 // Vector dari sdk/spec/test-vectors/barter/listing.json; kunci kA dan kB dari keys.json.
@@ -66,5 +66,27 @@ describe('lib/barter cocok dengan test vector SDK', () => {
   it('base58 bolak-balik termasuk byte nol di depan', () => {
     const bytes = Uint8Array.from([0, 0, 1, 2, 255])
     expect(base58Decode(base58Encode(bytes))).toEqual(bytes)
+  })
+})
+
+describe('lib/barter syarat bundle cocok dengan vector A→B→C→A', () => {
+  const terms = {
+    circle: 'x207-circle.near',
+    epoch: 42,
+    legs: [
+      { payer: 'scraper.x207-circle.near', payee: 'translator.x207-circle.near', max_amount: '6000000' },
+      { payer: 'translator.x207-circle.near', payee: 'summarizer.x207-circle.near', max_amount: '10000000' },
+      { payer: 'summarizer.x207-circle.near', payee: 'scraper.x207-circle.near', max_amount: '8000000' },
+    ],
+  }
+  it('JSON kanonik mengurutkan leg dan hash sama dengan SDK', async () => {
+    const message = serializeBundleTerms(terms)
+    expect(message.indexOf('summarizer.x207-circle.near","payee":"scraper')).toBeLessThan(message.indexOf('"payer":"translator'))
+    expect(await termsHash(terms)).toBe('f5d18602740f25fac33c0b84c831477246cd4c04bc9b19e7fddda2887637535d')
+  })
+  it('tanda tangan peserta translator (kA) sama dengan vector', async () => {
+    expect(await signMessageWithVoucher(serializeBundleTerms(terms), terms.circle, SEED_A)).toBe(
+      'ed25519:2qtxR6to99mHKxRSe4FLhTgCuULeGJzHaiBvL5aj37Jeb4V2kCLRTXpPLjbNbXLfuJMDHuokwQPXQo8RWTnMzg6c',
+    )
   })
 })

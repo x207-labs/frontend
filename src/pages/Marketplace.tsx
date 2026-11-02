@@ -2,7 +2,7 @@
 // Panel negosiasi (FE-020) ada di components/Negotiation.tsx dan dibuka dari baris listing.
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { ApiError, api } from '../api/client'
+import { api } from '../api/client'
 import { useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { Negotiation } from '../components/Negotiation'
@@ -11,6 +11,7 @@ import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { ASSET_CLASSES, listingHash, signListing, type AssetClass, type Listing } from '../lib/barter'
 import { toAtomic } from '../lib/amount'
+import { describeMarketError } from '../lib/marketError'
 import { formatCredit, formatNumber, formatTime, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
 
@@ -34,16 +35,6 @@ const bps = (percent: string): number | null => {
   if (!/^\d+([.,]\d{1,2})?$/.test(percent.trim())) return null
   const value = Math.round(Number(percent.replace(',', '.')) * 100)
   return value >= 0 && value <= 10_000 ? value : null
-}
-
-function describe(e: unknown): string {
-  if (e instanceof ApiError) {
-    if (e.code === 'asset_class_rejected') return `Kelas aset ditolak: ${e.message}`
-    if (e.code === 'invalid_signature') return 'Tanda tangan tidak cocok dengan kunci voucher yang terdaftar untuk akun ini. Periksa kunci voucher.'
-    if (e.code === 'member_not_active') return 'Akun belum aktif sebagai anggota lingkaran.'
-    return `${e.code}: ${e.message}`
-  }
-  return e instanceof Error ? e.message : String(e)
 }
 
 function SideFields({ legend, value, onChange }: { legend: string; value: Side; onChange: (next: Side) => void }) {
@@ -122,7 +113,7 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
       await client.invalidateQueries({ queryKey: ['listings'] })
       await client.invalidateQueries({ queryKey: ['market-stats'] })
     } catch (e) {
-      setError(describe(e))
+      setError(describeMarketError(e))
     } finally {
       setBusy(false)
     }

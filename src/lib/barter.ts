@@ -137,3 +137,20 @@ export const signOffer = (o: Offer, secretKey: string) => signMessageWithVoucher
 export const cancelListingMessage = (hash: string): string => `x207:cancel_listing:${hash}`
 export const signCancelListing = (hash: string, circle: string, secretKey: string) =>
   signMessageWithVoucher(cancelListingMessage(hash), circle, secretKey)
+
+export type BundleTerms = { circle: string; epoch: number; legs: Array<{ payer: string; payee: string; max_amount: string }> }
+
+const byBytes = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
+
+/** JSON kanonik syarat bundle: leg diurutkan menurut (payer, payee); sama dengan `serializeBundleTerms` SDK. */
+export const serializeBundleTerms = (t: BundleTerms): string =>
+  JSON.stringify({
+    circle: t.circle,
+    epoch: t.epoch,
+    legs: [...t.legs]
+      .sort((a, b) => byBytes(a.payer, b.payer) || byBytes(a.payee, b.payee))
+      .map((l) => ({ payer: l.payer, payee: l.payee, max_amount: l.max_amount })),
+  })
+
+export const termsHash = async (t: BundleTerms): Promise<string> => toHex(await sha256(serializeBundleTerms(t)))
+export const sha256Hex = async (text: string): Promise<string> => toHex(await sha256(text))
