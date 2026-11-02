@@ -308,3 +308,23 @@ export type DaoProposal = {
   votes: Record<string, [number, number, number]>
 }
 export type DaoProposals = { circle: string; dao: string; items: DaoProposal[]; nextCursor: string | null }
+
+// GET …/grants (BE-038, FE-017): grant D11 seperti event menceritakannya.
+export type GrantStatus = 'offered' | 'active' | 'revoked' | 'expired'
+export type RevokeReason = 'grantor' | 'grantee' | 'operator' | 'expired' | 'defaulted'
+export type Grant = {
+  grantId: number
+  assetType: string
+  grantor: string
+  grantee: string | null
+  class: 'A' | 'B' | 'C' | 'D' | 'X'
+  unit: string
+  unitPrice: string
+  /** Nanodetik sejak epoch Unix, sebagai string. */
+  expiresAt: string
+  deliveryPubkey: string | null
+  status: GrantStatus
+  revokeReason: RevokeReason | null
+  changedBlock: number
+}
+export type GrantList = { circle: string; unit: 'credit'; decimals: number; items: Grant[]; nextCursor: string | null }

@@ -35,6 +35,14 @@ export const limitHistory = {
   nextCursor: null,
 }
 
+const nsAt = (iso: string) => (BigInt(Date.parse(iso)) * 1_000_000n).toString()
+export const grants = [
+  { grantId: 1, assetType: 'near-rpc:access', grantor: near('scraper'), grantee: near('translator'), class: 'B', unit: 'day', unitPrice: '50000', expiresAt: nsAt('2026-12-01T00:00:00Z'), deliveryPubkey: 'ed25519:7iLjnTRLXo6xnVvb2wh5ckpNjYu8gxVv3TTzGd2K4q4d', status: 'revoked', revokeReason: 'defaulted', changedBlock: 171234500 },
+  { grantId: 2, assetType: 'near-rpc:access', grantor: near('scraper'), grantee: near('gpu'), class: 'B', unit: 'day', unitPrice: '50000', expiresAt: nsAt('2026-12-15T00:00:00Z'), deliveryPubkey: 'ed25519:9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu', status: 'active', revokeReason: null, changedBlock: 171234510 },
+  { grantId: 3, assetType: 'x402:endpoint', grantor: near('summarizer'), grantee: near('translator'), class: 'D', unit: 'call', unitPrice: '20000', expiresAt: nsAt('2026-11-05T00:00:00Z'), deliveryPubkey: null, status: 'expired', revokeReason: 'expired', changedBlock: 171234520 },
+  { grantId: 4, assetType: 'near-rpc:access', grantor: near('translator'), grantee: null, class: 'B', unit: 'day', unitPrice: '40000', expiresAt: nsAt('2026-12-20T00:00:00Z'), deliveryPubkey: null, status: 'offered', revokeReason: null, changedBlock: 171234530 },
+]
+
 export const daoProposals = {
   circle,
   dao: 'x207.sputnik-dao.near',
@@ -209,6 +217,13 @@ export function fixtureReply(path: string): FixtureReply {
   if (rest === '/params') return ok(params)
   if (rest === '/params/history') return ok(paramsHistory)
   if (rest === '/proposals') return ok(daoProposals)
+  if (rest === '/grants') {
+    const grantee = url.searchParams.get('grantee')
+    const grantor = url.searchParams.get('grantor')
+    const status = url.searchParams.get('status')
+    const items = grants.filter((g) => (!grantee || g.grantee === grantee) && (!grantor || g.grantor === grantor) && (!status || g.status === status))
+    return ok({ circle, ...amounts, items, nextCursor: null })
+  }
   const limits = rest.match(/^\/members\/([^/]+)\/limits$/)
   if (limits) {
     return members.some((m) => m.account === decodeURIComponent(limits[1]))

@@ -9,6 +9,7 @@ import type {
   WithdrawQuoteRequest,
   WithdrawSubmit,
   DaoProposals,
+  GrantList,
   EpochItem,
   LimitHistoryItem,
   EpochMetrics,
@@ -85,6 +86,10 @@ export const api = {
     get<Paged<SettlementItem>>(`${circle}/members/${encodeURIComponent(account)}/settlements`),
   memberLimits: (account: string) =>
     get<Paged<LimitHistoryItem>>(`${circle}/members/${encodeURIComponent(account)}/limits`),
+  grants: (query: Record<string, string>) => {
+    const qs = new URLSearchParams(query).toString()
+    return get<GrantList>(`${circle}/grants${qs ? `?${qs}` : ''}`)
+  },
   daoProposals: () => get<DaoProposals>(`${circle}/proposals`),
   report: (epoch: number) => get<ClearingReport>(`${circle}/epochs/${epoch}`),
   obligations: (epoch: number, stage: ObligationStage) =>

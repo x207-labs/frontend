@@ -58,3 +58,5 @@ export const useProposals = (account: string | null) =>
 export const useMemberLimits = (account: string | null) =>
   useQuery({ queryKey: ['limits', account], queryFn: () => api.memberLimits(account!), enabled: account !== null, retry: false })
 export const useDaoProposals = () => useQuery({ queryKey: ['dao-proposals'], queryFn: api.daoProposals })
+export const useGrants = (query: Record<string, string>, enabled = true) =>
+  useQuery({ queryKey: ['grants', query], queryFn: () => api.grants(query), enabled })

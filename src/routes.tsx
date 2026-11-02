@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import { ClearingStats } from './pages/ClearingStats'
 import { Governance } from './pages/Governance'
+import { Grants } from './pages/Grants'
 import { Marketplace } from './pages/Marketplace'
 import { ObligationGraph } from './pages/ObligationGraph'
 import { Onboarding } from './pages/Onboarding'
@@ -18,5 +19,6 @@ export const pages: PageRoute[] = [
   { path: '/settlement', title: 'Settlement', perEpoch: true, Page: Settlement },
   { path: '/risiko', title: 'Risiko', perEpoch: true, Page: Risk },
   { path: '/marketplace', title: 'Marketplace', perEpoch: false, Page: Marketplace },
+  { path: '/akses', title: 'Akses (F8)', perEpoch: false, Page: Grants },
   { path: '/tata-kelola', title: 'Tata kelola', perEpoch: false, Page: Governance },
 ]
