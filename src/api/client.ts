@@ -8,7 +8,9 @@ import type {
   WithdrawQuote,
   WithdrawQuoteRequest,
   WithdrawSubmit,
+  DaoProposals,
   EpochItem,
+  LimitHistoryItem,
   EpochMetrics,
   MemberResponse,
   Member,
@@ -81,6 +83,9 @@ export const api = {
     get<MemberResponse>(`${circle}/members/${encodeURIComponent(account)}`),
   memberSettlements: (account: string) =>
     get<Paged<SettlementItem>>(`${circle}/members/${encodeURIComponent(account)}/settlements`),
+  memberLimits: (account: string) =>
+    get<Paged<LimitHistoryItem>>(`${circle}/members/${encodeURIComponent(account)}/limits`),
+  daoProposals: () => get<DaoProposals>(`${circle}/proposals`),
   report: (epoch: number) => get<ClearingReport>(`${circle}/epochs/${epoch}`),
   obligations: (epoch: number, stage: ObligationStage) =>
     get<Obligations>(`${circle}/epochs/${epoch}/obligations?stage=${stage}`),

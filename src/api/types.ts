@@ -284,3 +284,27 @@ export type AcceptResult = {
   offer: OfferView
   result: { kind: 'payment'; payer: string; payee: string; amount: string } | { kind: 'bundle'; proposal: BundleProposal }
 }
+
+// GET …/members/{account}/limits (Spec API Backend 2.1, FE-013).
+export type LimitHistoryItem = {
+  epoch: number | null
+  oldLimit: string
+  newLimit: string
+  status: string
+  reason: string
+  blockHeight: number
+}
+
+// GET …/proposals (Spec API Backend 3.5, FE-015): proposal Sputnik DAO `set_params`.
+export type DaoProposal = {
+  id: number
+  status: 'InProgress' | 'Approved' | 'Rejected' | 'Removed' | 'Expired' | 'Moved' | 'Failed'
+  proposer: string
+  description: string
+  method: string
+  params: Partial<Params> | null
+  submittedAt: string
+  /** Sputnik `vote_counts`: peran -> [setuju, tolak, hapus]. */
+  votes: Record<string, [number, number, number]>
+}
+export type DaoProposals = { circle: string; dao: string; items: DaoProposal[]; nextCursor: string | null }

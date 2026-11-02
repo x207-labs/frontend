@@ -26,6 +26,31 @@ export const members = [
   member('translator', '50000000', '50000000', '0', '50000000'),
 ]
 
+export const limitHistory = {
+  items: [
+    { epoch: 42, oldLimit: '50000000', newLimit: '50000000', status: 'active', reason: 'epoch_update', blockHeight: 171234100 },
+    { epoch: 41, oldLimit: '40000000', newLimit: '50000000', status: 'active', reason: 'cash_settlement', blockHeight: 171230010 },
+    { epoch: null, oldLimit: '0', newLimit: '40000000', status: 'active', reason: 'stake', blockHeight: 171200001 },
+  ],
+  nextCursor: null,
+}
+
+export const daoProposals = {
+  circle,
+  dao: 'x207.sputnik-dao.near',
+  items: [
+    {
+      id: 7, status: 'InProgress', proposer: 'council1.near', description: 'Raise payment_window to 45 minutes', method: 'set_params',
+      params: { payment_window: 2700 }, submittedAt: '2026-11-09T10:00:00Z', votes: { council: [1, 0, 0] },
+    },
+    {
+      id: 5, status: 'Approved', proposer: 'council2.near', description: 'Lift limit_cap', method: 'set_params',
+      params: { limit_cap: '1000000000' }, submittedAt: '2026-11-08T09:00:00Z', votes: { council: [2, 0, 0] },
+    },
+  ],
+  nextCursor: null,
+}
+
 export const epochs = [
   { epoch: 42, phase: 'payment_window', proposalDeadline: '2026-11-09T11:10:00Z' },
   { epoch: 41, phase: 'finalized', proposalDeadline: '2026-11-09T10:10:00Z' },
@@ -183,6 +208,13 @@ export function fixtureReply(path: string): FixtureReply {
   if (rest === '/members') return ok({ circle, ...amounts, items: members, nextCursor: null })
   if (rest === '/params') return ok(params)
   if (rest === '/params/history') return ok(paramsHistory)
+  if (rest === '/proposals') return ok(daoProposals)
+  const limits = rest.match(/^\/members\/([^/]+)\/limits$/)
+  if (limits) {
+    return members.some((m) => m.account === decodeURIComponent(limits[1]))
+      ? ok({ ...amounts, ...limitHistory })
+      : notFound('member_not_found', 'Akun belum terdaftar di lingkaran')
+  }
 
   if (rest === '/marketplace/stats') return ok(marketStats)
   if (rest === '/listings') {
