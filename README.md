@@ -28,3 +28,5 @@ Semua variabel ada di `.env.example`. Read API dipoll tiap 5 detik (`VITE_X207_P
 ## Status integrasi
 
 Tipe respons di `src/api/types.ts` ditulis tangan dari Spec API Backend dan diganti impor `@x207/core` setelah npm workspaces payung terpasang (UM-006). Selama backend belum ada, halaman baca hanya teruji terhadap data contoh.
+
+Panel keluar dan tarik stake (`src/components/ExitPanel.tsx`) teruji dengan wallet tiruan dan data contoh. Transaksinya (`request_exit`, `withdraw_stake`, deposit 1 yoctoNEAR) sama dengan `buildRequestExitCall` dan `buildWithdrawStakeCall` di `@x207/core`, yang diuji terhadap kontrak di near-sandbox. Alur dari UI ke near-sandbox belum dijalankan.
