@@ -4,6 +4,10 @@ import type {
   DepositQuote,
   DepositQuoteRequest,
   Job,
+  WithdrawIntent,
+  WithdrawQuote,
+  WithdrawQuoteRequest,
+  WithdrawSubmit,
   EpochItem,
   EpochMetrics,
   MemberResponse,
@@ -80,5 +84,9 @@ export const api = {
   params: () => get<ParamsResponse>(`${circle}/params`),
   paramsHistory: () => get<ParamsHistory>(`${circle}/params/history`),
   depositQuote: (body: DepositQuoteRequest) => post<DepositQuote>('/x207/settlement/deposit/quote', body),
+  withdrawQuote: (body: WithdrawQuoteRequest) => post<WithdrawQuote>('/x207/settlement/withdraw/quote', body),
+  withdrawIntent: (jobId: string) => post<WithdrawIntent>('/x207/settlement/withdraw/intent', { jobId }),
+  withdrawSubmit: (jobId: string, signedIntent: object) =>
+    post<WithdrawSubmit>('/x207/settlement/withdraw/submit', { jobId, signedIntent }),
   job: (jobId: string) => get<Job>(`/x207/settlement/jobs/${encodeURIComponent(jobId)}`),
 }

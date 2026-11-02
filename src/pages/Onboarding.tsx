@@ -5,6 +5,7 @@ import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { TxResult } from '../components/TxResult'
 import { CIRCLE } from '../config'
 import { ApiError } from '../api/client'
+import { toAtomic } from '../lib/amount'
 import { formatCredit } from '../lib/format'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { ftWithdrawTx, joinTx, stakeTx } from '../wallet/transactions'
@@ -12,17 +13,7 @@ import type { FunctionCallTx } from '../wallet/types'
 
 const PUBKEY = /^ed25519:[1-9A-HJ-NP-Za-km-z]{32,}$/
 const TERMS_HASH = /^[0-9a-f]{64}$/
-const DECIMALS = 6
-
 type Source = 'near' | 'intents' | 'other'
-
-/** "12.5" -> "12500000" (6 desimal); null bila bukan angka > 0. */
-export function toAtomic(input: string): string | null {
-  const match = input.trim().match(/^(\d+)(?:\.(\d{1,6}))?$/)
-  if (!match) return null
-  const atomic = BigInt(match[1] + (match[2] ?? '').padEnd(DECIMALS, '0'))
-  return atomic > 0n ? atomic.toString() : null
-}
 
 function JoinForm({ registered }: { registered: boolean }) {
   const { account } = useWallet()

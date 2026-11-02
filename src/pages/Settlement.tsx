@@ -5,6 +5,7 @@ import { useEpochSettlements } from '../api/queries'
 import type { SettlementItem } from '../api/types'
 import { DepositBranch } from '../components/DepositBranch'
 import { QueryState } from '../components/QueryState'
+import { WithdrawPanel } from '../components/WithdrawPanel'
 import { TxResult } from '../components/TxResult'
 import { useSelectedEpoch } from '../epoch'
 import { formatCredit, shortAccount } from '../lib/format'
@@ -160,6 +161,7 @@ function MyDues() {
                 ))}
               </ul>
             )}
+            <WithdrawPanel account={account} />
           </>
         )
       }}

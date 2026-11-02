@@ -183,3 +183,31 @@ export type Job = {
   amountOut?: string
   updatedAt: string
 }
+
+// POST /x207/settlement/withdraw/{quote,intent,submit} (Spec API Backend 6.3, 6.4).
+export type WithdrawQuoteRequest = {
+  circle: string
+  account: string
+  destinationAsset: string
+  amount: string
+  recipient: string
+  refundTo: string
+  acceptHighFee: boolean
+  dry: boolean
+}
+export type WithdrawQuote = {
+  jobId: string
+  status: string
+  dry: boolean
+  amountIn: string
+  amountOut: string
+  withdrawFee: string
+  variableFeeBpsEstimate: number
+  totalFeePct: number
+  threshold: { chain: string; minAmount: string; ok: boolean }
+  timeEstimateSeconds: number
+  warnings: string[]
+}
+/** `intent` dari 1Click apa adanya; FE-011 membaca `payload` NEP-413 bila ada. */
+export type WithdrawIntent = { jobId: string; intent: { standard?: string; payload?: { message: string; nonce: string; recipient: string } } & Record<string, unknown> }
+export type WithdrawSubmit = { jobId: string; status: string; intentHash: string }

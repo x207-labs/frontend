@@ -79,4 +79,16 @@ export const nearConnectPort: WalletPort = {
     })
     return { hash: outcome.transaction.hash }
   },
+
+  async signMessage(signerId, input) {
+    const c = await getConnector()
+    const wallet = await c.wallet()
+    return wallet.signMessage({
+      message: input.message,
+      recipient: input.recipient,
+      nonce: input.nonce,
+      network: NEAR_NETWORK,
+      signerId,
+    })
+  },
 }

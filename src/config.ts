@@ -7,3 +7,5 @@ export const USE_FIXTURES = env.VITE_X207_USE_FIXTURES === 'true'
 export const NEAR_NETWORK: 'testnet' | 'mainnet' =
   env.VITE_NEAR_NETWORK === 'mainnet' ? 'mainnet' : 'testnet'
 export const CONTRACT_ID: string = env.VITE_X207_CONTRACT_ID ?? 'x207-circle.testnet'
+export const INTENTS_EXPLORER_URL: string =
+  env.VITE_X207_INTENTS_EXPLORER_URL ?? 'https://explorer.near-intents.org/transactions/'

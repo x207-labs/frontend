@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { FunctionCallTx, WalletPort } from './types'
+import type { FunctionCallTx, SignMessageInput, SignedMessage, WalletPort } from './types'
 
 type Wallet = {
   account: string | null
@@ -9,6 +9,7 @@ type Wallet = {
   login: () => Promise<void>
   logout: () => Promise<void>
   send: (tx: FunctionCallTx) => Promise<{ hash: string }>
+  signMessage: (input: SignMessageInput) => Promise<SignedMessage>
 }
 
 const WalletContext = createContext<Wallet | null>(null)
@@ -65,6 +66,10 @@ export function WalletProvider({ port, children }: { port: WalletPort; children:
       send: (tx) => {
         if (!account) return Promise.reject(new Error('Belum login'))
         return port.signAndSend(account, tx)
+      },
+      signMessage: (input) => {
+        if (!account) return Promise.reject(new Error('Belum login'))
+        return port.signMessage(account, input)
       },
     }),
     [account, busy, error, login, logout, port],
