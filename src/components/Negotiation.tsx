@@ -25,7 +25,7 @@ function Breakdown({ listing, breakdown }: { listing: ListingView; breakdown: Qu
         <dt>Lawan membayar</dt>
         <dd>{formatCredit(breakdown.counterpartyPays)} credit</dd>
         <dt>Penjual menerima</dt>
-        <dd>{formatCredit(breakdown.sellerReceives)} credit (nilai {formatCredit(listing.offer.value)} dikurangi diskon {formatCredit(breakdown.discount)})</dd>
+        <dd>{formatCredit(breakdown.sellerReceives)} credit (nilai kesepakatan {formatCredit(String(BigInt(breakdown.sellerReceives) + BigInt(breakdown.discount)))} dikurangi diskon {formatCredit(breakdown.discount)})</dd>
         <dt>Jatah pencari</dt>
         <dd>{formatCredit(breakdown.searcher)} credit</dd>
       </dl>
