@@ -13,11 +13,11 @@ describe('kerangka dashboard', () => {
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
   })
 
-  it('TC-FE-002-01 delapan halaman (tujuh F1-F4 ditambah marketplace F9) terbuka dari satu navigasi', async () => {
+  it('TC-FE-002-01 sembilan halaman (F1-F4, tata kelola, marketplace F9 dan akses F8) terbuka dari satu navigasi', async () => {
     const user = userEvent.setup()
     renderApp('/')
     const nav = screen.getByRole('navigation', { name: 'Halaman' })
-    expect(within(nav).getAllByRole('link')).toHaveLength(8)
+    expect(within(nav).getAllByRole('link')).toHaveLength(9)
     for (const { title } of pages) {
       await user.click(within(nav).getByRole('link', { name: title }))
       expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument()
