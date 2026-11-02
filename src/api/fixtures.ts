@@ -122,6 +122,48 @@ export const paramsHistory = {
   nextCursor: null,
 }
 
+// Marketplace F9 (backend/src/marketplace). Hash dan tanda tangan berupa contoh, bukan hasil hitung.
+export const listingHashA = '2f4f3bc3a4c63f350a33dc0e8bdbd90cdfe5a6b03767cad4fb214f006e6f6c5e'
+export const listings = [
+  {
+    listingHash: listingHashA,
+    account: near('translator'),
+    offer: { assetType: 'translate-calls', assetClass: 'D', quantity: 5000, value: '100000000' },
+    want: { assetType: 'summarize-calls', assetClass: 'D', quantity: 5000, value: '100000000' },
+    terms: 'delivery within 7 days',
+    detail: '5000 translation calls, any language pair',
+    expiresAt: '2026-11-12T10:00:00Z',
+    discountBps: 1000,
+    acceptPayment: true,
+    discoverable: true,
+    nonce: 'l1',
+    signature: 'ed25519:4pdj…',
+    status: 'open',
+  },
+  {
+    listingHash: 'b'.repeat(64),
+    account: near('gpu'),
+    offer: { assetType: 'gpu-hours', assetClass: 'A', quantity: 10, value: '250000000' },
+    want: { assetType: 'dataset', assetClass: 'C', quantity: 1, value: '250000000' },
+    terms: 'escrow on delivery',
+    detail: 'A100 80GB',
+    expiresAt: '2026-11-13T10:00:00Z',
+    discountBps: 0,
+    acceptPayment: false,
+    discoverable: false,
+    nonce: 'l2',
+    signature: 'ed25519:5kRv…',
+    status: 'open',
+  },
+]
+export const marketStats = {
+  listings: { open: 2, matched: 1, cancelled: 0, expired: 0, total: 3 },
+  matches: { count: 1, payment: 0, bundle: 1, pay: 0, barter: 1, listingValue: '100000000', discountValue: '10000000' },
+  timeToMatchSeconds: { samples: 1, min: 90, max: 90, average: 90, median: 90 },
+  searcherRevenue: { total: '3000000', matchesWithSearcher: 1, bySearcher: [{ account: near('scraper'), total: '3000000' }] },
+  offersPending: 0,
+}
+
 export type FixtureReply = { status: number; body: unknown; delayMs?: number }
 
 const notFound = (code: string, message: string): FixtureReply => ({
@@ -141,6 +183,17 @@ export function fixtureReply(path: string): FixtureReply {
   if (rest === '/members') return ok({ circle, ...amounts, items: members, nextCursor: null })
   if (rest === '/params') return ok(params)
   if (rest === '/params/history') return ok(paramsHistory)
+
+  if (rest === '/marketplace/stats') return ok(marketStats)
+  if (rest === '/listings') {
+    const status = url.searchParams.get('status') ?? 'open'
+    const offerType = url.searchParams.get('offerType')
+    const items = listings.filter((l) => (status === 'all' || l.status === status) && (!offerType || l.offer.assetType === offerType))
+    return ok({ items, nextCursor: null })
+  }
+  const listingOffers = rest.match(/^\/listings\/([0-9a-f]{64})\/offers$/)
+  if (listingOffers) return ok({ items: [] })
+  if (rest.startsWith('/bundle-proposals')) return ok({ items: [] })
 
   const account = rest.match(/^\/members\/([^/]+)(\/settlements)?$/)
   if (account) {

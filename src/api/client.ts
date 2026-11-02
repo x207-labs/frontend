@@ -18,6 +18,14 @@ import type {
   ParamsHistory,
   ParamsResponse,
   SettlementItem,
+  AcceptPreview,
+  AcceptRequest,
+  AcceptResult,
+  BundleProposal,
+  ListingList,
+  ListingView,
+  MarketStats,
+  OfferView,
 } from './types'
 
 export class ApiError extends Error {
@@ -88,5 +96,24 @@ export const api = {
   withdrawIntent: (jobId: string) => post<WithdrawIntent>('/x207/settlement/withdraw/intent', { jobId }),
   withdrawSubmit: (jobId: string, signedIntent: object) =>
     post<WithdrawSubmit>('/x207/settlement/withdraw/submit', { jobId, signedIntent }),
+  listings: (query: Record<string, string>) => {
+    const qs = new URLSearchParams(query).toString()
+    return get<ListingList>(`${circle}/listings${qs ? `?${qs}` : ''}`)
+  },
+  listing: (hash: string) => get<ListingView>(`${circle}/listings/${hash}`),
+  createListing: (listing: object, signature: string) => post<ListingView>(`${circle}/listings`, { listing, signature }),
+  cancelListing: (hash: string, signature: string) => post<ListingView>(`${circle}/listings/${hash}/cancel`, { signature }),
+  offers: (hash: string) => get<{ items: OfferView[] }>(`${circle}/listings/${hash}/offers`),
+  postOffer: (hash: string, offer: object, signature: string, inReplyTo?: string) =>
+    post<OfferView>(`${circle}/listings/${hash}/offers`, { offer, signature, ...(inReplyTo ? { inReplyTo } : {}) }),
+  previewAccept: (hash: string, offerHash: string, body: Omit<AcceptRequest, 'signature'>) =>
+    post<AcceptPreview>(`${circle}/listings/${hash}/offers/${offerHash}/preview`, body),
+  accept: (hash: string, offerHash: string, body: AcceptRequest) =>
+    post<AcceptResult>(`${circle}/listings/${hash}/offers/${offerHash}/accept`, body),
+  proposals: (account: string) =>
+    get<{ items: BundleProposal[] }>(`${circle}/bundle-proposals?account=${encodeURIComponent(account)}`),
+  signProposal: (termsHash: string, account: string, signature: string) =>
+    post<BundleProposal>(`${circle}/bundle-proposals/${termsHash}/signatures`, { account, signature }),
+  marketStats: () => get<MarketStats>(`${circle}/marketplace/stats`),
   job: (jobId: string) => get<Job>(`/x207/settlement/jobs/${encodeURIComponent(jobId)}`),
 }

@@ -47,3 +47,11 @@ export const useAllMetrics = (epochs: number[]) =>
       queryFn: () => api.metrics(epoch),
     })),
   })
+
+export const useListings = (query: Record<string, string>) =>
+  useQuery({ queryKey: ['listings', query], queryFn: () => api.listings(query) })
+export const useMarketStats = () => useQuery({ queryKey: ['market-stats'], queryFn: api.marketStats })
+export const useOffers = (hash: string | null) =>
+  useQuery({ queryKey: ['offers', hash], queryFn: () => api.offers(hash!), enabled: hash !== null })
+export const useProposals = (account: string | null) =>
+  useQuery({ queryKey: ['proposals', account], queryFn: () => api.proposals(account!), enabled: account !== null })

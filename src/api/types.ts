@@ -211,3 +211,76 @@ export type WithdrawQuote = {
 /** `intent` dari 1Click apa adanya; FE-011 membaca `payload` NEP-413 bila ada. */
 export type WithdrawIntent = { jobId: string; intent: { standard?: string; payload?: { message: string; nonce: string; recipient: string } } & Record<string, unknown> }
 export type WithdrawSubmit = { jobId: string; status: string; intentHash: string }
+
+// Marketplace barter (F9): Spec API Backend M11, route di backend/src/marketplace/.
+export type ListingStatus = 'open' | 'matched' | 'cancelled' | 'expired'
+export type ListingSideView = { assetType: string; assetClass: string; quantity: number; value: string }
+export type ListingView = {
+  listingHash: string
+  account: string
+  offer: ListingSideView
+  want: ListingSideView
+  terms: string
+  detail: string
+  expiresAt: string
+  discountBps: number
+  acceptPayment: boolean
+  discoverable: boolean
+  nonce: string
+  signature: string
+  status: ListingStatus
+}
+export type ListingList = { items: ListingView[]; nextCursor: string | null }
+export type OfferStatus = 'pending' | 'countered' | 'accepted' | 'closed'
+export type OfferView = {
+  offerHash: string
+  listingHash: string
+  proposer: string
+  counterparty: string
+  awaiting: string
+  round: number
+  mode: 'pay' | 'barter'
+  value: string
+  quantity: number
+  deliverBy: string
+  signature: string
+  inReplyTo: string | null
+  status: OfferStatus
+}
+export type MarketStats = {
+  listings: { open: number; matched: number; cancelled: number; expired: number; total: number }
+  matches: { count: number; payment: number; bundle: number; pay: number; barter: number; listingValue: string; discountValue: string }
+  timeToMatchSeconds: { samples: number; min: number | null; max: number | null; average: number | null; median: number | null }
+  searcherRevenue: { total: string; matchesWithSearcher: number; bySearcher: { account: string; total: string }[] }
+  offersPending: number
+}
+export type QuickBreakdown =
+  | { mode: 'pay'; counterpartyPays: string; sellerReceives: string; searcher: string; discount: string }
+  | { mode: 'barter'; cashback: string; searcher: string; sellerBears: string; counterpartyGives: string }
+export type BundleLeg = { payer: string; payee: string; max_amount: string }
+export type AcceptPreview = {
+  kind: 'payment' | 'bundle'
+  epoch: number
+  mode: 'pay' | 'barter'
+  discountValue: string
+  searcherValue: string
+  searcher: string | null
+  breakdown: QuickBreakdown
+  bundle: { termsHash: string; message: string; nonce: string; recipient: string; terms: { circle: string; epoch: number; legs: BundleLeg[] }; participants: string[] } | null
+  payment: { payer: string; payee: string; amount: string } | null
+}
+export type AcceptRequest = { account: string; signature?: string; epoch?: number; searcher?: string; searcherShareBps?: number }
+export type BundleProposal = {
+  termsHash: string
+  status: 'proposed' | 'ready'
+  epoch: number
+  terms: { circle: string; epoch: number; legs: BundleLeg[] }
+  participants: string[]
+  missing: string[]
+  listingHash: string | null
+}
+export type AcceptResult = {
+  match: { kind: 'payment' | 'bundle'; termsHash: string | null }
+  offer: OfferView
+  result: { kind: 'payment'; payer: string; payee: string; amount: string } | { kind: 'bundle'; proposal: BundleProposal }
+}
