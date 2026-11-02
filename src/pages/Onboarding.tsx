@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMember, useMembers } from '../api/queries'
 import { DepositBranch } from '../components/DepositBranch'
+import { ExitPanel } from '../components/ExitPanel'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { TxResult } from '../components/TxResult'
 import { CIRCLE } from '../config'
@@ -140,7 +141,8 @@ function StatusPanel({ account }: { account: string }) {
 export function Onboarding() {
   const members = useMembers()
   const { account } = useWallet()
-  const registered = Boolean(useMember(account).data)
+  const memberQuery = useMember(account)
+  const registered = Boolean(memberQuery.data)
   return (
     <>
       <QueryState query={members} loadingLabel="Memuat anggota">
@@ -151,6 +153,7 @@ export function Onboarding() {
         )}
       </QueryState>
       {account && <StatusPanel account={account} />}
+      {memberQuery.data && <ExitPanel member={memberQuery.data} />}
       <h2 id="bergabung">Bergabung</h2>
       <JoinForm registered={registered} />
     </>

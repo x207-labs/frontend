@@ -65,3 +65,13 @@ export function claimTx(epoch: number, destination: 'near' | 'intents'): Functio
     deposit: ONE_YOCTO,
   }
 }
+
+/** `request_exit()`: tanpa argumen, deposit 1 yoctoNEAR (ADR-29). */
+export function requestExitTx(): FunctionCallTx {
+  return { receiverId: CONTRACT_ID, methodName: 'request_exit', args: {}, gas: (30n * TGAS).toString(), deposit: ONE_YOCTO }
+}
+
+/** `withdraw_stake()`: deposit 1 yoctoNEAR, gas cukup untuk `ft_transfer` dan callback (ADR-29, ADR-32). */
+export function withdrawStakeTx(): FunctionCallTx {
+  return { receiverId: CONTRACT_ID, methodName: 'withdraw_stake', args: {}, gas: (100n * TGAS).toString(), deposit: ONE_YOCTO }
+}
