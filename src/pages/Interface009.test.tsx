@@ -122,8 +122,8 @@ describe('interface 0.0.9 in the frontend', () => {
   it('TC-FE-090-07 onboarding: the join deposit is read from @x207/core and the page says that it is kept on exit', async () => {
     renderApp('/onboarding', undefined, false, createMockWallet(NEW_ACCOUNT, NEW_ACCOUNT))
     const note = await screen.findByTestId('join-deposit')
-    expect(note).toHaveTextContent('0.32 NEAR')
+    expect(note).toHaveTextContent('0.35 NEAR')
     expect(note).toHaveTextContent('tidak kembali saat keluar')
-    expect(JOIN_STORAGE_DEPOSIT).toBe(32n * 10n ** 22n)
+    expect(JOIN_STORAGE_DEPOSIT).toBe(35n * 10n ** 22n)
   })
 })
