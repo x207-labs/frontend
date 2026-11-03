@@ -6,6 +6,7 @@ import { api } from '../api/client'
 import { useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { AssetTemplateForm, type TemplateCheck } from '../components/AssetTemplateForm'
+import { ResourceListingForm } from '../components/ResourceListingForm'
 import { Negotiation } from '../components/Negotiation'
 import { OwnIntents } from '../components/OwnIntents'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
@@ -161,6 +162,12 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
         check={check}
         onCheck={() => void runCheck()}
         canCheck={Boolean(account) && sideOk(offer) && sideOk(want) && discountBps !== null && hoursOk && voucherKey.trim() !== ''}
+      />
+      <ResourceListingForm
+        onApply={(t) => {
+          setOffer({ type: t.assetType, cls: t.assetClass, quantity: '1', value: fromAtomic(t.unitPriceAtomic) })
+          setDetail(t.detail)
+        }}
       />
       <SideFields legend="Menawarkan" value={offer} onChange={setOffer} />
       <SideFields legend="Mencari" value={want} onChange={setWant} />
