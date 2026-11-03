@@ -411,6 +411,6 @@ export type RentChallenge = { required: boolean; grantId?: number; circle?: stri
 // Sewa akses P2 (FE-029): jawaban broker `GET /grants/{id}/access` (README broker, BE-060).
 export type RentStatus = 'active' | 'revoke_pending' | 'revoked'
 export type RentView = {
-  grantId: number; provider: string; granteeRef: string; /** `verified` or `unproven: …` (BE-057). */ proof?: string | null; status: RentStatus; paidUntil: string; providerExpiresAt: string | null; reason: string | null
+  grantId: number; provider: string; granteeRef: string; /** `verified`, `unproven: …` or `not_applicable` (the provider has no way to prove the reference; BE-057, batch 4). */ proof?: string | null; /** `grantee_unproven` while the reference is not `verified`. */ warnings?: string[]; status: RentStatus; paidUntil: string; providerExpiresAt: string | null; reason: string | null
   revokePending: { attempts: number; nextRetryAt: string | null; lastError: string | null } | null; today: { day: string; cost: string | null; billed: string | null } | null
 }

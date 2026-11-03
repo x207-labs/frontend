@@ -1,8 +1,11 @@
 import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { buildGistContent, granteeChallenge, parseGranteeProof, signSshChallenge } from '@x207/core'
+import { sshEd25519Line, buildGistContent, granteeChallenge, parseGranteeProof, signSshChallenge } from '@x207/core'
 import { describe, expect, it } from 'vitest'
 import { CONTRACT_ID } from '../config'
+import { ApiError } from '../api/client'
+import { describeMarketError } from '../lib/marketError'
+import { granteeRefProblem, proofKind } from './Rent'
 import { base58Encode } from '../lib/barter'
 import { renderApp } from '../test/render'
 import { createMockWallet } from '../test/walletMock'
@@ -157,5 +160,54 @@ describe('FE-029 daily rent of an access', () => {
     cleanup()
     const none = await openWith(user, view({ provider: 'mock' }), { required: false })
     expect(within(none.section).getByTestId('rent-proof-panel')).toHaveTextContent('tidak memakai bukti')
+  })
+
+  // ---- review batch 4 (B4-F5, B4-F7) ----
+  it('TC-FE-029-09 [B4-F7] the renter sees three states of the reference: verified, unproven (an error colour), and not applicable (no way to prove; not a failure)', async () => {
+    const user = userEvent.setup()
+    for (const [proof, kind, text, error] of [
+      ['verified', 'verified', /Referensi terbukti/, false],
+      ['unproven: Discord OAuth tidak dipasang', 'unproven', /belum terbukti/, true],
+      ['not_applicable', 'not_applicable', /tidak punya cara membuktikan/, false],
+      [null, 'unknown', /Belum ada keterangan/, false],
+    ] as const) {
+      cleanup()
+      const { section } = await open(user, view({ proof, warnings: proof === 'verified' ? [] : ['grantee_unproven'] }))
+      const state = within(section).getByTestId('rent-proof-state')
+      expect(state).toHaveAttribute('data-proof', kind)
+      expect(state).toHaveTextContent(text)
+      expect(state.className.includes('state-error')).toBe(error)
+      if (kind === 'not_applicable') expect(state).toHaveTextContent('bukan kegagalan bukti')
+    }
+    expect([proofKind('verified'), proofKind('not_applicable'), proofKind('unproven: x'), proofKind(null), proofKind('other')]).toEqual(['verified', 'not_applicable', 'unproven', 'unknown', 'unknown'])
+  })
+
+  it('TC-FE-029-10 [B4-F5] the grantor page refuses an SSH key that cannot be proven, before anything is offered: only ssh-ed25519 passes, and the rule is shown', async () => {
+    const user = userEvent.setup()
+    const good = sshEd25519Line(new Uint8Array(32).fill(4), 'me')
+    expect(granteeRefProblem('ssh', good)).toBeNull()
+    expect(granteeRefProblem('ssh', '')).toBeNull() // empty = filled at offer_grant
+    expect(granteeRefProblem('ssh', 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ')).toMatch(/Hanya kunci ssh-ed25519.*ssh-rsa/)
+    expect(granteeRefProblem('ssh', 'ecdsa-sha2-nistp256 AAAA')).toMatch(/ecdsa-sha2-nistp256/)
+    expect(granteeRefProblem('ssh', 'ssh-ed25519 AAAAshort')).toMatch(/tidak sah/)
+    expect(granteeRefProblem('github', 'not a login!')).toMatch(/login GitHub/)
+    expect(granteeRefProblem('discord', 'alice')).toMatch(/Discord/)
+    expect(granteeRefProblem('discord', '123456789012345678')).toBeNull()
+    renderApp('/sewa', undefined, false, createMockWallet(RENTER, RENTER))
+    const form = await screen.findByRole('region', { name: 'Pasang sewa akses' })
+    await user.selectOptions(within(form).getByLabelText('Penyedia'), 'ssh')
+    await user.type(within(form).getByLabelText(/^Harga per hari/), '2')
+    await user.type(within(form).getByLabelText(/^Referensi penyewa/), 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ')
+    expect(within(form).getByTestId('rent-offer-error')).toHaveTextContent('Hanya kunci ssh-ed25519')
+    expect(within(form).queryByTestId('rent-scope')).not.toBeInTheDocument()
+    await user.clear(within(form).getByLabelText(/^Referensi penyewa/))
+    await user.type(within(form).getByLabelText(/^Referensi penyewa/), good)
+    expect(JSON.parse(within(form).getByTestId('rent-scope').textContent!)).toMatchObject({ provider: 'ssh', grantee_ref: good })
+  })
+
+  it('TC-FE-029-11 [B4-F2] a second live grant for the same login and resource is refused by the broker; the page says so in words', () => {
+    const e = new ApiError(502, 'grant_failed', 'grant 3 sudah membuka akses yang sama (github, alice-dev); tunggu sampai berakhir')
+    expect(describeMarketError(e)).toMatch(/Grant lain untuk login dan sumber daya yang sama masih berjalan/)
+    expect(describeMarketError(new ApiError(502, 'grant_failed', 'GitHub menjawab 500'))).toMatch(/Penyedia gagal membuka akses: GitHub menjawab 500/)
   })
 })

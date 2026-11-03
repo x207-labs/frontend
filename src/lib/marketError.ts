@@ -18,6 +18,10 @@ export function describeMarketError(e: unknown): string {
         return 'Penawaran ini sudah dibalas atau ditutup.'
       case 'negotiation_closed':
         return 'Batas ronde negosiasi tercapai.'
+      case 'grant_failed':
+        return /sudah membuka akses yang sama/.test(e.message)
+          ? 'Grant lain untuk login dan sumber daya yang sama masih berjalan. Tunggu sampai akses itu berakhir atau dicabut; satu akses tidak boleh dibuka dua kali.'
+          : `Penyedia gagal membuka akses: ${e.message}`
       default:
         return `${e.code}: ${e.message}`
     }

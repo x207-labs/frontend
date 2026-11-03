@@ -1,4 +1,4 @@
-import { GranteeProofError, RentError, buildGistContent, checkAccessBeforeNextDay, encodeGranteeProof, granteeChallenge, parseGranteeProof, type GranteeProof } from '@x207/core'
+import { GranteeProofError, RentError, buildGistContent, parseSshEd25519, checkAccessBeforeNextDay, encodeGranteeProof, granteeChallenge, parseGranteeProof, type GranteeProof } from '@x207/core'
 import { useState } from 'react'
 import { api } from '../api/client'
 import type { RentChallenge, RentView } from '../api/types'
@@ -20,6 +20,22 @@ export const PROVIDERS: Record<string, { label: string; costly: boolean; note: s
   'aws-sts': { label: 'AWS (role dengan permission boundary)', costly: true, note: 'Sesi tidak bisa ditarik sebelum habis. Biaya nyata ditagih per hari dengan batas harian.' },
   mock: { label: 'Penyedia tiruan (demo)', costly: false, note: 'Hanya untuk demo; tidak menyentuh layanan nyata.' },
 }
+/** B4-F5 (review batch 4): the reference of the lessee as the broker can prove it. An SSH key must be `ssh-ed25519` (the proof is a raw ed25519 signature); a key of another type is accepted by the contract and by the broker's first check but can never be proven, so the grant could never open. */
+export function granteeRefProblem(provider: string, ref: string): string | null {
+  const text = ref.trim()
+  if (text === '') return null
+  if (provider === 'ssh') {
+    if (!text.startsWith('ssh-ed25519 ')) return `Hanya kunci ssh-ed25519 yang bisa dibuktikan; ${text.split(/\s+/)[0]?.slice(0, 30) || 'kunci ini'} tidak bisa, jadi sewa ini tidak akan pernah terbuka. Buat kunci baru dengan ssh-keygen -t ed25519.`
+    try {
+      parseSshEd25519(text)
+    } catch {
+      return 'Baris kunci ssh-ed25519 tidak sah (blob tidak cocok).'
+    }
+  }
+  if (provider === 'github' && !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(text)) return 'Bukan login GitHub.'
+  if (provider === 'discord' && !/^\d{15,21}$/.test(text)) return 'Bukan id pengguna Discord (angka 15 sampai 21 digit).'
+  return null
+}
 const STATUS_LABEL: Record<string, string> = { active: 'Aktif', revoke_pending: 'Menunggu pencabutan', revoked: 'Dicabut' }
 const now = () => Math.floor(Date.now() / 1000)
 
@@ -29,16 +45,19 @@ function Offer() {
   const [permission, setPermission] = useState('')
   const [price, setPrice] = useState('')
   const [cap, setCap] = useState('')
+  const [ref, setRef] = useState('')
+  const refProblem = granteeRefProblem(provider, ref)
   const info = PROVIDERS[provider]!
   const priceAtomic = toAtomic(price)
   const capAtomic = cap.trim() === '' ? null : toAtomic(cap)
-  const problem = priceAtomic === null ? 'Harga per hari harus angka credit > 0.' : info.costly && capAtomic === null ? 'Akses berbiaya wajib punya batas belanja harian (daily_cap) > 0.' : null
-  const scope = { provider, grantee_ref: '<diisi penyewa saat offer_grant>', ...(resource.trim() ? { resource: resource.trim() } : {}), ...(permission.trim() ? { permission: permission.trim() } : {}), ...(capAtomic !== null ? { daily_cap: capAtomic } : {}) }
+  const problem = refProblem !== null ? refProblem : priceAtomic === null ? 'Harga per hari harus angka credit > 0.' : info.costly && capAtomic === null ? 'Akses berbiaya wajib punya batas belanja harian (daily_cap) > 0.' : null
+  const scope = { provider, grantee_ref: ref.trim() === '' ? '<diisi penyewa saat offer_grant>' : ref.trim(), ...(resource.trim() ? { resource: resource.trim() } : {}), ...(permission.trim() ? { permission: permission.trim() } : {}), ...(capAtomic !== null ? { daily_cap: capAtomic } : {}) }
   const detail = JSON.stringify({ kind: 'access-rent', provider, ...(resource.trim() ? { resource: resource.trim() } : {}), ...(permission.trim() ? { permission: permission.trim() } : {}), price_per_day: priceAtomic, ...(capAtomic !== null ? { daily_cap: capAtomic } : {}) })
   return (
     <section className="form" aria-label="Pasang sewa akses">
       <h3>Pasang sewa akses (pemberi)</h3>
       <label><span>Penyedia</span><select value={provider} onChange={(e) => setProvider(e.target.value)}>{Object.entries(PROVIDERS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></label>
+      <label><span>Referensi penyewa (grantee_ref; kosong = diisi saat offer_grant)</span><input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={provider === 'ssh' ? 'ssh-ed25519 AAAA…' : provider === 'discord' ? '123456789012345678' : 'login'} /></label>
       <label><span>Sumber daya (repo, role, perintah, objek)</span><input value={resource} onChange={(e) => setResource(e.target.value)} /></label>
       <label><span>Izin</span><input value={permission} onChange={(e) => setPermission(e.target.value)} placeholder="pull" /></label>
       <label><span>Harga per hari (credit)</span><input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" /></label>
@@ -61,6 +80,29 @@ function Offer() {
 // FE-029, BE-057: the proof that the renter controls the reference `grantee_ref`. The broker is not trusted for the text that is signed: it is built again here from the circle of the
 // configuration, the grant and the reference that the page shows, and only the nonce comes from the broker. The payment of the day and the field `proof` of
 // `POST /grants/{id}/access` are sent by the x402 client or the agent of the renter; this panel only builds the text of the proof.
+/** The three states of the reference of the lessee (batch 4, B4-F7): proven, not proven, and not applicable (the provider has no proof at all). */
+export function proofKind(proof: string | null): 'verified' | 'unproven' | 'not_applicable' | 'unknown' {
+  if (proof === 'verified') return 'verified'
+  if (proof === 'not_applicable') return 'not_applicable'
+  if (proof !== null && proof.startsWith('unproven')) return 'unproven'
+  return 'unknown'
+}
+function ProofState({ proof, warnings }: { proof: string | null; warnings: string[] }) {
+  const kind = proofKind(proof)
+  const warned = warnings.includes('grantee_unproven')
+  const text = {
+    verified: 'Referensi terbukti: broker sudah memeriksa bahwa Anda mengendalikannya.',
+    unproven: `Referensi belum terbukti (${proof}). Akses dibuka dengan peringatan grantee_unproven; siapa pun yang mengetahui nama akun itu tidak bisa dibedakan dari Anda.`,
+    not_applicable: 'Penyedia ini tidak punya cara membuktikan pemilik referensi, jadi tidak ada keterangan bukti. Akses dibuka dengan peringatan grantee_unproven; ini bukan kegagalan bukti.',
+    unknown: 'Belum ada keterangan bukti dari broker.',
+  }[kind]
+  return (
+    <p data-testid="rent-proof-state" data-proof={kind} className={kind === 'unproven' ? 'state state-error' : 'state'}>
+      {text}{warned && kind === 'verified' ? ' (broker masih memberi peringatan.)' : ''}
+    </p>
+  )
+}
+
 function GranteeProofPanel({ view, voucherKey, account }: { view: RentView; voucherKey: string; account: string | null }) {
   const [challenge, setChallenge] = useState<RentChallenge | null>(null)
   const [gist, setGist] = useState('')
@@ -111,9 +153,7 @@ function GranteeProofPanel({ view, voucherKey, account }: { view: RentView; vouc
   return (
     <div data-testid="rent-proof-panel">
       <h4>Bukti pemilik referensi</h4>
-      <p data-testid="rent-proof-state" className={view.proof?.startsWith('unproven') ? 'state state-error' : 'state'}>
-        {view.proof === 'verified' ? 'Referensi terbukti: broker sudah memeriksa bahwa Anda mengendalikannya.' : view.proof ? `Referensi belum terbukti (${view.proof}). Akses tetap dibuka dengan peringatan grantee_unproven; siapa pun yang mengetahui nama akun itu tidak bisa dibedakan dari Anda.` : 'Belum ada keterangan bukti dari broker.'}
-      </p>
+      <ProofState proof={view.proof ?? null} warnings={view.warnings ?? []} />
       {kind === null && <p className="state">Penyedia ini tidak memakai bukti dari halaman ini.</p>}
       {kind === 'oauth' && <p className="state">Bukti Discord lewat OAuth dibuat di sisi penyedia; halaman ini tidak menyimpan token OAuth.</p>}
       {(kind === 'near-gist' || kind === 'ssh-signature') && (
