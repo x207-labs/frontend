@@ -58,12 +58,12 @@ const reply = (body: Record<string, unknown>, sellerMember: unknown = { account_
   rpcMethod(init) === 'member' ? rpcResult(sellerMember) : !init?.method && p.endsWith('/purchases/p1') ? { status: 200, body } : init?.method === 'POST' && p.endsWith('/purchases/p1') ? { status: 200, body: {} } : undefined
 
 async function openPurchase(user: ReturnType<typeof userEvent.setup>, body: Record<string, unknown>, sellerMember?: unknown) {
-  const rendered = renderApp('/kode', reply(body, sellerMember), false, createMockWallet(BUYER, BUYER))
-  const section = await screen.findByRole('region', { name: 'Pembelian kode' })
-  await user.type(within(section).getByLabelText('Nomor pembelian'), 'p1')
-  await user.click(within(section).getByRole('button', { name: 'Buka pembelian' }))
+  const rendered = renderApp('/codes', reply(body, sellerMember), false, createMockWallet(BUYER, BUYER))
+  const section = await screen.findByRole('region', { name: 'Code purchase' })
+  await user.type(within(section).getByLabelText('Purchase number'), 'p1')
+  await user.click(within(section).getByRole('button', { name: 'Open purchase' }))
   await within(section).findByTestId('purchase')
-  await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
+  await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
   return { section, ...rendered }
 }
 
@@ -86,22 +86,22 @@ describe('FE-032 one-time codes', () => {
 
   it('TC-FE-032-02 the seller page shows the limit and blocks an over-limit code that cannot be checked, and no arbiter field exists; nothing is sent', async () => {
     const user = userEvent.setup()
-    const { requests } = renderApp('/kode', undefined, false, createMockWallet(SELLER, SELLER))
-    const form = await screen.findByRole('form', { name: 'Siapkan kode' })
-    await user.type(within(form).getByLabelText(/^Kode/), CODE)
-    await user.type(within(form).getByLabelText('Nilai (credit)'), '25')
-    expect(within(form).getByRole('note')).toHaveTextContent('dibatasi 20 credit')
-    expect(within(form).getByRole('button', { name: 'Hash dan enkripsi kode' })).toBeDisabled()
+    const { requests } = renderApp('/codes', undefined, false, createMockWallet(SELLER, SELLER))
+    const form = await screen.findByRole('form', { name: 'Prepare code' })
+    await user.type(within(form).getByLabelText(/^Code/), CODE)
+    await user.type(within(form).getByLabelText('Value (credit)'), '25')
+    expect(within(form).getByRole('note')).toHaveTextContent('limited to 20 credit')
+    expect(within(form).getByRole('button', { name: 'Hash and encrypt code' })).toBeDisabled()
     expect(within(form).queryByLabelText(/^Arbiter/)).not.toBeInTheDocument()
-    expect(within(form).getByLabelText(/^Kode/)).toBeInTheDocument()
-    await user.clear(within(form).getByLabelText('Nilai (credit)'))
-    await user.type(within(form).getByLabelText('Nilai (credit)'), '15')
+    expect(within(form).getByLabelText(/^Code/)).toBeInTheDocument()
+    await user.clear(within(form).getByLabelText('Value (credit)'))
+    await user.type(within(form).getByLabelText('Value (credit)'), '15')
     expect(within(form).queryByRole('note')).not.toBeInTheDocument()
-    await user.click(within(form).getByRole('button', { name: 'Hash dan enkripsi kode' }))
+    await user.click(within(form).getByRole('button', { name: 'Hash and encrypt code' }))
     const out = await screen.findByTestId('code-prepared')
     expect(out).toHaveTextContent('code_commitment')
     expect(screen.getByTestId('code-detail').textContent).not.toContain(CODE)
-    expect(screen.getByTestId('code-keep-page')).toHaveTextContent('hanya ada di halaman ini')
+    expect(screen.getByTestId('code-keep-page')).toHaveTextContent('exist only on this page')
     expect(requests().filter((r) => r.method === 'POST')).toHaveLength(0)
   })
 
@@ -109,21 +109,21 @@ describe('FE-032 one-time codes', () => {
     const user = userEvent.setup()
     const sellerKeys = generateVoucherKeypair()
     const { typed, view } = signedCodeListing(sellerKeys)
-    renderApp('/kode', (p, init) => {
+    renderApp('/codes', (p, init) => {
       if (!init?.method && p.endsWith(`/listings/${typed}`)) return { status: 200, body: view }
       if (rpcMethod(init) === 'member') return rpcResult({ account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' })
       return undefined
     }, false, createMockWallet(BUYER, BUYER))
-    const section = await screen.findByRole('region', { name: 'Pembelian kode' })
-    await user.type(within(section).getByLabelText('Hash listing kode'), typed)
-    await user.click(within(section).getByRole('button', { name: 'Periksa listing' }))
+    const section = await screen.findByRole('region', { name: 'Code purchase' })
+    await user.type(within(section).getByLabelText('Code listing hash'), typed)
+    await user.click(within(section).getByRole('button', { name: 'Check listing' }))
     const summary = await within(section).findByTestId('code-summary')
-    expect(within(summary).getByTestId('code-hidden')).toHaveTextContent('disembunyikan sampai dibeli')
+    expect(within(summary).getByTestId('code-hidden')).toHaveTextContent('hidden until purchased')
     expect(summary).toHaveTextContent('5 credit')
     expect(summary).toHaveTextContent('shop.example')
-    expect(summary).toHaveTextContent('tidak bisa dicek')
+    expect(summary).toHaveTextContent('not checkable')
     expect(summary).not.toHaveTextContent(CODE)
-    expect(within(summary).getByTestId('unverifiable-warning')).toHaveTextContent('tidak bisa dicek')
+    expect(within(summary).getByTestId('unverifiable-warning')).toHaveTextContent('cannot be checked')
     expect(within(summary).queryByTestId('over-limit')).not.toBeInTheDocument()
   })
 
@@ -135,19 +135,19 @@ describe('FE-032 one-time codes', () => {
       ['over the limit', {}, '50000000', true, true],
     ] as const) {
       const { typed, view } = signedCodeListing(sellerKeys, detail, value)
-      const { unmount } = renderApp('/kode', (p, init) => {
+      const { unmount } = renderApp('/codes', (p, init) => {
         if (!init?.method && p.endsWith(`/listings/${typed}`)) return { status: 200, body: view }
         if (rpcMethod(init) === 'member') return rpcResult({ account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' })
         return undefined
       }, false, createMockWallet(BUYER, BUYER))
-      const section = await screen.findByRole('region', { name: 'Pembelian kode' })
-      await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-      await user.type(within(section).getByLabelText('Hash listing kode'), typed)
-      await user.click(within(section).getByRole('button', { name: 'Periksa listing' }))
+      const section = await screen.findByRole('region', { name: 'Code purchase' })
+      await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+      await user.type(within(section).getByLabelText('Code listing hash'), typed)
+      await user.click(within(section).getByRole('button', { name: 'Check listing' }))
       const summary = await within(section).findByTestId('code-summary')
       expect(within(summary).queryByTestId('unverifiable-warning') !== null, name).toBe(warn)
       expect(within(summary).queryByTestId('over-limit') !== null, name).toBe(over)
-      expect(within(summary).getByRole('button', { name: /^Beli / }), name).toHaveProperty('disabled', over)
+      expect(within(summary).getByRole('button', { name: /^Buy / }), name).toHaveProperty('disabled', over)
       unmount()
     }
   })
@@ -156,7 +156,7 @@ describe('FE-032 one-time codes', () => {
     const user = userEvent.setup()
     const sellerKeys = generateVoucherKeypair()
     const { typed, view } = signedCodeListing(sellerKeys, { verifiable: true })
-    const { requests } = renderApp('/kode', (p, init) => {
+    const { requests } = renderApp('/codes', (p, init) => {
       if (!init?.method && p.endsWith(`/listings/${typed}`)) return { status: 200, body: view }
       if (init?.method === 'POST' && p.endsWith('/purchases')) return { status: 201, body: { purchase_id: 'p9' } }
       if (!init?.method && p.endsWith('/epochs')) return { status: 200, body: { items: [{ epoch: 42, phase: 'open', proposalDeadline: null }], nextCursor: null } }
@@ -164,13 +164,13 @@ describe('FE-032 one-time codes', () => {
       if (rpcMethod(init) === 'obligation') return rpcResult({ cumulative: '2000000', last_seq: 3 })
       return undefined
     }, false, createMockWallet(BUYER, BUYER))
-    const section = await screen.findByRole('region', { name: 'Pembelian kode' })
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.type(within(section).getByLabelText('Hash listing kode'), typed)
-    await user.click(within(section).getByRole('button', { name: 'Periksa listing' }))
+    const section = await screen.findByRole('region', { name: 'Code purchase' })
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.type(within(section).getByLabelText('Code listing hash'), typed)
+    await user.click(within(section).getByRole('button', { name: 'Check listing' }))
     const summary = await within(section).findByTestId('code-summary')
     expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/'))).toHaveLength(0)
-    await user.click(within(summary).getByRole('button', { name: `Beli 5 credit dari ${SELLER} (voucher ditahan backend)` }))
+    await user.click(within(summary).getByRole('button', { name: `Buy for 5 credit from ${SELLER} (voucher held by the backend)` }))
     await waitFor(() => expect(requests().some((r) => r.method === 'POST' && r.path.endsWith('/purchases'))).toBe(true))
     const post = requests().find((r) => r.method === 'POST' && r.path.endsWith('/purchases'))!
     expect(post.body.voucher).toMatchObject({ payer: BUYER, payee: SELLER, epoch: 42, seq: 4, cumulativeAmount: '7000000', unit: 'credit', resource: `x207:code:${'d'.repeat(64)}` })
@@ -182,14 +182,14 @@ describe('FE-032 one-time codes', () => {
     const user = userEvent.setup()
     const sellerKeys = generateVoucherKeypair()
     const { typed, view } = signedCodeListing(sellerKeys, { kind: 'license' })
-    renderApp('/kode', (p, init) => {
+    renderApp('/codes', (p, init) => {
       if (!init?.method && p.endsWith(`/listings/${typed}`)) return { status: 200, body: view }
       return undefined
     }, false, createMockWallet(BUYER, BUYER))
-    const section = await screen.findByRole('region', { name: 'Pembelian kode' })
-    await user.type(within(section).getByLabelText('Hash listing kode'), typed)
-    await user.click(within(section).getByRole('button', { name: 'Periksa listing' }))
-    expect(await within(section).findByText(/bukan listing kode/)).toBeInTheDocument()
+    const section = await screen.findByRole('region', { name: 'Code purchase' })
+    await user.type(within(section).getByLabelText('Code listing hash'), typed)
+    await user.click(within(section).getByRole('button', { name: 'Check listing' }))
+    expect(await within(section).findByText(/not a code listing/)).toBeInTheDocument()
     expect(parseCodeListing({ ...view, detail: 'plain note' } as never)).toBeNull()
   })
 
@@ -197,15 +197,15 @@ describe('FE-032 one-time codes', () => {
     const user = userEvent.setup()
     const until = Math.floor(Date.now() / 1000) + 1800
     const { section, requests } = await openPurchase(user, delivered(CODE, CODE, until))
-    expect(within(section).getByTestId('dispute-window')).toHaveTextContent(/Sengketa dibuka (29|30) menit/)
-    await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa kode' }))
+    expect(within(section).getByTestId('dispute-window')).toHaveTextContent(/Disputes open for (29|30) min/)
+    await user.click(within(section).getByRole('button', { name: 'Download and check code' }))
     const ok = await within(section).findByTestId('code-ok')
     expect(ok).not.toHaveTextContent(CODE)
     expect(screen.queryByText(CODE)).not.toBeInTheDocument()
-    await user.click(within(ok).getByRole('button', { name: 'Tampilkan kode' }))
+    await user.click(within(ok).getByRole('button', { name: 'Show code' }))
     expect(within(ok).getByTestId('code-value')).toHaveTextContent(CODE)
-    await user.click(within(ok).getByRole('button', { name: 'Konfirmasi' }))
-    await within(section).findByText(/Dikonfirmasi/)
+    await user.click(within(ok).getByRole('button', { name: 'Confirm' }))
+    await within(section).findByText(/Confirmed: the voucher/)
     const post = requests().find((r) => r.method === 'POST' && r.path.includes('/purchases/'))!
     expect(post.body.notice).toMatchObject({ purchase_id: 'p1', actor: BUYER, action: 'confirmed', proof: null })
     expect(JSON.stringify(post.body)).not.toContain(CODE)
@@ -217,10 +217,10 @@ describe('FE-032 one-time codes', () => {
     const until = Math.floor(Date.now() / 1000) + 1800
     const body = delivered('WRONG-CODE-0000-AAAA', CODE, until)
     const { section, requests } = await openPurchase(user, body)
-    await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa kode' }))
+    await user.click(within(section).getByRole('button', { name: 'Download and check code' }))
     expect(await within(section).findByTestId('code-cheated')).toHaveTextContent('content_mismatch')
-    await user.click(within(section).getByRole('button', { name: 'Sengketakan dengan bukti' }))
-    await within(section).findByText(/Sengketa dikirim/)
+    await user.click(within(section).getByRole('button', { name: 'Dispute with proof' }))
+    await within(section).findByText(/Dispute sent/)
     const post = requests().find((r) => r.method === 'POST' && r.path.includes('/purchases/'))!
     expect(post.body.notice).toMatchObject({ action: 'disputed', reason: 'content_mismatch' })
     const sent = post.body.notice.proof as { release: never; signature: string; box_key: string }
@@ -234,15 +234,15 @@ describe('FE-032 one-time codes', () => {
     const user = userEvent.setup()
     const soon = Math.floor(Date.now() / 1000) + 600
     const first = await openPurchase(user, delivered(CODE, CODE, soon))
-    const dispute = within(first.section).getByRole('button', { name: /Laporkan ke reputasi/ })
+    const dispute = within(first.section).getByRole('button', { name: /Report to reputation/ })
     expect(dispute).toBeEnabled()
     await user.click(dispute)
-    await within(first.section).findByText(/Aduan dicatat[\s\S]*tidak menghentikan pembayaran/)
+    await within(first.section).findByText(/Complaint recorded[\s\S]*does not stop payment/)
     expect(first.requests().find((r) => r.method === 'POST' && r.path.includes('/purchases/'))!.body.notice).toMatchObject({ action: 'disputed', reason: 'other', proof: null })
     first.unmount()
     const late = await openPurchase(user, delivered(CODE, CODE, Math.floor(Date.now() / 1000) - 5))
-    expect(within(late.section).getByTestId('dispute-window')).toHaveTextContent('Jendela sengketa sudah lewat')
-    expect(within(late.section).getByRole('button', { name: /Laporkan ke reputasi/ })).toBeDisabled()
+    expect(within(late.section).getByTestId('dispute-window')).toHaveTextContent('The dispute window has passed')
+    expect(within(late.section).getByRole('button', { name: /Report to reputation/ })).toBeDisabled()
   })
 
   it('TC-FE-032-10 helpers: the seconds left in the window never go below zero and are null without a window', () => {
@@ -256,30 +256,30 @@ describe('FE-032 one-time codes', () => {
     const buyerKeys = generateVoucherKeypair()
     let status = 'paid_held'
     const view = () => ({ purchase_id: 'p7', listing_hash: 'a'.repeat(64), buyer: BUYER, seller: SELLER, status, content_hash: codeCommitment(CODE, SALT), source: null, cipher_hash: null, release: null, release_signature: null })
-    const { requests } = renderApp('/kode', (p, init) => {
+    const { requests } = renderApp('/codes', (p, init) => {
       if (!init?.method && p.endsWith('/purchases/p7')) return { status: 200, body: view() }
       if (rpcMethod(init) === 'member') return rpcResult({ account_id: BUYER, pubkey_voucher: buyerKeys.publicKey, status: 'active' })
       if (init?.method === 'POST' && p.endsWith('/purchases/p7')) return { status: 200, body: {} }
       return undefined
     }, false, createMockWallet(SELLER, SELLER))
-    const form = await screen.findByRole('form', { name: 'Siapkan kode' })
-    await user.type(within(form).getByLabelText(/^Kode/), CODE)
-    await user.type(within(form).getByLabelText('Nilai (credit)'), '5')
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.click(within(form).getByRole('button', { name: 'Hash dan enkripsi kode' }))
+    const form = await screen.findByRole('form', { name: 'Prepare code' })
+    await user.type(within(form).getByLabelText(/^Code/), CODE)
+    await user.type(within(form).getByLabelText('Value (credit)'), '5')
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.click(within(form).getByRole('button', { name: 'Hash and encrypt code' }))
     await screen.findByTestId('code-prepared')
-    const serve = screen.getByRole('region', { name: 'Layani pembelian kode' })
-    await user.type(within(serve).getByLabelText('Nomor pembelian'), 'p7')
-    await user.click(within(serve).getByRole('button', { name: 'Buka pembelian' }))
+    const serve = screen.getByRole('region', { name: 'Serve code purchase' })
+    await user.type(within(serve).getByLabelText('Purchase number'), 'p7')
+    await user.click(within(serve).getByRole('button', { name: 'Open purchase' }))
     await within(serve).findByTestId('serve')
-    await user.type(within(serve).getByLabelText('Alamat atau CID'), 'https://cdn.example.com/c.enc')
+    await user.type(within(serve).getByLabelText('Address or CID'), 'https://cdn.example.com/c.enc')
     status = 'cipher_posted'
-    await user.click(within(serve).getByRole('button', { name: 'Catat ciphertext' }))
-    await within(serve).findByText('Ciphertext dicatat.')
-    await user.click(await within(serve).findByRole('button', { name: 'Periksa kunci pembeli di kontrak' }))
+    await user.click(within(serve).getByRole('button', { name: 'Record ciphertext' }))
+    await within(serve).findByText('Ciphertext recorded.')
+    await user.click(await within(serve).findByRole('button', { name: 'Check the buyer key in the contract' }))
     const fingerprint = (await within(serve).findByTestId('buyer-fingerprint')).textContent!
-    await user.click(await within(serve).findByRole('button', { name: `Lepas kunci ke ${BUYER} (sidik jari ${fingerprint})` }))
-    await within(serve).findByText(/Jendela sengketa satu jam dimulai/)
+    await user.click(await within(serve).findByRole('button', { name: `Release key to ${BUYER} (fingerprint ${fingerprint})` }))
+    await within(serve).findByText(/one-hour dispute window starts/)
     const released = requests().filter((r) => r.method === 'POST' && r.path.includes('/purchases/p7'))[1]!
     expect(released.body.notice).toMatchObject({ circle: expect.any(String), buyer: BUYER, content_hash: expect.stringMatching(/^[0-9a-f]{64}$/), purchase_id: 'p7' })
     const listed = JSON.parse(screen.getByTestId('code-detail').textContent!) as { code_commitment: string }
@@ -292,23 +292,23 @@ describe('FE-032 one-time codes', () => {
   async function serveWithCheck(user: ReturnType<typeof userEvent.setup>, checkReply: (init?: RequestInit) => { status: number; body: unknown }, verifiable = true) {
     const buyerKeys = generateVoucherKeypair()
     const view = { purchase_id: 'p8', listing_hash: 'b'.repeat(64), buyer: BUYER, seller: SELLER, status: 'cipher_posted', content_hash: 'c'.repeat(64), source: null, cipher_hash: null, release: null, release_signature: null }
-    const rendered = renderApp('/kode', (p, init) => {
+    const rendered = renderApp('/codes', (p, init) => {
       if (!init?.method && p.endsWith('/purchases/p8')) return { status: 200, body: view }
       if (init?.method === 'POST' && p.endsWith(`/listings/${'b'.repeat(64)}/code-check`)) return checkReply(init)
       if (rpcMethod(init) === 'member') return rpcResult({ account_id: BUYER, pubkey_voucher: buyerKeys.publicKey, status: 'active' })
       if (init?.method === 'POST' && p.endsWith('/purchases/p8')) return { status: 200, body: {} }
       return undefined
     }, false, createMockWallet(SELLER, SELLER))
-    const form = await screen.findByRole('form', { name: 'Siapkan kode' })
-    await user.type(within(form).getByLabelText(/^Kode/), CODE)
-    await user.type(within(form).getByLabelText('Nilai (credit)'), '5')
-    if (verifiable) await user.click(within(form).getByLabelText(/Penerbit punya API cek/))
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.click(within(form).getByRole('button', { name: 'Hash dan enkripsi kode' }))
+    const form = await screen.findByRole('form', { name: 'Prepare code' })
+    await user.type(within(form).getByLabelText(/^Code/), CODE)
+    await user.type(within(form).getByLabelText('Value (credit)'), '5')
+    if (verifiable) await user.click(within(form).getByLabelText(/The issuer has a check API/))
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.click(within(form).getByRole('button', { name: 'Hash and encrypt code' }))
     await screen.findByTestId('code-prepared')
-    const serve = screen.getByRole('region', { name: 'Layani pembelian kode' })
-    await user.type(within(serve).getByLabelText('Nomor pembelian'), 'p8')
-    await user.click(within(serve).getByRole('button', { name: 'Buka pembelian' }))
+    const serve = screen.getByRole('region', { name: 'Serve code purchase' })
+    await user.type(within(serve).getByLabelText('Purchase number'), 'p8')
+    await user.click(within(serve).getByRole('button', { name: 'Open purchase' }))
     await within(serve).findByTestId('serve')
     return { serve, ...rendered }
   }
@@ -316,15 +316,15 @@ describe('FE-032 one-time codes', () => {
   it('TC-FE-032-12 the seller of a checkable code sees what the backend will see before the check, the check sends a signed notice with the code and the salt, and the key is blocked until the verdict is valid', async () => {
     const user = userEvent.setup()
     const { serve, requests } = await serveWithCheck(user, () => ({ status: 200, body: { listingHash: 'b'.repeat(64), verdict: 'valid', checkedAt: Date.now(), validUntilMs: Date.now() + 600_000 } }))
-    expect(within(serve).getByTestId('check-disclosure')).toHaveTextContent('backend melihat kode dan salt satu kali')
-    expect(within(serve).getByTestId('check-disclosure')).toHaveTextContent('tidak disimpan')
-    await user.click(await within(serve).findByRole('button', { name: 'Periksa kunci pembeli di kontrak' }))
+    expect(within(serve).getByTestId('check-disclosure')).toHaveTextContent('the backend sees the code and salt once')
+    expect(within(serve).getByTestId('check-disclosure')).toHaveTextContent('not stored')
+    await user.click(await within(serve).findByRole('button', { name: 'Check the buyer key in the contract' }))
     const fingerprint = (await within(serve).findByTestId('buyer-fingerprint')).textContent!
-    const release = within(serve).getByRole('button', { name: `Lepas kunci ke ${BUYER} (sidik jari ${fingerprint})` })
+    const release = within(serve).getByRole('button', { name: `Release key to ${BUYER} (fingerprint ${fingerprint})` })
     expect(release).toBeDisabled() // no verdict yet
     expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/code-check'))).toHaveLength(0) // nothing is sent before the click
-    await user.click(within(serve).getByRole('button', { name: 'Tunjukkan kode ke backend untuk dicek penerbit' }))
-    expect(await within(serve).findByTestId('issuer-verdict')).toHaveTextContent('kode sah')
+    await user.click(within(serve).getByRole('button', { name: 'Show the code to the backend for the issuer check' }))
+    expect(await within(serve).findByTestId('issuer-verdict')).toHaveTextContent('code is valid')
     expect(release).toBeEnabled()
     const post = requests().find((r) => r.method === 'POST' && r.path.includes('/code-check'))!
     expect(Object.keys(post.body.notice)).toEqual(['circle', 'listing_hash', 'actor', 'action', 'at'])
@@ -339,19 +339,19 @@ describe('FE-032 one-time codes', () => {
     const user = userEvent.setup()
     let reply: { status: number; body: unknown } = { status: 200, body: { listingHash: 'b'.repeat(64), verdict: 'used', checkedAt: 1, validUntilMs: null } }
     const { serve } = await serveWithCheck(user, () => reply)
-    await user.click(await within(serve).findByRole('button', { name: 'Periksa kunci pembeli di kontrak' }))
+    await user.click(await within(serve).findByRole('button', { name: 'Check the buyer key in the contract' }))
     await within(serve).findByTestId('buyer-fingerprint')
-    const release = within(serve).getByRole('button', { name: /^Lepas kunci ke/ })
-    await user.click(within(serve).getByRole('button', { name: 'Tunjukkan kode ke backend untuk dicek penerbit' }))
-    expect(await within(serve).findByTestId('issuer-verdict')).toHaveTextContent('sudah terpakai')
+    const release = within(serve).getByRole('button', { name: /^Release key to/ })
+    await user.click(within(serve).getByRole('button', { name: 'Show the code to the backend for the issuer check' }))
+    expect(await within(serve).findByTestId('issuer-verdict')).toHaveTextContent('already used')
     expect(release).toBeDisabled()
     reply = { status: 503, body: { error: { code: 'code_issuer_unavailable', message: 'down', details: {} } } }
-    await user.click(within(serve).getByRole('button', { name: 'Tunjukkan kode ke backend untuk dicek penerbit' }))
-    expect(await within(serve).findByText(/Penerbit tidak menjawab/)).toBeInTheDocument()
+    await user.click(within(serve).getByRole('button', { name: 'Show the code to the backend for the issuer check' }))
+    expect(await within(serve).findByText(/The issuer did not respond/)).toBeInTheDocument()
     expect(release).toBeDisabled()
     reply = { status: 200, body: { listingHash: 'b'.repeat(64), verdict: 'unknown', checkedAt: 2, validUntilMs: null } }
-    await user.click(within(serve).getByRole('button', { name: 'Tunjukkan kode ke backend untuk dicek penerbit' }))
-    await waitFor(() => expect(within(serve).getByTestId('issuer-verdict')).toHaveTextContent('tidak mengenal'))
+    await user.click(within(serve).getByRole('button', { name: 'Show the code to the backend for the issuer check' }))
+    await waitFor(() => expect(within(serve).getByTestId('issuer-verdict')).toHaveTextContent('does not recognize'))
     expect(release).toBeDisabled()
   })
 
@@ -359,7 +359,7 @@ describe('FE-032 one-time codes', () => {
     const user = userEvent.setup()
     const { serve, requests } = await serveWithCheck(user, () => ({ status: 500, body: {} }), false)
     expect(within(serve).queryByTestId('issuer-check')).not.toBeInTheDocument()
-    expect(within(serve).getByTestId('no-check-note')).toHaveTextContent('backend tidak melihat kodenya')
+    expect(within(serve).getByTestId('no-check-note')).toHaveTextContent('the backend does not see the code')
     expect(requests().filter((r) => r.path.includes('/code-check'))).toHaveLength(0)
   })
 
@@ -372,36 +372,36 @@ describe('FE-032 one-time codes', () => {
     const user = userEvent.setup()
     const until = Math.floor(Date.now() / 1000) + 1800
     const ok = await openPurchase(user, delivered(CODE, CODE, until))
-    expect(within(ok.section).queryByLabelText(/Kunci publik penjual/)).not.toBeInTheDocument()
-    expect(within(ok.section).getByTestId('seller-key-note')).toHaveTextContent('dibaca dari kontrak')
-    await user.click(within(ok.section).getByRole('button', { name: 'Unduh dan periksa kode' }))
+    expect(within(ok.section).queryByLabelText(/Seller public key/)).not.toBeInTheDocument()
+    expect(within(ok.section).getByTestId('seller-key-note')).toHaveTextContent('read from the contract')
+    await user.click(within(ok.section).getByRole('button', { name: 'Download and check code' }))
     expect(await within(ok.section).findByTestId('code-ok')).toBeInTheDocument()
     expect(within(ok.section).getByTestId('seller-fingerprint').textContent).toMatch(/[0-9a-f]{4}( [0-9a-f]{4}){3}/)
     ok.unmount()
     cleanup()
     const bad = await openPurchase(user, delivered(CODE, CODE, until), null)
-    await user.click(within(bad.section).getByRole('button', { name: 'Unduh dan periksa kode' }))
-    expect(await within(bad.section).findByTestId('code-refused')).toHaveTextContent('bukan anggota aktif di kontrak')
+    await user.click(within(bad.section).getByRole('button', { name: 'Download and check code' }))
+    expect(await within(bad.section).findByTestId('code-refused')).toHaveTextContent('is not an active member in the contract')
     expect(within(bad.section).queryByTestId('code-ok')).not.toBeInTheDocument()
     // a key of another seller in the contract: the delivery is refused as a bad signature, not shown as a code
     cleanup()
     const other = await openPurchase(user, delivered(CODE, CODE, until), { account_id: SELLER, pubkey_voucher: generateVoucherKeypair().publicKey, status: 'active' })
-    await user.click(within(other.section).getByRole('button', { name: 'Unduh dan periksa kode' }))
-    expect(await within(other.section).findByTestId('code-refused')).toHaveTextContent('Tanda tangan rilis')
+    await user.click(within(other.section).getByRole('button', { name: 'Download and check code' }))
+    expect(await within(other.section).findByTestId('code-refused')).toHaveTextContent('The release signature')
   })
 
   it('TC-FE-032-17 [B6-F1, F7] a complaint without proof is not a dispute: the button says it does not stop the payment, the page no longer tells the buyer to try the code first, and the labels say where the code goes', async () => {
     const user = userEvent.setup()
     const until = Math.floor(Date.now() / 1000) + 1800
     const { section } = await openPurchase(user, delivered(CODE, CODE, until))
-    expect(within(section).getByRole('button', { name: 'Laporkan ke reputasi (tidak menghentikan pembayaran)' })).toBeInTheDocument()
-    expect(within(section).queryByRole('button', { name: /^Sengketakan:/ })).not.toBeInTheDocument()
-    await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa kode' }))
+    expect(within(section).getByRole('button', { name: 'Report to reputation (does not stop payment)' })).toBeInTheDocument()
+    expect(within(section).queryByRole('button', { name: /^Dispute:/ })).not.toBeInTheDocument()
+    await user.click(within(section).getByRole('button', { name: 'Download and check code' }))
     const ok = await within(section).findByTestId('code-ok')
-    expect(ok.textContent).not.toMatch(/tebus/i)
-    expect(ok.textContent).not.toMatch(/coba/i)
-    expect(document.body.textContent).not.toMatch(/jaminan/)
-    expect(document.body.textContent).toMatch(/dikirim sekali ke backend saat pengecekan penerbit/)
-    expect(document.body.textContent).not.toMatch(/tidak dikirim ke mana pun; hanya/)
+    expect(ok.textContent).not.toMatch(/redeem/i)
+    expect(ok.textContent).not.toMatch(/try/i)
+    expect(document.body.textContent).not.toMatch(/bond/)
+    expect(document.body.textContent).toMatch(/sent once to the backend during the issuer check/)
+    expect(document.body.textContent).not.toMatch(/sent nowhere; only/)
   })
 })

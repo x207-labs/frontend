@@ -1,18 +1,18 @@
 import type { EpochPhase } from '../api/types'
 
 const phases: { id: EpochPhase; label: string }[] = [
-  { id: 'open', label: 'Terbuka' },
+  { id: 'open', label: 'Open' },
   { id: 'cutoff', label: 'Cutoff' },
-  { id: 'clearing', label: 'Kliring' },
+  { id: 'clearing', label: 'Clearing' },
   { id: 'commit', label: 'Commit' },
-  { id: 'payment_window', label: 'Jendela bayar' },
-  { id: 'finalized', label: 'Final' },
+  { id: 'payment_window', label: 'Payment window' },
+  { id: 'finalized', label: 'Finalized' },
 ]
 
 export function PhaseStrip({ phase }: { phase: EpochPhase }) {
   const current = phases.findIndex((p) => p.id === phase)
   return (
-    <ol className="phases" aria-label="Fase epoch">
+    <ol className="phases" aria-label="Epoch phase">
       {phases.map((p, i) => (
         <li
           key={p.id}

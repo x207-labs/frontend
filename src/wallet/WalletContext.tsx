@@ -64,11 +64,11 @@ export function WalletProvider({ port, children }: { port: WalletPort; children:
       logout,
       // Semua transaksi halaman lewat sini, jadi signer dan network selalu terisi (TC-FE-003-06).
       send: (tx) => {
-        if (!account) return Promise.reject(new Error('Belum login'))
+        if (!account) return Promise.reject(new Error('Not signed in'))
         return port.signAndSend(account, tx)
       },
       signMessage: (input) => {
-        if (!account) return Promise.reject(new Error('Belum login'))
+        if (!account) return Promise.reject(new Error('Not signed in'))
         return port.signMessage(account, input)
       },
     }),
@@ -80,7 +80,7 @@ export function WalletProvider({ port, children }: { port: WalletPort; children:
 
 export function useWallet(): Wallet {
   const value = useContext(WalletContext)
-  if (!value) throw new Error('useWallet harus di dalam WalletProvider')
+  if (!value) throw new Error('useWallet must be inside WalletProvider')
   return value
 }
 

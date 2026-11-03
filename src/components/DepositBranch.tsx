@@ -6,28 +6,28 @@ import { CIRCLE } from '../config'
 
 // Aset asal contoh untuk cabang 1Click; daftar penuh dari 1Click di luar lingkup halaman ini.
 const ORIGIN_ASSETS = [
-  { id: 'nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near', label: 'USDC di Base' },
+  { id: 'nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near', label: 'USDC on Base' },
 ]
 
 const QUOTE_ERRORS: Record<string, string> = {
-  refund_account_not_found: 'Akun refund tidak ditemukan di NEAR. Periksa akun yang dipakai.',
-  one_click_error: 'Layanan 1Click bermasalah atau jumlah di bawah minimum. Coba lagi nanti.',
-  member_not_found: 'Akun belum terdaftar. Selesaikan join dulu.',
-  nothing_due: 'Tidak ada tagihan untuk epoch ini.',
+  refund_account_not_found: 'Refund account not found on NEAR. Check the account you are using.',
+  one_click_error: 'The 1Click service has a problem or the amount is below the minimum. Try again later.',
+  member_not_found: 'Account not registered. Complete join first.',
+  nothing_due: 'No bill for this epoch.',
 }
 
 const JOB_LABEL: Record<string, string> = {
-  waiting_deposit: 'Menunggu deposit ke alamat di atas',
-  processing: 'Deposit diproses',
-  ready_withdraw: 'USDT sudah di saldo Intents, siap ft_withdraw',
-  completed: 'Selesai',
-  failed: 'Gagal. Tidak ada langkah lanjut.',
-  refunded: 'Dikembalikan ke akun refund. Tidak ada langkah lanjut.',
-  expired: 'Quote kedaluwarsa tanpa deposit. Tidak ada langkah lanjut.',
+  waiting_deposit: 'Waiting for a deposit to the address above',
+  processing: 'Deposit processing',
+  ready_withdraw: 'USDT is in the Intents balance, ready for ft_withdraw',
+  completed: 'Completed',
+  failed: 'Failed. No further steps.',
+  refunded: 'Refunded to the refund account. No further steps.',
+  expired: 'Quote expired without a deposit. No further steps.',
 }
 
 const WARNING_LABEL: Record<string, string> = {
-  deadline_risk: 'Risiko melewati batas bayar: perkiraan waktu swap melewati payment window. Pertimbangkan membayar USDT langsung.',
+  deadline_risk: 'Risk of missing the payment deadline: the estimated swap time exceeds the payment window. Consider paying USDT directly.',
 }
 
 function useJob(jobId: string | null) {
@@ -84,7 +84,7 @@ export function DepositBranch({ purpose, account, amount, epoch, onReady }: Prop
   return (
     <div className="branch">
       <button type="button" onClick={() => void requestQuote()} disabled={loading}>
-        {loading ? 'Meminta quote…' : 'Minta quote 1Click'}
+        {loading ? 'Requesting quote…' : 'Request 1Click quote'}
       </button>
       {error && <p className="state state-error" role="alert">{error}</p>}
       {quote?.warnings.map((w) => (
@@ -92,19 +92,19 @@ export function DepositBranch({ purpose, account, amount, epoch, onReady }: Prop
       ))}
       {quote && (
         <dl>
-          <dt>Alamat deposit</dt>
+          <dt>Deposit address</dt>
           <dd><code>{quote.depositAddress}</code></dd>
-          <dt>Jumlah masuk</dt>
+          <dt>Amount in</dt>
           <dd>{quote.amountIn}</dd>
-          <dt>Tujuan</dt>
+          <dt>Destination</dt>
           <dd>
             <code>{quote.recipientType}</code>
           </dd>
-          <dt>Batas quote</dt>
+          <dt>Quote deadline</dt>
           <dd>{quote.quoteDeadline}</dd>
         </dl>
       )}
-      {status && <p className="state" role="status">Status job: {JOB_LABEL[status] ?? status}</p>}
+      {status && <p className="state" role="status">Job status: {JOB_LABEL[status] ?? status}</p>}
     </div>
   )
 }

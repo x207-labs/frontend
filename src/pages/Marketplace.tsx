@@ -20,17 +20,17 @@ import { formatCredit, formatNumber, formatTime, shortAccount } from '../lib/for
 import { useWallet } from '../wallet/WalletContext'
 
 const STATUS_OPTIONS = [
-  ['open', 'Terbuka'],
-  ['matched', 'Sudah cocok'],
-  ['cancelled', 'Dibatalkan'],
-  ['expired', 'Kedaluwarsa'],
-  ['all', 'Semua'],
+  ['open', 'Open'],
+  ['matched', 'Matched'],
+  ['cancelled', 'Cancelled'],
+  ['expired', 'Expired'],
+  ['all', 'All'],
 ] as const
 const CLASS_LABEL: Record<AssetClass, string> = {
-  A: 'A · dialihkan native (escrow)',
-  B: 'B · sewa akses akun',
-  C: 'C · broker TEE (x402)',
-  D: 'D · jasa langsung (voucher)',
+  A: 'A · native transfer (escrow)',
+  B: 'B · account access rent',
+  C: 'C · TEE broker (x402)',
+  D: 'D · direct service (voucher)',
 }
 const ASSET_TYPE = /^[a-z0-9][a-z0-9._:-]{0,63}$/
 const SECONDS_PER_HOUR = 3600
@@ -46,11 +46,11 @@ function SideFields({ legend, value, onChange }: { legend: string; value: Side; 
     <fieldset className="side">
       <legend>{legend}</legend>
       <label>
-        <span>Jenis aset ({legend})</span>
+        <span>Asset type ({legend})</span>
         <input value={value.type} onChange={(e) => onChange({ ...value, type: e.target.value })} placeholder="gpu-hours" />
       </label>
       <label>
-        <span>Kelas ({legend})</span>
+        <span>Class ({legend})</span>
         <select value={value.cls} onChange={(e) => onChange({ ...value, cls: e.target.value as AssetClass })}>
           {ASSET_CLASSES.map((c) => (
             <option key={c} value={c}>{CLASS_LABEL[c]}</option>
@@ -58,11 +58,11 @@ function SideFields({ legend, value, onChange }: { legend: string; value: Side; 
         </select>
       </label>
       <label>
-        <span>Jumlah ({legend})</span>
+        <span>Quantity ({legend})</span>
         <input value={value.quantity} onChange={(e) => onChange({ ...value, quantity: e.target.value })} inputMode="numeric" />
       </label>
       <label>
-        <span>Nilai credit ({legend})</span>
+        <span>Credit value ({legend})</span>
         <input value={value.value} onChange={(e) => onChange({ ...value, value: e.target.value })} inputMode="decimal" />
       </label>
     </fieldset>
@@ -149,13 +149,13 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
   return (
     <form
       className="form listing-form"
-      aria-label="Buat listing"
+      aria-label="Create listing"
       onSubmit={(e) => {
         e.preventDefault()
         void submit()
       }}
     >
-      {!account && <p className="state">Masuk dengan wallet untuk membuat listing.</p>}
+      {!account && <p className="state">Sign in with a wallet to create a listing.</p>}
       <AssetTemplateForm
         onApply={(t) => {
           setOffer({ type: t.side.asset_type, cls: t.side.asset_class, quantity: String(t.side.quantity), value: fromAtomic(t.side.value) })
@@ -171,10 +171,10 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
           setDetail(t.detail)
         }}
       />
-      <SideFields legend="Menawarkan" value={offer} onChange={setOffer} />
-      <SideFields legend="Mencari" value={want} onChange={setWant} />
+      <SideFields legend="Offering" value={offer} onChange={setOffer} />
+      <SideFields legend="Seeking" value={want} onChange={setWant} />
       <label>
-        <span>Syarat</span>
+        <span>Terms</span>
         <input value={terms} onChange={(e) => setTerms(e.target.value)} maxLength={512} placeholder="delivery within 7 days" />
       </label>
       <label>
@@ -182,52 +182,52 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
         <textarea value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={2048} rows={3} />
       </label>
       <label>
-        <span>Berlaku (jam)</span>
+        <span>Valid for (hours)</span>
         <input value={hours} onChange={(e) => setHours(e.target.value)} inputMode="numeric" />
-        {!hoursOk && <small className="state-error" role="alert">Isi jam 1–9999.</small>}
+        {!hoursOk && <small className="state-error" role="alert">Enter hours 1–9999.</small>}
       </label>
       <label>
-        <span>Diskon barter cepat (%)</span>
+        <span>Quick barter discount (%)</span>
         <input value={discount} onChange={(e) => setDiscount(e.target.value)} inputMode="decimal" />
-        {discountBps === null && <small className="state-error" role="alert">Diskon 0–100% dengan maksimal 2 desimal.</small>}
+        {discountBps === null && <small className="state-error" role="alert">Discount 0–100% with at most 2 decimals.</small>}
       </label>
       <label className="check">
         <input type="checkbox" checked={acceptPayment} onChange={(e) => setAcceptPayment(e.target.checked)} />
-        <span>Lawan boleh membayar dengan harga diskon</span>
+        <span>The counterparty may pay the discounted price</span>
       </label>
       <label className="check">
         <input type="checkbox" checked={human} onChange={(e) => setHuman(e.target.checked)} />
-        <span>Dikerjakan oleh manusia (tanda “manusia” di listing; manusia ikut sebagai anggota biasa lewat wallet web)</span>
+        <span>Done by a human (a “human” mark on the listing; humans take part as ordinary members through the web wallet)</span>
       </label>
       <label className="check">
         <input type="checkbox" checked={discoverable} onChange={(e) => setDiscoverable(e.target.checked)} />
-        <span>Pencari otonom boleh mendatangi agent ini</span>
+        <span>Autonomous seekers may approach this agent</span>
       </label>
       <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
       <div>
         <button type="submit" disabled={!valid || busy}>
-          {busy ? 'Menandatangani…' : 'Tanda tangani dan pasang listing'}
+          {busy ? 'Signing…' : 'Sign and post listing'}
         </button>
       </div>
       {error && <p className="state state-error" role="alert">{error}</p>}
-      {created && <p className="state" role="status">Listing terpasang: <code>{created}</code></p>}
+      {created && <p className="state" role="status">Listing posted: <code>{created}</code></p>}
     </form>
   )
 }
 
 function ListingRow({ listing, selected, onSelect }: { listing: ListingView; selected: boolean; onSelect: () => void }) {
-  const side = (s: ListingView['offer']) => `${s.assetType} · kelas ${s.assetClass} · ${formatNumber(s.quantity, 0)} unit · ${formatCredit(s.value)} credit`
+  const side = (s: ListingView['offer']) => `${s.assetType} · class ${s.assetClass} · ${formatNumber(s.quantity, 0)} units · ${formatCredit(s.value)} credit`
   return (
     <tr aria-selected={selected}>
-      <td><code>{shortAccount(listing.account)}</code>{isHumanListing(listing.detail) && <> <span className="badge" data-testid="human-badge">manusia</span></>}</td>
+      <td><code>{shortAccount(listing.account)}</code>{isHumanListing(listing.detail) && <> <span className="badge" data-testid="human-badge">human</span></>}</td>
       <td>{side(listing.offer)}</td>
       <td>{side(listing.want)}</td>
-      <td>{formatNumber(listing.discountBps / 100)}%{listing.acceptPayment ? ', bayar boleh' : ''}</td>
+      <td>{formatNumber(listing.discountBps / 100)}%{listing.acceptPayment ? ', payment allowed' : ''}</td>
       <td>{formatTime(listing.expiresAt)}</td>
       <td>{listing.status}</td>
       <td>
-        <button type="button" onClick={onSelect} aria-label={`Buka ${listing.listingHash.slice(0, 8)}`}>
-          Buka
+        <button type="button" onClick={onSelect} aria-label={`Open ${listing.listingHash.slice(0, 8)}`}>
+          Open
         </button>
       </td>
     </tr>
@@ -236,19 +236,19 @@ function ListingRow({ listing, selected, onSelect }: { listing: ListingView; sel
 
 function Stats() {
   const stats = useMarketStats()
-  if (stats.data === undefined) return stats.isError ? <ErrorNotice error={stats.error} onRetry={() => stats.refetch()} /> : <Loading label="Memuat statistik" />
+  if (stats.data === undefined) return stats.isError ? <ErrorNotice error={stats.error} onRetry={() => stats.refetch()} /> : <Loading label="Loading statistics" />
   const s = stats.data
   return (
-    <dl className="status-panel" aria-label="Statistik marketplace">
-      <dt>Listing terbuka</dt>
+    <dl className="status-panel" aria-label="Marketplace statistics">
+      <dt>Open listings</dt>
       <dd>{s.listings.open}</dd>
-      <dt>Sudah cocok</dt>
+      <dt>Matched</dt>
       <dd>{s.matches.count}</dd>
-      <dt>Rata-rata waktu sampai cocok</dt>
-      <dd>{s.timeToMatchSeconds.average === null ? 'belum ada' : `${formatNumber(s.timeToMatchSeconds.average, 0)} detik`}</dd>
-      <dt>Nilai diskon</dt>
+      <dt>Average time to match</dt>
+      <dd>{s.timeToMatchSeconds.average === null ? 'none yet' : `${formatNumber(s.timeToMatchSeconds.average, 0)} seconds`}</dd>
+      <dt>Discount value</dt>
       <dd>{formatCredit(s.matches.discountValue)}</dd>
-      <dt>Pendapatan pencari</dt>
+      <dt>Seeker revenue</dt>
       <dd>{formatCredit(s.searcherRevenue.total)}</dd>
     </dl>
   )
@@ -276,21 +276,21 @@ export function Marketplace() {
           </select>
         </label>
         <label>
-          <span>Jenis aset ditawarkan</span>
+          <span>Offered asset type</span>
           <input value={offerType} onChange={(e) => setOfferType(e.target.value)} placeholder="gpu-hours" />
         </label>
       </div>
-      <QueryState query={listings} loadingLabel="Memuat listing" isEmpty={(d) => d.items.length === 0} empty="Belum ada listing yang cocok dengan filter.">
+      <QueryState query={listings} loadingLabel="Loading listings" isEmpty={(d) => d.items.length === 0} empty="No listing matches the filter yet.">
         {(data) => (
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Pemasang</th>
-                  <th>Menawarkan</th>
-                  <th>Mencari</th>
-                  <th>Diskon</th>
-                  <th>Berlaku sampai</th>
+                  <th>Poster</th>
+                  <th>Offering</th>
+                  <th>Seeking</th>
+                  <th>Discount</th>
+                  <th>Valid until</th>
                   <th>Status</th>
                   <th />
                 </tr>
@@ -306,7 +306,7 @@ export function Marketplace() {
       </QueryState>
       {selected && <Negotiation listing={selected} voucherKey={voucherKey} onVoucherKey={setVoucherKey} onClose={() => setSelected(null)} />}
       <OwnIntents />
-      <h2 id="pasang">Pasang listing</h2>
+      <h2 id="post-listing">Post a listing</h2>
       <CreateListing voucherKey={voucherKey} onVoucherKey={setVoucherKey} />
     </>
   )

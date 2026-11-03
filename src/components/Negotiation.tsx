@@ -16,30 +16,30 @@ import { ErrorNotice, Loading } from './QueryState'
 import { VoucherKeyField } from './VoucherKeyField'
 
 const SECONDS_PER_DAY = 86_400
-const MODE_LABEL = { pay: 'Bayar harga diskon', barter: 'Barter' } as const
+const MODE_LABEL = { pay: 'Pay discounted price', barter: 'Barter' } as const
 
 function Breakdown({ listing, breakdown }: { listing: ListingView; breakdown: QuickBreakdown }) {
   if (breakdown.mode === 'pay') {
     return (
-      <dl aria-label="Rincian bayar">
-        <dt>Lawan membayar</dt>
+      <dl aria-label="Payment breakdown">
+        <dt>Counterparty pays</dt>
         <dd>{formatCredit(breakdown.counterpartyPays)} credit</dd>
-        <dt>Penjual menerima</dt>
-        <dd>{formatCredit(breakdown.sellerReceives)} credit (nilai kesepakatan {formatCredit(String(BigInt(breakdown.sellerReceives) + BigInt(breakdown.discount)))} dikurangi diskon {formatCredit(breakdown.discount)})</dd>
-        <dt>Jatah pencari</dt>
+        <dt>Seller receives</dt>
+        <dd>{formatCredit(breakdown.sellerReceives)} credit (deal value {formatCredit(String(BigInt(breakdown.sellerReceives) + BigInt(breakdown.discount)))} minus discount {formatCredit(breakdown.discount)})</dd>
+        <dt>Seeker share</dt>
         <dd>{formatCredit(breakdown.searcher)} credit</dd>
       </dl>
     )
   }
   return (
-    <dl aria-label="Rincian barter">
-      <dt>Lawan menyerahkan</dt>
-      <dd>{listing.want.assetType} senilai {formatCredit(breakdown.counterpartyGives)} credit</dd>
-      <dt>Lawan menerima</dt>
-      <dd>{listing.offer.assetType} ditambah cashback {formatCredit(breakdown.cashback)} credit</dd>
-      <dt>Penjual menanggung</dt>
-      <dd>{formatCredit(breakdown.sellerBears)} credit (cashback {formatCredit(breakdown.cashback)} + jatah pencari {formatCredit(breakdown.searcher)})</dd>
-      <dt>Jatah pencari</dt>
+    <dl aria-label="Barter breakdown">
+      <dt>Counterparty gives</dt>
+      <dd>{listing.want.assetType} worth {formatCredit(breakdown.counterpartyGives)} credit</dd>
+      <dt>Counterparty receives</dt>
+      <dd>{listing.offer.assetType} plus cashback {formatCredit(breakdown.cashback)} credit</dd>
+      <dt>Seller bears</dt>
+      <dd>{formatCredit(breakdown.sellerBears)} credit (cashback {formatCredit(breakdown.cashback)} + seeker share {formatCredit(breakdown.searcher)})</dd>
+      <dt>Seeker share</dt>
       <dd>{formatCredit(breakdown.searcher)} credit</dd>
     </dl>
   )
@@ -82,32 +82,32 @@ function OfferForm({ listing, previous, voucherKey, onVoucherKey, onDone }: {
     }
   }
 
-  const title = previous ? `Penawaran balik ronde ${previous.round + 1}` : 'Ajukan penawaran'
+  const title = previous ? `Counteroffer round ${previous.round + 1}` : 'Make an offer'
   return (
     <form className="form" aria-label={title} onSubmit={(e) => { e.preventDefault(); void submit() }}>
       <h4>{title}</h4>
       <label>
-        <span>Cara</span>
+        <span>Method</span>
         <select value={mode} onChange={(e) => setMode(e.target.value as 'pay' | 'barter')}>
           <option value="barter">{MODE_LABEL.barter}</option>
-          <option value="pay" disabled={!listing.acceptPayment}>{MODE_LABEL.pay}{listing.acceptPayment ? '' : ' (tidak diterima listing ini)'}</option>
+          <option value="pay" disabled={!listing.acceptPayment}>{MODE_LABEL.pay}{listing.acceptPayment ? '' : ' (not accepted by this listing)'}</option>
         </select>
       </label>
       <label>
-        <span>Nilai usulan (credit)</span>
+        <span>Proposed value (credit)</span>
         <input value={value} onChange={(e) => setValue(e.target.value)} inputMode="decimal" />
       </label>
       <label>
-        <span>Jumlah</span>
+        <span>Quantity</span>
         <input value={quantity} onChange={(e) => setQuantity(e.target.value)} inputMode="numeric" />
       </label>
       <label>
-        <span>Diserahkan dalam (hari)</span>
+        <span>Delivered within (days)</span>
         <input value={days} onChange={(e) => setDays(e.target.value)} inputMode="numeric" />
       </label>
       <VoucherKeyField value={voucherKey} onChange={onVoucherKey} />
       <div>
-        <button type="submit" disabled={!valid || busy}>{busy ? 'Menandatangani…' : 'Tanda tangani dan kirim penawaran'}</button>
+        <button type="submit" disabled={!valid || busy}>{busy ? 'Signing…' : 'Sign and send offer'}</button>
       </div>
       {error && <p className="state state-error" role="alert">{error}</p>}
     </form>
@@ -156,7 +156,7 @@ function AcceptPanel({ listing, offer, voucherKey, onVoucherKey }: {
       let signature: string | undefined
       if (preview.bundle) {
         if ((await sha256Hex(preview.bundle.message)) !== preview.bundle.termsHash) {
-          throw new Error('Pesan yang akan ditandatangani tidak cocok dengan terms_hash dari server. Dibatalkan.')
+          throw new Error('The message to sign does not match the terms_hash from the server. Cancelled.')
         }
         // FE-1: the hash above comes from the same server, so the message itself is checked before the key signs it
         const check = checkBundleToSign({ message: preview.bundle.message, recipient: preview.bundle.recipient, account: account ?? '', contract: CONTRACT_ID, epoch: preview.epoch, breakdown: preview.breakdown as unknown as Record<string, string> })
@@ -177,11 +177,11 @@ function AcceptPanel({ listing, offer, voucherKey, onVoucherKey }: {
   if (result) {
     return result.result.kind === 'payment' ? (
       <p className="state" role="status">
-        Disepakati. {shortAccount(result.result.payer)} membayar {formatCredit(result.result.amount)} credit ke {shortAccount(result.result.payee)} dengan voucher biasa; tanpa bundle.
+        Agreed. {shortAccount(result.result.payer)} pays {formatCredit(result.result.amount)} credit to {shortAccount(result.result.payee)} with an ordinary voucher; no bundle.
       </p>
     ) : (
       <p className="state" role="status">
-        Usulan bundle dibuat untuk epoch {result.result.proposal.epoch}. Menunggu tanda tangan: {result.result.proposal.missing.map(shortAccount).join(', ') || 'tidak ada'}.
+        Bundle proposal created for epoch {result.result.proposal.epoch}. Waiting for signatures: {result.result.proposal.missing.map(shortAccount).join(', ') || 'none'}.
       </p>
     )
   }
@@ -189,27 +189,27 @@ function AcceptPanel({ listing, offer, voucherKey, onVoucherKey }: {
   const shown = preview?.bundle ? checkBundleToSign({ message: preview.bundle.message, recipient: preview.bundle.recipient, account: account ?? '', contract: CONTRACT_ID, epoch: preview.epoch, breakdown: preview.breakdown as unknown as Record<string, string> }) : null
   const legs = shown?.ok ? shown.terms.legs : []
   return (
-    <section className="accept" aria-label="Terima penawaran">
-      <h4>Terima penawaran ronde {offer.round}</h4>
+    <section className="accept" aria-label="Accept offer">
+      <h4>Accept offer round {offer.round}</h4>
       <label>
-        <span>Pencari otonom (opsional)</span>
+        <span>Autonomous seeker (optional)</span>
         <input value={searcher} onChange={(e) => setSearcher(e.target.value)} placeholder="scraper.x207-circle.near" />
       </label>
       <label>
-        <span>Jatah pencari (% dari nilai listing)</span>
+        <span>Seeker share (% of listing value)</span>
         <input value={share} onChange={(e) => setShare(e.target.value)} inputMode="decimal" disabled={!searcher.trim()} />
-        {!shareOk && <small className="state-error" role="alert">Isi persen dengan maksimal 2 desimal.</small>}
+        {!shareOk && <small className="state-error" role="alert">Enter a percentage with at most 2 decimals.</small>}
       </label>
       <button type="button" onClick={() => void calculate()} disabled={!account || !shareOk || busy !== null}>
-        {busy === 'preview' ? 'Menghitung…' : 'Hitung rincian'}
+        {busy === 'preview' ? 'Calculating…' : 'Calculate breakdown'}
       </button>
       {preview && (
         <>
           <Breakdown listing={listing} breakdown={preview.breakdown} />
           {preview.bundle ? (
             <>
-              <p>Bundle epoch {preview.epoch}, <code>terms_hash</code> <code>{preview.bundle.termsHash.slice(0, 16)}…</code>. Setiap peserta menandatangani.</p>
-              <ul aria-label="Leg bundle">
+              <p>Bundle epoch {preview.epoch}, <code>terms_hash</code> <code>{preview.bundle.termsHash.slice(0, 16)}…</code>. Every participant signs.</p>
+              <ul aria-label="Bundle legs">
                 {legs.map((l) => (
                   <li key={`${l.payer}>${l.payee}`}>{shortAccount(l.payer)} → {shortAccount(l.payee)}: {formatCredit(l.max_amount)} credit</li>
                 ))}
@@ -217,10 +217,10 @@ function AcceptPanel({ listing, offer, voucherKey, onVoucherKey }: {
               <VoucherKeyField value={voucherKey} onChange={onVoucherKey} />
             </>
           ) : (
-            <p>Satu pembayaran voucher: {shortAccount(preview.payment!.payer)} → {shortAccount(preview.payment!.payee)}, {formatCredit(preview.payment!.amount)} credit. Tidak ada tanda tangan bundle.</p>
+            <p>A single voucher payment: {shortAccount(preview.payment!.payer)} → {shortAccount(preview.payment!.payee)}, {formatCredit(preview.payment!.amount)} credit. No bundle signature.</p>
           )}
           <button type="button" onClick={() => void accept()} disabled={busy !== null || (preview.bundle !== null && voucherKey.trim() === '')}>
-            {busy === 'sign' ? 'Menandatangani…' : preview.bundle ? 'Tanda tangani dan terima' : 'Terima'}
+            {busy === 'sign' ? 'Signing…' : preview.bundle ? 'Sign and accept' : 'Accept'}
           </button>
         </>
       )}
@@ -240,7 +240,7 @@ function ProposalSigner({ proposal, voucherKey }: { proposal: BundleProposal; vo
     setError(null)
     try {
       const message = serializeBundleTerms(proposal.terms)
-      if ((await sha256Hex(message)) !== proposal.termsHash) throw new Error('Syarat bundle tidak cocok dengan terms_hash. Dibatalkan.')
+      if ((await sha256Hex(message)) !== proposal.termsHash) throw new Error('Bundle terms do not match the terms_hash. Cancelled.')
       // FE-1: lingkaran dan epoch pada usulan dari server harus lingkaran ini, dan akun ini harus ikut
       const check = checkBundleToSign({ message, recipient: CONTRACT_ID, account, contract: CONTRACT_ID, epoch: proposal.epoch })
       if (!check.ok) throw new Error(check.reason)
@@ -254,10 +254,10 @@ function ProposalSigner({ proposal, voucherKey }: { proposal: BundleProposal; vo
   }
   return (
     <li>
-      Bundle epoch {proposal.epoch}, <code>{proposal.termsHash.slice(0, 12)}…</code>: {proposal.status === 'ready' ? 'siap dikirim solver' : `menunggu ${proposal.missing.map(shortAccount).join(', ')}`}.
+      Bundle epoch {proposal.epoch}, <code>{proposal.termsHash.slice(0, 12)}…</code>: {proposal.status === 'ready' ? 'ready to be sent by the solver' : `waiting for ${proposal.missing.map(shortAccount).join(', ')}`}.
       {account && proposal.missing.includes(account) && (
         <button type="button" onClick={() => void sign()} disabled={busy || voucherKey.trim() === ''}>
-          {busy ? 'Menandatangani…' : 'Tanda tangani bundle'}
+          {busy ? 'Signing…' : 'Sign bundle'}
         </button>
       )}
       {error && <span className="state state-error" role="alert"> {error}</span>}
@@ -284,22 +284,22 @@ export function Negotiation({ listing, voucherKey, onVoucherKey, onClose }: {
   const mineProposals = (proposals.data?.items ?? []).filter((p) => p.listingHash === listing.listingHash)
 
   return (
-    <section className="negotiation" aria-label="Negosiasi">
+    <section className="negotiation" aria-label="Negotiation">
       <div className="page-title">
-        <h3>Negosiasi {listing.offer.assetType} ↔ {listing.want.assetType}</h3>
-        <button type="button" onClick={onClose}>Tutup</button>
+        <h3>Negotiation {listing.offer.assetType} ↔ {listing.want.assetType}</h3>
+        <button type="button" onClick={onClose}>Close</button>
       </div>
       <p>
-        Diskon barter cepat {formatNumber(listing.discountBps / 100)}%, {listing.acceptPayment ? 'lawan boleh membayar harga diskon' : 'hanya barter'}. Berlaku sampai {formatTime(listing.expiresAt)}.
+        Quick barter discount {formatNumber(listing.discountBps / 100)}%, {listing.acceptPayment ? 'the counterparty may pay the discounted price' : 'barter only'}. Valid until {formatTime(listing.expiresAt)}.
       </p>
       {offers.isError && <ErrorNotice error={offers.error} onRetry={() => offers.refetch()} />}
-      {offers.isLoading && <Loading label="Memuat penawaran" />}
-      {offers.data && mine.length === 0 && <p className="state">Belum ada penawaran{owner ? '' : ' dari akun ini'}.</p>}
+      {offers.isLoading && <Loading label="Loading offers" />}
+      {offers.data && mine.length === 0 && <p className="state">No offers yet{owner ? '' : ' from this account'}.</p>}
       {mine.length > 0 && (
         <div className="table-wrap">
-          <table aria-label="Ronde negosiasi">
+          <table aria-label="Negotiation rounds">
             <thead>
-              <tr><th>Ronde</th><th>Dari</th><th>Cara</th><th>Nilai</th><th>Jumlah</th><th>Diserahkan</th><th>Status</th></tr>
+              <tr><th>Round</th><th>From</th><th>Method</th><th>Value</th><th>Quantity</th><th>Delivered</th><th>Status</th></tr>
             </thead>
             <tbody>
               {mine.map((o) => (
@@ -317,26 +317,26 @@ export function Negotiation({ listing, voucherKey, onVoucherKey, onClose }: {
           </table>
         </div>
       )}
-      {!account && <p className="state">Masuk dengan wallet untuk menawar.</p>}
-      {account && !open && <p className="state">Listing sudah tidak terbuka ({listing.status}).</p>}
+      {!account && <p className="state">Sign in with a wallet to negotiate.</p>}
+      {account && !open && <p className="state">The listing is no longer open ({listing.status}).</p>}
       {account && open && !owner && !hasThread && (
         <OfferForm listing={listing} voucherKey={voucherKey} onVoucherKey={onVoucherKey} onDone={() => undefined} />
       )}
       {account && open && waiting.map((o) => (
         <div key={o.offerHash} className="actions">
-          <p>Penawaran ronde {o.round} dari {shortAccount(o.proposer)} menunggu jawaban Anda.</p>
-          <button type="button" onClick={() => { setReplying(true); setAccepting(null) }}>Penawaran balik</button>
-          <button type="button" onClick={() => { setAccepting(o); setReplying(false) }}>Terima</button>
+          <p>Offer round {o.round} from {shortAccount(o.proposer)} is waiting for your answer.</p>
+          <button type="button" onClick={() => { setReplying(true); setAccepting(null) }}>Counteroffer</button>
+          <button type="button" onClick={() => { setAccepting(o); setReplying(false) }}>Accept</button>
           {replying && <OfferForm listing={listing} previous={o} voucherKey={voucherKey} onVoucherKey={onVoucherKey} onDone={() => setReplying(false)} />}
           {accepting?.offerHash === o.offerHash && <AcceptPanel listing={listing} offer={o} voucherKey={voucherKey} onVoucherKey={onVoucherKey} />}
         </div>
       ))}
-      {account && open && hasThread && waiting.length === 0 && <p className="state">Menunggu jawaban pihak lawan.</p>}
+      {account && open && hasThread && waiting.length === 0 && <p className="state">Waiting for the counterparty to answer.</p>}
       {mineProposals.length > 0 && (
         <>
-          <h4>Usulan bundle</h4>
+          <h4>Bundle proposals</h4>
           {account && mineProposals.some((p) => p.missing.includes(account)) && <VoucherKeyField value={voucherKey} onChange={onVoucherKey} />}
-          <ul aria-label="Usulan bundle">
+          <ul aria-label="Bundle proposals">
             {mineProposals.map((p) => <ProposalSigner key={p.termsHash} proposal={p} voucherKey={voucherKey} />)}
           </ul>
         </>

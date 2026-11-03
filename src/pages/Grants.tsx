@@ -6,23 +6,23 @@ import { formatCredit, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
 
 // FE-017 (F8): grant akses per anggota dari D9 `grants` (BE-038). Hanya baca. Kelas A sampai D seperti registri D10; rahasia tidak ada di D9.
-const STATUS_LABEL: Record<GrantStatus, string> = { offered: 'Ditawarkan', active: 'Aktif', revoked: 'Dicabut', expired: 'Kedaluwarsa' }
+const STATUS_LABEL: Record<GrantStatus, string> = { offered: 'Offered', active: 'Active', revoked: 'Revoked', expired: 'Expired' }
 const REASON_LABEL: Record<string, string> = {
-  grantor: 'dicabut pemberi',
-  grantee: 'dicabut penerima',
-  operator: 'dicabut operator',
-  expired: 'masa berlaku habis',
-  defaulted: 'penerima gagal bayar (defaulted)',
+  grantor: 'revoked by grantor',
+  grantee: 'revoked by grantee',
+  operator: 'revoked by operator',
+  expired: 'validity ended',
+  defaulted: 'grantee defaulted (defaulted)',
 }
-const CLASS_LABEL: Record<string, string> = { A: 'A: dialihkan', B: 'B: kredensial turunan', C: 'C: broker TEE', D: 'D: endpoint x402', X: 'X: ditolak' }
+const CLASS_LABEL: Record<string, string> = { A: 'A: transferred', B: 'B: derived credential', C: 'C: TEE broker', D: 'D: x402 endpoint', X: 'X: rejected' }
 
 const ESCROW_STATE_LABEL: Record<string, string> = {
-  held: 'dipegang kontrak',
-  completing: 'sedang diserahkan',
-  cancelling: 'sedang dikembalikan',
-  delivered: 'sudah diserahkan',
-  cancelled: 'dikembalikan ke pemberi',
-  stuck: 'macet',
+  held: 'held by contract',
+  completing: 'being delivered',
+  cancelling: 'being returned',
+  delivered: 'delivered',
+  cancelled: 'returned to grantor',
+  stuck: 'stuck',
 }
 
 /** Escrow kelas A: NFT, atau jumlah persis token NEP-141 dalam satuan token itu (bukan credit). */
@@ -32,13 +32,13 @@ export function EscrowCell({ escrow }: { escrow: GrantEscrow | null | undefined 
   if (escrow.kind === 'mt') {
     return (
       <>
-        Multi-token <code className="plain">{shortAccount(escrow.mtContract)}</code> <code className="plain">{escrow.tokenId}</code>: {escrow.amount} satuan token ({state})
+        Multi-token <code className="plain">{shortAccount(escrow.mtContract)}</code> <code className="plain">{escrow.tokenId}</code>: {escrow.amount} token units ({state})
       </>
     )
   }
   return escrow.kind === 'ft' ? (
     <>
-      Token <code className="plain">{shortAccount(escrow.ftContract)}</code>: {escrow.amount} satuan token ({state})
+      Token <code className="plain">{shortAccount(escrow.ftContract)}</code>: {escrow.amount} token units ({state})
     </>
   ) : (
     <>
@@ -51,13 +51,13 @@ export function EscrowCell({ escrow }: { escrow: GrantEscrow | null | undefined 
 export function formatExpiry(ns: string): string {
   try {
     const ms = Number(BigInt(ns) / 1_000_000n)
-    return new Date(ms).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC'
+    return new Date(ms).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC'
   } catch {
-    return 'belum tersedia'
+    return 'not available'
   }
 }
 
-type Row = Grant & { role: 'pemberi' | 'penerima' }
+type Row = Grant & { role: 'grantor' | 'grantee' }
 
 function GrantTable({ rows }: { rows: Row[] }) {
   const hasToken = rows.some((g) => g.escrow?.kind === 'ft' || g.escrow?.kind === 'mt')
@@ -65,24 +65,24 @@ function GrantTable({ rows }: { rows: Row[] }) {
     <div className="table-wrap">
       {hasToken && (
         <p className="state" role="note" data-testid="ft-escrow-warning">
-          Escrow token atau multi-token (kelas A): kontrak memegang <strong>jumlah persis</strong> yang tertulis di grant. Token dengan biaya transfer tidak didukung: jumlah yang
-          tiba lebih kecil, jadi titipannya ditolak dan token kembali ke pemberi. Token terbatas (whitelist, pembekuan) bisa menolak penyerahan ke pembeli;
-          pembayaran pembeli lalu dibatalkan dan grant tetap ditawarkan. Pembeli harus terdaftar di kontrak token (<code className="plain">storage_deposit</code>). Titipan multi-token yang ditolak dikembalikan oleh kontrak multi-token itu sendiri; hanya kontrak yang tertulis di grant yang boleh menitipkan.
+          Token or multi-token escrow (class A): the contract holds the <strong>exact amount</strong> written in the grant. Tokens with a transfer fee are not supported: the amount that
+          arrives is smaller, so the escrow is rejected and the token returns to the grantor. Restricted tokens (whitelist, freezing) can refuse delivery to the buyer;
+          the buyer's payment is then cancelled and the grant stays offered. The buyer must be registered on the token contract (<code className="plain">storage_deposit</code>). A rejected multi-token escrow is returned by the multi-token contract itself; only the contract written in the grant may escrow.
         </p>
       )}
-      <table aria-label="Daftar grant">
+      <table aria-label="Grant list">
         <thead>
           <tr>
             <th scope="col" className="num">ID</th>
-            <th scope="col">Peran</th>
-            <th scope="col">Jenis aset</th>
-            <th scope="col">Kelas</th>
-            <th scope="col">Pemberi</th>
-            <th scope="col">Penerima</th>
-            <th scope="col" className="num">Harga</th>
+            <th scope="col">Role</th>
+            <th scope="col">Asset type</th>
+            <th scope="col">Class</th>
+            <th scope="col">Grantor</th>
+            <th scope="col">Grantee</th>
+            <th scope="col" className="num">Price</th>
             <th scope="col">Status</th>
-            <th scope="col">Berlaku sampai</th>
-            <th scope="col">Alasan pencabutan</th>
+            <th scope="col">Valid until</th>
+            <th scope="col">Revocation reason</th>
             <th scope="col">Escrow</th>
           </tr>
         </thead>
@@ -127,8 +127,8 @@ export function Grants() {
   const rows: Row[] =
     asGrantee.data && asGrantor.data
       ? [
-          ...asGrantor.data.items.map((g) => ({ ...g, role: 'pemberi' as const })),
-          ...asGrantee.data.items.filter((g) => g.grantor !== account).map((g) => ({ ...g, role: 'penerima' as const })),
+          ...asGrantor.data.items.map((g) => ({ ...g, role: 'grantor' as const })),
+          ...asGrantee.data.items.filter((g) => g.grantor !== account).map((g) => ({ ...g, role: 'grantee' as const })),
         ].sort((a, b) => a.grantId - b.grantId)
       : []
   // satu query bersama untuk status loading dan galat
@@ -136,9 +136,9 @@ export function Grants() {
 
   return (
     <>
-      <p>Grant akses (F8): anggota menyewakan akses tanpa menyerahkan rahasianya. Data dari read API; rahasia tidak pernah ada di sana.</p>
+      <p>Access grants (F8): members rent out access without handing over their secrets. Data comes from the read API; secrets are never there.</p>
       <label>
-        <span>Anggota</span>
+        <span>Member</span>
         <select value={account ?? ''} onChange={(e) => setChosen(e.target.value)}>
           {members.data?.items.map((m) => (
             <option key={m.account} value={m.account}>
@@ -151,7 +151,7 @@ export function Grants() {
       <label>
         <span>Status</span>
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">Semua</option>
+          <option value="">All</option>
           {(Object.keys(STATUS_LABEL) as GrantStatus[]).map((s) => (
             <option key={s} value={s}>
               {STATUS_LABEL[s]}
@@ -161,9 +161,9 @@ export function Grants() {
       </label>
       <QueryState
         query={query as never}
-        loadingLabel="Memuat grant"
+        loadingLabel="Loading grants"
         isEmpty={(d: { items: Row[] }) => d.items.length === 0}
-        empty="Anggota ini belum punya grant."
+        empty="This member has no grants yet."
       >
         {(data: { items: Row[] }) => <GrantTable rows={data.items} />}
       </QueryState>

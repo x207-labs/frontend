@@ -23,7 +23,7 @@ export function useTemplateResult(kind: AssetKind | '', values: Record<string, s
 function FieldInput({ field, value, onChange }: { field: Field; value: string; onChange: (v: string) => void }) {
   return (
     <label>
-      <span>{field.label}{field.optional ? ' (opsional)' : ''}</span>
+      <span>{field.label}{field.optional ? ' (optional)' : ''}</span>
       {field.kind === 'select' ? (
         <select value={value} onChange={(e) => onChange(e.target.value)}>
           {field.options!.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
@@ -54,12 +54,12 @@ export function AssetTemplateForm({ onApply, check, onCheck, canCheck = false }:
   const fields = kind === '' ? [] : [...KIND_FIELDS[kind].fields, ...COMMON_FIELDS]
 
   return (
-    <section aria-label="Template aset on-chain" className="form asset-template">
-      <h3>Template aset on-chain (kelas A)</h3>
+    <section aria-label="On-chain asset template" className="form asset-template">
+      <h3>On-chain asset template (class A)</h3>
       <label>
-        <span>Jenis aset</span>
+        <span>Asset type</span>
         <select value={kind} onChange={(e) => { setKind(e.target.value as AssetKind | ''); setValues({ hours: '24' }) }}>
-          <option value="">Isi sendiri (tanpa template)</option>
+          <option value="">Fill in manually (no template)</option>
           {ASSET_KINDS.map((k) => <option key={k} value={k}>{KIND_FIELDS[k].label}</option>)}
         </select>
       </label>
@@ -71,31 +71,31 @@ export function AssetTemplateForm({ onApply, check, onCheck, canCheck = false }:
       )}
       {result && 'template' in result && (
         <>
-          <ul className="warnings" aria-label="Risiko" data-testid="template-warnings">
+          <ul className="warnings" aria-label="Risks" data-testid="template-warnings">
             {result.template.warnings.map((w) => <li key={w}>{w}</li>)}
           </ul>
           <details>
-            <summary>Scope dan panggilan on-chain</summary>
-            <p>Scope <code>limits.scope</code> untuk <code>offer_grant</code> ({result.template.assetType}, <code>{result.template.deliveryMethod}</code>):</p>
+            <summary>Scope and on-chain call</summary>
+            <p>Scope <code>limits.scope</code> for <code>offer_grant</code> ({result.template.assetType}, <code>{result.template.deliveryMethod}</code>):</p>
             <pre data-testid="template-scope">{result.template.scope}</pre>
-            <p>Detail listing:</p>
+            <p>Listing detail:</p>
             <pre data-testid="template-detail">{result.template.detail}</pre>
           </details>
           <div>
-            <button type="button" onClick={() => onApply(result.template)}>Isi sisi “Menawarkan” dari template</button>
+            <button type="button" onClick={() => onApply(result.template)}>Fill the “Offering” side from the template</button>
           </div>
           {onCheck && (
-            <div className="listing-check" aria-label="Pemeriksaan sebelum titipan">
+            <div className="listing-check" aria-label="Pre-escrow check">
               <p>
-                Periksa listing ini ke backend <strong>sebelum</strong> memanggil <code>offer_grant</code> dan menitipkan aset: aset yang sudah dititipkan untuk listing yang ditolak
-                baru bisa diambil kembali setelah grant kedaluwarsa. Isi sisi “Menawarkan”, sisi “Mencari”, dan kunci voucher dulu.
+                Check this listing with the backend <strong>before</strong> calling <code>offer_grant</code> and escrowing the asset: an asset already escrowed for a rejected listing
+                can only be reclaimed after the grant expires. Fill in the “Offering” side, the “Seeking” side, and the voucher key first.
               </p>
               <button type="button" disabled={!canCheck || check?.state === 'busy'} onClick={onCheck}>
-                {check?.state === 'busy' ? 'Memeriksa…' : 'Periksa listing sebelum titipan'}
+                {check?.state === 'busy' ? 'Checking…' : 'Check listing before escrow'}
               </button>
-              {check?.state === 'ok' && <p className="state" role="status" data-testid="listing-check-ok">Lulus pemeriksaan (<code>{check.hash.slice(0, 12)}</code>): aman memanggil offer_grant dan menitipkan aset. Lulus belum menjamin: pemeriksaan diulang saat listing dipasang.</p>}
-              {check?.state === 'error' && <p className="state state-error" role="alert" data-testid="listing-check-error">Listing ditolak: {check.message}. Jangan panggil offer_grant dan jangan titipkan aset.</p>}
-              {(check === undefined || check.state === 'idle') && <p className="state" data-testid="listing-check-idle">Belum diperiksa: jangan panggil offer_grant atau titipkan aset dulu.</p>}
+              {check?.state === 'ok' && <p className="state" role="status" data-testid="listing-check-ok">Check passed (<code>{check.hash.slice(0, 12)}</code>): safe to call offer_grant and escrow the asset. Passing is no guarantee: the check is repeated when the listing is posted.</p>}
+              {check?.state === 'error' && <p className="state state-error" role="alert" data-testid="listing-check-error">Listing rejected: {check.message}. Do not call offer_grant and do not escrow the asset.</p>}
+              {(check === undefined || check.state === 'idle') && <p className="state" data-testid="listing-check-idle">Not checked yet: do not call offer_grant or escrow the asset yet.</p>}
             </div>
           )}
         </>

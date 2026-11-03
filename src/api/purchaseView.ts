@@ -10,7 +10,7 @@ export function toPurchaseView(input: unknown): PurchaseView {
   const raw = (input ?? {}) as Raw
   const id = pick(raw, 'purchase_id', 'purchaseId')
   const status = raw.status as PurchaseStatus
-  if ((typeof id !== 'string' && typeof id !== 'number') || !STATUSES.includes(status)) throw new Error('Jawaban pembelian tidak dikenal: purchase_id atau status tidak sah')
+  if ((typeof id !== 'string' && typeof id !== 'number') || !STATUSES.includes(status)) throw new Error('Unrecognized purchase response: purchase_id or status is invalid')
   const source = raw.source as Raw | null | undefined
   const release = pick(raw, 'release', 'release') as Raw | null | undefined
   const until = pick(raw, 'dispute_until', 'disputeUntil')

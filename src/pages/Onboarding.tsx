@@ -58,42 +58,42 @@ function JoinForm({ registered }: { registered: boolean }) {
         void run()
       }}
     >
-      {!account && <p className="state">Masuk dengan wallet untuk bergabung ke lingkaran.</p>}
-      {account && registered && <p className="state">Akun {account} sudah terdaftar; tambah stake saja.</p>}
+      {!account && <p className="state">Sign in with a wallet to join the circle.</p>}
+      {account && registered && <p className="state">Account {account} is already registered; just add stake.</p>}
       {needsJoin && (
         <>
           <label>
             <span>
-              Kunci voucher (<code className="plain">pubkey_voucher</code>)
+              Voucher key (<code className="plain">pubkey_voucher</code>)
             </span>
             <input value={pubkey} onChange={(e) => setPubkey(e.target.value)} placeholder="ed25519:…" disabled={!account} />
-            {pubkey && !pubkeyOk && <small className="state-error" role="alert">Harus berformat ed25519: diikuti base58.</small>}
+            {pubkey && !pubkeyOk && <small className="state-error" role="alert">Must have the format ed25519: followed by base58.</small>}
           </label>
           <label>
             <span>
-              Hash syarat lingkaran (<code className="plain">terms_hash</code>)
+              Circle terms hash (<code className="plain">terms_hash</code>)
             </span>
             <input value={termsHash} onChange={(e) => setTermsHash(e.target.value)} disabled={!account} />
-            {termsHash && !hashOk && <small className="state-error" role="alert">Harus 64 karakter heksadesimal huruf kecil.</small>}
+            {termsHash && !hashOk && <small className="state-error" role="alert">Must be 64 lowercase hexadecimal characters.</small>}
           </label>
           <label className="check">
             <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} disabled={!account} />
-            <span>Saya menyetujui syarat lingkaran dengan hash di atas.</span>
+            <span>I agree to the circle terms with the hash above.</span>
           </label>
-          {!agreed && account && <small className="state-error" data-hint>Persetujuan syarat diperlukan.</small>}
+          {!agreed && account && <small className="state-error" data-hint>Agreement to the terms is required.</small>}
         </>
       )}
       <label>
-        <span>Jumlah stake (USDT)</span>
+        <span>Stake amount (USDT)</span>
         <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" disabled={!account} />
-        {amount && atomic === null && <small className="state-error" role="alert">Jumlah harus lebih dari 0.</small>}
+        {amount && atomic === null && <small className="state-error" role="alert">Amount must be greater than 0.</small>}
       </label>
       <label>
-        <span>Sumber USDT</span>
+        <span>USDT source</span>
         <select value={source} onChange={(e) => setSource(e.target.value as Source)} disabled={!account}>
-          <option value="near">USDT di akun NEAR</option>
-          <option value="intents">USDT di saldo Intents</option>
-          <option value="other">Aset lain lewat 1Click</option>
+          <option value="near">USDT in the NEAR account</option>
+          <option value="intents">USDT in the Intents balance</option>
+          <option value="other">Other asset via 1Click</option>
         </select>
       </label>
       {source === 'other' && account && atomic && (
@@ -101,17 +101,17 @@ function JoinForm({ registered }: { registered: boolean }) {
       )}
       {needsJoin && (
         <p className="state" role="note" data-testid="join-deposit">
-          <code className="plain">join</code> melampirkan deposit <strong>{formatNear(JOIN_STORAGE_DEPOSIT)} NEAR</strong> dari akun NEAR Anda untuk storage anggota di kontrak.
-          Deposit <strong>tidak kembali saat keluar</strong> dari lingkaran (ADR-29): entri anggota tetap tersimpan sebagai riwayat. Hanya kelebihan di atas
-          jumlah ini dikembalikan. Pastikan akun punya saldo NEAR sedikitnya {formatNear(JOIN_STORAGE_DEPOSIT + 80_000_000_000_000_000_000_000n)} NEAR untuk deposit dan gas.
+          <code className="plain">join</code> attaches a deposit of <strong>{formatNear(JOIN_STORAGE_DEPOSIT)} NEAR</strong> from your NEAR account for member storage on the contract.
+          The deposit is <strong>not refunded when you leave</strong> the circle (ADR-29): the member entry stays stored as history. Only the excess above
+          this amount is refunded. Make sure the account has a NEAR balance of at least {formatNear(JOIN_STORAGE_DEPOSIT + 80_000_000_000_000_000_000_000n)} NEAR for the deposit and gas.
         </p>
       )}
       <div>
         <button type="submit" disabled={!canSend}>
-          {signing ? 'Menunggu wallet…' : source === 'near' ? 'Tanda tangani join dan stake' : 'Tanda tangani withdraw, join, dan stake'}
+          {signing ? 'Waiting for wallet…' : source === 'near' ? 'Sign join and stake' : 'Sign withdraw, join, and stake'}
         </button>
       </div>
-      {step && <p className="state" role="status">Langkah: {step}</p>}
+      {step && <p className="state" role="status">Step: {step}</p>}
       <TxResult state={state} />
     </form>
   )
@@ -124,21 +124,21 @@ function StatusPanel({ account }: { account: string }) {
     if (member.error instanceof ApiError && member.error.code === 'member_not_found') {
       return (
         <p className="state">
-          Akun {account} belum terdaftar. <a href="#bergabung">Isi form bergabung di bawah</a>.
+          Account {account} is not registered yet. <a href="#join">Fill in the join form below</a>.
         </p>
       )
     }
     if (member.isError) return <ErrorNotice error={member.error} onRetry={() => member.refetch()} />
   }
   const m = member.data
-  const cell = (value: string | undefined) => (m ? formatCredit(value) : <Loading label="Memuat" />)
+  const cell = (value: string | undefined) => (m ? formatCredit(value) : <Loading label="Loading" />)
   return (
-    <dl className="status-panel" aria-label="Status onboarding">
+    <dl className="status-panel" aria-label="Onboarding status">
       <dt>Status</dt>
-      <dd>{m ? <code>{m.status}</code> : <Loading label="Memuat" />}</dd>
+      <dd>{m ? <code>{m.status}</code> : <Loading label="Loading" />}</dd>
       <dt>Stake</dt>
       <dd>{cell(m?.stake)}</dd>
-      <dt>Limit kredit</dt>
+      <dt>Credit limit</dt>
       <dd>{cell(m?.limit)}</dd>
       <dt>Headroom</dt>
       <dd>{cell(m?.headroom)}</dd>
@@ -153,16 +153,16 @@ export function Onboarding() {
   const registered = Boolean(memberQuery.data)
   return (
     <>
-      <QueryState query={members} loadingLabel="Memuat anggota">
+      <QueryState query={members} loadingLabel="Loading members">
         {(data) => (
           <p>
-            {data.items.length} anggota terdaftar di lingkaran {CIRCLE}.
+            {data.items.length} members registered in circle {CIRCLE}.
           </p>
         )}
       </QueryState>
       {account && <StatusPanel account={account} />}
       {memberQuery.data && <ExitPanel member={memberQuery.data} />}
-      <h2 id="bergabung">Bergabung</h2>
+      <h2 id="join">Join</h2>
       <JoinForm registered={registered} />
     </>
   )

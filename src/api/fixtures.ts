@@ -227,7 +227,7 @@ const emptyList = { ...amounts, items: [], nextCursor: null }
 export function fixtureReply(path: string): FixtureReply {
   const url = new URL(path, 'http://fixture')
   const prefix = `/x207/circles/${circle}`
-  if (!url.pathname.startsWith(prefix)) return notFound('circle_not_found', 'Lingkaran tidak ada')
+  if (!url.pathname.startsWith(prefix)) return notFound('circle_not_found', 'Circle not found')
   const rest = url.pathname.slice(prefix.length)
 
   if (rest === '/epochs') return ok({ ...amounts, items: epochs, nextCursor: null })
@@ -246,7 +246,7 @@ export function fixtureReply(path: string): FixtureReply {
   if (limits) {
     return members.some((m) => m.account === decodeURIComponent(limits[1]))
       ? ok({ ...amounts, ...limitHistory })
-      : notFound('member_not_found', 'Akun belum terdaftar di lingkaran')
+      : notFound('member_not_found', 'Account is not registered in the circle')
   }
 
   if (rest === '/invoices') {
@@ -258,7 +258,7 @@ export function fixtureReply(path: string): FixtureReply {
   const invoiceOne = rest.match(/^\/invoices\/([0-9a-f]{64})$/)
   if (invoiceOne) {
     const found = invoices.find((i) => i.invoice_hash === invoiceOne[1])
-    return found ? ok(found) : notFound('invoice_not_found', 'Invoice tidak ada')
+    return found ? ok(found) : notFound('invoice_not_found', 'Invoice not found')
   }
   if (rest === '/orders') {
     const party = url.searchParams.get('party')
@@ -269,7 +269,7 @@ export function fixtureReply(path: string): FixtureReply {
   const orderOne = rest.match(/^\/orders\/([0-9a-f]{64})$/)
   if (orderOne) {
     const found = orders.find((o) => o.order_hash === orderOne[1])
-    return found ? ok(found) : notFound('order_not_found', 'Pesanan tidak ada')
+    return found ? ok(found) : notFound('order_not_found', 'Order not found')
   }
   const orderProofs = rest.match(/^\/orders\/([0-9a-f]{64})\/onchain-proofs$/)
   if (orderProofs) return ok({ items: [{ tx_hash: 'AbC1', method: 'close_epoch', signer: near('keeper') }, { tx_hash: 'AbC2', method: 'close_epoch', signer: near('keeper') }] })
@@ -290,7 +290,7 @@ export function fixtureReply(path: string): FixtureReply {
   const account = rest.match(/^\/members\/([^/]+)(\/settlements)?$/)
   if (account) {
     const found = members.find((m) => m.account === decodeURIComponent(account[1]))
-    if (!found) return notFound('member_not_found', 'Akun belum terdaftar di lingkaran')
+    if (!found) return notFound('member_not_found', 'Account is not registered in the circle')
     if (!account[2]) return ok({ circle, ...amounts, ...found })
     const items = epochSettlements42.items.filter((i) => i.account === found.account)
     return ok({ ...amounts, items, nextCursor: null })
@@ -300,7 +300,7 @@ export function fixtureReply(path: string): FixtureReply {
   if (epoch) {
     const n = Number(epoch[1])
     if (!epochs.some((e) => e.epoch === n)) {
-      return notFound('epoch_not_found', `Epoch ${n} belum ada di D9`)
+      return notFound('epoch_not_found', `Epoch ${n} is not in D9 yet`)
     }
     const status = url.searchParams.get('status')
     switch (epoch[2]) {
@@ -318,7 +318,7 @@ export function fixtureReply(path: string): FixtureReply {
         })
     }
   }
-  return notFound('not_found', `Tidak ada data contoh untuk ${path}`)
+  return notFound('not_found', `No sample data for ${path}`)
 }
 
 function safeJson(text: string): { params?: unknown } | null {

@@ -52,7 +52,7 @@ export const nearConnectPort: WalletPort = {
     const wallet = await c.connect()
     const accounts = await wallet.getAccounts()
     const accountId = accounts[0]?.accountId
-    if (!accountId) throw new Error('Wallet tidak memberikan akun')
+    if (!accountId) throw new Error('Wallet did not provide an account')
     remember(true)
     return accountId
   },

@@ -11,33 +11,33 @@ export function ResourceListingForm({ onApply }: { onApply: (template: ResourceT
   const set = <K extends keyof ResourceValues>(key: K, value: ResourceValues[K]) => setValues((prev) => ({ ...prev, [key]: value }))
 
   return (
-    <section aria-label="Template sumber daya terukur" className="form resource-template">
-      <h3>Sumber daya terukur (kelas D)</h3>
+    <section aria-label="Metered resource template" className="form resource-template">
+      <h3>Metered resource (class D)</h3>
       <label>
-        <span>Jenis sumber daya</span>
+        <span>Resource type</span>
         <select value={values.kind} onChange={(e) => setValues({ ...EMPTY_RESOURCE, kind: e.target.value as ResourceValues['kind'] })}>
-          <option value="">Isi sendiri (tanpa template)</option>
+          <option value="">Fill in manually (no template)</option>
           {METERED_KINDS.map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
         </select>
       </label>
       {preset && (
         <>
           <label>
-            <span>Satuan</span>
+            <span>Unit</span>
             <select value={values.unit === '' ? preset.units[0] : values.unit} onChange={(e) => set('unit', e.target.value)}>
               {preset.units.map((u) => <option key={u} value={u}>{UNIT_LABEL[u]} ({u})</option>)}
             </select>
           </label>
           <label>
-            <span>Harga per satuan (credit)</span>
+            <span>Price per unit (credit)</span>
             <input value={values.unitPrice} onChange={(e) => set('unitPrice', e.target.value)} inputMode="decimal" />
           </label>
           <label>
-            <span>Alamat endpoint (https)</span>
+            <span>Endpoint address (https)</span>
             <input value={values.endpoint} onChange={(e) => set('endpoint', e.target.value)} placeholder="https://gpu.example.com/api/run" />
           </label>
           <label>
-            <span>Perkiraan jumlah satuan</span>
+            <span>Estimated number of units</span>
             <input value={values.quantity} onChange={(e) => set('quantity', e.target.value)} inputMode="decimal" />
           </label>
         </>
@@ -47,18 +47,18 @@ export function ResourceListingForm({ onApply }: { onApply: (template: ResourceT
         <>
           <p data-testid="resource-estimate">
             {result.estimateAtomic === null
-              ? 'Isi perkiraan jumlah satuan (angka > 0, paling banyak 6 desimal).'
-              : `Perkiraan biaya ${values.quantity} ${result.unit}: ${fromAtomic(result.estimateAtomic)} credit. Batas per request: ${result.maxQuantity} ${result.unit}.`}
+              ? 'Enter the estimated number of units (a number > 0, at most 6 decimals).'
+              : `Estimated cost for ${values.quantity} ${result.unit}: ${fromAtomic(result.estimateAtomic)} credit. Limit per request: ${result.maxQuantity} ${result.unit}.`}
           </p>
-          <ul className="warnings" aria-label="Risiko sumber daya" data-testid="resource-warnings">
+          <ul className="warnings" aria-label="Resource risks" data-testid="resource-warnings">
             {result.warnings.map((w) => <li key={w}>{w}</li>)}
           </ul>
           <details>
-            <summary>Detail listing</summary>
+            <summary>Listing detail</summary>
             <pre data-testid="resource-detail">{result.detail}</pre>
           </details>
           <div>
-            <button type="button" onClick={() => onApply(result)}>Isi sisi “Menawarkan” dari sumber daya</button>
+            <button type="button" onClick={() => onApply(result)}>Fill the “Offering” side from the resource</button>
           </div>
         </>
       )}

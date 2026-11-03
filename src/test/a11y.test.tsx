@@ -15,7 +15,7 @@ describe('FE-031 accessibility (axe-core)', () => {
     it(`TC-FE-031-01 ${title} (${path}): no serious or critical violation`, async () => {
       const { container } = renderApp(path, undefined, false, createMockWallet(ACCOUNT, ACCOUNT))
       await screen.findAllByRole('heading')
-      await waitFor(() => expect(screen.queryByText(/Memuat/)).not.toBeInTheDocument(), { timeout: 3000 }).catch(() => undefined)
+      await waitFor(() => expect(screen.queryByText(/Loading/)).not.toBeInTheDocument(), { timeout: 3000 }).catch(() => undefined)
       const results = await axe.run(container, { rules: { 'color-contrast': { enabled: false }, region: { enabled: false } }, resultTypes: ['violations'] })
       const bad = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
       expect(bad.map((v) => `${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')})`)).toEqual([])
@@ -30,22 +30,22 @@ describe('FE-031 accessibility (axe-core)', () => {
   })
   it('TC-FE-031-06 the first stop of the keyboard is the skip link; it moves the focus to the content; each page has its own title', async () => {
     const user = userEvent.setup()
-    renderApp('/laporan', undefined, false, createMockWallet(ACCOUNT, ACCOUNT))
+    renderApp('/reports', undefined, false, createMockWallet(ACCOUNT, ACCOUNT))
     await screen.findAllByRole('heading')
-    expect(document.title).toBe('Laporan 207 · x207')
+    expect(document.title).toBe('207 report · x207')
     await user.tab()
-    const skip = screen.getByRole('link', { name: 'Lewati ke isi halaman' })
+    const skip = screen.getByRole('link', { name: 'Skip to content' })
     expect(skip).toHaveFocus()
     await user.keyboard('{Enter}')
     expect(screen.getByRole('main')).toHaveFocus()
     // a change of page moves the focus to the content and changes the title
-    await user.click(within(screen.getByRole('navigation', { name: 'Halaman' })).getByRole('link', { name: 'Statistik kliring' }))
-    await waitFor(() => expect(document.title).toBe('Statistik kliring · x207'))
+    await user.click(within(screen.getByRole('navigation', { name: 'Pages' })).getByRole('link', { name: 'Clearing stats' }))
+    await waitFor(() => expect(document.title).toBe('Clearing stats · x207'))
     expect(screen.getByRole('main')).toHaveFocus()
   })
 
   it('TC-FE-031-07 the loading state and the errors are announced: a status region while loading, an alert when a read fails', async () => {
-    renderApp('/statistik', (p) => (p.includes('/metrics') || p.includes('/stats') ? { status: 500, body: { error: { code: 'boom', message: 'x' } } } : undefined), false, createMockWallet(ACCOUNT, ACCOUNT))
+    renderApp('/stats', (p) => (p.includes('/metrics') || p.includes('/stats') ? { status: 500, body: { error: { code: 'boom', message: 'x' } } } : undefined), false, createMockWallet(ACCOUNT, ACCOUNT))
     expect((await screen.findAllByRole('status')).length + (await screen.findAllByRole('alert').catch(() => [])).length).toBeGreaterThan(0)
   })
 

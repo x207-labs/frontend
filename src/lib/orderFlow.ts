@@ -6,17 +6,17 @@ import { toAtomic } from './amount'
 // FE-027: pesanan jasa (pipeline P6, ADR-45), dari Spec API Backend 5f. Aturan dokumen ada di SDK (SD-069: `normalizeOrder`); di sini hanya mengubah isian formulir menjadi
 // dokumen, menghitung hash dengan sha256 browser atas JSON kanonik SDK, dan menandatangani notice.
 export const KIND_LABEL: Record<OrderKind, string> = {
-  prompt: '39 · Prompt atau workflow', research: '40 · Riset', translation: '41 · Terjemahan', annotation: '42 · Anotasi data', scraping: '43 · Pengumpulan data web',
-  audit: '52 · Audit kode', loadtest: '53 · Uji beban', freelance: '83 · Freelance', bug: '88 · Uji produk (per bug)', lead: '51 · Referral dan lead (per konversi)',
-  keeper: '46 · Jasa keeper (per tx)', solver: '48 · Jasa solver (per tx)', delegate: '16 · Jasa delegate (per suara)',
+  prompt: '39 · Prompt or workflow', research: '40 · Research', translation: '41 · Translation', annotation: '42 · Data annotation', scraping: '43 · Web data collection',
+  audit: '52 · Code audit', loadtest: '53 · Load test', freelance: '83 · Freelance', bug: '88 · Product testing (per bug)', lead: '51 · Referral and leads (per conversion)',
+  keeper: '46 · Keeper service (per tx)', solver: '48 · Solver service (per tx)', delegate: '16 · Delegate service (per vote)',
 }
 /** Semua jenis bisa dibuat dari formulir ini; `delegate` memakai kolom mandat tambahan (FE-030). */
 export const CREATABLE_KINDS = ORDER_KINDS
 export const KIND_NOTE: Partial<Record<OrderKind, string>> = {
-  scraping: 'Pengumpulan data dari situs web bisa melanggar ketentuan layanan (ToS) situs itu. Penjual bertanggung jawab atas caranya; x207 tidak memeriksanya.',
-  loadtest: 'Uji beban hanya untuk situs yang Anda kuasai. Backend meminta bukti: berkas /.well-known/x207-loadtest atau DNS TXT berisi hash pesanan, sebelum pesanan diterima.',
-  prompt: 'Hasil yang mudah disalin wajib punya contoh: hash contoh dikunci di pesanan sehingga tidak bisa disalin lalu disengketakan.',
-  delegate: 'Delegate dibayar per proposal yang ia pilih dengan suara setuju atau tolak, sesuai mandat publik di bawah. Aksi lain di DAO (finalisasi, hapus suara) tidak dibayar, dan satu proposal dibayar sekali. Mandat menyebut jenis proposal yang boleh dibayar, bukan cara memilih: teks aturan hanya hash-nya yang terkunci.',
+  scraping: 'Collecting data from a website may violate that site\'s terms of service (ToS). The seller is responsible for how it is done; x207 does not check it.',
+  loadtest: 'Load tests are only for sites you control. The backend asks for proof before accepting the order: a /.well-known/x207-loadtest file or a DNS TXT record containing the order hash.',
+  prompt: 'Results that are easy to copy must have a sample: the sample hash is locked in the order so it cannot be copied and then disputed.',
+  delegate: 'The delegate is paid per proposal they vote on, approve or reject, under the public mandate below. Other DAO actions (finalize, remove vote) are not paid, and each proposal is paid once. The mandate names the proposal kinds that may be paid, not how to vote: only the hash of the rules text is locked.',
 }
 export { ORDER_KINDS, ORDER_CATALOG_NO, ORDER_PATTERN, PROOF_METHODS }
 
@@ -36,7 +36,7 @@ const seconds = (text: string): number => {
 /** Dokumen dari isian formulir, atau teks galat. Hash contoh dan spesifikasi dihitung di browser dari teks yang diketik. */
 /** Mandat dari isian formulir (`delegate`), atau teks galat; hash teks aturan dihitung di browser. */
 export async function toMandate(f: OrderForm, circle: string): Promise<DelegateMandate | string> {
-  if (f.rules.trim() === '') return 'Isi teks aturan mandat (hanya hash-nya yang dikunci).'
+  if (f.rules.trim() === '') return 'Enter the mandate rules text (only its hash is locked).'
   const kinds = f.kinds.split(/[\s,]+/).filter((k) => k !== '')
   const mandate: DelegateMandate = { circle, dao: f.dao.trim(), kinds, rules_hash: await sha256Hex(f.rules.trim()) }
   try {
@@ -49,16 +49,16 @@ export async function toMandate(f: OrderForm, circle: string): Promise<DelegateM
 export const mandateHashOf = (m: DelegateMandate): Promise<string> => sha256Hex(serializeMandate(m))
 
 export async function toOrderDocument(f: OrderForm, circle: string, buyer: string, nonce: string, mandateHash: string | null = null): Promise<OrderDocument | string> {
-  if (f.kind === '') return 'Pilih jenis jasa.'
+  if (f.kind === '') return 'Choose a service kind.'
   const milestones = []
   for (const [k, m] of f.milestones.entries()) {
     const amount = toAtomic(m.amount)
-    if (amount === null) return `Tonggak ${k + 1}: jumlah harus angka credit > 0.`
+    if (amount === null) return `Milestone ${k + 1}: amount must be a credit number > 0.`
     const due = seconds(m.due)
-    if (due === 0) return `Tonggak ${k + 1}: isi tenggat (UTC).`
+    if (due === 0) return `Milestone ${k + 1}: enter a due date (UTC).`
     milestones.push({ amount, due_at: due })
   }
-  if (f.spec.trim() === '') return 'Isi spesifikasi kerja.'
+  if (f.spec.trim() === '') return 'Enter the work specification.'
   const proofAmount = toAtomic(f.proofAmount)
   const doc: OrderDocument = {
     circle, kind: f.kind, buyer, seller: f.seller.trim(), spec_hash: await sha256Hex(f.spec.trim()), milestones, nonce,
@@ -97,24 +97,24 @@ export async function assertOrderHash(view: OrderView, opened: string): Promise<
   try {
     computed = await orderHashOf(orderDocFromView(view))
   } catch (e) {
-    throw new Error(`Dokumen pesanan dari server tidak sah: ${e instanceof Error ? e.message : String(e)}`)
+    throw new Error(`Order document from the server is invalid: ${e instanceof Error ? e.message : String(e)}`)
   }
-  if (computed !== opened || view.orderHash !== opened) throw new Error('Hash pesanan yang dihitung dari dokumen yang ditampilkan tidak sama dengan hash yang dibuka: notice tidak ditandatangani.')
+  if (computed !== opened || view.orderHash !== opened) throw new Error('The order hash computed from the displayed document does not match the opened hash: notice not signed.')
   if (view.order.kind === 'delegate') await assertMandate(view)
 }
 
 /** Mandat yang ditampilkan harus yang hash-nya ada di pesanan, dan ada untuk lingkaran ini: server tidak bisa memperlihatkan mandat lain dari yang dikunci. */
 export async function assertMandate(view: OrderView): Promise<void> {
   const m = view.mandate
-  if (m === null) throw new Error('Pesanan delegate tanpa mandat dari server: tidak ditandatangani.')
-  if (m.circle !== view.order.circle) throw new Error('Mandat bukan untuk lingkaran pesanan ini: tidak ditandatangani.')
+  if (m === null) throw new Error('Delegate order without a mandate from the server: not signed.')
+  if (m.circle !== view.order.circle) throw new Error('The mandate is not for this order\'s circle: not signed.')
   let hash: string
   try {
     hash = await mandateHashOf({ circle: m.circle, dao: m.dao, kinds: m.kinds, rules_hash: m.rulesHash })
   } catch (e) {
-    throw new Error(`Mandat dari server tidak sah: ${e instanceof Error ? e.message : String(e)}`)
+    throw new Error(`Mandate from the server is invalid: ${e instanceof Error ? e.message : String(e)}`)
   }
-  if (hash !== view.order.mandateHash) throw new Error('Mandat yang ditampilkan tidak sama dengan mandat yang hash-nya ada di pesanan: tidak ditandatangani.')
+  if (hash !== view.order.mandateHash) throw new Error('The displayed mandate does not match the mandate whose hash is in the order: not signed.')
 }
 export const mandateOf = (m: OrderMandateView): DelegateMandate => ({ circle: m.circle, dao: m.dao, kinds: m.kinds, rules_hash: m.rulesHash })
 
@@ -131,9 +131,9 @@ export async function signClaim(circle: string, orderHash: string, actor: string
 }
 /** Alasan penolakan klaim (BE-055) dalam bahasa pengguna. */
 export const CLAIM_REASON: Record<string, string> = {
-  tx_not_found: 'RPC tidak mengenal transaksi ini.', tx_failed: 'Transaksi gagal di rantai.', wrong_signer: 'Transaksi ini bukan ditandatangani penjual.',
-  wrong_receiver: 'Transaksi ini bukan ke DAO di mandat.', not_a_vote: 'Transaksi ini bukan suara setuju atau tolak (VoteApprove atau VoteReject).',
-  kind_not_in_mandate: 'Jenis proposal tidak ada di mandat.', already_claimed: 'Transaksi atau proposal ini sudah diklaim.', before_order: 'Suara ini diberikan sebelum pesanan dibuat.',
+  tx_not_found: 'The RPC does not know this transaction.', tx_failed: 'The transaction failed on chain.', wrong_signer: 'This transaction was not signed by the seller.',
+  wrong_receiver: 'This transaction is not to the DAO in the mandate.', not_a_vote: 'This transaction is not an approve or reject vote (VoteApprove or VoteReject).',
+  kind_not_in_mandate: 'The proposal kind is not in the mandate.', already_claimed: 'This transaction or proposal has already been claimed.', before_order: 'This vote was cast before the order was created.',
 }
 
 export type MilestoneAction = 'delivered' | 'confirmed' | 'disputed' | 'cancelled'

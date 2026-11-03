@@ -11,64 +11,64 @@ const KEY = `ed25519:${base58Encode(Uint8Array.from(new Array<number>(32).fill(1
 const login = () => createMockWallet(ME, ME)
 
 async function fillCreate(user: ReturnType<typeof userEvent.setup>, over: { offerClass?: string; key?: string } = {}) {
-  await user.type(screen.getByLabelText('Jenis aset (Menawarkan)'), 'gpu-hours')
-  if (over.offerClass) await user.selectOptions(screen.getByLabelText('Kelas (Menawarkan)'), over.offerClass)
-  await user.clear(screen.getByLabelText('Jumlah (Menawarkan)'))
-  await user.type(screen.getByLabelText('Jumlah (Menawarkan)'), '10')
-  await user.type(screen.getByLabelText('Nilai credit (Menawarkan)'), '100')
-  await user.type(screen.getByLabelText('Jenis aset (Mencari)'), 'translation')
-  await user.type(screen.getByLabelText('Nilai credit (Mencari)'), '100')
-  await user.clear(screen.getByLabelText(/Diskon barter cepat/))
-  await user.type(screen.getByLabelText(/Diskon barter cepat/), '10')
-  await user.type(screen.getByLabelText(/Kunci voucher/), over.key ?? KEY)
+  await user.type(screen.getByLabelText('Asset type (Offering)'), 'gpu-hours')
+  if (over.offerClass) await user.selectOptions(screen.getByLabelText('Class (Offering)'), over.offerClass)
+  await user.clear(screen.getByLabelText('Quantity (Offering)'))
+  await user.type(screen.getByLabelText('Quantity (Offering)'), '10')
+  await user.type(screen.getByLabelText('Credit value (Offering)'), '100')
+  await user.type(screen.getByLabelText('Asset type (Seeking)'), 'translation')
+  await user.type(screen.getByLabelText('Credit value (Seeking)'), '100')
+  await user.clear(screen.getByLabelText(/Quick barter discount/))
+  await user.type(screen.getByLabelText(/Quick barter discount/), '10')
+  await user.type(screen.getByLabelText(/Voucher key/), over.key ?? KEY)
 }
 
-describe('marketplace F9: telusuri dan buat listing', () => {
-  it('TC-FE-019-01 daftar listing dengan kelas aset, diskon, dan masa berlaku dari API', async () => {
+describe('marketplace F9: browse and create listings', () => {
+  it('TC-FE-019-01 listings with asset class, discount, and validity from the API', async () => {
     renderApp('/marketplace')
-    const row = (await screen.findByText(/translate-calls · kelas D/)).closest('tr')!
-    expect(row).toHaveTextContent('summarize-calls · kelas D')
-    expect(row).toHaveTextContent('10%, bayar boleh')
-    expect(row).toHaveTextContent('12 Nov 2026')
-    const gpu = screen.getByText(/gpu-hours · kelas A/).closest('tr')!
-    expect(gpu).toHaveTextContent('dataset · kelas C')
+    const row = (await screen.findByText(/translate-calls · class D/)).closest('tr')!
+    expect(row).toHaveTextContent('summarize-calls · class D')
+    expect(row).toHaveTextContent('10%, payment allowed')
+    expect(row).toHaveTextContent('Nov 12, 2026')
+    const gpu = screen.getByText(/gpu-hours · class A/).closest('tr')!
+    expect(gpu).toHaveTextContent('dataset · class C')
     expect(gpu).toHaveTextContent('0%')
-    expect(gpu).not.toHaveTextContent('bayar boleh')
+    expect(gpu).not.toHaveTextContent('payment allowed')
   })
 
-  it('TC-FE-019-02 statistik dihitung dari API, bukan contoh', async () => {
+  it('TC-FE-019-02 statistics are computed from the API, not a sample', async () => {
     renderApp('/marketplace')
-    const panel = await screen.findByLabelText('Statistik marketplace')
-    expect(within(panel).getByText('Listing terbuka').nextSibling).toHaveTextContent('2')
-    expect(within(panel).getByText('Nilai diskon').nextSibling).toHaveTextContent('10')
-    expect(within(panel).getByText('Pendapatan pencari').nextSibling).toHaveTextContent('3')
+    const panel = await screen.findByLabelText('Marketplace statistics')
+    expect(within(panel).getByText('Open listings').nextSibling).toHaveTextContent('2')
+    expect(within(panel).getByText('Discount value').nextSibling).toHaveTextContent('10')
+    expect(within(panel).getByText('Seeker revenue').nextSibling).toHaveTextContent('3')
   })
 
-  it('TC-FE-019-03 filter status dan jenis aset memanggil API dengan parameter', async () => {
+  it('TC-FE-019-03 the status and asset type filters call the API with parameters', async () => {
     const user = userEvent.setup()
     const { calls } = renderApp('/marketplace')
-    await screen.findByText(/translate-calls · kelas D/)
-    await user.type(screen.getByLabelText('Jenis aset ditawarkan'), 'gpu-hours')
+    await screen.findByText(/translate-calls · class D/)
+    await user.type(screen.getByLabelText('Offered asset type'), 'gpu-hours')
     await waitFor(() => expect(calls().some((c) => c.includes('/listings?') && c.includes('offerType=gpu-hours'))).toBe(true))
-    expect(await screen.findByText(/gpu-hours · kelas A/)).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByText(/translate-calls · kelas D/)).not.toBeInTheDocument())
+    expect(await screen.findByText(/gpu-hours · class A/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText(/translate-calls · class D/)).not.toBeInTheDocument())
     await user.selectOptions(screen.getByLabelText('Status'), 'matched')
-    expect(await screen.findByText('Belum ada listing yang cocok dengan filter.')).toBeInTheDocument()
+    expect(await screen.findByText('No listing matches the filter yet.')).toBeInTheDocument()
   })
 
-  it('TC-FE-019-04 error 503 menampilkan kode dan tombol coba lagi', async () => {
+  it('TC-FE-019-04 error 503 shows the code and a retry button', async () => {
     renderApp('/marketplace', (p) => (p.includes('/listings') ? apiError(503, 'indexer_unavailable') : undefined))
     expect(await screen.findByRole('alert')).toHaveTextContent('indexer_unavailable')
   })
 
-  it('TC-FE-019-05 listing dibuat: ditandatangani di browser dan dikirim dengan hash yang cocok', async () => {
+  it('TC-FE-019-05 listing created: signed in the browser and sent with a matching hash', async () => {
     const user = userEvent.setup()
     const { requests } = renderApp('/marketplace', (p, init) => (init?.method === 'POST' && p.endsWith('/listings') ? { status: 201, body: { ...listings[0], listingHash: 'c'.repeat(64) } } : undefined), false, login())
-    await screen.findByText(/translate-calls · kelas D/)
-    await screen.findByText(/Masuk dengan wallet|Kunci voucher/)
+    await screen.findByText(/translate-calls · class D/)
+    await screen.findByText(/Sign in with a wallet|Voucher key/)
     await fillCreate(user, { offerClass: 'A' })
-    await user.click(screen.getByRole('button', { name: /Tanda tangani dan pasang listing/ }))
-    expect(await screen.findByText(/Listing terpasang/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Sign and post listing/ }))
+    expect(await screen.findByText(/Listing posted/)).toBeInTheDocument()
     const post = requests().find((r) => r.method === 'POST')!
     expect(post.path).toMatch(/\/listings$/)
     const { listing, signature } = post.body
@@ -82,45 +82,45 @@ describe('marketplace F9: telusuri dan buat listing', () => {
     expect(await listingHash(listing)).toMatch(/^[0-9a-f]{64}$/)
   })
 
-  it('TC-FE-019-06 kelas X ditolak server: pesan jelas, tidak ada listing baru', async () => {
+  it('TC-FE-019-06 class X rejected by the server: clear message, no new listing', async () => {
     const user = userEvent.setup()
     renderApp(
       '/marketplace',
       (p, init) =>
         init?.method === 'POST' && p.endsWith('/listings')
-          ? apiError(400, 'asset_class_rejected', 'offer.asset_class "X" ditolak: kelas X tidak bisa dilisting')
+          ? apiError(400, 'asset_class_rejected', 'offer.asset_class "X" rejected: class X cannot be listed')
           : undefined,
       false,
       login(),
     )
-    await screen.findByText(/translate-calls · kelas D/)
-    await screen.findByLabelText(/Kunci voucher/)
+    await screen.findByText(/translate-calls · class D/)
+    await screen.findByLabelText(/Voucher key/)
     await fillCreate(user)
-    await user.click(screen.getByRole('button', { name: /Tanda tangani dan pasang listing/ }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Kelas aset ditolak')
-    expect(screen.queryByText(/Listing terpasang/)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Sign and post listing/ }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Asset class rejected')
+    expect(screen.queryByText(/Listing posted/)).not.toBeInTheDocument()
   })
 
-  it('TC-FE-019-07 pilihan kelas hanya A sampai D dan form nonaktif tanpa login', async () => {
+  it('TC-FE-019-07 class options are only A to D and the form is disabled without login', async () => {
     renderApp('/marketplace')
-    await screen.findByText(/translate-calls · kelas D/)
-    const select = screen.getByLabelText('Kelas (Menawarkan)')
+    await screen.findByText(/translate-calls · class D/)
+    const select = screen.getByLabelText('Class (Offering)')
     expect(within(select).getAllByRole('option').map((o) => o.textContent?.[0])).toEqual(['A', 'B', 'C', 'D'])
-    expect(screen.getByText(/Masuk dengan wallet untuk membuat listing/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Tanda tangani dan pasang listing/ })).toBeDisabled()
+    expect(screen.getByText(/Sign in with a wallet to create a listing/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Sign and post listing/ })).toBeDisabled()
   })
 
-  it('TC-FE-019-08 validasi: jenis aset salah, diskon di atas 100%, tombol tetap nonaktif', async () => {
+  it('TC-FE-019-08 validation: wrong asset type, discount above 100%, button stays disabled', async () => {
     const user = userEvent.setup()
     renderApp('/marketplace', undefined, false, login())
-    await screen.findByText(/translate-calls · kelas D/)
-    await screen.findByLabelText(/Kunci voucher/)
+    await screen.findByText(/translate-calls · class D/)
+    await screen.findByLabelText(/Voucher key/)
     await fillCreate(user)
-    const button = screen.getByRole('button', { name: /Tanda tangani dan pasang listing/ })
+    const button = screen.getByRole('button', { name: /Sign and post listing/ })
     await waitFor(() => expect(button).toBeEnabled())
-    await user.clear(screen.getByLabelText(/Diskon barter cepat/))
-    await user.type(screen.getByLabelText(/Diskon barter cepat/), '101')
-    expect(screen.getByText(/Diskon 0–100%/)).toBeInTheDocument()
+    await user.clear(screen.getByLabelText(/Quick barter discount/))
+    await user.type(screen.getByLabelText(/Quick barter discount/), '101')
+    expect(screen.getByText(/Discount 0–100%/)).toBeInTheDocument()
     expect(button).toBeDisabled()
   })
 })

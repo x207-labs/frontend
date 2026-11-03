@@ -26,8 +26,8 @@ const offer: Offer = {
   value: '100000000', quantity: 5000, deliver_by: 1793000000,
 }
 
-describe('lib/barter cocok dengan test vector SDK', () => {
-  it('hash dan tanda tangan listing', async () => {
+describe('lib/barter matches the SDK test vectors', () => {
+  it('listing hash and signature', async () => {
     expect(serializeListing(listing)).toContain('"account":"translator.x207-circle.near","offer":{"asset_type":"translate-calls"')
     expect(await listingHash(listing)).toBe(HASH)
     expect(await signListing(listing, SEED_A)).toBe(
@@ -35,7 +35,7 @@ describe('lib/barter cocok dengan test vector SDK', () => {
     )
   })
 
-  it('hash dan tanda tangan penawaran', async () => {
+  it('offer hash and signature', async () => {
     expect(serializeOffer(offer)).toBe(
       '{"circle":"x207-circle.near","listing_hash":"' + HASH + '","proposer":"summarizer.x207-circle.near","round":1,"mode":"barter","value":"100000000","quantity":5000,"deliver_by":1793000000}',
     )
@@ -45,22 +45,22 @@ describe('lib/barter cocok dengan test vector SDK', () => {
     )
   })
 
-  it('kunci 64 byte (seed + publik) memberi tanda tangan sama dengan seed saja', async () => {
+  it('a 64-byte key (seed + public) gives the same signature as the seed alone', async () => {
     const pub = base58Decode('AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9')
     const full = `ed25519:${base58Encode(Uint8Array.from([...new Array<number>(32).fill(1), ...pub]))}`
     expect(await signListing(listing, full)).toBe(await signListing(listing, SEED_A))
   })
 
-  it('pembatalan: pesan dan tanda tangan deterministik per hash dan lingkaran', async () => {
+  it('cancellation: message and signature are deterministic per hash and circle', async () => {
     expect(cancelListingMessage(HASH)).toBe(`x207:cancel_listing:${HASH}`)
     const a = await signCancelListing(HASH, 'x207-circle.near', SEED_A)
     expect(a).toBe(await signMessageWithVoucher(cancelListingMessage(HASH), 'x207-circle.near', SEED_A))
     expect(a).not.toBe(await signCancelListing(HASH, 'other.near', SEED_A))
   })
 
-  it('kunci salah format ditolak', () => {
+  it('a key with the wrong format is rejected', () => {
     expect(() => voucherSeed('abc')).toThrow(/ed25519:/)
-    expect(() => voucherSeed('ed25519:1111')).toThrow(/32 atau 64 byte/)
+    expect(() => voucherSeed('ed25519:1111')).toThrow(/32 or 64 bytes/)
   })
 
   it('base58 bolak-balik termasuk byte nol di depan', () => {
@@ -69,7 +69,7 @@ describe('lib/barter cocok dengan test vector SDK', () => {
   })
 })
 
-describe('lib/barter syarat bundle cocok dengan vector A→B→C→A', () => {
+describe('lib/barter bundle terms match the A→B→C→A vector', () => {
   const terms = {
     circle: 'x207-circle.near',
     epoch: 42,
@@ -79,12 +79,12 @@ describe('lib/barter syarat bundle cocok dengan vector A→B→C→A', () => {
       { payer: 'summarizer.x207-circle.near', payee: 'scraper.x207-circle.near', max_amount: '8000000' },
     ],
   }
-  it('JSON kanonik mengurutkan leg dan hash sama dengan SDK', async () => {
+  it('canonical JSON sorts the legs and the hash equals the one of the SDK', async () => {
     const message = serializeBundleTerms(terms)
     expect(message.indexOf('summarizer.x207-circle.near","payee":"scraper')).toBeLessThan(message.indexOf('"payer":"translator'))
     expect(await termsHash(terms)).toBe('f5d18602740f25fac33c0b84c831477246cd4c04bc9b19e7fddda2887637535d')
   })
-  it('tanda tangan peserta translator (kA) sama dengan vector', async () => {
+  it('the signature of participant translator (kA) equals the vector', async () => {
     expect(await signMessageWithVoucher(serializeBundleTerms(terms), terms.circle, SEED_A)).toBe(
       'ed25519:2qtxR6to99mHKxRSe4FLhTgCuULeGJzHaiBvL5aj37Jeb4V2kCLRTXpPLjbNbXLfuJMDHuokwQPXQo8RWTnMzg6c',
     )

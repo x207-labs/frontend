@@ -21,11 +21,11 @@ export type ListingCheckResult = { ok: true; listing: Listing; sellerFingerprint
 
 export async function checkListingToBuy(view: ListingView, typedHash: string): Promise<ListingCheckResult> {
   const listing = listingFromView(view)
-  if ((await listingHash(listing)) !== typedHash) return { ok: false, reason: 'Hash listing dari server tidak sama dengan yang Anda ketik: jangan beli.' }
+  if ((await listingHash(listing)) !== typedHash) return { ok: false, reason: 'The listing hash from the server differs from the one you typed: do not buy.' }
   const seller = await memberOnChain(view.account)
-  if (seller === null || seller.status !== 'active') return { ok: false, reason: `Penjual ${view.account} bukan anggota aktif di kontrak: jangan beli.` }
+  if (seller === null || seller.status !== 'active') return { ok: false, reason: `Seller ${view.account} is not an active member on the contract: do not buy.` }
   if (!(await verifyListingSignature(listing, view.signature, seller.pubkey_voucher))) {
-    return { ok: false, reason: 'Tanda tangan listing tidak cocok dengan kunci voucher penjual di kontrak: jangan beli.' }
+    return { ok: false, reason: 'The listing signature does not match the seller voucher key on the contract: do not buy.' }
   }
   return { ok: true, listing, sellerFingerprint: await keyFingerprint(seller.pubkey_voucher) }
 }

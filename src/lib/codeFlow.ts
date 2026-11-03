@@ -71,7 +71,7 @@ export async function receiveCode(view: PurchaseView, sellerPublicKey: string, b
   const result = await receiveLicense(view, sellerPublicKey, buyerSecretKey, onProgress)
   if (result.state !== 'ok') return result
   const parts = splitCodePayload(result.content)
-  if (parts === null || (view.contentHash !== null && contentHash(result.content) !== view.contentHash)) return { state: 'refused', reason: 'Isi yang dibuka tidak cocok dengan code_commitment listing.' }
+  if (parts === null || (view.contentHash !== null && contentHash(result.content) !== view.contentHash)) return { state: 'refused', reason: 'The opened content does not match the listing code_commitment.' }
   return { state: 'ok', code: parts.code }
 }
 

@@ -15,73 +15,73 @@ const staged = (stage: string, edges: ReturnType<typeof edge>[]) => ({
 const only = (stage: string, body: unknown) => (path: string) =>
   path.includes('/obligations') && path.includes(`stage=${stage}`) ? { status: 200, body } : undefined
 
-describe('grafik kewajiban', () => {
-  it('TC-FE-006-01 graf berarah: jumlah sisi sama dengan edgeCount', async () => {
-    renderApp('/grafik?epoch=42')
-    expect(await screen.findByText(/2 kewajiban senilai/)).toBeInTheDocument()
-    const graph = screen.getByRole('img', { name: /Epoch berjalan, 2 sisi/ })
+describe('obligation graph', () => {
+  it('TC-FE-006-01 directed graph: the number of edges equals edgeCount', async () => {
+    renderApp('/charts?epoch=42')
+    expect(await screen.findByText(/2 obligations worth/)).toBeInTheDocument()
+    const graph = screen.getByRole('img', { name: /Current epoch, 2 edges/ })
     expect(graph.querySelectorAll('line.edge')).toHaveLength(2)
     expect(within(graph.closest('figure')!).getAllByText(/translator|summarizer|scraper|gpu/).length).toBeGreaterThan(0)
   })
 
-  it('TC-FE-006-02 sesudah kliring: sisi remaining 0 redup dan total terhapus = jumlah cleared', async () => {
-    renderApp('/grafik?epoch=42')
-    expect(await screen.findByText(/Nilai terhapus:/)).toHaveTextContent('377,74')
+  it('TC-FE-006-02 after clearing: edges with remaining 0 are dimmed and the cleared total = the sum of cleared', async () => {
+    renderApp('/charts?epoch=42')
+    expect(await screen.findByText(/Cleared value:/)).toHaveTextContent('377.74')
     expect(screen.getByTestId('edge-after-translator-summarizer')).toHaveClass('edge-dim')
     expect(screen.getByTestId('edge-after-scraper-gpu')).not.toHaveClass('edge-dim')
     expect(screen.getByTestId('edge-before-translator-summarizer')).not.toHaveClass('edge-dim')
   })
 
-  it('TC-FE-006-03 siklus translator → summarizer → scraper → translator disorot dengan nilai 5 per sisi', async () => {
+  it('TC-FE-006-03 cycle translator → summarizer → scraper → translator is highlighted with value 5 per edge', async () => {
     const e = [
       edge('translator', 'summarizer', '10000000', '5000000', '5000000'),
       edge('summarizer', 'scraper', '8000000', '5000000', '3000000'),
       edge('scraper', 'translator', '7000000', '5000000', '2000000'),
     ]
-    renderApp('/grafik?epoch=42', (p) => only('live', staged('live', e.map((x) => ({ ...x, cleared: null, remaining: null }))))(p) ?? only('cleared', staged('cleared', e))(p))
+    renderApp('/charts?epoch=42', (p) => only('live', staged('live', e.map((x) => ({ ...x, cleared: null, remaining: null }))))(p) ?? only('cleared', staged('cleared', e))(p))
     const item = await screen.findByText(/→.*→.*→/)
-    // Siklus yang sama dengan awal berbeda: scraper → translator → summarizer → scraper.
+    // The same cycle with a different start: scraper → translator → summarizer → scraper.
     for (const name of ['translator', 'summarizer', 'scraper']) expect(item).toHaveTextContent(name)
-    expect(item).toHaveTextContent('5 per sisi')
+    expect(item).toHaveTextContent('5 per edge')
   })
 
-  it('TC-FE-006-04 epoch open tanpa edge', async () => {
-    renderApp('/grafik?epoch=42', only('live', staged('live', [])))
-    expect(await screen.findByText(/Belum ada kewajiban terdaftar/)).toBeInTheDocument()
+  it('TC-FE-006-04 open epoch with no edges', async () => {
+    renderApp('/charts?epoch=42', only('live', staged('live', [])))
+    expect(await screen.findByText(/No obligations registered/)).toBeInTheDocument()
   })
 
-  it('TC-FE-006-05 stage cleared kosong: kliring belum diterapkan', async () => {
-    renderApp('/grafik?epoch=42', only('cleared', staged('cleared', [])))
-    expect(await screen.findByText(/Kliring belum diterapkan/)).toBeInTheDocument()
+  it('TC-FE-006-05 empty cleared stage: clearing not applied yet', async () => {
+    renderApp('/charts?epoch=42', only('cleared', staged('cleared', [])))
+    expect(await screen.findByText(/Clearing has not been applied/)).toBeInTheDocument()
   })
 
-  it('TC-FE-006-06 loading di area graf', async () => {
-    renderApp('/grafik?epoch=42', (p) => (p.includes('/obligations') ? { status: 200, body: staged('live', []), delayMs: 40 } : undefined))
-    expect(await screen.findByText(/Memuat kewajiban/)).toBeInTheDocument()
+  it('TC-FE-006-06 loading in the graph area', async () => {
+    renderApp('/charts?epoch=42', (p) => (p.includes('/obligations') ? { status: 200, body: staged('live', []), delayMs: 40 } : undefined))
+    expect(await screen.findByText(/Loading obligations/)).toBeInTheDocument()
   })
 
   it.each([
-    [409, 'epoch_not_closed', /belum ditutup/],
-    [404, 'epoch_not_found', /Epoch tidak ditemukan/],
+    [409, 'epoch_not_closed', /not closed yet/],
+    [404, 'epoch_not_found', /Epoch not found/],
   ])('TC-FE-006-07 stage cleared %s %s', async (status, code, text) => {
-    renderApp('/grafik?epoch=42', (p) => (p.includes('stage=cleared') ? apiError(status, code) : undefined))
+    renderApp('/charts?epoch=42', (p) => (p.includes('stage=cleared') ? apiError(status, code) : undefined))
     expect(await screen.findByText(text)).toBeInTheDocument()
   })
 
-  it('TC-FE-006-07 503 pada stage live menampilkan kodenya', async () => {
-    renderApp('/grafik?epoch=42', (p) => (p.includes('stage=live') ? apiError(503, 'indexer_unavailable') : undefined))
+  it('TC-FE-006-07 503 on the live stage shows its code', async () => {
+    renderApp('/charts?epoch=42', (p) => (p.includes('stage=live') ? apiError(503, 'indexer_unavailable') : undefined))
     expect((await screen.findAllByRole('alert'))[0]).toHaveTextContent('indexer_unavailable')
   })
 })
 
 describe('decomposeCycles', () => {
-  it('menguraikan dua siklus yang berbagi sisi', () => {
+  it('decomposes two cycles that share an edge', () => {
     const c = (d: string, k: string, v: number) => ({ debtor: d, creditor: k, cleared: BigInt(v) })
     const cycles = decomposeCycles([c('a', 'b', 8), c('b', 'a', 3), c('b', 'c', 5), c('c', 'a', 5)])
     expect(cycles.reduce((s, x) => s + x.amount * BigInt(x.path.length - 1), 0n)).toBe(21n)
     expect(cycles.map((x) => x.path.length - 1).sort()).toEqual([2, 3])
   })
-  it('tanpa sisi terhapus tidak ada siklus', () => {
+  it('no cleared edge means no cycle', () => {
     expect(decomposeCycles([{ debtor: 'a', creditor: 'b', cleared: 0n }])).toEqual([])
   })
 })

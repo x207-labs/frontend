@@ -10,10 +10,10 @@ const defaulted = (extra: object) => ({
   due: '2026-11-09T12:00:00Z', paidAmount: '0', stakeSlashed: '35000000', haircut: '0', ...extra,
 })
 
-describe('FE-013 riwayat limit dan alokasi kerugian', () => {
-  it('TC-FE-013-01 riwayat limit anggota pertama dari read API, terbaru dulu', async () => {
-    const { calls } = renderApp('/risiko')
-    const table = await screen.findByRole('table', { name: 'Riwayat limit' })
+describe('FE-013 limit history and loss allocation', () => {
+  it('TC-FE-013-01 limit history of the first member from the read API, newest first', async () => {
+    const { calls } = renderApp('/risk')
+    const table = await screen.findByRole('table', { name: 'Limit history' })
     await waitFor(() => expect(calls().some((c) => c.includes('/members/cleaner.x207-circle.near/limits'))).toBe(true))
     const rows = within(table).getAllByRole('row').slice(1)
     expect(rows).toHaveLength(3)
@@ -25,37 +25,37 @@ describe('FE-013 riwayat limit dan alokasi kerugian', () => {
     expect(rows[2]).toHaveTextContent('-')
   })
 
-  it('TC-FE-013-02 memilih anggota lain memuat riwayat anggota itu', async () => {
-    const { calls } = renderApp('/risiko')
+  it('TC-FE-013-02 choosing another member loads the history of that member', async () => {
+    const { calls } = renderApp('/risk')
     const user = userEvent.setup()
-    await screen.findByRole('table', { name: 'Riwayat limit' })
-    await user.selectOptions(screen.getByLabelText('Anggota'), 'gpu.x207-circle.near')
+    await screen.findByRole('table', { name: 'Limit history' })
+    await user.selectOptions(screen.getByLabelText('Member'), 'gpu.x207-circle.near')
     await waitFor(() => expect(calls().some((c) => c.includes('/members/gpu.x207-circle.near/limits'))).toBe(true))
   })
 
-  it('TC-FE-013-03 anggota tanpa riwayat atau galat: pesan, bukan tabel kosong', async () => {
-    renderApp('/risiko', (p) => (p.endsWith('/limits') ? { status: 200, body: { items: [], nextCursor: null } } : undefined))
-    expect(await screen.findByText('Belum ada perubahan limit untuk anggota ini.')).toBeInTheDocument()
+  it('TC-FE-013-03 a member with no history or an error: a message, not an empty table', async () => {
+    renderApp('/risk', (p) => (p.endsWith('/limits') ? { status: 200, body: { items: [], nextCursor: null } } : undefined))
+    expect(await screen.findByText('No limit changes for this member yet.')).toBeInTheDocument()
   })
 
-  it('TC-FE-013-04 galat 404 riwayat tampil sebagai pesan', async () => {
-    renderApp('/risiko', (p) => (p.endsWith('/limits') ? apiError(404, 'member_not_found', 'Akun belum terdaftar di lingkaran') : undefined))
-    expect((await screen.findAllByText(/member_not_found|belum terdaftar/)).length).toBeGreaterThan(0)
+  it('TC-FE-013-04 a 404 error on the history shows as a message', async () => {
+    renderApp('/risk', (p) => (p.endsWith('/limits') ? apiError(404, 'member_not_found', 'Account is not registered in the circle') : undefined))
+    expect((await screen.findAllByText(/member_not_found|not registered/)).length).toBeGreaterThan(0)
   })
 
-  it('TC-FE-013-05 default: kolom stake, dana cadangan dan haircut dengan sisa dihitung dari urutan kerugian', async () => {
-    renderApp('/risiko?epoch=42', (p) =>
+  it('TC-FE-013-05 defaults: stake, reserve fund, and haircut columns with the rest computed from the loss order', async () => {
+    renderApp('/risk?epoch=42', (p) =>
       p.includes('/epochs/42/settlements') ? { status: 200, body: { items: [defaulted({ paidAmount: '5000000', stakeSlashed: '20000000', haircut: '4000000' })], nextCursor: null } } : undefined,
     )
-    const table = (await screen.findByRole('columnheader', { name: 'Dana cadangan' })).closest('table')!
+    const table = (await screen.findByRole('columnheader', { name: 'Reserve fund' })).closest('table')!
     const row = within(table).getAllByRole('row')[1]!
     const cells = within(row).getAllByRole('cell').map((c) => c.textContent)
-    // tagihan 35, dibayar 5, stake 20, haircut 4: cadangan 35 - 5 - 20 - 4 = 6
+    // owed 35, paid 5, stake 20, haircut 4: reserve 35 - 5 - 20 - 4 = 6
     expect(cells.slice(1)).toEqual(['35', '20', '6', '4'])
-    expect(screen.getByText(/Urutan kerugian: stake debtor, dana cadangan/)).toBeInTheDocument()
+    expect(screen.getByText(/Loss order: debtor stake, then reserve fund/)).toBeInTheDocument()
   })
 
-  it('TC-FE-013-06 lossAllocation: stake lebih dulu, lalu cadangan, lalu haircut', () => {
+  it('TC-FE-013-06 lossAllocation: stake first, then reserve, then haircut', () => {
     expect(lossAllocation({ amount: '100', paidAmount: '0', stakeSlashed: '100', haircut: '0' })).toEqual({ owed: 100n, stake: 100n, haircut: 0n, reserve: 0n })
     expect(lossAllocation({ amount: '100', paidAmount: '10', stakeSlashed: '40', haircut: '20' })).toEqual({ owed: 90n, stake: 40n, haircut: 20n, reserve: 30n })
     expect(lossAllocation({ amount: '100', stakeSlashed: '120', haircut: '0' }).reserve).toBe(0n)

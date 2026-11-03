@@ -26,13 +26,13 @@ const SIBLINGS = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const load = (path: string): Promise<any> => import(/* @vite-ignore */ `/@fs${path}`)
 
-describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox', () => {
+describe.skipIf(!enabled)('FE-018 exit and withdraw stake from the UI to near-sandbox', () => {
   const cleanup: Array<() => Promise<void> | void> = []
   afterAll(async () => {
     for (const fn of cleanup.reverse()) await fn()
   })
 
-  it('TC-FE-018-08 request_exit lalu withdraw_stake dari tombol UI, stake kembali dan status exited', async (ctx) => {
+  it('TC-FE-018-08 request_exit then withdraw_stake from the UI button, stake returns and status is exited', async (ctx) => {
     const { sandboxAvailable } = await load(SIBLINGS.sandbox)
     if (!sandboxAvailable) return ctx.skip()
     const { deployCircle, TERMS_HASH } = await load(SIBLINGS.circle)
@@ -92,7 +92,7 @@ describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox
       connect: async () => account.accountId,
       disconnect: async () => undefined,
       signMessage: async () => {
-        throw new Error('tidak dipakai')
+        throw new Error('not used')
       },
       signAndSend: async (_signer: string, tx: FunctionCallTx) => {
         const r = await account.call(
@@ -118,11 +118,11 @@ describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox
     const memberView = () => fx.sandbox.view(contract, 'member', { account_id: account.accountId }) as Promise<{ status: string; stake: string; exit_requested_epoch: number | null }>
 
     // 1. request_exit dari tombol
-    await user.click(await screen.findByRole('button', { name: 'Minta keluar', hidden: false }, { timeout: 60_000 }))
+    await user.click(await screen.findByRole('button', { name: 'Request exit', hidden: false }, { timeout: 60_000 }))
     await waitFor(() => expect(sent.map((s) => s.method)).toEqual(['request_exit']), { timeout: 30_000 })
     expect((await memberView()).exit_requested_epoch).toBe(1)
-    expect(await screen.findByText(/Keluar diminta di epoch 1/, undefined, { timeout: 60_000 })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Tarik stake/ })).toBeDisabled()
+    expect(await screen.findByText(/Exit requested in epoch 1/, undefined, { timeout: 60_000 })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Withdraw stake/ })).toBeDisabled()
 
     // 2. keeper menutup epoch 1 sampai finalized; waktu blok dimajukan
     const pass = () =>
@@ -144,7 +144,7 @@ describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox
     expect((await epochView(1)).phase).toBe('finalized')
 
     // 3. UI melihat epoch finalized lewat read API dan membuka tombol tarik stake
-    const withdraw = await screen.findByRole('button', { name: /Tarik stake/ })
+    const withdraw = await screen.findByRole('button', { name: /Withdraw stake/ })
     await waitFor(() => expect(withdraw).toBeEnabled(), { timeout: 90_000 })
     await user.click(withdraw)
     await waitFor(() => expect(sent.map((s) => s.method)).toEqual(['request_exit', 'withdraw_stake']), { timeout: 30_000 })
@@ -153,7 +153,7 @@ describe.skipIf(!enabled)('FE-018 keluar dan tarik stake dari UI ke near-sandbox
     await waitFor(async () => expect((await memberView()).status).toBe('exited'), { timeout: 30_000 })
     expect((await memberView()).stake).toBe('0')
     await waitFor(async () => expect((await usdt()) - usdtBefore).toBe(50_000_000n), { timeout: 30_000 })
-    expect(await screen.findByText(/sudah keluar dan stake sudah ditarik/, undefined, { timeout: 90_000 })).toBeInTheDocument()
+    expect(await screen.findByText(/already left and the stake has been withdrawn/, undefined, { timeout: 90_000 })).toBeInTheDocument()
     process.stderr.write(`FE-018 sandbox: ${sent.map((s) => `${s.method} ${s.hash.slice(0, 8)}`).join(', ')}; USDT +${(await usdt()) - usdtBefore}\n`)
   }, 900_000)
 })

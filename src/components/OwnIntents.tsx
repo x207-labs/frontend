@@ -24,17 +24,17 @@ export function OwnIntents() {
   }
 
   return (
-    <section aria-label="Intent barter saya">
-      <h2>Intent barter saya</h2>
+    <section aria-label="My barter intents">
+      <h2>My barter intents</h2>
       {!account ? (
-        <p className="state">Masuk dengan wallet untuk melihat intent Anda.</p>
+        <p className="state">Sign in with a wallet to see your intents.</p>
       ) : (
-        <QueryState query={posted} loadingLabel="Memuat intent" isEmpty={(d) => d.items.length === 0} empty="Tidak ada intent terpasang di kontrak. Batas: 64 intent terbuka per anggota.">
+        <QueryState query={posted} loadingLabel="Loading intents" isEmpty={(d) => d.items.length === 0} empty="No intent posted on the contract. Limit: 64 open intents per member.">
           {(data) => (
             <>
               <p className="state" role="status" data-testid="intent-count">
-                {data.items.length} dari {MAX_OPEN_INTENTS_PER_MEMBER} intent terbuka di kontrak. Batas ini tetap: intent baru ditolak{' '}
-                <code className="plain">ERR_INTENT_LIMIT</code> sampai satu dihapus.
+                {data.items.length} of {MAX_OPEN_INTENTS_PER_MEMBER} open intents on the contract. This limit is fixed: a new intent is rejected with{' '}
+                <code className="plain">ERR_INTENT_LIMIT</code> until one is removed.
               </p>
               <ul className="intents">
                 {data.items.map((item) => {
@@ -44,16 +44,16 @@ export function OwnIntents() {
                       <p>
                         {text ? (
                           <>
-                            Tawar {text.offer.calls} panggilan <code className="plain">{text.offer.service}</code>, butuh {text.need.calls} panggilan{' '}
+                            Offering {text.offer.calls} calls of <code className="plain">{text.offer.service}</code>, needing {text.need.calls} calls of{' '}
                             <code className="plain">{text.need.service}</code>.{' '}
                           </>
                         ) : (
-                          'Tanpa catatan di buku intent off-chain. '
+                          'No record in the off-chain intent book. '
                         )}
                         Hash <code className="plain">{shortAccount(item.intentHash)}</code>
                       </p>
                       <button type="button" disabled={signing} onClick={() => void remove(item.intentHash)}>
-                        {signing ? 'Menunggu wallet…' : 'Hapus dari kontrak'}
+                        {signing ? 'Waiting for wallet…' : 'Remove from contract'}
                       </button>
                     </li>
                   )

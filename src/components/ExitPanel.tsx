@@ -18,40 +18,40 @@ export function ExitPanel({ member }: { member: MemberResponse }) {
 
   if (member.status === 'exited') {
     return (
-      <section aria-label="Keluar dari lingkaran">
-        <h2>Keluar dari lingkaran</h2>
-        <p className="state">Akun ini sudah keluar dan stake sudah ditarik. Klaim epoch lama tetap bisa diambil di halaman settlement.</p>
+      <section aria-label="Leave the circle">
+        <h2>Leave the circle</h2>
+        <p className="state">This account has already left and the stake has been withdrawn. Claims from past epochs can still be collected on the settlement page.</p>
       </section>
     )
   }
   if (member.status === 'pending') return null
 
   return (
-    <section aria-label="Keluar dari lingkaran">
-      <h2>Keluar dari lingkaran</h2>
+    <section aria-label="Leave the circle">
+      <h2>Leave the circle</h2>
       {owes && (
         <p className="state state-error" role="alert">
-          Masih ada kewajiban {formatCredit(member.outstandingDebt)} credit (posisi <code className="plain">due</code> atau obligasi epoch berjalan).
-          Lunasi dulu: <code className="plain">withdraw_stake</code> ditolak <code className="plain">ERR_HAS_DUE</code> selama kewajiban ada.
+          An obligation of {formatCredit(member.outstandingDebt)} credit remains (a <code className="plain">due</code> position or a current-epoch obligation).
+          Settle it first: <code className="plain">withdraw_stake</code> is rejected with <code className="plain">ERR_HAS_DUE</code> while the obligation exists.
         </p>
       )}
       {requested === null ? (
         <>
           <p className="state">
-            Setelah meminta keluar, voucher untuk epoch berikutnya dan tambahan stake ditolak. Voucher epoch ini tetap berlaku sampai cutoff.
+            After requesting to leave, vouchers for the next epoch and additional stake are rejected. Vouchers for this epoch stay valid until the cutoff.
           </p>
           <button type="button" disabled={signing} onClick={() => void sign(requestExitTx())}>
-            {signing ? 'Menunggu wallet…' : 'Minta keluar'}
+            {signing ? 'Waiting for wallet…' : 'Request exit'}
           </button>
         </>
       ) : (
         <>
           <p className="state" role="status">
-            Keluar diminta di epoch {requested}.{' '}
-            {finalized ? 'Epoch itu sudah finalized.' : `Menunggu epoch ${requested} berstatus finalized${phase ? ` (sekarang ${phase})` : ''}.`}
+            Exit requested in epoch {requested}.{' '}
+            {finalized ? 'That epoch is already finalized.' : `Waiting for epoch ${requested} to become finalized${phase ? ` (now ${phase})` : ''}.`}
           </p>
           <button type="button" disabled={signing || !finalized || owes} onClick={() => void sign(withdrawStakeTx())}>
-            {signing ? 'Menunggu wallet…' : `Tarik stake (${formatCredit(member.stake)})`}
+            {signing ? 'Waiting for wallet…' : `Withdraw stake (${formatCredit(member.stake)})`}
           </button>
         </>
       )}

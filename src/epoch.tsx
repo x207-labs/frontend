@@ -31,7 +31,7 @@ export function EpochProvider({ children }: { children: ReactNode }) {
 
 export function useEpochSelection(): Selection {
   const value = useContext(EpochContext)
-  if (!value) throw new Error('useEpochSelection harus di dalam EpochProvider')
+  if (!value) throw new Error('useEpochSelection must be inside EpochProvider')
   return value
 }
 

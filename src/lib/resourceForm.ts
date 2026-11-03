@@ -4,20 +4,20 @@ import { toAtomic } from './amount'
 // FE-024: formulir listing sumber daya terukur (pipeline P5, kelas D, dua belas jenis). Tidak ada aturan sendiri: jenis, satuan, batas, peringatan, pemeriksaan endpoint, dan bentuk
 // `detail` datang dari SDK (`METERED_PRESETS`, `resourceListingDetail`); formulir hanya mengubah teks menjadi harga satuan dan menghitung perkiraan biaya.
 export const KIND_LABEL: Record<MeteredKind, string> = {
-  cpu: '31 · CPU menganggur',
-  gpu: '32 · GPU per jam',
-  storage: '33 · Penyimpanan',
-  cdn: '34 · Cache dan CDN',
-  inference: '35 · Inferensi model sendiri',
+  cpu: '31 · Idle CPU',
+  gpu: '32 · GPU per hour',
+  storage: '33 · Storage',
+  cdn: '34 · Cache and CDN',
+  inference: '35 · Own-model inference',
   'fine-tuning': '36 · Fine-tuning',
-  'data-feed': '44 · Umpan data atau oracle',
-  'iot-sensor': '45 · Data sensor IoT',
-  'gas-relayer': '47 · Relayer gas',
-  'priority-slot': '49 · Slot antrean prioritas',
-  'proxy-bandwidth': '55 · Proxy dan bandwidth',
-  'home-device': '90 · Perangkat rumahan',
+  'data-feed': '44 · Data feed or oracle',
+  'iot-sensor': '45 · IoT sensor data',
+  'gas-relayer': '47 · Gas relayer',
+  'priority-slot': '49 · Priority queue slot',
+  'proxy-bandwidth': '55 · Proxy and bandwidth',
+  'home-device': '90 · Home device',
 }
-export const UNIT_LABEL: Record<MeteredUnit, string> = { call: 'per panggilan', minute: 'per menit', day: 'per hari', GB: 'per GB', job: 'per job', request: 'per request' }
+export const UNIT_LABEL: Record<MeteredUnit, string> = { call: 'per call', minute: 'per minute', day: 'per day', GB: 'per GB', job: 'per job', request: 'per request' }
 
 export { METERED_KINDS, METERED_PRESETS }
 
@@ -39,12 +39,12 @@ export type ResourceTemplate = {
 
 /** Nilai formulir menjadi template listing, atau teks galat. Satuan bawaan: satuan pertama preset jenisnya. */
 export function toResourceTemplate(v: ResourceValues): ResourceTemplate | string {
-  if (v.kind === '') return 'Pilih jenis sumber daya.'
+  if (v.kind === '') return 'Choose a resource type.'
   const preset = METERED_PRESETS[v.kind]
   const unit = (v.unit === '' ? preset.units[0] : v.unit) as MeteredUnit
-  if (!preset.units.includes(unit)) return `Satuan ${unit} tidak cocok untuk jenis ini; pilih ${preset.units.join(' atau ')}.`
+  if (!preset.units.includes(unit)) return `Unit ${unit} does not fit this type; choose ${preset.units.join(' or ')}.`
   const unitPriceAtomic = toAtomic(v.unitPrice)
-  if (unitPriceAtomic === null) return 'Harga per satuan harus angka credit > 0 (paling banyak 6 desimal).'
+  if (unitPriceAtomic === null) return 'Price per unit must be a credit number > 0 (at most 6 decimals).'
   const problem = endpointProblem(v.endpoint.trim())
   if (problem !== null) return problem
   return {

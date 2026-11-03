@@ -8,15 +8,15 @@ export function TxResult({ state }: { state: SignState }) {
     case 'idle':
       return null
     case 'signing':
-      return <p className="state" role="status"><span className="spinner" aria-hidden="true" />Menunggu tanda tangan di wallet…</p>
+      return <p className="state" role="status"><span className="spinner" aria-hidden="true" />Waiting for signature in wallet…</p>
     case 'cancelled':
-      return <p className="state" role="status">Dibatalkan pengguna. Tidak ada transaksi yang dikirim.</p>
+      return <p className="state" role="status">Cancelled by user. No transaction was sent.</p>
     case 'failed':
-      return <p className="state state-error" role="alert">Transaksi gagal: {state.message}</p>
+      return <p className="state state-error" role="alert">Transaction failed: {state.message}</p>
     case 'done':
       return (
         <p className="state" role="status">
-          Transaksi terkirim:{' '}
+          Transaction sent:{' '}
           <a href={`${EXPLORER}${state.hash}`} target="_blank" rel="noreferrer">{state.hash}</a>
         </p>
       )

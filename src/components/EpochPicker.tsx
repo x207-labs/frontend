@@ -7,10 +7,10 @@ export function EpochPicker() {
     return query.isError ? (
       <ErrorNotice error={query.error} onRetry={() => query.refetch()} />
     ) : (
-      <Loading label="Memuat epoch" />
+      <Loading label="Loading epoch" />
     )
   }
-  if (!selected) return <p className="state">Belum ada epoch di lingkaran ini.</p>
+  if (!selected) return <p className="state">No epoch in this circle yet.</p>
   return (
     <div className="picker">
       <label htmlFor="epoch-picker">Epoch</label>

@@ -26,7 +26,7 @@ export function Scatter({ title, xLabel, yLabel, yMax, formatY, points }: Props)
     <figure className="scatter">
       <figcaption>{title}</figcaption>
       <div className="scatter-plot">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${title}. Rincian ada di tabel per epoch.`}>
+        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${title}. Details are in the per-epoch table.`}>
           {yTicks.map((t) => (
             <g key={t}>
               <line className="grid" x1={M.left} x2={W - M.right} y1={sy(t)} y2={sy(t)} />
@@ -37,7 +37,7 @@ export function Scatter({ title, xLabel, yLabel, yMax, formatY, points }: Props)
           ))}
           {xTicks.map((t) => (
             <text key={t} className="tick" x={sx(t)} y={H - M.bottom + 18} textAnchor="middle">
-              {t.toLocaleString('id-ID')}
+              {t.toLocaleString('en-US')}
             </text>
           ))}
           <text className="tick" x={(M.left + W - M.right) / 2} y={H - 6} textAnchor="middle">

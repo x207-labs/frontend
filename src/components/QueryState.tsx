@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { ApiError } from '../api/client'
 import { describeMarketError } from '../lib/marketError'
 
-export function Loading({ label = 'Memuat data' }: { label?: string }) {
+export function Loading({ label = 'Loading data' }: { label?: string }) {
   return (
     <p className="state" role="status">
       <span className="spinner" aria-hidden="true" />
@@ -20,14 +20,14 @@ export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry: () =>
     ? describeMarketError(error)
     : error instanceof Error && error.message !== 'Failed to fetch'
       ? error.message
-      : 'Read API tidak bisa dihubungi.'
+      : 'Read API unreachable.'
   return (
     <div className="state state-error" role="alert">
       <p>
         <code>{code}</code> {message}
       </p>
       <button type="button" onClick={onRetry}>
-        Coba lagi
+        Try again
       </button>
     </div>
   )

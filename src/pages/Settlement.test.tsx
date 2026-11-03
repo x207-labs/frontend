@@ -17,22 +17,22 @@ const mine = (items: unknown[]) => (path: string) =>
 afterEach(() => vi.useRealTimers())
 
 describe('settlement debtor', () => {
-  it('TC-FE-009-01 tagihan due: posisi bersih, status, batas bayar, dan hitung mundur', async () => {
+  it('TC-FE-009-01 due amount: net position, status, payment deadline, and countdown', async () => {
     vi.useFakeTimers({ toFake: ['Date'], now: NOW })
     renderApp('/settlement?epoch=42', undefined, false, createMockWallet(SCRAPER, SCRAPER))
-    const summary = await screen.findByText(/Epoch 42: posisi bersih/)
+    const summary = await screen.findByText(/Epoch 42: net position/)
     expect(summary).toHaveTextContent('-35')
     expect(summary).toHaveTextContent('status due')
-    expect(screen.getByText(/Batas bayar/)).toHaveTextContent(DUE)
-    expect(screen.getByTestId('countdown')).toHaveTextContent('2j 00m 00d')
+    expect(screen.getByText(/Payment deadline/)).toHaveTextContent(DUE)
+    expect(screen.getByTestId('countdown')).toHaveTextContent('2h 00m 00s')
   })
 
-  it('TC-FE-009-02 bayar: ft_transfer_call dengan msg settle epoch, amount = due, 1 yocto', async () => {
+  it('TC-FE-009-02 pay: ft_transfer_call with the settle epoch msg, amount = due, 1 yocto', async () => {
     vi.useFakeTimers({ toFake: ['Date'], now: NOW })
     const wallet = createMockWallet(SCRAPER, SCRAPER)
     renderApp('/settlement?epoch=42', undefined, false, wallet)
     const user = userEvent.setup({ advanceTimers: () => undefined })
-    await user.click(await screen.findByRole('button', { name: 'Bayar residual' }))
+    await user.click(await screen.findByRole('button', { name: 'Pay residual' }))
     await waitFor(() => expect(wallet.txs).toHaveLength(1))
     expect(wallet.txs[0]).toMatchObject({
       receiverId: 'usdt.tether-token.near', methodName: 'ft_transfer_call', deposit: '1',
@@ -40,55 +40,55 @@ describe('settlement debtor', () => {
     })
   })
 
-  it('TC-FE-009-04 melewati batas bayar: tombol nonaktif dan pesan', async () => {
+  it('TC-FE-009-04 past the payment deadline: button disabled and a message', async () => {
     vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], now: NOW })
     renderApp('/settlement?epoch=42', undefined, false, createMockWallet(SCRAPER, SCRAPER))
-    const button = await screen.findByRole('button', { name: 'Bayar residual' })
+    const button = await screen.findByRole('button', { name: 'Pay residual' })
     expect(button).toBeEnabled()
     await act(async () => {
       vi.setSystemTime(Date.parse(DUE) + 1000)
       await vi.advanceTimersByTimeAsync(1100)
     })
-    expect(screen.getByRole('button', { name: 'Bayar residual' })).toBeDisabled()
-    expect(screen.getByRole('alert')).toHaveTextContent('Payment window habis')
+    expect(screen.getByRole('button', { name: 'Pay residual' })).toBeDisabled()
+    expect(screen.getByRole('alert')).toHaveTextContent('Payment window expired')
   })
 
-  it('TC-FE-009-04 status defaulted tampil dengan tombol nonaktif', async () => {
+  it('TC-FE-009-04 defaulted status shows with a disabled button', async () => {
     renderApp('/settlement?epoch=42', mine([row('defaulted')]), false, createMockWallet(SCRAPER, SCRAPER))
-    expect(await screen.findByText(/Epoch 42: posisi bersih/)).toHaveTextContent('defaulted')
-    expect(screen.getByRole('button', { name: 'Bayar residual' })).toBeDisabled()
-    expect(screen.getByRole('alert')).toHaveTextContent('Payment window habis')
+    expect(await screen.findByText(/Epoch 42: net position/)).toHaveTextContent('defaulted')
+    expect(screen.getByRole('button', { name: 'Pay residual' })).toBeDisabled()
+    expect(screen.getByRole('alert')).toHaveTextContent('Payment window expired')
   })
 
-  it('TC-FE-009-05 tidak ada tagihan', async () => {
+  it('TC-FE-009-05 no dues', async () => {
     renderApp('/settlement?epoch=42', mine([]), false, createMockWallet(SCRAPER, SCRAPER))
-    expect(await screen.findByText('Tidak ada tagihan.')).toBeInTheDocument()
+    expect(await screen.findByText('No dues.')).toBeInTheDocument()
   })
 
-  it('TC-FE-009-06 loading lalu error 404 member_not_found', async () => {
+  it('TC-FE-009-06 loading then error 404 member_not_found', async () => {
     renderApp(
       '/settlement?epoch=42',
       (p) => (p.includes('/settlements') && p.includes('/members/') ? { ...apiError(404, 'member_not_found'), delayMs: 30 } : undefined),
       false,
       createMockWallet(SCRAPER, SCRAPER),
     )
-    expect(await screen.findByText(/Memuat tagihan/)).toBeInTheDocument()
+    expect(await screen.findByText(/Loading dues/)).toBeInTheDocument()
     expect(await screen.findByRole('alert')).toHaveTextContent('member_not_found')
   })
 
-  it('TC-FE-009-07 wallet menolak: dibatalkan dan status tetap due', async () => {
+  it('TC-FE-009-07 wallet rejects: cancelled and status stays due', async () => {
     vi.useFakeTimers({ toFake: ['Date'], now: NOW })
     const wallet = createMockWallet(SCRAPER, SCRAPER)
     wallet.rejectNext = true
     renderApp('/settlement?epoch=42', undefined, false, wallet)
     const user = userEvent.setup({ advanceTimers: () => undefined })
-    await user.click(await screen.findByRole('button', { name: 'Bayar residual' }))
-    expect(await screen.findByText(/Dibatalkan pengguna/)).toBeInTheDocument()
-    expect(screen.getByText(/Epoch 42: posisi bersih/)).toHaveTextContent('status due')
+    await user.click(await screen.findByRole('button', { name: 'Pay residual' }))
+    expect(await screen.findByText(/Cancelled by user/)).toBeInTheDocument()
+    expect(screen.getByText(/Epoch 42: net position/)).toHaveTextContent('status due')
     expect(wallet.txs).toHaveLength(0)
   })
 
-  it('TC-FE-009-08 aset lain: peringatan deadline_risk tampil dari quote settle', async () => {
+  it('TC-FE-009-08 other asset: the deadline_risk warning shows from the settle quote', async () => {
     vi.useFakeTimers({ toFake: ['Date'], now: NOW })
     const quote = {
       jobId: 'j1', status: 'waiting_deposit', purpose: 'settle', unit: 'credit', decimals: 6, originAsset: 'x', destinationAsset: 'y',
@@ -102,14 +102,14 @@ describe('settlement debtor', () => {
       createMockWallet(SCRAPER, SCRAPER),
     )
     const user = userEvent.setup({ advanceTimers: () => undefined })
-    await user.click(await screen.findByRole('button', { name: 'Bayar dengan aset lain' }))
-    await user.click(await screen.findByRole('button', { name: 'Minta quote 1Click' }))
-    expect(await screen.findByText(/Risiko melewati batas bayar/)).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Pay with another asset' }))
+    await user.click(await screen.findByRole('button', { name: 'Request 1Click quote' }))
+    expect(await screen.findByText(/Risk of missing the payment deadline/)).toBeInTheDocument()
     expect(requests().find((r) => r.method === 'POST' && r.path.includes('/settlement/'))?.body).toMatchObject({ purpose: 'settle', epoch: 42, account: SCRAPER })
   })
 
-  it('tanpa login: ajakan login', async () => {
+  it('not signed in: a prompt to sign in', async () => {
     renderApp('/settlement?epoch=42')
-    expect(await screen.findByText(/Masuk dengan wallet untuk melihat tagihan/)).toBeInTheDocument()
+    expect(await screen.findByText(/Sign in with a wallet to see your dues/)).toBeInTheDocument()
   })
 })

@@ -23,30 +23,30 @@ export function PrunePanel({ epoch }: { epoch: number }) {
 
   if (!finalized) {
     return (
-      <section aria-label="Pangkas epoch">
-        <h3>Pangkas epoch</h3>
-        <p className="state">Epoch {epoch} belum <code className="plain">finalized</code>; <code className="plain">prune_epoch</code> menolaknya (<code className="plain">ERR_NOT_FINALIZED</code>).</p>
+      <section aria-label="Prune epoch">
+        <h3>Prune epoch</h3>
+        <p className="state">Epoch {epoch} is not <code className="plain">finalized</code> yet; <code className="plain">prune_epoch</code> rejects it (<code className="plain">ERR_NOT_FINALIZED</code>).</p>
       </section>
     )
   }
   return (
-    <section aria-label="Pangkas epoch">
-      <h3>Pangkas epoch</h3>
+    <section aria-label="Prune epoch">
+      <h3>Prune epoch</h3>
       <p className="state" role="status" data-testid="prune-status">
         {pairsLeft === null
-          ? 'Memeriksa pasangan epoch…'
+          ? 'Checking epoch pairs…'
           : pairsLeft
-            ? `Epoch ${epoch} belum dipangkas: pasangan kewajiban masih tersimpan di kontrak.`
-            : `Pasangan kewajiban epoch ${epoch} sudah dihapus dari kontrak. Panggil lagi sampai transaksi mengembalikan 0 untuk total peserta dan bundle.`}
+            ? `Epoch ${epoch} is not pruned yet: obligation pairs are still stored on the contract.`
+            : `Obligation pairs of epoch ${epoch} have been removed from the contract. Call again until the transaction returns 0 for the participant total and bundle.`}
       </p>
       <p className="state">
-        Satu panggilan menghapus paling banyak {PRUNE_MAX_ITEMS_PER_CALL} entri (sekitar 70 Tgas untuk 196 entri; tombol memakai 100 Tgas). Posisi settlement,
-        klaim, dan laporan 207 tidak berubah.
+        One call removes at most {PRUNE_MAX_ITEMS_PER_CALL} entries (about 70 Tgas for 196 entries; the button uses 100 Tgas). Settlement positions,
+        claims, and the 207 report are unchanged.
       </p>
       <button type="button" disabled={!account || signing} onClick={() => void prune()}>
-        {signing ? 'Menunggu wallet…' : `Pangkas epoch ${epoch}`}
+        {signing ? 'Waiting for wallet…' : `Prune epoch ${epoch}`}
       </button>
-      {!account && <p className="state">Masuk dengan wallet untuk menandatangani.</p>}
+      {!account && <p className="state">Sign in with a wallet to sign.</p>}
       <TxResult state={state} />
     </section>
   )

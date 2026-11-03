@@ -7,22 +7,22 @@ import { formatCredit, formatNumber } from '../lib/format'
 type Key = keyof Params
 
 const percent = (bps: number) => `${formatNumber(bps / 100)}%`
-const minutes = (seconds: number) => `${formatNumber(seconds / 60)} menit`
+const minutes = (seconds: number) => `${formatNumber(seconds / 60)} minutes`
 
 const rows: { key: Key; label: string; format: (value: never) => string }[] = [
-  { key: 'epoch_length', label: 'Panjang epoch', format: minutes },
-  { key: 'payment_window', label: 'Jendela bayar', format: minutes },
-  { key: 'proposal_window', label: 'Jendela proposal kliring', format: minutes },
-  { key: 'base_limit_ratio', label: 'Rasio limit awal terhadap stake', format: percent },
-  { key: 'limit_growth', label: 'Kenaikan limit dari pelunasan tunai', format: percent },
-  { key: 'limit_cap', label: 'Batas limit (credit)', format: (v: string) => formatCredit(v) },
-  { key: 'limit_decay', label: 'Peluruhan limit', format: percent },
+  { key: 'epoch_length', label: 'Epoch length', format: minutes },
+  { key: 'payment_window', label: 'Payment window', format: minutes },
+  { key: 'proposal_window', label: 'Clearing proposal window', format: minutes },
+  { key: 'base_limit_ratio', label: 'Initial limit ratio to stake', format: percent },
+  { key: 'limit_growth', label: 'Limit growth from cash settlement', format: percent },
+  { key: 'limit_cap', label: 'Limit cap (credit)', format: (v: string) => formatCredit(v) },
+  { key: 'limit_decay', label: 'Limit decay', format: percent },
   {
     key: 'fees',
-    label: 'Biaya',
-    format: (v: Params['fees']) => `kliring ${percent(v.clearing_fee_bps)}, solver ${percent(v.solver_fee_bps)}`,
+    label: 'Fees',
+    format: (v: Params['fees']) => `clearing ${percent(v.clearing_fee_bps)}, solver ${percent(v.solver_fee_bps)}`,
   },
-  { key: 'admission', label: 'Penerimaan anggota', format: (v: string) => v },
+  { key: 'admission', label: 'Member admission', format: (v: string) => v },
 ]
 
 // Riwayat memuat nilai mentah per field; formatnya mengikuti tabel parameter.
@@ -34,13 +34,13 @@ function formatField(field: string, value: unknown): string {
 const EXPLORER_ACCOUNT = NEAR_NETWORK === 'mainnet' ? 'https://nearblocks.io/address/' : 'https://testnet.nearblocks.io/address/'
 
 const STATUS_LABEL: Record<DaoProposal['status'], string> = {
-  InProgress: 'Terbuka',
-  Approved: 'Disetujui',
-  Rejected: 'Ditolak',
-  Removed: 'Dihapus',
-  Expired: 'Kedaluwarsa',
-  Moved: 'Dipindah',
-  Failed: 'Gagal dijalankan',
+  InProgress: 'Open',
+  Approved: 'Approved',
+  Rejected: 'Rejected',
+  Removed: 'Removed',
+  Expired: 'Expired',
+  Moved: 'Moved',
+  Failed: 'Failed to execute',
 }
 
 /** Sputnik `vote_counts` per peran dijumlahkan: [setuju, tolak, hapus]. */
@@ -68,10 +68,10 @@ function DaoProposals() {
   const next = params.data?.nextEpoch
   return (
     <>
-      <h2>Proposal DAO</h2>
+      <h2>DAO proposals</h2>
       {next && params.data?.nextEpochEffective != null && (
-        <p className="state" aria-label="Parameter epoch berikutnya">
-          Berlaku mulai epoch {params.data.nextEpochEffective}:{' '}
+        <p className="state" aria-label="Next epoch parameters">
+          Effective from epoch {params.data.nextEpochEffective}:{' '}
           {Object.entries(next)
             .map(([key, value]) => `${key} = ${formatField(key, value)}`)
             .join(', ')}
@@ -80,9 +80,9 @@ function DaoProposals() {
       )}
       <QueryState
         query={proposals}
-        loadingLabel="Memuat proposal DAO"
+        loadingLabel="Loading DAO proposals"
         isEmpty={(d) => d.items.length === 0}
-        empty="Belum ada proposal set_params di DAO."
+        empty="No set_params proposals in the DAO yet."
       >
         {(data) => {
           const open = data.items.filter((p) => p.status === 'InProgress')
@@ -94,9 +94,9 @@ function DaoProposals() {
                   <tr>
                     <th scope="col" className="num">ID</th>
                     <th scope="col">Status</th>
-                    <th scope="col">Perubahan</th>
-                    <th scope="col">Pengusul</th>
-                    <th scope="col" className="num">Suara (setuju / tolak / hapus)</th>
+                    <th scope="col">Change</th>
+                    <th scope="col">Proposer</th>
+                    <th scope="col" className="num">Votes (approve / reject / remove)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -127,13 +127,13 @@ function DaoProposals() {
           return (
             <>
               <p>
-                DAO: <a href={`${EXPLORER_ACCOUNT}${data.dao}`} target="_blank" rel="noreferrer">{data.dao}</a>. Suara diberikan di DAO oleh anggota dewan.
+                DAO: <a href={`${EXPLORER_ACCOUNT}${data.dao}`} target="_blank" rel="noreferrer">{data.dao}</a>. Votes are cast in the DAO by council members.
               </p>
-              {open.length === 0 ? <p className="state">Tidak ada proposal yang terbuka.</p> : table(open, 'Proposal terbuka')}
+              {open.length === 0 ? <p className="state">No open proposals.</p> : table(open, 'Open proposals')}
               {closed.length > 0 && (
                 <>
-                  <h3>Proposal selesai</h3>
-                  {table(closed, 'Proposal selesai')}
+                  <h3>Closed proposals</h3>
+                  {table(closed, 'Closed proposals')}
                 </>
               )}
             </>
@@ -149,16 +149,16 @@ export function Governance() {
   const history = useParamsHistory()
   return (
     <>
-      <QueryState query={params} loadingLabel="Memuat parameter">
+      <QueryState query={params} loadingLabel="Loading parameters">
         {(data) => (
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th scope="col">Parameter</th>
-                  <th scope="col">Nama di kontrak</th>
-                  <th scope="col" className="num">Nilai aktif</th>
-                  <th scope="col">Perubahan tertunda</th>
+                  <th scope="col">Contract name</th>
+                  <th scope="col" className="num">Active value</th>
+                  <th scope="col">Pending change</th>
                 </tr>
               </thead>
               <tbody>
@@ -173,7 +173,7 @@ export function Governance() {
                       <td className="num">{format(data.active[key] as never)}</td>
                       <td>
                         {next !== undefined &&
-                          `${format(next as never)}, berlaku mulai epoch ${data.nextEpochEffective}`}
+                          `${format(next as never)}, effective from epoch ${data.nextEpochEffective}`}
                       </td>
                     </tr>
                   )
@@ -184,12 +184,12 @@ export function Governance() {
         )}
       </QueryState>
       <DaoProposals />
-      <h2>Riwayat perubahan</h2>
+      <h2>Change history</h2>
       <QueryState
         query={history}
-        loadingLabel="Memuat riwayat"
+        loadingLabel="Loading history"
         isEmpty={(d) => d.items.length === 0}
-        empty="Belum ada perubahan parameter."
+        empty="No parameter changes yet."
       >
         {(data) => (
           <div className="table-wrap">
@@ -197,10 +197,10 @@ export function Governance() {
               <thead>
                 <tr>
                   <th scope="col">Parameter</th>
-                  <th scope="col" className="num">Dari</th>
-                  <th scope="col" className="num">Menjadi</th>
-                  <th scope="col" className="num">Berlaku mulai epoch</th>
-                  <th scope="col" className="num">Blok</th>
+                  <th scope="col" className="num">From</th>
+                  <th scope="col" className="num">To</th>
+                  <th scope="col" className="num">Effective from epoch</th>
+                  <th scope="col" className="num">Block</th>
                 </tr>
               </thead>
               <tbody>

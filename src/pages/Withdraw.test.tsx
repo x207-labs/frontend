@@ -16,8 +16,8 @@ const job = (status: string) => ({ jobId: 'w1', kind: 'withdraw', status, oneCli
 async function open(override: Override, wallet = createMockWallet(GPU, GPU), pollMs: number | false = false) {
   const view = renderApp('/settlement?epoch=42', override, pollMs, wallet)
   const user = userEvent.setup()
-  await user.type(await screen.findByLabelText('Nominal (credit)'), '45')
-  await user.type(screen.getByLabelText('Alamat penerima'), '0x4b2e0000000000000000000000000000000a7c10')
+  await user.type(await screen.findByLabelText('Amount (credit)'), '45')
+  await user.type(screen.getByLabelText('Recipient address'), '0x4b2e0000000000000000000000000000000a7c10')
   return { ...view, user }
 }
 const ok = (path: string, init: RequestInit | undefined, routes: Record<string, { status: number; body: unknown }>) => {
@@ -25,47 +25,47 @@ const ok = (path: string, init: RequestInit | undefined, routes: Record<string, 
   return undefined
 }
 
-describe('pencairan kreditor ke chain lain', () => {
-  it('TC-FE-011-01 fee tampil sebelum tombol tanda tangan ada', async () => {
+describe('creditor withdrawal to another chain', () => {
+  it('TC-FE-011-01 the fee shows before the sign button exists', async () => {
     const { user } = await open((p, i) => ok(p, i, { '/withdraw/quote': { status: 201, body: QUOTE } }))
-    expect(screen.queryByRole('button', { name: 'Tanda tangani pencairan' })).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Minta quote pencairan' }))
-    const card = await screen.findByLabelText('Biaya pencairan')
-    expect(card).toHaveTextContent('0,0024')
+    expect(screen.queryByRole('button', { name: 'Sign withdrawal' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Request withdrawal quote' }))
+    const card = await screen.findByLabelText('Withdrawal fees')
+    expect(card).toHaveTextContent('0.0024')
     expect(card).toHaveTextContent('14 bps')
     expect(card).toHaveTextContent('0.1453%')
-    expect(card).toHaveTextContent('44,9346')
-    expect(screen.getByRole('button', { name: 'Tanda tangani pencairan' })).toBeEnabled()
+    expect(card).toHaveTextContent('44.9346')
+    expect(screen.getByRole('button', { name: 'Sign withdrawal' })).toBeEnabled()
   })
 
-  it('TC-FE-011-02 di bawah ambang Base: pesan ambang dan perkiraan kerugian', async () => {
+  it('TC-FE-011-02 below the Base threshold: threshold message and estimated loss', async () => {
     const { user } = await open((p, i) =>
       ok(p, i, { '/withdraw/quote': { status: 422, body: { error: { code: 'below_withdraw_threshold', message: 'x', details: { chain: 'base', minAmount: '250000', estimatedLossPct: 2.55 } } } } }),
     )
-    await user.click(screen.getByRole('button', { name: 'Minta quote pencairan' }))
+    await user.click(screen.getByRole('button', { name: 'Request withdrawal quote' }))
     const alert = await screen.findByRole('alert')
-    expect(alert).toHaveTextContent('minimal 0,25 USD')
+    expect(alert).toHaveTextContent('must be at least 0.25 USD')
     expect(alert).toHaveTextContent('2.55%')
   })
 
-  it('TC-FE-011-03 Tron: high_fee_requires_ack lalu request ulang membawa acceptHighFee true', async () => {
+  it('TC-FE-011-03 Tron: high_fee_requires_ack then the repeated request carries acceptHighFee true', async () => {
     let calls = 0
     const { user, requests } = await open((p, i) => {
       if (!p.endsWith('/withdraw/quote') || i?.method !== 'POST') return undefined
       return calls++ === 0 ? apiError(422, 'high_fee_requires_ack') : { status: 201, body: QUOTE }
     })
-    await user.selectOptions(screen.getByLabelText('Chain tujuan'), 'tron')
-    await user.click(screen.getByRole('button', { name: 'Minta quote pencairan' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Biaya pencairan ke chain ini tinggi')
-    await user.click(screen.getByRole('checkbox', { name: /menerima biaya tinggi/ }))
-    await user.click(screen.getByRole('button', { name: 'Minta quote pencairan' }))
-    await screen.findByLabelText('Biaya pencairan')
+    await user.selectOptions(screen.getByLabelText('Destination chain'), 'tron')
+    await user.click(screen.getByRole('button', { name: 'Request withdrawal quote' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('The withdrawal fee to this chain is high')
+    await user.click(screen.getByRole('checkbox', { name: /accept the high fee/ }))
+    await user.click(screen.getByRole('button', { name: 'Request withdrawal quote' }))
+    await screen.findByLabelText('Withdrawal fees')
     const posts = requests().filter((r) => r.path.endsWith('/withdraw/quote'))
     expect(posts.map((r) => r.body.acceptHighFee)).toEqual([false, true])
     expect(posts[0]!.body.destinationAsset).toContain('tron-')
   })
 
-  it('TC-FE-011-04 dan 06 urutan quote, intent, tanda tangan wallet, submit, polling sampai completed, tautan explorer', async () => {
+  it('TC-FE-011-04 and 06 order of quote, intent, wallet signature, submit, polling until completed, explorer link', async () => {
     const wallet = createMockWallet(GPU, GPU)
     const statuses = ['processing', 'completed']
     let n = 0
@@ -79,9 +79,9 @@ describe('pencairan kreditor ke chain lain', () => {
       wallet,
       20,
     )
-    await user.click(screen.getByRole('button', { name: 'Minta quote pencairan' }))
-    await user.click(await screen.findByRole('button', { name: 'Tanda tangani pencairan' }))
-    await waitFor(() => expect(screen.getByText(/Status: Selesai/)).toBeInTheDocument())
+    await user.click(screen.getByRole('button', { name: 'Request withdrawal quote' }))
+    await user.click(await screen.findByRole('button', { name: 'Sign withdrawal' }))
+    await waitFor(() => expect(screen.getByText(/Status: Completed/)).toBeInTheDocument())
     expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/settlement/')).map((r) => r.path.split('/').slice(-2).join('/'))).toEqual(['withdraw/quote', 'withdraw/intent', 'withdraw/submit'])
     expect(wallet.messages).toHaveLength(1)
     expect(wallet.messages[0]).toMatchObject({ message: '{"intent":"x"}', recipient: 'intents.near', signerId: GPU })
@@ -91,7 +91,7 @@ describe('pencairan kreditor ke chain lain', () => {
     expect(screen.getByRole('link', { name: 'INTENTHASH1' })).toHaveAttribute('href', expect.stringContaining('INTENTHASH1'))
   })
 
-  it('TC-FE-011-05 submit 409 job_state_conflict: arahkan mulai dari quote', async () => {
+  it('TC-FE-011-05 submit 409 job_state_conflict: directs to start from the quote', async () => {
     const { user } = await open((p, i) =>
       ok(p, i, {
         '/withdraw/quote': { status: 201, body: QUOTE },
@@ -99,33 +99,33 @@ describe('pencairan kreditor ke chain lain', () => {
         '/withdraw/submit': { status: 409, body: { error: { code: 'job_state_conflict', message: 'x' } } },
       }),
     )
-    await user.click(screen.getByRole('button', { name: 'Minta quote pencairan' }))
-    await user.click(await screen.findByRole('button', { name: 'Tanda tangani pencairan' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Urutan langkah tidak sesuai. Mulai lagi dari quote.')
-    expect(screen.queryByRole('button', { name: 'Tanda tangani pencairan' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Request withdrawal quote' }))
+    await user.click(await screen.findByRole('button', { name: 'Sign withdrawal' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Steps are out of order. Start again from the quote.')
+    expect(screen.queryByRole('button', { name: 'Sign withdrawal' })).not.toBeInTheDocument()
   })
 
-  it('TC-FE-011-07 loading lalu 502 one_click_error dengan details.upstream', async () => {
+  it('TC-FE-011-07 loading then 502 one_click_error with details.upstream', async () => {
     const { user } = await open((p, i) =>
       p.endsWith('/withdraw/quote') && i?.method === 'POST'
         ? { status: 502, delayMs: 40, body: { error: { code: 'one_click_error', message: 'x', details: { upstream: { status: 500 } } } } }
         : undefined,
     )
-    await user.click(screen.getByRole('button', { name: 'Minta quote pencairan' }))
-    expect(await screen.findByText('Memuat quote…', { selector: 'p' })).toBeInTheDocument()
-    expect(await screen.findByRole('alert')).toHaveTextContent('1Click bermasalah: {"status":500}')
+    await user.click(screen.getByRole('button', { name: 'Request withdrawal quote' }))
+    expect(await screen.findByText('Loading quote…', { selector: 'p' })).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('1Click has a problem: {"status":500}')
   })
 
-  it('wallet menolak tanda tangan: dibatalkan, tidak ada submit', async () => {
+  it('wallet rejects the signature: cancelled, no submit', async () => {
     const wallet = createMockWallet(GPU, GPU)
     const { user, requests } = await open(
       (p, i) => ok(p, i, { '/withdraw/quote': { status: 201, body: QUOTE }, '/withdraw/intent': { status: 200, body: INTENT } }),
       wallet,
     )
-    await user.click(screen.getByRole('button', { name: 'Minta quote pencairan' }))
+    await user.click(screen.getByRole('button', { name: 'Request withdrawal quote' }))
     wallet.rejectNext = true
-    await user.click(await screen.findByRole('button', { name: 'Tanda tangani pencairan' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Dibatalkan pengguna')
+    await user.click(await screen.findByRole('button', { name: 'Sign withdrawal' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Cancelled by user')
     expect(requests().some((r) => r.path.endsWith('/withdraw/submit'))).toBe(false)
   })
 })

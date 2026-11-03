@@ -27,7 +27,7 @@ function Graph({ title, edges, nodes, mode }: { title: string; edges: Obligation
   return (
     <figure className="graph">
       <figcaption>{title}</figcaption>
-      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label={`${title}, ${edges.length} sisi`}>
+      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label={`${title}, ${edges.length} edges`}>
         <defs>
           <marker id={`arrow-${mode}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
@@ -69,10 +69,10 @@ function EdgeTable({ edges, staged }: { edges: ObligationEdge[]; staged: boolean
       <thead>
         <tr>
           <th>Debtor</th>
-          <th>Kreditor</th>
-          <th>Nilai</th>
-          {staged && <th>Terhapus</th>}
-          {staged && <th>Sisa</th>}
+          <th>Creditor</th>
+          <th>Amount</th>
+          {staged && <th>Cleared</th>}
+          {staged && <th>Remaining</th>}
         </tr>
       </thead>
       <tbody>
@@ -91,8 +91,8 @@ function EdgeTable({ edges, staged }: { edges: ObligationEdge[]; staged: boolean
 }
 
 const ERROR_TEXT: Record<string, string> = {
-  epoch_not_closed: 'Epoch ini belum ditutup, jadi kliring belum ada.',
-  epoch_not_found: 'Epoch tidak ditemukan.',
+  epoch_not_closed: 'This epoch is not closed yet, so there is no clearing.',
+  epoch_not_found: 'Epoch not found.',
 }
 
 function Cleared({ live, cleared }: { live: Obligations; cleared: Obligations }) {
@@ -108,19 +108,19 @@ function Cleared({ live, cleared }: { live: Obligations; cleared: Obligations })
   return (
     <>
       <p>
-        Nilai terhapus: <strong>{formatCredit(totalCleared.toString())}</strong> credit.
+        Cleared value: <strong>{formatCredit(totalCleared.toString())}</strong> credit.
       </p>
       <div className="graph-pair">
-        <Graph title="Sebelum kliring" edges={live.edges} nodes={nodes} mode="before" />
-        <Graph title="Sesudah kliring" edges={cleared.edges} nodes={nodes} mode="after" />
+        <Graph title="Before clearing" edges={live.edges} nodes={nodes} mode="before" />
+        <Graph title="After clearing" edges={cleared.edges} nodes={nodes} mode="after" />
       </div>
       {cycles.length > 0 && (
-        <section aria-label="Siklus terhapus">
-          <h3>Siklus terhapus</h3>
+        <section aria-label="Cleared cycles">
+          <h3>Cleared cycles</h3>
           <ul>
             {cycles.map((c, i) => (
               <li key={i}>
-                {c.path.map(shortAccount).join(' → ')}: {formatCredit(c.amount.toString())} per sisi
+                {c.path.map(shortAccount).join(' → ')}: {formatCredit(c.amount.toString())} per edge
               </li>
             ))}
           </ul>
@@ -140,17 +140,17 @@ export function ObligationGraph() {
     <>
       <QueryState
         query={live}
-        loadingLabel="Memuat kewajiban"
+        loadingLabel="Loading obligations"
         isEmpty={(d) => d.edges.length === 0}
-        empty="Belum ada kewajiban terdaftar di epoch ini."
+        empty="No obligations registered in this epoch yet."
       >
         {(data) => (
           <>
             <p>
-              {data.edgeCount} kewajiban senilai {formatCredit(data.totalObligation)} credit.
+              {data.edgeCount} obligations worth {formatCredit(data.totalObligation)} credit.
             </p>
             <Graph
-              title="Epoch berjalan"
+              title="Current epoch"
               edges={data.edges}
               nodes={[...new Set(data.edges.flatMap((e) => [e.debtor, e.creditor]))].sort()}
               mode="live"
@@ -159,15 +159,15 @@ export function ObligationGraph() {
           </>
         )}
       </QueryState>
-      <h2>Sebelum dan sesudah kliring</h2>
+      <h2>Before and after clearing</h2>
       {cleared.error instanceof ApiError && ERROR_TEXT[cleared.error.code] ? (
         <p className="state" role="status">{ERROR_TEXT[cleared.error.code]}</p>
       ) : (
         <QueryState
           query={cleared}
-          loadingLabel="Memuat hasil kliring"
+          loadingLabel="Loading clearing result"
           isEmpty={(d) => d.edges.length === 0}
-          empty="Kliring belum diterapkan untuk epoch ini."
+          empty="Clearing has not been applied to this epoch yet."
         >
           {(data) => (live.data ? <Cleared live={live.data} cleared={data} /> : null)}
         </QueryState>

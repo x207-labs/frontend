@@ -7,7 +7,7 @@ export function WalletButton() {
       <div className="wallet">
         <span className="wallet-account" title={account}>{account}</span>
         <button type="button" className="quiet" onClick={logout}>
-          Keluar
+          Sign out
         </button>
       </div>
     )
@@ -16,7 +16,7 @@ export function WalletButton() {
     <div className="wallet">
       {error && <span className="wallet-error" role="alert">{error}</span>}
       <button type="button" onClick={login} disabled={busy}>
-        {busy ? 'Membuka wallet…' : 'Masuk dengan wallet'}
+        {busy ? 'Opening wallet…' : 'Sign in with wallet'}
       </button>
     </div>
   )

@@ -26,8 +26,8 @@ describe('batch 3 F5 lifetime of the voucher key on the page', () => {
 
   it('TC-FE-SEC-23 the user can clear the key at once, and an empty field offers no clear button', () => {
     render(<Host initial="ed25519:secret" />)
-    fireEvent.click(screen.getByRole('button', { name: 'Hapus kunci sekarang' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Clear key now' }))
     expect(field().value).toBe('')
-    expect(screen.queryByRole('button', { name: 'Hapus kunci sekarang' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Clear key now' })).toBeNull()
   })
 })

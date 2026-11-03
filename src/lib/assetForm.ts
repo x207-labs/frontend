@@ -7,68 +7,68 @@ export type FieldKind = 'text' | 'number' | 'credit' | 'token' | 'datetime' | 's
 export type Field = { key: string; label: string; kind: FieldKind; optional?: boolean; options?: ReadonlyArray<[string, string]>; hint?: string }
 
 const NFT: Field[] = [
-  { key: 'nftContract', label: 'Kontrak NFT', kind: 'text' },
-  { key: 'tokenId', label: 'ID token NFT', kind: 'text' },
+  { key: 'nftContract', label: 'NFT contract', kind: 'text' },
+  { key: 'tokenId', label: 'NFT token ID', kind: 'text' },
 ]
 const FT: Field[] = [
-  { key: 'ftContract', label: 'Kontrak token', kind: 'text' },
-  { key: 'symbol', label: 'Simbol', kind: 'text' },
-  { key: 'decimals', label: 'Desimal token', kind: 'number' },
-  { key: 'amount', label: 'Jumlah token', kind: 'token', hint: 'Jumlah penuh, mis. 2.5; dikirim sebagai satuan terkecil.' },
+  { key: 'ftContract', label: 'Token contract', kind: 'text' },
+  { key: 'symbol', label: 'Symbol', kind: 'text' },
+  { key: 'decimals', label: 'Token decimals', kind: 'number' },
+  { key: 'amount', label: 'Token amount', kind: 'token', hint: 'Full amount, e.g. 2.5; sent in the smallest unit.' },
 ]
 const MT: Field[] = [
-  { key: 'mtContract', label: 'Kontrak multi-token', kind: 'text' },
-  { key: 'tokenId', label: 'ID token', kind: 'text', hint: 'Saldo Intents: nep141:… atau nep245:…' },
-  { key: 'amount', label: 'Jumlah (satuan terkecil)', kind: 'number' },
+  { key: 'mtContract', label: 'Multi-token contract', kind: 'text' },
+  { key: 'tokenId', label: 'Token ID', kind: 'text', hint: 'Intents balance: nep141:… or nep245:…' },
+  { key: 'amount', label: 'Amount (smallest unit)', kind: 'number' },
 ]
-const TRI: Array<[string, string]> = [['', 'belum diperiksa'], ['yes', 'ya'], ['no', 'tidak']]
+const TRI: Array<[string, string]> = [['', 'not checked'], ['yes', 'yes'], ['no', 'no']]
 
 export const KIND_FIELDS: Record<AssetKind, { label: string; fields: Field[] }> = {
-  nft: { label: '1 · NFT NEP-171', fields: [...NFT, { key: 'name', label: 'Nama', kind: 'text', optional: true }] },
+  nft: { label: '1 · NFT NEP-171', fields: [...NFT, { key: 'name', label: 'Name', kind: 'text', optional: true }] },
   ticket: {
-    label: '2 · Tiket acara (NFT)',
-    fields: [...NFT, { key: 'eventName', label: 'Nama acara', kind: 'text' }, { key: 'startsAt', label: 'Acara mulai (UTC)', kind: 'datetime' }, { key: 'endsAt', label: 'Acara selesai (UTC)', kind: 'datetime' }],
+    label: '2 · Event ticket (NFT)',
+    fields: [...NFT, { key: 'eventName', label: 'Event name', kind: 'text' }, { key: 'startsAt', label: 'Event starts (UTC)', kind: 'datetime' }, { key: 'endsAt', label: 'Event ends (UTC)', kind: 'datetime' }],
   },
-  'game-item': { label: '3 · Item game (NFT)', fields: [...NFT, { key: 'gameName', label: 'Nama game', kind: 'text' }, { key: 'collection', label: 'Koleksi', kind: 'text', optional: true }] },
-  coupon: { label: '4 · Kupon atau voucher toko (NFT)', fields: [...NFT, { key: 'description', label: 'Isi kupon', kind: 'text' }, { key: 'validUntil', label: 'Berlaku sampai (UTC)', kind: 'datetime' }] },
+  'game-item': { label: '3 · Game item (NFT)', fields: [...NFT, { key: 'gameName', label: 'Game name', kind: 'text' }, { key: 'collection', label: 'Collection', kind: 'text', optional: true }] },
+  coupon: { label: '4 · Store coupon or voucher (NFT)', fields: [...NFT, { key: 'description', label: 'Coupon content', kind: 'text' }, { key: 'validUntil', label: 'Valid until (UTC)', kind: 'datetime' }] },
   license: {
-    label: '5 · Lisensi software (NFT)',
-    fields: [...NFT, { key: 'product', label: 'Produk', kind: 'text' }, { key: 'termsHash', label: 'Hash syarat lisensi (64 hex)', kind: 'text' }, { key: 'seats', label: 'Jumlah kursi', kind: 'number' }],
+    label: '5 · Software license (NFT)',
+    fields: [...NFT, { key: 'product', label: 'Product', kind: 'text' }, { key: 'termsHash', label: 'License terms hash (64 hex)', kind: 'text' }, { key: 'seats', label: 'Number of seats', kind: 'number' }],
   },
-  ft: { label: '6 · Token fungible NEP-141', fields: FT },
+  ft: { label: '6 · Fungible token NEP-141', fields: FT },
   rwa: {
-    label: '7 · Token RWA',
+    label: '7 · RWA token',
     fields: [
       ...FT,
-      { key: 'wlCircle', label: 'Kontrak lingkaran ada di whitelist token', kind: 'select', options: TRI, optional: true },
-      { key: 'wlGrantor', label: 'Pemberi ada di whitelist token', kind: 'select', options: TRI, optional: true },
-      { key: 'wlBuyer', label: 'Pembeli ada di whitelist token', kind: 'select', options: TRI, optional: true },
+      { key: 'wlCircle', label: 'Circle contract is on the token whitelist', kind: 'select', options: TRI, optional: true },
+      { key: 'wlGrantor', label: 'Grantor is on the token whitelist', kind: 'select', options: TRI, optional: true },
+      { key: 'wlBuyer', label: 'Buyer is on the token whitelist', kind: 'select', options: TRI, optional: true },
     ],
   },
   lst: {
     label: '8 · Liquid staking token',
-    fields: [...FT, { key: 'rateNear', label: 'Nilai tukar ke NEAR (info)', kind: 'text', optional: true }, { key: 'rateSource', label: 'Sumber nilai tukar', kind: 'text', optional: true }],
+    fields: [...FT, { key: 'rateNear', label: 'Exchange rate to NEAR (info)', kind: 'text', optional: true }, { key: 'rateSource', label: 'Exchange rate source', kind: 'text', optional: true }],
   },
-  'intents-balance': { label: '9 · Saldo NEAR Intents', fields: [...MT, { key: 'label', label: 'Label', kind: 'text', optional: true }] },
+  'intents-balance': { label: '9 · NEAR Intents balance', fields: [...MT, { key: 'label', label: 'Label', kind: 'text', optional: true }] },
   'pool-share': {
-    label: '10 · Share pool likuiditas',
+    label: '10 · Liquidity pool share',
     fields: [
-      { key: 'pool', label: 'Nama pool', kind: 'text' },
-      { key: 'standard', label: 'Standar token share', kind: 'select', options: [['nep245', 'NEP-245 multi-token'], ['nep141', 'NEP-141']] },
-      { key: 'mtContract', label: 'Kontrak multi-token (NEP-245)', kind: 'text', optional: true },
-      { key: 'tokenId', label: 'ID token share (NEP-245)', kind: 'text', optional: true },
-      { key: 'amount', label: 'Jumlah share', kind: 'text', hint: 'NEP-245: satuan terkecil. NEP-141: jumlah penuh, mis. 2.5.' },
-      { key: 'ftContract', label: 'Kontrak token (hanya NEP-141)', kind: 'text', optional: true },
-      { key: 'symbol', label: 'Simbol (hanya NEP-141)', kind: 'text', optional: true },
-      { key: 'decimals', label: 'Desimal (hanya NEP-141)', kind: 'number', optional: true },
-      { key: 'valueInfo', label: 'Nilai share (info)', kind: 'text', optional: true },
+      { key: 'pool', label: 'Pool name', kind: 'text' },
+      { key: 'standard', label: 'Share token standard', kind: 'select', options: [['nep245', 'NEP-245 multi-token'], ['nep141', 'NEP-141']] },
+      { key: 'mtContract', label: 'Multi-token contract (NEP-245)', kind: 'text', optional: true },
+      { key: 'tokenId', label: 'Share token ID (NEP-245)', kind: 'text', optional: true },
+      { key: 'amount', label: 'Share amount', kind: 'text', hint: 'NEP-245: smallest unit. NEP-141: full amount, e.g. 2.5.' },
+      { key: 'ftContract', label: 'Token contract (NEP-141 only)', kind: 'text', optional: true },
+      { key: 'symbol', label: 'Symbol (NEP-141 only)', kind: 'text', optional: true },
+      { key: 'decimals', label: 'Decimals (NEP-141 only)', kind: 'number', optional: true },
+      { key: 'valueInfo', label: 'Share value (info)', kind: 'text', optional: true },
     ],
   },
 }
 
 export const COMMON_FIELDS: Field[] = [
-  { key: 'price', label: 'Harga (credit)', kind: 'credit' },
-  { key: 'hours', label: 'Penawaran berlaku (jam)', kind: 'number' },
+  { key: 'price', label: 'Price (credit)', kind: 'credit' },
+  { key: 'hours', label: 'Offer valid for (hours)', kind: 'number' },
 ]
 
 /** "2.5" dengan 6 desimal token menjadi "2500000"; null bila bukan angka > 0 atau desimalnya lebih banyak dari desimal token. */
@@ -89,20 +89,20 @@ const seconds = (text: string): number => {
 export function toAssetInput(kind: AssetKind, v: Record<string, string>, now: number): AssetInput | string {
   const need = (key: string) => (v[key] ?? '').trim()
   const price = toAtomic(need('price'))
-  if (price === null) return 'Harga harus angka credit > 0.'
-  if (!/^[1-9]\d{0,3}$/.test(need('hours'))) return 'Jam penawaran harus 1 sampai 9999.'
+  if (price === null) return 'Price must be a credit number > 0.'
+  if (!/^[1-9]\d{0,3}$/.test(need('hours'))) return 'Offer hours must be 1 to 9999.'
   const common = { unitPrice: price, expiresAt: now + Number(need('hours')) * 3600 }
   const fungiblePool = kind === 'pool-share' && need('standard') === 'nep141'
   const only = (f: Field) => (kind !== 'pool-share' ? true : fungiblePool ? !['mtContract', 'tokenId'].includes(f.key) : true)
   const mtPool = kind === 'pool-share' && !fungiblePool
   const missing = KIND_FIELDS[kind].fields.filter((f) => f.kind !== 'select' && only(f) && (!f.optional || (fungiblePool && ['ftContract', 'symbol', 'decimals'].includes(f.key)) || (mtPool && ['mtContract', 'tokenId'].includes(f.key))) && need(f.key) === '')
-  if (missing.length > 0) return `Isi: ${missing.map((f) => f.label).join(', ')}.`
+  if (missing.length > 0) return `Fill in: ${missing.map((f) => f.label).join(', ')}.`
   const tri = (key: string): boolean | undefined => (need(key) === 'yes' ? true : need(key) === 'no' ? false : undefined)
   const nft = { nftContract: need('nftContract'), tokenId: need('tokenId') }
   // FE-026 (X2): decimals and seats only as decimal integers; Number() would read "0x6" as 6 and "1e1" as 10
   const usesDecimals = ['ft', 'rwa', 'lst'].includes(kind) || fungiblePool
-  if (usesDecimals && !/^\d{1,2}$/.test(need('decimals'))) return 'Desimal token harus bilangan bulat 0 sampai 38 (angka desimal biasa).'
-  if (kind === 'license' && !/^[1-9]\d{0,8}$/.test(need('seats'))) return 'Jumlah kursi harus bilangan bulat >= 1 (angka desimal biasa).'
+  if (usesDecimals && !/^\d{1,2}$/.test(need('decimals'))) return 'Token decimals must be an integer from 0 to 38 (plain decimal digits).'
+  if (kind === 'license' && !/^[1-9]\d{0,8}$/.test(need('seats'))) return 'Number of seats must be an integer >= 1 (plain decimal digits).'
   const decimals = usesDecimals ? Number(need('decimals')) : 0
   const ftAmount = (): string => tokenToAtomic(need('amount'), decimals) ?? ''
   const ft = () => ({ ftContract: need('ftContract'), symbol: need('symbol'), decimals, amount: ftAmount() })
@@ -130,7 +130,7 @@ export function toAssetInput(kind: AssetKind, v: Record<string, string>, now: nu
       }
     }
     case 'lst':
-      return { kind, ...ft(), ...common, ...(need('rateNear') !== '' ? { rate: { nearPerToken: need('rateNear'), source: need('rateSource') || 'tanpa sumber', asOf: now } } : {}) }
+      return { kind, ...ft(), ...common, ...(need('rateNear') !== '' ? { rate: { nearPerToken: need('rateNear'), source: need('rateSource') || 'no source', asOf: now } } : {}) }
     case 'intents-balance':
       return { kind, ...mt(), ...opt('label', 'label'), ...common }
     case 'pool-share':

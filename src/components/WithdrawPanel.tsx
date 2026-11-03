@@ -17,13 +17,13 @@ type Chain = keyof typeof CHAINS
 const base64ToBytes = (value: string): Uint8Array => Uint8Array.from(atob(value), (c) => c.charCodeAt(0))
 
 const JOB_LABEL: Record<string, string> = {
-  quoted: 'Quote siap',
-  awaiting_signature: 'Menunggu tanda tangan',
-  processing: 'Pencairan diproses',
-  completed: 'Selesai',
-  failed: 'Gagal. Tidak ada langkah lanjut.',
-  refunded: 'Dikembalikan. Tidak ada langkah lanjut.',
-  expired: 'Kedaluwarsa. Tidak ada langkah lanjut.',
+  quoted: 'Quote ready',
+  awaiting_signature: 'Waiting for signature',
+  processing: 'Withdrawal processing',
+  completed: 'Completed',
+  failed: 'Failed. No further steps.',
+  refunded: 'Refunded. No further steps.',
+  expired: 'Expired. No further steps.',
 }
 
 // FE-011: pencairan saldo Intents kreditor ke chain lain. Urutan quote -> intent -> tanda tangan wallet -> submit -> polling.
@@ -51,13 +51,13 @@ export function WithdrawPanel({ account }: { account: string }) {
     const d = e.details as Record<string, unknown> | undefined
     switch (e.code) {
       case 'below_withdraw_threshold':
-        return `Pencairan ke ${String(d?.chain ?? 'chain ini')} minimal ${formatCredit(String(d?.minAmount ?? '0'))} USD; nominal ini kehilangan sekitar ${String(d?.estimatedLossPct ?? '?')}%.`
+        return `Withdrawal to ${String(d?.chain ?? 'this chain')} must be at least ${formatCredit(String(d?.minAmount ?? '0'))} USD; this amount would lose about ${String(d?.estimatedLossPct ?? '?')}%.`
       case 'high_fee_requires_ack':
-        return 'Biaya pencairan ke chain ini tinggi dibanding nominal. Centang persetujuan biaya tinggi untuk lanjut.'
+        return 'The withdrawal fee to this chain is high relative to the amount. Tick the high-fee consent to continue.'
       case 'job_state_conflict':
-        return 'Urutan langkah tidak sesuai. Mulai lagi dari quote.'
+        return 'Steps are out of order. Start again from the quote.'
       case 'one_click_error':
-        return `1Click bermasalah${d?.upstream ? `: ${JSON.stringify(d.upstream).slice(0, 120)}` : ''}`
+        return `1Click has a problem${d?.upstream ? `: ${JSON.stringify(d.upstream).slice(0, 120)}` : ''}`
       default:
         return `${e.code}: ${e.message}`
     }
@@ -92,7 +92,7 @@ export function WithdrawPanel({ account }: { account: string }) {
     try {
       const { intent } = await api.withdrawIntent(quote.jobId)
       const payload = intent.payload
-      if (!payload) throw new Error('Intent dari 1Click tidak memuat payload NEP-413')
+      if (!payload) throw new Error('The intent from 1Click has no NEP-413 payload')
       const signed = await signMessage({ message: payload.message, recipient: payload.recipient, nonce: base64ToBytes(payload.nonce) })
       const result = await api.withdrawSubmit(quote.jobId, {
         standard: 'nep413', payload, public_key: signed.publicKey, signature: signed.signature,
@@ -100,60 +100,60 @@ export function WithdrawPanel({ account }: { account: string }) {
       setIntentHash(result.intentHash)
     } catch (e) {
       if (e instanceof ApiError && e.code === 'job_state_conflict') setQuote(null)
-      setError(/reject|cancel|denied|declin|closed|batal/i.test(String((e as Error).message)) ? 'Dibatalkan pengguna. Tidak ada yang dikirim.' : describe(e))
+      setError(/reject|cancel|denied|declin|closed|batal/i.test(String((e as Error).message)) ? 'Cancelled by user. Nothing was sent.' : describe(e))
     } finally {
       setBusy(null)
     }
   }
 
   return (
-    <section className="withdraw" aria-label="Pencairan ke chain lain">
-      <h3>Cairkan saldo Intents ke chain lain</h3>
+    <section className="withdraw" aria-label="Withdrawal to another chain">
+      <h3>Withdraw Intents balance to another chain</h3>
       <label>
-        <span>Chain tujuan</span>
+        <span>Destination chain</span>
         <select value={chain} onChange={(e) => setChain(e.target.value as Chain)}>
           {Object.entries(CHAINS).map(([key, c]) => <option key={key} value={key}>{c.label}</option>)}
         </select>
       </label>
       <label>
-        <span>Nominal (credit)</span>
+        <span>Amount (credit)</span>
         <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" />
       </label>
       <label>
-        <span>Alamat penerima</span>
+        <span>Recipient address</span>
         <input value={recipient} onChange={(e) => setRecipient(e.target.value)} />
       </label>
       {needsAck && (
         <label className="check">
           <input type="checkbox" checked={acceptHighFee} onChange={(e) => setAcceptHighFee(e.target.checked)} />
-          <span>Saya menerima biaya tinggi untuk pencairan ini.</span>
+          <span>I accept the high fee for this withdrawal.</span>
         </label>
       )}
       <button type="button" onClick={() => void requestQuote()} disabled={!atomic || !recipient || busy !== null}>
-        {busy === 'quote' ? 'Meminta quote…' : 'Minta quote pencairan'}
+        {busy === 'quote' ? 'Requesting quote…' : 'Request withdrawal quote'}
       </button>
-      {busy === 'quote' && <Loading label="Memuat quote" />}
+      {busy === 'quote' && <Loading label="Loading quote" />}
       {error && <p className="state state-error" role="alert">{error}</p>}
       {quote && (
-        <dl aria-label="Biaya pencairan">
-          <dt>Biaya tetap</dt>
+        <dl aria-label="Withdrawal fees">
+          <dt>Fixed fee</dt>
           <dd>{formatCredit(quote.withdrawFee)}</dd>
-          <dt>Perkiraan biaya variabel</dt>
+          <dt>Estimated variable fee</dt>
           <dd>{quote.variableFeeBpsEstimate} bps</dd>
-          <dt>Total biaya</dt>
+          <dt>Total fee</dt>
           <dd>{quote.totalFeePct}%</dd>
-          <dt>Diterima</dt>
+          <dt>Received</dt>
           <dd>{formatCredit(quote.amountOut)}</dd>
         </dl>
       )}
       {quote && !intentHash && (
         <button type="button" onClick={() => void sign()} disabled={busy !== null}>
-          {busy === 'sign' ? 'Menunggu wallet…' : 'Tanda tangani pencairan'}
+          {busy === 'sign' ? 'Waiting for wallet…' : 'Sign withdrawal'}
         </button>
       )}
       {intentHash && (
         <p>
-          Intent terkirim: <a href={`${INTENTS_EXPLORER_URL}${intentHash}`} target="_blank" rel="noreferrer">{intentHash}</a>
+          Intent sent: <a href={`${INTENTS_EXPLORER_URL}${intentHash}`} target="_blank" rel="noreferrer">{intentHash}</a>
         </p>
       )}
       {status && <p className="state" role="status">Status: {JOB_LABEL[status] ?? status}</p>}

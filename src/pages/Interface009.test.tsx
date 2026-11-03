@@ -38,8 +38,8 @@ describe('interface 0.0.9 in the frontend', () => {
 
   it('TC-FE-090-02 settlement: no Intents balance, the button is off and the page says nothing waits', async () => {
     renderApp('/settlement', undefined, false, createMockWallet(SCRAPER, SCRAPER))
-    expect(await screen.findByText(/Tidak ada yang menunggu/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Tarik saldo Intents/ })).toBeDisabled()
+    expect(await screen.findByText(/Nothing is waiting/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Withdraw Intents balance/ })).toBeDisabled()
   })
 
   it('TC-FE-090-03 settlement: a balance is shown, the claim warning is written, and anybody can withdraw it with 150 Tgas', async () => {
@@ -49,11 +49,11 @@ describe('interface 0.0.9 in the frontend', () => {
         ? { status: 200, body: { circle: 'agents-main', unit: 'credit', decimals: 6, totalWithdrawn: '3000000', withdrawals: 2, items: [{ amount: '1500000', changedBlock: 77, receiptId: 'r2' }, { amount: '1500000', changedBlock: 60, receiptId: 'r1' }], nextCursor: null } }
         : undefined
     renderApp('/settlement', combine(history, views({ intents_balance: () => '1500000' })), false, wallet)
-    const section = await screen.findByRole('region', { name: 'Saldo Intents yang belum ditarik' })
-    expect(await within(section).findByText('1,5')).toBeInTheDocument()
-    expect(section).toHaveTextContent(/klaim bisa gagal sampai saldo ini\s+ditarik/)
-    expect(await within(section).findByTestId('withdrawal-history')).toHaveTextContent(/Sudah ditarik 2 kali, total 3 USDT\. Terakhir 1,5 USDT di blok 77/)
-    const button = within(section).getByRole('button', { name: /Tarik saldo Intents/ })
+    const section = await screen.findByRole('region', { name: 'Unwithdrawn Intents balance' })
+    expect(await within(section).findByText('1.5')).toBeInTheDocument()
+    expect(section).toHaveTextContent(/a claim can fail until this balance\s+is withdrawn/)
+    expect(await within(section).findByTestId('withdrawal-history')).toHaveTextContent(/Withdrawn 2 times, total 3 USDT\. Latest 1\.5 USDT at block 77/)
+    const button = within(section).getByRole('button', { name: /Withdraw Intents balance/ })
     await waitFor(() => expect(button).toBeEnabled())
     await userEvent.setup().click(button)
     await waitFor(() => expect(wallet.txs).toHaveLength(1))
@@ -80,11 +80,11 @@ describe('interface 0.0.9 in the frontend', () => {
       return undefined
     }
     renderApp('/marketplace', api, false, wallet)
-    const section = await screen.findByRole('region', { name: 'Intent barter saya' })
-    await waitFor(() => expect(within(section).getByTestId('intent-count')).toHaveTextContent(`2 dari ${MAX_OPEN_INTENTS_PER_MEMBER} intent terbuka`))
-    expect(within(section).getByText(/Tanpa catatan di buku intent off-chain/)).toBeInTheDocument()
-    expect(await within(section).findByText(/Tawar 10 panggilan/)).toBeInTheDocument()
-    const buttons = within(section).getAllByRole('button', { name: 'Hapus dari kontrak' })
+    const section = await screen.findByRole('region', { name: 'My barter intents' })
+    await waitFor(() => expect(within(section).getByTestId('intent-count')).toHaveTextContent(`2 of ${MAX_OPEN_INTENTS_PER_MEMBER} open intents`))
+    expect(within(section).getByText(/No record in the off-chain intent book/)).toBeInTheDocument()
+    expect(await within(section).findByText(/Offering 10 calls/)).toBeInTheDocument()
+    const buttons = within(section).getAllByRole('button', { name: 'Remove from contract' })
     expect(buttons).toHaveLength(2)
     await userEvent.setup().click(buttons[0]!)
     await waitFor(() => expect(wallet.txs).toHaveLength(1))
@@ -93,20 +93,20 @@ describe('interface 0.0.9 in the frontend', () => {
 
   it('TC-FE-090-04b marketplace: no intent posted shows the empty text with the limit', async () => {
     renderApp('/marketplace', undefined, false, createMockWallet(SCRAPER, SCRAPER))
-    const section = await screen.findByRole('region', { name: 'Intent barter saya' })
-    expect(await within(section).findByText(/Tidak ada intent terpasang di kontrak/)).toBeInTheDocument()
+    const section = await screen.findByRole('region', { name: 'My barter intents' })
+    expect(await within(section).findByText(/No intent posted on the contract/)).toBeInTheDocument()
   })
 
   it('TC-FE-090-05 report: an epoch that is not finalized cannot be pruned, a finalized one can, with the pair status from the contract', async () => {
     const wallet = createMockWallet(SCRAPER, SCRAPER)
-    const open = renderApp('/laporan?epoch=42', undefined, false, wallet)
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Pangkas epoch' })).toHaveTextContent(/belum finalized.*ERR_NOT_FINALIZED/))
-    expect(screen.queryByRole('button', { name: /Pangkas epoch/ })).not.toBeInTheDocument()
+    const open = renderApp('/reports?epoch=42', undefined, false, wallet)
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Prune epoch' })).toHaveTextContent(/not finalized yet.*ERR_NOT_FINALIZED/))
+    expect(screen.queryByRole('button', { name: /Prune epoch/ })).not.toBeInTheDocument()
     open.unmount()
 
-    renderApp('/laporan?epoch=41', undefined, false, wallet)
-    await waitFor(() => expect(screen.getByTestId('prune-status')).toHaveTextContent(/belum dipangkas/))
-    const button = await screen.findByRole('button', { name: 'Pangkas epoch 41' })
+    renderApp('/reports?epoch=41', undefined, false, wallet)
+    await waitFor(() => expect(screen.getByTestId('prune-status')).toHaveTextContent(/not pruned yet/))
+    const button = await screen.findByRole('button', { name: 'Prune epoch 41' })
     await waitFor(() => expect(button).toBeEnabled())
     await userEvent.setup().click(button)
     await waitFor(() => expect(wallet.txs).toHaveLength(1))
@@ -114,16 +114,16 @@ describe('interface 0.0.9 in the frontend', () => {
   })
 
   it('TC-FE-090-06 report: a pruned epoch says that its pairs are gone and that claims are unchanged', async () => {
-    renderApp('/laporan?epoch=41', views({ list_obligations: () => [] }), false, createMockWallet(SCRAPER, SCRAPER))
-    await waitFor(() => expect(screen.getByTestId('prune-status')).toHaveTextContent(/sudah dihapus dari kontrak/))
-    expect(screen.getByRole('region', { name: 'Pangkas epoch' })).toHaveTextContent(/klaim, dan laporan 207 tidak berubah/)
+    renderApp('/reports?epoch=41', views({ list_obligations: () => [] }), false, createMockWallet(SCRAPER, SCRAPER))
+    await waitFor(() => expect(screen.getByTestId('prune-status')).toHaveTextContent(/removed from the contract/))
+    expect(screen.getByRole('region', { name: 'Prune epoch' })).toHaveTextContent(/claims, and the 207 report are unchanged/)
   })
 
   it('TC-FE-090-07 onboarding: the join deposit is read from @x207/core and the page says that it is kept on exit', async () => {
     renderApp('/onboarding', undefined, false, createMockWallet(NEW_ACCOUNT, NEW_ACCOUNT))
     const note = await screen.findByTestId('join-deposit')
     expect(note).toHaveTextContent('0.35 NEAR')
-    expect(note).toHaveTextContent('tidak kembali saat keluar')
+    expect(note).toHaveTextContent('not refunded when you leave')
     expect(JOIN_STORAGE_DEPOSIT).toBe(35n * 10n ** 22n)
   })
 })

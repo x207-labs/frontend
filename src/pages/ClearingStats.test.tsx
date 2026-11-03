@@ -5,54 +5,54 @@ import { apiError, renderApp } from '../test/render'
 
 const fact = (term: string) => screen.getByText(term, { selector: 'dt' }).closest('div')!
 
-describe('statistik kliring', () => {
-  it('TC-FE-008-01 metrik epoch 42', async () => {
-    renderApp('/statistik')
-    expect(await screen.findByText('512 voucher menjadi 3 transfer.')).toBeInTheDocument()
-    expect(fact('Cleared ratio')).toHaveTextContent('0,71')
-    expect(fact('Penghematan transfer')).toHaveTextContent('170,67')
-    expect(fact('Kepadatan grafik')).toHaveTextContent('0,4667')
+describe('clearing stats', () => {
+  it('TC-FE-008-01 metrics of epoch 42', async () => {
+    renderApp('/stats')
+    expect(await screen.findByText('512 vouchers become 3 transfers.')).toBeInTheDocument()
+    expect(fact('Cleared ratio')).toHaveTextContent('0.71')
+    expect(fact('Transfer savings')).toHaveTextContent('170.67')
+    expect(fact('Graph density')).toHaveTextContent('0.4667')
   })
 
-  it('TC-FE-008-02 satu titik per epoch di tiap grafik dan baris tabel', async () => {
-    renderApp('/statistik')
+  it('TC-FE-008-02 one dot per epoch in each chart and a table row', async () => {
+    renderApp('/stats')
     await screen.findByText('Per epoch')
     await waitFor(() => expect(screen.getAllByTestId('dot-40')).toHaveLength(2))
     expect(screen.getAllByTestId('dot-41')).toHaveLength(2)
     expect(screen.getAllByTestId('dot-42')).toHaveLength(2)
     const row = screen.getAllByRole('row').find((r) => within(r).queryByText('41'))!
-    expect(row).toHaveTextContent('0,3')
+    expect(row).toHaveTextContent('0.3')
     expect(row).toHaveTextContent('60')
   })
 
-  it('TC-FE-008-03 defaultRate null bukan 0, metrik tambahan tampil', async () => {
-    renderApp('/statistik')
-    await screen.findByText('512 voucher menjadi 3 transfer.')
-    expect(fact('Default rate')).toHaveTextContent('belum tersedia')
-    expect(fact('Penurunan net debt')).toHaveTextContent('71%')
-    expect(fact('Waktu kliring')).toHaveTextContent('604 detik')
+  it('TC-FE-008-03 defaultRate null is not 0, extra metrics show', async () => {
+    renderApp('/stats')
+    await screen.findByText('512 vouchers become 3 transfers.')
+    expect(fact('Default rate')).toHaveTextContent('not available')
+    expect(fact('Net debt reduction')).toHaveTextContent('71%')
+    expect(fact('Clearing time')).toHaveTextContent('604 seconds')
   })
 
-  it('K-38 epoch belum commit menampilkan nilai kosong', async () => {
+  it('K-38 an epoch not yet committed shows empty values', async () => {
     const open = { ...metrics[42], phase: 'open', clearedRatio: null, residualTransfers: null, transferSavings: null, cleared: null, debtReduction: null, clearingTimeSeconds: null }
-    renderApp('/statistik', (p) => (p.endsWith('/epochs/42/metrics') ? { status: 200, body: open } : undefined))
-    expect(await screen.findByText(/belum ada hasil kliring/)).toBeInTheDocument()
-    expect(fact('Cleared ratio')).toHaveTextContent('belum tersedia')
+    renderApp('/stats', (p) => (p.endsWith('/epochs/42/metrics') ? { status: 200, body: open } : undefined))
+    expect(await screen.findByText(/no clearing result yet/)).toBeInTheDocument()
+    expect(fact('Cleared ratio')).toHaveTextContent('not available')
   })
 
-  it('TC-FE-008-04 kosong', async () => {
-    renderApp('/statistik', (p) => (p.endsWith('/epochs') ? { status: 200, body: { items: [], nextCursor: null } } : undefined))
-    expect(await screen.findByText('Belum ada epoch dengan metrik kliring.')).toBeInTheDocument()
+  it('TC-FE-008-04 empty', async () => {
+    renderApp('/stats', (p) => (p.endsWith('/epochs') ? { status: 200, body: { items: [], nextCursor: null } } : undefined))
+    expect(await screen.findByText('No epoch with clearing metrics yet.')).toBeInTheDocument()
   })
 
-  it('TC-FE-008-05 loading lalu error', async () => {
-    renderApp('/statistik', (p) => (p.endsWith('/metrics') ? { ...apiError(503, 'indexer_unavailable'), delayMs: 30 } : undefined))
-    expect(await screen.findByText(/Memuat metrik/)).toBeInTheDocument()
+  it('TC-FE-008-05 loading then error', async () => {
+    renderApp('/stats', (p) => (p.endsWith('/metrics') ? { ...apiError(503, 'indexer_unavailable'), delayMs: 30 } : undefined))
+    expect(await screen.findByText(/Loading metrics/)).toBeInTheDocument()
     expect(await screen.findByRole('alert')).toHaveTextContent('indexer_unavailable')
   })
 
-  it('TC-FE-008-05 error 404 menyebut kode', async () => {
-    renderApp('/statistik', (p) => (p.endsWith('/metrics') ? apiError(404, 'epoch_not_found') : undefined))
+  it('TC-FE-008-05 404 error names the code', async () => {
+    renderApp('/stats', (p) => (p.endsWith('/metrics') ? apiError(404, 'epoch_not_found') : undefined))
     expect(await screen.findByRole('alert')).toHaveTextContent('epoch_not_found')
   })
 })

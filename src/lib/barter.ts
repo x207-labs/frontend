@@ -49,7 +49,7 @@ export function base58Decode(text: string): Uint8Array {
   let n = 0n
   for (const ch of text) {
     const digit = ALPHABET.indexOf(ch)
-    if (digit < 0) throw new Error('Karakter base58 tidak sah')
+    if (digit < 0) throw new Error('Invalid base58 character')
     n = n * 58n + BigInt(digit)
   }
   const bytes: number[] = []
@@ -90,7 +90,7 @@ export async function sha256(data: Uint8Array | string): Promise<Uint8Array> {
 
 /** sha256 dari payload NEP-413: `u32 tag` + borsh `{ message, nonce[32], recipient, callback_url: None }`. */
 export async function nep413SigningHash(message: string, nonce: Uint8Array, recipient: string): Promise<Uint8Array> {
-  if (nonce.length !== 32) throw new Error('nonce NEP-413 harus 32 byte')
+  if (nonce.length !== 32) throw new Error('NEP-413 nonce must be 32 bytes')
   return sha256(concat(u32le(NEP413_TAG), borshString(message), nonce, borshString(recipient), Uint8Array.of(0)))
 }
 
@@ -115,9 +115,9 @@ export const offerHash = async (o: Offer): Promise<string> => toHex(await sha256
 /** Kunci voucher `ed25519:<base58>` berisi seed 32 byte atau seed + kunci publik 64 byte; hanya seed yang dipakai. */
 export function voucherSeed(secretKey: string): Uint8Array {
   const text = secretKey.trim()
-  if (!text.startsWith('ed25519:')) throw new Error('Kunci voucher harus berformat ed25519:…')
+  if (!text.startsWith('ed25519:')) throw new Error('Voucher key must have the format ed25519:…')
   const bytes = base58Decode(text.slice('ed25519:'.length))
-  if (bytes.length !== 32 && bytes.length !== 64) throw new Error('Kunci voucher harus 32 atau 64 byte')
+  if (bytes.length !== 32 && bytes.length !== 64) throw new Error('Voucher key must be 32 or 64 bytes')
   return bytes.slice(0, 32)
 }
 
@@ -170,12 +170,12 @@ export type BundleCheck = { ok: true; terms: BundleTerms } | { ok: false; reason
  */
 export function checkBundleToSign(input: { message: string; recipient: string; account: string; contract: string; epoch: number; breakdown?: Record<string, string> }): BundleCheck {
   const fail = (reason: string): BundleCheck => ({ ok: false, reason })
-  if (input.recipient !== input.contract) return fail(`Penerima tanda tangan (${input.recipient}) bukan kontrak lingkaran ini (${input.contract}). Dibatalkan.`)
+  if (input.recipient !== input.contract) return fail(`The signature recipient (${input.recipient}) is not this circle's contract (${input.contract}). Cancelled.`)
   let parsed: unknown
   try {
     parsed = JSON.parse(input.message)
   } catch {
-    return fail('Pesan bukan syarat bundle (bukan JSON). Dibatalkan.')
+    return fail('The message is not bundle terms (not JSON). Cancelled.')
   }
   const shapeOk =
     isObject(parsed) &&
@@ -188,16 +188,16 @@ export function checkBundleToSign(input: { message: string; recipient: string; a
     parsed.legs.length <= MAX_BUNDLE_LEGS &&
     parsed.legs.every((l) => isObject(l) && sameKeys(l, ['payer', 'payee', 'max_amount']) && typeof l.payer === 'string' && typeof l.payee === 'string' && typeof l.max_amount === 'string' && /^[1-9]\d*$/.test(l.max_amount)) &&
     (parsed.search_leg === undefined || (isObject(parsed.search_leg) && sameKeys(parsed.search_leg, ['payer', 'payee']) && typeof parsed.search_leg.payer === 'string' && typeof parsed.search_leg.payee === 'string'))
-  if (!shapeOk) return fail('Pesan bukan syarat bundle. Dibatalkan.')
+  if (!shapeOk) return fail('The message is not bundle terms. Cancelled.')
   const terms = parsed as unknown as BundleTerms
-  if (serializeBundleTerms(terms) !== input.message) return fail('Pesan bukan syarat bundle kanonik (spasi, urutan kunci, atau urutan leg berbeda). Dibatalkan.')
-  if (terms.circle !== input.contract) return fail(`Syarat bundle untuk lingkaran lain (${terms.circle}), bukan kontrak lingkaran ini (${input.contract}). Dibatalkan.`)
-  if (terms.epoch !== input.epoch) return fail(`Epoch pada pesan (${terms.epoch}) berbeda dari epoch rincian (${input.epoch}). Dibatalkan.`)
-  if (!terms.legs.some((l) => l.payer === input.account || l.payee === input.account)) return fail('Akun Anda tidak ikut sebagai payer atau payee di leg mana pun. Dibatalkan.')
+  if (serializeBundleTerms(terms) !== input.message) return fail('The message is not canonical bundle terms (spacing, key order, or leg order differs). Cancelled.')
+  if (terms.circle !== input.contract) return fail(`Bundle terms are for another circle (${terms.circle}), not this circle's contract (${input.contract}). Cancelled.`)
+  if (terms.epoch !== input.epoch) return fail(`The epoch in the message (${terms.epoch}) differs from the breakdown epoch (${input.epoch}). Cancelled.`)
+  if (!terms.legs.some((l) => l.payer === input.account || l.payee === input.account)) return fail('Your account is not a payer or payee in any leg. Cancelled.')
   if (input.breakdown) {
     const bound = Object.values(input.breakdown).reduce((sum, v) => (typeof v === 'string' && /^\d+$/.test(v) ? sum + BigInt(v) : sum), 0n)
     const outgoing = terms.legs.filter((l) => l.payer === input.account).reduce((sum, l) => sum + BigInt(l.max_amount), 0n)
-    if (outgoing > bound) return fail(`Leg keluar Anda (${outgoing}) melebihi rincian yang ditampilkan (${bound}). Dibatalkan.`)
+    if (outgoing > bound) return fail(`Your outgoing legs (${outgoing}) exceed the breakdown shown (${bound}). Cancelled.`)
   }
   return { ok: true, terms }
 }

@@ -62,23 +62,23 @@ export type DownloadResult =
  * bukan kecurangan dan tidak menghasilkan bukti; isi yang salah menghasilkan bukti curang yang bisa diperiksa siapa saja.
  */
 export async function receiveLicense(view: PurchaseView, sellerPublicKey: string, buyerSecretKey: string, onProgress: (received: number) => void): Promise<DownloadResult> {
-  if (view.source === null || view.cipherHash === null || view.release === null || view.releaseSignature === null) return { state: 'refused', reason: 'Penjual belum memasang ciphertext dan melepas kunci.' }
-  if (view.release.cipher_hash !== view.cipherHash) return { state: 'refused', reason: 'cipher_hash di rilis berbeda dari yang dicatat penjual.' }
+  if (view.source === null || view.cipherHash === null || view.release === null || view.releaseSignature === null) return { state: 'refused', reason: 'The seller has not yet posted the ciphertext and released the key.' }
+  if (view.release.cipher_hash !== view.cipherHash) return { state: 'refused', reason: 'The cipher_hash in the release differs from the one the seller recorded.' }
   let ciphertext: Uint8Array
   try {
     ciphertext = await fetchCiphertext(view.source, view.cipherHash, licenseSources.current, { onProgress })
   } catch (e) {
-    if (e instanceof LicenseError && e.code === 'cipher_hash_mismatch') return { state: 'refused', reason: 'Byte yang diunduh tidak cocok dengan cipher_hash: salah sumber, bukan bukti curang.' }
+    if (e instanceof LicenseError && e.code === 'cipher_hash_mismatch') return { state: 'refused', reason: 'The downloaded bytes do not match cipher_hash: wrong source, not proof of cheating.' }
     return { state: 'refused', reason: e instanceof Error ? e.message : String(e) }
   }
   const verdict = verifyDelivery({ ciphertext, release: view.release as LicenseRelease, signature: view.releaseSignature, sellerPublicKey, buyerSecretKey, purchaseId: view.purchaseId })
   if (verdict.ok) return { state: 'ok', content: verdict.content }
   if ('proof' in verdict) return { state: 'cheated', reason: verdict.reason, proof: verdict.proof }
   const text: Record<string, string> = {
-    cipher_hash_mismatch: 'Byte yang diunduh tidak cocok dengan cipher_hash: salah sumber, bukan bukti curang.',
-    bad_signature: 'Tanda tangan rilis tidak cocok dengan kunci penjual.',
-    sealed_key_unopenable: 'Kunci tersegel tidak bisa dibuka dengan kunci voucher Anda. Ini tidak bisa dibuktikan sebagai kecurangan; sengketakan dengan alasan lain.',
-    wrong_purchase: 'Rilis kunci ini untuk pembelian lain: jangan dipakai.',
+    cipher_hash_mismatch: 'The downloaded bytes do not match cipher_hash: wrong source, not proof of cheating.',
+    bad_signature: 'The release signature does not match the seller key.',
+    sealed_key_unopenable: 'The sealed key cannot be opened with your voucher key. This cannot be proven as cheating; dispute it for another reason.',
+    wrong_purchase: 'This key release is for another purchase: do not use it.',
   }
   return { state: 'refused', reason: text[verdict.reason] ?? verdict.reason }
 }

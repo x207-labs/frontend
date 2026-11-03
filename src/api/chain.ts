@@ -17,11 +17,11 @@ export async function viewContract<T>(methodName: string, args: Record<string, u
       params: { request_type: 'call_function', finality: 'final', account_id: CONTRACT_ID, method_name: methodName, args_base64: btoa(JSON.stringify(args)) },
     }),
   })
-  if (!res.ok) throw new ChainError(`RPC NEAR menjawab HTTP ${res.status}`)
+  if (!res.ok) throw new ChainError(`NEAR RPC answered HTTP ${res.status}`)
   const body = await res.json()
   const failure = body?.error ?? body?.result?.error
-  if (failure) throw new ChainError(`View ${methodName} gagal: ${typeof failure === 'string' ? failure : (failure.cause?.name ?? failure.message ?? 'error')}`)
+  if (failure) throw new ChainError(`View ${methodName} failed: ${typeof failure === 'string' ? failure : (failure.cause?.name ?? failure.message ?? 'error')}`)
   const bytes: number[] | undefined = body?.result?.result
-  if (!Array.isArray(bytes)) throw new ChainError(`View ${methodName}: jawaban RPC tidak berisi hasil`)
+  if (!Array.isArray(bytes)) throw new ChainError(`View ${methodName}: the RPC answer has no result`)
   return JSON.parse(new TextDecoder().decode(Uint8Array.from(bytes))) as T
 }

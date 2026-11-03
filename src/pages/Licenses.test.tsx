@@ -51,13 +51,13 @@ const purchaseReply = (body: Record<string, unknown>) => (p: string, init?: Requ
 }
 
 async function openPurchase(user: ReturnType<typeof userEvent.setup>, override: Parameters<typeof renderApp>[1]) {
-  renderApp('/lisensi', override, false, createMockWallet(BUYER, BUYER))
-  const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
-  await user.type(within(section).getByLabelText('Nomor pembelian'), 'p1')
-  await user.click(within(section).getByRole('button', { name: 'Buka pembelian' }))
+  renderApp('/licenses', override, false, createMockWallet(BUYER, BUYER))
+  const section = await screen.findByRole('region', { name: 'License purchase' })
+  await user.type(within(section).getByLabelText('Purchase number'), 'p1')
+  await user.click(within(section).getByRole('button', { name: 'Open purchase' }))
   await within(section).findByTestId('purchase')
-  await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-  await user.type(within(section).getByLabelText(/Kunci publik penjual/), seller.publicKey)
+  await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+  await user.type(within(section).getByLabelText(/Seller public key/), seller.publicKey)
   return section
 }
 
@@ -76,19 +76,19 @@ describe('FE-028 content license', () => {
 
   it('TC-FE-028-02 the seller page computes the hash of a chosen file in the browser and shows the detail, the cipher_hash and the key; nothing is sent', async () => {
     const user = userEvent.setup()
-    const { requests } = renderApp('/lisensi', undefined, false, createMockWallet(SELLER, SELLER))
-    const form = await screen.findByRole('form', { name: 'Siapkan lisensi' })
+    const { requests } = renderApp('/licenses', undefined, false, createMockWallet(SELLER, SELLER))
+    const form = await screen.findByRole('form', { name: 'Prepare license' })
     const data = text('a,b\n1,2\n')
     const file = new File([data], 'data.csv', { type: 'text/csv' })
-    fireEvent.change(within(form).getByLabelText(/^Berkas/), { target: { files: [file] } })
-    await user.type(within(form).getByLabelText(/^Teks lisensi/), 'personal use only')
-    await user.click(within(form).getByRole('button', { name: 'Hitung hash dan enkripsi' }))
+    fireEvent.change(within(form).getByLabelText(/^File/), { target: { files: [file] } })
+    await user.type(within(form).getByLabelText(/^License text/), 'personal use only')
+    await user.click(within(form).getByRole('button', { name: 'Compute hash and encrypt' }))
     const out = await screen.findByTestId('license-prepared')
     expect(out).toHaveTextContent(contentHash(data))
     expect(JSON.parse(screen.getByTestId('license-detail').textContent!)).toMatchObject({ content_hash: contentHash(data), asset_type: 'data:dataset' })
     expect(screen.getByTestId('license-key').textContent).toMatch(/^[0-9a-f]{64}$/)
     // Batch 3 F9: the seller is told that the key and the file live only in this page
-    expect(screen.getByTestId('license-keep-page')).toHaveTextContent('hanya ada di halaman ini')
+    expect(screen.getByTestId('license-keep-page')).toHaveTextContent('exist only on this page')
     expect(requests().filter((r) => r.method === 'POST')).toHaveLength(0)
   })
 
@@ -96,20 +96,20 @@ describe('FE-028 content license', () => {
     const user = userEvent.setup()
     const data = text('the licensed dataset')
     const body = delivered(data, contentHash(data))
-    const { requests } = renderApp('/lisensi', (p, init) => purchaseReply(body)(p, init) ?? (init?.method === 'POST' && p.endsWith('/purchases/p1') ? { status: 200, body: {} } : undefined), false, createMockWallet(BUYER, BUYER))
-    const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
-    await user.type(within(section).getByLabelText('Nomor pembelian'), 'p1')
-    await user.click(within(section).getByRole('button', { name: 'Buka pembelian' }))
+    const { requests } = renderApp('/licenses', (p, init) => purchaseReply(body)(p, init) ?? (init?.method === 'POST' && p.endsWith('/purchases/p1') ? { status: 200, body: {} } : undefined), false, createMockWallet(BUYER, BUYER))
+    const section = await screen.findByRole('region', { name: 'License purchase' })
+    await user.type(within(section).getByLabelText('Purchase number'), 'p1')
+    await user.click(within(section).getByRole('button', { name: 'Open purchase' }))
     await within(section).findByTestId('purchase')
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.type(within(section).getByLabelText(/Kunci publik penjual/), seller.publicKey)
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.type(within(section).getByLabelText(/Seller public key/), seller.publicKey)
     // Batch 3 F6: the host that the download contacts is shown before the button is pressed
     expect(within(section).getByTestId('download-host')).toHaveTextContent(new URL(body.source.ref).host)
-    await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa hash' }))
-    expect(await within(section).findByTestId('license-ok')).toHaveTextContent('Isi cocok')
-    expect(within(section).getByTestId('download-progress')).toHaveTextContent(`Diunduh ${body.ciphertext.length} byte`)
-    await user.click(within(section).getByRole('button', { name: 'Konfirmasi' }))
-    await within(section).findByText(/Dikonfirmasi/)
+    await user.click(within(section).getByRole('button', { name: 'Download and check hash' }))
+    expect(await within(section).findByTestId('license-ok')).toHaveTextContent('The content matches')
+    expect(within(section).getByTestId('download-progress')).toHaveTextContent(`Downloaded ${body.ciphertext.length} bytes`)
+    await user.click(within(section).getByRole('button', { name: 'Confirm' }))
+    await within(section).findByText(/Confirmed: the voucher/)
     const post = requests().find((r) => r.method === 'POST')!
     expect(post.body.notice).toMatchObject({ purchase_id: 'p1', actor: BUYER, action: 'confirmed', proof: null })
     expect(JSON.stringify(post.body)).not.toContain(KEY)
@@ -119,17 +119,17 @@ describe('FE-028 content license', () => {
     const user = userEvent.setup()
     const claimed = contentHash(text('the file in the listing'))
     const body = delivered(text('another file'), claimed)
-    const { requests } = renderApp('/lisensi', (p, init) => purchaseReply(body)(p, init) ?? (init?.method === 'POST' && p.endsWith('/purchases/p1') ? { status: 200, body: {} } : undefined), false, createMockWallet(BUYER, BUYER))
-    const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
-    await user.type(within(section).getByLabelText('Nomor pembelian'), 'p1')
-    await user.click(within(section).getByRole('button', { name: 'Buka pembelian' }))
+    const { requests } = renderApp('/licenses', (p, init) => purchaseReply(body)(p, init) ?? (init?.method === 'POST' && p.endsWith('/purchases/p1') ? { status: 200, body: {} } : undefined), false, createMockWallet(BUYER, BUYER))
+    const section = await screen.findByRole('region', { name: 'License purchase' })
+    await user.type(within(section).getByLabelText('Purchase number'), 'p1')
+    await user.click(within(section).getByRole('button', { name: 'Open purchase' }))
     await within(section).findByTestId('purchase')
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.type(within(section).getByLabelText(/Kunci publik penjual/), seller.publicKey)
-    await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa hash' }))
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.type(within(section).getByLabelText(/Seller public key/), seller.publicKey)
+    await user.click(within(section).getByRole('button', { name: 'Download and check hash' }))
     expect(await within(section).findByTestId('license-cheated')).toHaveTextContent('content_mismatch')
-    await user.click(within(section).getByRole('button', { name: 'Sengketakan dengan bukti' }))
-    await within(section).findByText(/Sengketa dikirim/)
+    await user.click(within(section).getByRole('button', { name: 'Dispute with proof' }))
+    await within(section).findByText(/Dispute sent/)
     const post = requests().find((r) => r.method === 'POST')!
     expect(post.body.notice).toMatchObject({ action: 'disputed', reason: 'content_mismatch' })
     const sent = post.body.notice.proof as ReturnType<typeof proofForApi>
@@ -143,14 +143,14 @@ describe('FE-028 content license', () => {
     const data = text('the licensed dataset')
     const body = delivered(data, contentHash(data), text('tampered by the host'))
     const section = await openPurchase(user, (p, init) => purchaseReply(body)(p, init))
-    await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa hash' }))
-    expect(await within(section).findByTestId('license-refused')).toHaveTextContent('salah sumber, bukan bukti curang')
+    await user.click(within(section).getByRole('button', { name: 'Download and check hash' }))
+    expect(await within(section).findByTestId('license-refused')).toHaveTextContent('wrong source, not proof of cheating')
     expect(within(section).queryByTestId('license-cheated')).not.toBeInTheDocument()
     // the right bytes but the public key of another seller
     licenseSources.current = { https: { kind: 'https', fetch: async () => body.ciphertext } }
-    fireEvent.change(within(section).getByLabelText(/Kunci publik penjual/), { target: { value: generateVoucherKeypair().publicKey } })
-    await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa hash' }))
-    await waitFor(() => expect(within(section).getByTestId('license-refused')).toHaveTextContent('Tanda tangan rilis tidak cocok'))
+    fireEvent.change(within(section).getByLabelText(/Seller public key/), { target: { value: generateVoucherKeypair().publicKey } })
+    await user.click(within(section).getByRole('button', { name: 'Download and check hash' }))
+    await waitFor(() => expect(within(section).getByTestId('license-refused')).toHaveTextContent('The release signature does not match'))
   })
 
   /** A listing of the seller, really signed, as the read API would answer it; `typed` is the hash that the user types. */
@@ -172,7 +172,7 @@ describe('FE-028 content license', () => {
     const user = userEvent.setup()
     const sellerKeys = generateVoucherKeypair()
     const { typed, view } = signedListingView(sellerKeys)
-    const { requests } = renderApp('/lisensi', (p, init) => {
+    const { requests } = renderApp('/licenses', (p, init) => {
       if (!init?.method && p.endsWith(`/listings/${typed}`)) return { status: 200, body: view }
       if (init?.method === 'POST' && p.endsWith('/purchases')) return { status: 201, body: { purchase_id: 'p9' } }
       if (!init?.method && p.endsWith('/epochs')) return { status: 200, body: { items: [{ epoch: 42, phase: 'open', proposalDeadline: null }], nextCursor: null } }
@@ -180,15 +180,15 @@ describe('FE-028 content license', () => {
       if (rpcMethod(init) === 'obligation') return rpcResult({ cumulative: '2000000', last_seq: 3 })
       return undefined
     }, false, createMockWallet(BUYER, BUYER))
-    const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.type(within(section).getByLabelText('Hash listing lisensi'), typed)
-    await user.click(within(section).getByRole('button', { name: 'Periksa listing' }))
+    const section = await screen.findByRole('region', { name: 'License purchase' })
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.type(within(section).getByLabelText('License listing hash'), typed)
+    await user.click(within(section).getByRole('button', { name: 'Check listing' }))
     const summary = await within(section).findByTestId('buy-summary')
     expect(summary).toHaveTextContent(SELLER)
     expect(summary).toHaveTextContent('5 credit')
     expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/'))).toHaveLength(0) // nothing signed before the click on the button with the payee and the price
-    await user.click(within(summary).getByRole('button', { name: `Beli 5 credit dari ${SELLER} (voucher ditahan backend)` }))
+    await user.click(within(summary).getByRole('button', { name: `Buy for 5 credit from ${SELLER} (voucher held by the backend)` }))
     await waitFor(() => expect(requests().some((r) => r.method === 'POST' && r.path.endsWith('/purchases'))).toBe(true))
     const post = requests().find((r) => r.method === 'POST' && r.path.endsWith('/purchases'))!
     expect(post.body.voucher).toMatchObject({ payer: BUYER, payee: SELLER, epoch: 42, seq: 4, cumulativeAmount: '7000000', unit: 'credit', resource: `x207:license:${'d'.repeat(64)}` })
@@ -202,22 +202,22 @@ describe('FE-028 content license', () => {
     const attacker = generateVoucherKeypair()
     const good = signedListingView(sellerKeys)
     const cases: Array<[string, ReturnType<typeof signedListingView>['view'], RegExp, { member: unknown }]> = [
-      ['attacker payee, 999 credit, signature not valid', { ...good.view, account: 'attacker.x207-circle.near', offer: { ...good.view.offer, value: '999000000' }, signature: 'ed25519:not-valid' }, /Hash listing dari server tidak sama/, { member: { account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' } }],
-      ['same hash typed but the signature is the attacker\'s', { ...good.view, signature: signedListingView(attacker).view.signature }, /Tanda tangan listing tidak cocok/, { member: { account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' } }],
-      ['the API names the attacker key but the contract has the real one', good.view, /Tanda tangan listing tidak cocok/, { member: { account_id: SELLER, pubkey_voucher: attacker.publicKey, status: 'active' } }],
-      ['the seller is not a member', good.view, /bukan anggota aktif/, { member: null }],
-      ['the seller is suspended', good.view, /bukan anggota aktif/, { member: { account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'suspended' } }],
+      ['attacker payee, 999 credit, signature not valid', { ...good.view, account: 'attacker.x207-circle.near', offer: { ...good.view.offer, value: '999000000' }, signature: 'ed25519:not-valid' }, /The listing hash from the server differs/, { member: { account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' } }],
+      ['same hash typed but the signature is the attacker\'s', { ...good.view, signature: signedListingView(attacker).view.signature }, /The listing signature does not match/, { member: { account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' } }],
+      ['the API names the attacker key but the contract has the real one', good.view, /The listing signature does not match/, { member: { account_id: SELLER, pubkey_voucher: attacker.publicKey, status: 'active' } }],
+      ['the seller is not a member', good.view, /is not an active member on the contract/, { member: null }],
+      ['the seller is suspended', good.view, /is not an active member on the contract/, { member: { account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'suspended' } }],
     ]
     for (const [name, view, reason, chain] of cases) {
-      const { requests, unmount } = renderApp('/lisensi', (p, init) => {
+      const { requests, unmount } = renderApp('/licenses', (p, init) => {
         if (!init?.method && p.endsWith(`/listings/${good.typed}`)) return { status: 200, body: view }
         if (rpcMethod(init) === 'member') return rpcResult(chain.member)
         return undefined
       }, false, createMockWallet(BUYER, BUYER))
-      const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
-      await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-      await user.type(within(section).getByLabelText('Hash listing lisensi'), good.typed)
-      await user.click(within(section).getByRole('button', { name: 'Periksa listing' }))
+      const section = await screen.findByRole('region', { name: 'License purchase' })
+      await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+      await user.type(within(section).getByLabelText('License listing hash'), good.typed)
+      await user.click(within(section).getByRole('button', { name: 'Check listing' }))
       expect(await within(section).findByText(reason), name).toBeInTheDocument()
       expect(within(section).queryByTestId('buy-summary'), name).not.toBeInTheDocument()
       expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/')), name).toHaveLength(0)
@@ -229,38 +229,38 @@ describe('FE-028 content license', () => {
     const user = userEvent.setup()
     const sellerKeys = generateVoucherKeypair()
     const { typed, view } = signedListingView(sellerKeys, {}, 'plain note')
-    renderApp('/lisensi', (p, init) => {
+    renderApp('/licenses', (p, init) => {
       if (!init?.method && p.endsWith(`/listings/${typed}`)) return { status: 200, body: view }
       if (rpcMethod(init) === 'member') return rpcResult({ account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' })
       return undefined
     }, false, createMockWallet(BUYER, BUYER))
-    const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.type(within(section).getByLabelText('Hash listing lisensi'), typed)
-    await user.click(within(section).getByRole('button', { name: 'Periksa listing' }))
-    expect(await within(section).findByText(/bukan listing lisensi/)).toBeInTheDocument()
+    const section = await screen.findByRole('region', { name: 'License purchase' })
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.type(within(section).getByLabelText('License listing hash'), typed)
+    await user.click(within(section).getByRole('button', { name: 'Check listing' }))
+    expect(await within(section).findByText(/not a license listing/)).toBeInTheDocument()
   })
 
   it('TC-FE-028-13 [batch 3 F2] a buyer that is not an active member of the contract gets no key, whatever the API says', async () => {
     const user = userEvent.setup()
     const data = text('rows')
-    renderApp('/lisensi', (p, init) => {
+    renderApp('/licenses', (p, init) => {
       if (!init?.method && p.endsWith('/purchases/p7')) return { status: 200, body: { purchase_id: 'p7', listing_hash: 'a'.repeat(64), buyer: BUYER, seller: SELLER, status: 'cipher_posted', content_hash: contentHash(data), license_id: 'personal', exclusive: false, source: null, cipher_hash: null, release: null, release_signature: null } }
       if (!init?.method && p.endsWith(`/members/${BUYER}`)) return { status: 200, body: { account: BUYER, pubkeyVoucher: generateVoucherKeypair().publicKey } }
       if (rpcMethod(init) === 'member') return rpcResult(null)
       return undefined
     }, false, createMockWallet(SELLER, SELLER))
-    const form = await screen.findByRole('form', { name: 'Siapkan lisensi' })
-    fireEvent.change(within(form).getByLabelText(/^Berkas/), { target: { files: [new File([data], 'd.csv')] } })
-    await user.type(within(form).getByLabelText(/^Teks lisensi/), 'terms')
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.click(within(form).getByRole('button', { name: 'Hitung hash dan enkripsi' }))
+    const form = await screen.findByRole('form', { name: 'Prepare license' })
+    fireEvent.change(within(form).getByLabelText(/^File/), { target: { files: [new File([data], 'd.csv')] } })
+    await user.type(within(form).getByLabelText(/^License text/), 'terms')
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.click(within(form).getByRole('button', { name: 'Compute hash and encrypt' }))
     await screen.findByTestId('license-prepared')
-    const serve = screen.getByRole('region', { name: 'Layani pembelian' })
-    await user.type(within(serve).getByLabelText('Nomor pembelian'), 'p7')
-    await user.click(within(serve).getByRole('button', { name: 'Buka pembelian' }))
-    await user.click(await within(serve).findByRole('button', { name: 'Periksa kunci pembeli di kontrak' }))
-    expect(await within(serve).findByText(/bukan anggota aktif di kontrak/)).toBeInTheDocument()
+    const serve = screen.getByRole('region', { name: 'Serve purchase' })
+    await user.type(within(serve).getByLabelText('Purchase number'), 'p7')
+    await user.click(within(serve).getByRole('button', { name: 'Open purchase' }))
+    await user.click(await within(serve).findByRole('button', { name: 'Check the buyer key in the contract' }))
+    expect(await within(serve).findByText(/is not an active member in the contract/)).toBeInTheDocument()
     expect(within(serve).queryByTestId('buyer-key')).not.toBeInTheDocument()
   })
 
@@ -268,35 +268,35 @@ describe('FE-028 content license', () => {
     const user = userEvent.setup()
     const data = text('the licensed dataset')
     const body = delivered(data, contentHash(data))
-    const { requests } = renderApp('/lisensi', (p, init) => {
+    const { requests } = renderApp('/licenses', (p, init) => {
       if (!init?.method && p.endsWith('/purchases/p1')) return { status: 200, body: { ...body, purchase_id: 'p999', ciphertext: undefined } } // the API answers with another purchase
       if (init?.method === 'POST' && p.includes('/purchases/')) return { status: 200, body: {} }
       return undefined
     }, false, createMockWallet(BUYER, BUYER))
-    const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
-    await user.type(within(section).getByLabelText('Nomor pembelian'), 'p1')
-    await user.click(within(section).getByRole('button', { name: 'Buka pembelian' }))
+    const section = await screen.findByRole('region', { name: 'License purchase' })
+    await user.type(within(section).getByLabelText('Purchase number'), 'p1')
+    await user.click(within(section).getByRole('button', { name: 'Open purchase' }))
     await within(section).findByTestId('purchase')
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.type(within(section).getByLabelText(/Kunci publik penjual/), seller.publicKey)
-    await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa hash' }))
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.type(within(section).getByLabelText(/Seller public key/), seller.publicKey)
+    await user.click(within(section).getByRole('button', { name: 'Download and check hash' }))
     // the release names purchase p1 while the view says p999: the buyer's SDK refuses the delivery, and the dispute button still checks the id before it signs
-    expect(await within(section).findByTestId('license-refused')).toHaveTextContent('pembelian lain')
-    await user.click(await within(section).findByRole('button', { name: 'Sengketakan (alasan lain)' }))
-    expect(await within(section).findByText(/bukan p1 yang Anda buka/)).toBeInTheDocument()
+    expect(await within(section).findByTestId('license-refused')).toHaveTextContent('another purchase')
+    await user.click(await within(section).findByRole('button', { name: 'Dispute (other reason)' }))
+    expect(await within(section).findByText(/not p1 which you opened/)).toBeInTheDocument()
     expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/'))).toHaveLength(0)
   })
 
   it('TC-FE-028-08 takedown sends the claim, the hash of the evidence and a signature; the backend error is shown', async () => {
     const user = userEvent.setup()
-    const { requests } = renderApp('/lisensi', (p, init) => (init?.method === 'POST' && p.endsWith('/takedown') ? { status: 200, body: {} } : undefined), false, createMockWallet(BUYER, BUYER))
+    const { requests } = renderApp('/licenses', (p, init) => (init?.method === 'POST' && p.endsWith('/takedown') ? { status: 200, body: {} } : undefined), false, createMockWallet(BUYER, BUYER))
     const form = await screen.findByRole('form', { name: 'Takedown' })
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.type(within(form).getByLabelText('Hash listing'), 'a'.repeat(64))
-    await user.type(within(form).getByLabelText(/^Pernyataan/), 'I own the rights')
-    await user.type(within(form).getByLabelText(/^Bukti kepemilikan/), 'https://registry.example/work/1')
-    await user.click(within(form).getByRole('button', { name: /ajukan takedown/ }))
-    await within(form).findByText(/Takedown diajukan/)
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.type(within(form).getByLabelText('Listing hash'), 'a'.repeat(64))
+    await user.type(within(form).getByLabelText(/^Statement/), 'I own the rights')
+    await user.type(within(form).getByLabelText(/^Proof of ownership/), 'https://registry.example/work/1')
+    await user.click(within(form).getByRole('button', { name: /file takedown/ }))
+    await within(form).findByText(/Takedown filed/)
     const post = requests().find((r) => r.method === 'POST')!
     expect(post.path).toContain(`/listings/${'a'.repeat(64)}/takedown`)
     expect(post.body).toMatchObject({ claim: 'I own the rights', evidence_hash: expect.stringMatching(/^[0-9a-f]{64}$/), signature: expect.stringMatching(/^ed25519:/) })
@@ -305,14 +305,14 @@ describe('FE-028 content license', () => {
   })
 
   it('TC-FE-028-09 an unknown status is an error, camelCase is accepted, the default gateways are https, and an API error is shown with its code', async () => {
-    expect(() => toPurchaseView({ purchase_id: 'p', status: 'weird' })).toThrow(/tidak dikenal/)
+    expect(() => toPurchaseView({ purchase_id: 'p', status: 'weird' })).toThrow(/Unrecognized purchase response/)
     expect(toPurchaseView({ purchaseId: 'p', status: 'paid_held', listingHash: 'a', cipherHash: null })).toMatchObject({ purchaseId: 'p', status: 'paid_held', source: null, release: null })
     for (const g of IPFS_GATEWAYS) expect(g.startsWith('https://')).toBe(true)
-    renderApp('/lisensi', (p) => (p.includes('/purchases/') ? apiError(404, 'purchase_not_found', 'Pembelian tidak ada') : undefined), false, createMockWallet(BUYER, BUYER))
-    const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
+    renderApp('/licenses', (p) => (p.includes('/purchases/') ? apiError(404, 'purchase_not_found', 'Purchase not found') : undefined), false, createMockWallet(BUYER, BUYER))
+    const section = await screen.findByRole('region', { name: 'License purchase' })
     const user = userEvent.setup()
-    await user.type(within(section).getByLabelText('Nomor pembelian'), 'zz')
-    await user.click(within(section).getByRole('button', { name: 'Buka pembelian' }))
+    await user.type(within(section).getByLabelText('Purchase number'), 'zz')
+    await user.click(within(section).getByRole('button', { name: 'Open purchase' }))
     expect(await within(section).findByRole('alert')).toHaveTextContent('purchase_not_found')
   })
 
@@ -325,7 +325,7 @@ describe('FE-028 content license', () => {
     const view = () => ({
       purchase_id: 'p7', listing_hash: 'a'.repeat(64), buyer: BUYER, seller: SELLER, status, content_hash: contentHash(data), license_id: 'personal', exclusive: false, source: null, cipher_hash: null, release: null, release_signature: null,
     })
-    const { requests } = renderApp('/lisensi', (p, init) => {
+    const { requests } = renderApp('/licenses', (p, init) => {
       if (!init?.method && p.endsWith('/purchases/p7')) return { status: 200, body: view() }
       // the read API names the key of the attacker; the contract has the real one, and the page reads the contract (batch 3 F2)
       if (!init?.method && p.endsWith(`/members/${BUYER}`)) return { status: 200, body: { account: BUYER, pubkeyVoucher: attackerKeys.publicKey } }
@@ -333,28 +333,28 @@ describe('FE-028 content license', () => {
       if (init?.method === 'POST' && p.endsWith('/purchases/p7')) return { status: 200, body: {} }
       return undefined
     }, false, createMockWallet(SELLER, SELLER))
-    const form = await screen.findByRole('form', { name: 'Siapkan lisensi' })
-    fireEvent.change(within(form).getByLabelText(/^Berkas/), { target: { files: [new File([data], 'd.csv')] } })
-    await user.type(within(form).getByLabelText(/^Teks lisensi/), 'personal use only')
-    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.click(within(form).getByRole('button', { name: 'Hitung hash dan enkripsi' }))
+    const form = await screen.findByRole('form', { name: 'Prepare license' })
+    fireEvent.change(within(form).getByLabelText(/^File/), { target: { files: [new File([data], 'd.csv')] } })
+    await user.type(within(form).getByLabelText(/^License text/), 'personal use only')
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.click(within(form).getByRole('button', { name: 'Compute hash and encrypt' }))
     await screen.findByTestId('license-prepared')
-    const serve = screen.getByRole('region', { name: 'Layani pembelian' })
-    await user.type(within(serve).getByLabelText('Nomor pembelian'), 'p7')
-    await user.click(within(serve).getByRole('button', { name: 'Buka pembelian' }))
+    const serve = screen.getByRole('region', { name: 'Serve purchase' })
+    await user.type(within(serve).getByLabelText('Purchase number'), 'p7')
+    await user.click(within(serve).getByRole('button', { name: 'Open purchase' }))
     await within(serve).findByTestId('serve')
-    await user.type(within(serve).getByLabelText('Alamat atau CID'), 'https://cdn.example.com/d.enc')
+    await user.type(within(serve).getByLabelText('Address or CID'), 'https://cdn.example.com/d.enc')
     status = 'cipher_posted' // what the book answers once the notice is in: the page reads it again
-    await user.click(within(serve).getByRole('button', { name: 'Catat ciphertext' }))
-    await within(serve).findByText('Ciphertext dicatat.')
+    await user.click(within(serve).getByRole('button', { name: 'Record ciphertext' }))
+    await within(serve).findByText('Ciphertext recorded.')
     const posted = requests().find((r) => r.method === 'POST' && r.path.includes('/purchases/p7'))!
     expect(posted.body.notice).toMatchObject({ purchase_id: 'p7', actor: SELLER, action: 'cipher_posted', source: { kind: 'https', ref: 'https://cdn.example.com/d.enc' }, cipher_hash: expect.stringMatching(/^[0-9a-f]{64}$/) })
     expect(Object.keys(posted.body.notice)).toEqual(['circle', 'purchase_id', 'actor', 'action', 'at', 'source', 'cipher_hash'])
-    await user.click(await within(serve).findByRole('button', { name: 'Periksa kunci pembeli di kontrak' }))
+    await user.click(await within(serve).findByRole('button', { name: 'Check the buyer key in the contract' }))
     const fingerprint = (await within(serve).findByTestId('buyer-fingerprint')).textContent!
     expect(fingerprint).toMatch(/^[0-9a-f]{4}( [0-9a-f]{4}){3}$/)
-    await user.click(await within(serve).findByRole('button', { name: `Lepas kunci ke ${BUYER} (sidik jari ${fingerprint})` }))
-    await within(serve).findByText(/Kunci dilepas/)
+    await user.click(await within(serve).findByRole('button', { name: `Release key to ${BUYER} (fingerprint ${fingerprint})` }))
+    await within(serve).findByText(/Key released to the buyer/)
     const released = requests().filter((r) => r.method === 'POST' && r.path.includes('/purchases/p7'))[1]!
     // the notice is a LicenseRelease: the buyer's SDK opens it, and nothing in the request holds the key of the file or the key of the voucher
     expect(Object.keys(released.body.notice)).toEqual(['circle', 'license_hash', 'buyer', 'content_hash', 'cipher_hash', 'sealed_key', 'at', 'content_size', 'cipher_size', 'key_commitment', 'purchase_id'])

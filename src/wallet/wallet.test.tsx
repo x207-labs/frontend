@@ -13,40 +13,40 @@ const noPoll = false
 async function fillJoin(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByRole('textbox', { name: /pubkey_voucher/ }), PUBKEY)
   await user.type(screen.getByRole('textbox', { name: /terms_hash/ }), HASH)
-  await user.click(screen.getByRole('checkbox', { name: /menyetujui syarat/ }))
-  await user.type(screen.getByRole('textbox', { name: /Jumlah stake/ }), '50')
+  await user.click(screen.getByRole('checkbox', { name: /agree to the circle terms/ }))
+  await user.type(screen.getByRole('textbox', { name: /Stake amount/ }), '50')
 }
 
 describe('NEAR Connect', () => {
-  it('TC-FE-003-01 tombol login membuka wallet dan akun tampil', async () => {
+  it('TC-FE-003-01 the login button opens the wallet and the account shows', async () => {
     const user = userEvent.setup()
     const wallet = createMockWallet()
     renderApp('/onboarding', undefined, noPoll, wallet)
-    await user.click(await screen.findByRole('button', { name: 'Masuk dengan wallet' }))
+    await user.click(await screen.findByRole('button', { name: 'Sign in with wallet' }))
     expect(wallet.connectCalls).toBe(1)
     expect(await screen.findByText('scraper.x207-circle.near')).toBeInTheDocument()
   })
 
-  it('sesi tersimpan dipulihkan setelah reload', async () => {
+  it('a saved session is restored after reload', async () => {
     renderApp('/onboarding', undefined, noPoll, createMockWallet('a.testnet', 'a.testnet'))
     expect(await screen.findByText('a.testnet')).toBeInTheDocument()
   })
 
-  it('TC-FE-003-05 logout: akun hilang dan tombol aksi nonaktif', async () => {
+  it('TC-FE-003-05 sign out: the account is gone and the action button is disabled', async () => {
     const user = userEvent.setup()
     renderApp('/onboarding', undefined, noPoll, createMockWallet('a.testnet', 'a.testnet'))
-    await user.click(await screen.findByRole('button', { name: 'Keluar' }))
+    await user.click(await screen.findByRole('button', { name: 'Sign out' }))
     expect(screen.queryByText('a.testnet')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Tanda tangani join dan stake' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Sign join and stake' })).toBeDisabled()
   })
 
-  it('TC-FE-003-06 transaksi join memuat network, receiver, gas, dan deposit', async () => {
+  it('TC-FE-003-06 the join transaction carries network, receiver, gas, and deposit', async () => {
     const user = userEvent.setup()
     const wallet = createMockWallet('a.testnet', 'a.testnet')
     renderApp('/onboarding', undefined, noPoll, wallet)
     await screen.findByText('a.testnet')
     await fillJoin(user)
-    await user.click(screen.getByRole('button', { name: 'Tanda tangani join dan stake' }))
+    await user.click(screen.getByRole('button', { name: 'Sign join and stake' }))
     expect(await screen.findByRole('link', { name: 'hash2' })).toHaveAttribute('href', expect.stringContaining('hash2'))
     expect(wallet.txs.slice(0, 1)).toEqual([
       {
@@ -60,29 +60,29 @@ describe('NEAR Connect', () => {
       },
     ])
     expect(BigInt(wallet.txs[0].deposit)).toBe(CORE_JOIN_DEPOSIT)
-    // Halaman onboarding dan settlement memakai helper tanda tangan yang sama: stake ikut mengisi network, receiver, dan gas.
+    // Onboarding and settlement use the same signing helper: the stake fills network, receiver, and gas too.
     expect(wallet.txs[1]).toMatchObject({ network: 'testnet', methodName: 'ft_transfer_call', receiverId: 'usdt.tether-token.near' })
     expect(wallet.txs[1].gas).not.toBe('')
   })
 
-  it('TC-FE-003-04 wallet menolak: pesan dibatalkan, tanpa transaksi', async () => {
+  it('TC-FE-003-04 wallet rejects: cancelled message, no transaction', async () => {
     const user = userEvent.setup()
     const wallet = createMockWallet('a.testnet', 'a.testnet')
     wallet.rejectNext = true
     renderApp('/onboarding', undefined, noPoll, wallet)
     await screen.findByText('a.testnet')
     await fillJoin(user)
-    await user.click(screen.getByRole('button', { name: 'Tanda tangani join dan stake' }))
-    expect(await screen.findByText(/Dibatalkan pengguna/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Sign join and stake' }))
+    expect(await screen.findByText(/Cancelled by user/)).toBeInTheDocument()
     expect(wallet.txs).toEqual([])
   })
 
-  it('input tidak valid menahan tombol', async () => {
+  it('invalid input holds the button', async () => {
     const user = userEvent.setup()
     renderApp('/onboarding', undefined, noPoll, createMockWallet('a.testnet', 'a.testnet'))
     await screen.findByText('a.testnet')
-    await user.type(screen.getByRole('textbox', { name: /pubkey_voucher/ }), 'bukan-kunci')
+    await user.type(screen.getByRole('textbox', { name: /pubkey_voucher/ }), 'not-a-key')
     await user.type(screen.getByRole('textbox', { name: /terms_hash/ }), HASH)
-    expect(screen.getByRole('button', { name: 'Tanda tangani join dan stake' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Sign join and stake' })).toBeDisabled()
   })
 })

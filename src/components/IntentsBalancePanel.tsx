@@ -24,27 +24,27 @@ export function IntentsBalancePanel() {
   }
 
   return (
-    <section aria-label="Saldo Intents yang belum ditarik">
-      <h3>Saldo Intents yang belum ditarik</h3>
-      <QueryState query={balance} loadingLabel="Memuat saldo Intents">
+    <section aria-label="Unwithdrawn Intents balance">
+      <h3>Unwithdrawn Intents balance</h3>
+      <QueryState query={balance} loadingLabel="Loading Intents balance">
         {(raw) => {
           const waiting = BigInt(raw) > 0n
           return (
             <>
               <p className="state" role="status">
-                Saldo kontrak di Intents: <strong>{formatCredit(raw)}</strong> USDT
-                {waiting ? ' menunggu ditarik ke akun NEP-141 kontrak.' : '. Tidak ada yang menunggu.'}
+                Contract balance on Intents: <strong>{formatCredit(raw)}</strong> USDT
+                {waiting ? ' waiting to be withdrawn to the contract NEP-141 account.' : '. Nothing is waiting.'}
               </p>
               <p className="state">
-                Residual yang dibayar lewat NEAR Intents (<code className="plain">mt_on_transfer</code>) masuk sebagai saldo multi-token di Intents. Klaim ke
-                akun NEAR dibayar dengan <code className="plain">ft_transfer</code> dari saldo USDT kontrak, jadi klaim bisa gagal sampai saldo ini
-                ditarik. Klaim yang gagal tidak hilang: ulangi setelah penarikan. Siapa pun boleh menekan tombol ini; transaksinya memakai 150 Tgas
-                prepaid dan tanpa deposit.
+                Residuals paid through NEAR Intents (<code className="plain">mt_on_transfer</code>) arrive as a multi-token balance on Intents. Claims to a
+                NEAR account are paid with <code className="plain">ft_transfer</code> from the contract USDT balance, so a claim can fail until this balance
+                is withdrawn. A failed claim is not lost: retry after the withdrawal. Anyone may press this button; the transaction uses 150 Tgas
+                prepaid and no deposit.
               </p>
               <button type="button" disabled={!account || !waiting || signing} onClick={() => void withdraw()}>
-                {signing ? 'Menunggu wallet…' : 'Tarik saldo Intents ke kontrak'}
+                {signing ? 'Waiting for wallet…' : 'Withdraw Intents balance to the contract'}
               </button>
-              {!account && <p className="state">Masuk dengan wallet untuk menandatangani.</p>}
+              {!account && <p className="state">Sign in with a wallet to sign.</p>}
               <TxResult state={state} />
             </>
           )
@@ -52,8 +52,8 @@ export function IntentsBalancePanel() {
       </QueryState>
       {history.data && history.data.withdrawals > 0 && (
         <p className="state" data-testid="withdrawal-history">
-          Sudah ditarik {history.data.withdrawals} kali, total <strong>{formatCredit(history.data.totalWithdrawn)}</strong> USDT. Terakhir{' '}
-          {formatCredit(history.data.items[0]?.amount)} USDT di blok {history.data.items[0]?.changedBlock}.
+          Withdrawn {history.data.withdrawals} times, total <strong>{formatCredit(history.data.totalWithdrawn)}</strong> USDT. Latest{' '}
+          {formatCredit(history.data.items[0]?.amount)} USDT at block {history.data.items[0]?.changedBlock}.
         </p>
       )}
     </section>

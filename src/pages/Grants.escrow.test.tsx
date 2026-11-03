@@ -19,22 +19,22 @@ describe('FE-022 escrow of tokens in the grant list', () => {
       grant(6, { kind: 'nft', nftContract: 'nft.ticket.near', tokenId: 't1', state: 'delivered' }, 'ticket:event-nft'),
       grant(7, null, 'compute:gpu-hours'),
     ]
-    renderApp('/akses', withGrants(items), false, createMockWallet(GPU, GPU))
-    await screen.findByRole('table', { name: 'Daftar grant' })
-    expect(rowOf(5)).toHaveTextContent(/Token\s*rwa\.bond\.near: 2500000 satuan token \(dipegang kontrak\)/)
+    renderApp('/access', withGrants(items), false, createMockWallet(GPU, GPU))
+    await screen.findByRole('table', { name: 'Grant list' })
+    expect(rowOf(5)).toHaveTextContent(/Token\s*rwa\.bond\.near: 2500000 token units \(held by contract\)/)
     expect(rowOf(5)).not.toHaveTextContent('2.500') // token units, not credits
-    expect(rowOf(6)).toHaveTextContent(/NFT\s*nft\.ticket\.near #t1 \(sudah diserahkan\)/)
+    expect(rowOf(6)).toHaveTextContent(/NFT\s*nft\.ticket\.near #t1 \(delivered\)/)
     expect(within(rowOf(7)).getAllByRole('cell').at(-1)).toHaveTextContent('-')
     const warning = screen.getByTestId('ft-escrow-warning')
-    expect(warning).toHaveTextContent('Token dengan biaya transfer tidak didukung')
+    expect(warning).toHaveTextContent('Tokens with a transfer fee are not supported')
     expect(warning).toHaveTextContent('storage_deposit')
   })
 
   it('TC-FE-022-02 without a token escrow the warning is not shown, and a grant without the escrow field still renders', async () => {
     const plain = { ...grant(8, null, 'compute:gpu-hours') } as Record<string, unknown>
     delete plain.escrow
-    renderApp('/akses', withGrants([plain, grant(6, { kind: 'nft', nftContract: 'nft.ticket.near', tokenId: 't1', state: 'held' }, 'ticket:event-nft')]), false, createMockWallet(GPU, GPU))
-    await screen.findByRole('table', { name: 'Daftar grant' })
+    renderApp('/access', withGrants([plain, grant(6, { kind: 'nft', nftContract: 'nft.ticket.near', tokenId: 't1', state: 'held' }, 'ticket:event-nft')]), false, createMockWallet(GPU, GPU))
+    await screen.findByRole('table', { name: 'Grant list' })
     expect(screen.queryByTestId('ft-escrow-warning')).not.toBeInTheDocument()
     expect(rowOf(8)).toHaveTextContent('compute:gpu-hours')
   })
@@ -44,12 +44,12 @@ describe('FE-022 escrow of tokens in the grant list', () => {
       grant(9, { kind: 'mt', mtContract: 'mt.near', tokenId: 'nep141:usdc.tether-token.near', amount: '123456789012345678901', state: 'held' }, 'intents:multi-token'),
       grant(10, { kind: 'mt', mtContract: 'mt.near', tokenId: 'pool:1', amount: '42', state: 'delivered' }, 'amm:lp-share'),
     ]
-    renderApp('/akses', withGrants(items), false, createMockWallet(GPU, GPU))
-    await screen.findByRole('table', { name: 'Daftar grant' })
-    expect(rowOf(9)).toHaveTextContent(/Multi-token\s*mt\.near\s*nep141:usdc\.tether-token\.near: 123456789012345678901 satuan token \(dipegang kontrak\)/)
-    expect(rowOf(10)).toHaveTextContent(/Multi-token\s*mt\.near\s*pool:1: 42 satuan token \(sudah diserahkan\)/)
+    renderApp('/access', withGrants(items), false, createMockWallet(GPU, GPU))
+    await screen.findByRole('table', { name: 'Grant list' })
+    expect(rowOf(9)).toHaveTextContent(/Multi-token\s*mt\.near\s*nep141:usdc\.tether-token\.near: 123456789012345678901 token units \(held by contract\)/)
+    expect(rowOf(10)).toHaveTextContent(/Multi-token\s*mt\.near\s*pool:1: 42 token units \(delivered\)/)
     const warning = screen.getByTestId('ft-escrow-warning')
-    expect(warning).toHaveTextContent('Token dengan biaya transfer tidak didukung')
+    expect(warning).toHaveTextContent('Tokens with a transfer fee are not supported')
     expect(warning).toHaveTextContent('multi-token')
   })
 })

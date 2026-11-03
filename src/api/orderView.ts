@@ -10,7 +10,7 @@ const orNull = <T,>(v: T | undefined | null): T | null => v ?? null
 function toMandate(input: unknown): OrderMandateView | null {
   if (input === undefined || input === null) return null
   const m = input as Raw
-  if (!Array.isArray(m.kinds)) throw new Error('Mandat dari server tidak sah: kinds bukan daftar')
+  if (!Array.isArray(m.kinds)) throw new Error('Mandate from the server is invalid: kinds is not a list')
   return { circle: String(m.circle), dao: String(m.dao), kinds: m.kinds.map(String), rulesHash: String(pick(m, 'rules_hash', 'rulesHash')) }
 }
 
@@ -18,7 +18,7 @@ export function toOrderView(input: unknown): OrderView {
   const raw = (input ?? {}) as Raw
   const order = (raw.order ?? {}) as Raw
   const hash = pick(raw, 'order_hash', 'orderHash')
-  if (typeof hash !== 'string' || typeof raw.status !== 'string') throw new Error('Jawaban pesanan tidak dikenal: order_hash atau status tidak sah')
+  if (typeof hash !== 'string' || typeof raw.status !== 'string') throw new Error('Unrecognized order response: order_hash or status is invalid')
   const proof = (order.proof ?? null) as Raw | null
   const milestones = Array.isArray(raw.milestones) ? (raw.milestones as Raw[]) : []
   const verified = pick(raw, 'target_verified', 'targetVerified')
@@ -37,7 +37,7 @@ export function toOrderView(input: unknown): OrderView {
     signedBy: Array.isArray(pick(raw, 'signed_by', 'signedBy')) ? (pick(raw, 'signed_by', 'signedBy') as unknown[]).map(String) : [],
     milestones: milestones.map((m, k) => {
       const status = m.status as MilestoneStatus
-      if (!MILESTONE_STATUSES.includes(status)) throw new Error(`Status tonggak tidak dikenal: ${String(m.status)}`)
+      if (!MILESTONE_STATUSES.includes(status)) throw new Error(`Unknown milestone status: ${String(m.status)}`)
       return {
         index: Number(m.index ?? k + 1), amount: String(m.amount), dueAt: Number(pick(m, 'due_at', 'dueAt')), status,
         deliverableHash: orNull(pick(m, 'deliverable_hash', 'deliverableHash') as string | null | undefined), at: m.at === undefined || m.at === null ? null : Number(m.at),

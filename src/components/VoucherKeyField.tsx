@@ -24,7 +24,7 @@ export function VoucherKeyField({ value, onChange, disabled }: { value: string; 
   }, [held, onChange])
   return (
     <label>
-      <span>Kunci voucher (rahasia, hanya dipakai di browser ini)</span>
+      <span>Voucher key (secret, used only in this browser)</span>
       <input
         type="password"
         autoComplete="off"
@@ -35,8 +35,8 @@ export function VoucherKeyField({ value, onChange, disabled }: { value: string; 
         disabled={disabled}
       />
       <small>
-        Menandatangani listing, penawaran, dan bundle. Tidak dikirim ke server, hilang saat halaman ditutup, dan dihapus otomatis setelah {VOUCHER_KEY_IDLE_MS / 60000} menit tanpa aktivitas.
-        {held && <> <button type="button" onClick={() => onChange('')}>Hapus kunci sekarang</button></>}
+        Signs listings, offers, and bundles. Not sent to the server, gone when the page closes, and cleared automatically after {VOUCHER_KEY_IDLE_MS / 60000} minutes without activity.
+        {held && <> <button type="button" onClick={() => onChange('')}>Clear key now</button></>}
       </small>
     </label>
   )

@@ -16,11 +16,11 @@ import { useWallet } from '../wallet/WalletContext'
 // sekaligus (seq 1 di epochnya) atau menolak; cicilan yang gagal digeser sekali dengan voucher susulan yang ditandatangani setelah gagal. Tanda tangan di depan adalah bukti,
 // bukan jaminan pembayaran (ADR-44): halaman memberi tahu itu di tempat yang dilihat debtor.
 const STATUS_LABEL: Record<InvoiceStatus, string> = {
-  requested: 'Diajukan', approved: 'Disetujui', registered: 'Terdaftar', rejected: 'Ditolak', expired: 'Kedaluwarsa', missed: 'Meleset',
+  requested: 'Requested', approved: 'Approved', registered: 'Registered', rejected: 'Rejected', expired: 'Expired', missed: 'Missed',
 }
 const REASON_LABEL: Record<InstallmentReason, string> = {
-  headroom: 'headroom debtor habis',
-  blocked_by_debtor: 'diblokir debtor (voucher ber-seq lebih tinggi didaftarkan lebih dulu)',
+  headroom: 'debtor headroom exhausted',
+  blocked_by_debtor: 'blocked by the debtor (a voucher with a higher seq was registered first)',
 }
 const STATUS_FILTERS = ['', 'requested', 'approved', 'registered', 'rejected', 'expired', 'missed'] as const
 
@@ -59,16 +59,16 @@ function CreateInvoice({ voucherKey, onVoucherKey, onCreated }: { voucherKey: st
   }
 
   return (
-    <form className="form" aria-label="Ajukan invoice" onSubmit={(e) => { e.preventDefault(); void submit() }}>
-      <h3>Ajukan invoice (issuer)</h3>
-      {!account && <p className="state">Masuk dengan wallet untuk mengajukan invoice.</p>}
-      <label><span>Debtor (akun penagih dibayar oleh)</span><input value={debtor} onChange={(e) => setDebtor(e.target.value)} placeholder="maker.x207-circle.near" /></label>
-      <label><span>Nomor invoice</span><input value={id} onChange={(e) => setId(e.target.value)} placeholder="INV-2026-001" /></label>
-      <label><span>Jumlah (credit)</span><input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" /></label>
-      <label><span>Keterangan</span><input value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={256} /></label>
-      <label><span>Jumlah cicilan (1 sampai 24, satu per epoch)</span><input value={installments} onChange={(e) => setInstallments(e.target.value)} inputMode="numeric" /></label>
+    <form className="form" aria-label="Request invoice" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+      <h3>Request an invoice (issuer)</h3>
+      {!account && <p className="state">Sign in with your wallet to request an invoice.</p>}
+      <label><span>Debtor (the account that pays the issuer)</span><input value={debtor} onChange={(e) => setDebtor(e.target.value)} placeholder="maker.x207-circle.near" /></label>
+      <label><span>Invoice number</span><input value={id} onChange={(e) => setId(e.target.value)} placeholder="INV-2026-001" /></label>
+      <label><span>Amount (credit)</span><input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" /></label>
+      <label><span>Memo</span><input value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={256} /></label>
+      <label><span>Number of installments (1 to 24, one per epoch)</span><input value={installments} onChange={(e) => setInstallments(e.target.value)} inputMode="numeric" /></label>
       <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
-      <div><button type="submit" disabled={!ready || busy}>{busy ? 'Menandatangani…' : 'Tanda tangani dan ajukan'}</button></div>
+      <div><button type="submit" disabled={!ready || busy}>{busy ? 'Signing…' : 'Sign and request'}</button></div>
       {error && <p className="state state-error" role="alert">{error}</p>}
     </form>
   )
@@ -80,12 +80,12 @@ function InstallmentRow({ item, canCatchUp, onCatchUp, busy }: { item: Installme
       <td>{item.index}</td>
       <td>{item.epoch}</td>
       <td>{formatCredit(item.amount)}</td>
-      <td>{item.status}{item.shifted && item.voucherEpoch !== null ? ` (digeser ke epoch ${item.voucherEpoch})` : ''}</td>
+      <td>{item.status}{item.shifted && item.voucherEpoch !== null ? ` (shifted to epoch ${item.voucherEpoch})` : ''}</td>
       <td>{item.reason ? REASON_LABEL[item.reason] : '-'}</td>
       <td>
         {canCatchUp && (
-          <button type="button" disabled={busy} onClick={onCatchUp} aria-label={`Susulan cicilan ${item.index}`}>
-            Tandatangani susulan
+          <button type="button" disabled={busy} onClick={onCatchUp} aria-label={`Catch-up installment ${item.index}`}>
+            Sign catch-up
           </button>
         )}
       </td>
@@ -123,13 +123,13 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
     const vouchers = await buildApproval(CONTRACT_ID, view, voucherKey, hash)
     if (typeof vouchers === 'string') return fail(vouchers)
     await api.approveInvoice(hash, vouchers)
-    return `Disetujui: ${vouchers.length} voucher cicilan ditandatangani, satu per epoch.`
+    return `Approved: ${vouchers.length} installment vouchers signed, one per epoch.`
   })
   const reject = () => act(async (view) => {
     await assertInvoiceHash(view, hash)
     const { notice, signature } = await buildRejection(CONTRACT_ID, view, account!, '', Math.floor(Date.now() / 1000), voucherKey)
     await api.rejectInvoice(hash, notice, signature)
-    return 'Invoice ditolak.'
+    return 'Invoice rejected.'
   })
   const catchUp = (item: InstallmentView) => act(async (view) => {
     // keadaan pasangan di epoch tujuan dari kontrak, bukan tebakan: voucher susulan melanjutkannya
@@ -139,12 +139,12 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
     const built = await buildCatchUp(CONTRACT_ID, view, item.index, state, item.shifted, voucherKey)
     if (typeof built === 'string') return fail(built)
     await api.catchUpInstallment(hash, item.index, built.voucher, built.signature)
-    return `Voucher susulan cicilan ${item.index} ditandatangani untuk epoch ${target}.`
+    return `Catch-up voucher for installment ${item.index} signed for epoch ${target}.`
   })
 
   return (
-    <section className="detail" aria-label="Rincian invoice">
-      <QueryState query={query} loadingLabel="Memuat invoice">
+    <section className="detail" aria-label="Invoice details">
+      <QueryState query={query} loadingLabel="Loading invoices">
         {(view) => {
           const isDebtor = account === view.document.debtor
           const isIssuer = account === view.document.issuer
@@ -152,17 +152,17 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
             <>
               <h3>{view.document.id} · {STATUS_LABEL[view.status]}</h3>
               <dl className="status-panel">
-                <dt>Penagih (issuer)</dt><dd><code>{view.document.issuer}</code></dd>
+                <dt>Issuer (collector)</dt><dd><code>{view.document.issuer}</code></dd>
                 <dt>Debtor</dt><dd><code>{view.document.debtor}</code></dd>
-                <dt>Jumlah</dt><dd>{formatCredit(view.document.amount)} credit</dd>
-                <dt>Keterangan</dt><dd>{view.document.memo || '-'}</dd>
+                <dt>Amount</dt><dd>{formatCredit(view.document.amount)} credit</dd>
+                <dt>Memo</dt><dd>{view.document.memo || '-'}</dd>
                 <dt>Hash</dt><dd><code>{view.invoiceHash}</code></dd>
               </dl>
-              {view.rejectReason && <p className="state" role="status">Alasan penolakan: {view.rejectReason}</p>}
-              {view.needsBond && <p className="state state-error" role="status" data-testid="invoice-bond">Invoice ini sebesar atau di atas ambang jaminan: perlu jaminan dua sisi (CT-094) sebelum didaftarkan.</p>}
+              {view.rejectReason && <p className="state" role="status">Rejection reason: {view.rejectReason}</p>}
+              {view.needsBond && <p className="state state-error" role="status" data-testid="invoice-bond">This invoice is at or above the bond threshold: it needs a two-sided bond (CT-094) before it is registered.</p>}
               <div className="table-wrap">
-                <table aria-label="Jadwal cicilan">
-                  <thead><tr><th>#</th><th>Epoch</th><th>Jumlah</th><th>Status</th><th>Alasan</th><th /></tr></thead>
+                <table aria-label="Installment schedule">
+                  <thead><tr><th>#</th><th>Epoch</th><th>Amount</th><th>Status</th><th>Reason</th><th /></tr></thead>
                   <tbody>
                     {view.installments.map((item) => (
                       <InstallmentRow
@@ -178,24 +178,24 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
               </div>
               {view.installments.some((i) => i.reason === 'blocked_by_debtor') && (
                 <p className="state state-error" role="status" data-testid="invoice-blocked">
-                  Cicilan diblokir debtor. Tidak ada voucher susulan untuk ini; hanya reputasi dan jaminan CT-094 yang menjawabnya.
+                  An installment was blocked by the debtor. There is no catch-up voucher for this; only reputation and the CT-094 bond answer it.
                 </p>
               )}
               {isDebtor && view.status === 'requested' && (
                 <>
                   <p className="state" data-testid="invoice-advance-note">
-                    Menyetujui berarti menandatangani sekarang {view.installments.length} voucher, satu per epoch. Itu bukti bahwa Anda mengakui tagihan, bukan jaminan bagi penagih: kontrak
-                    membolehkan voucher ber-seq lebih tinggi mendahului. Tidak ada voucher cadangan; bila cicilan gagal, voucher susulan baru ditandatangani setelah gagal.
+                    Approving means signing {view.installments.length} vouchers now, one per epoch. It is proof that you acknowledge the invoice, not a guarantee for the issuer: the contract
+                    allows a voucher with a higher seq to go first. There are no spare vouchers; if an installment fails, a catch-up voucher is signed only after the failure.
                   </p>
                   <div className="actions">
                     <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void approve()}>
-                      Setujui dan tandatangani {view.installments.length} cicilan: {formatCredit(view.document.amount)} credit kepada {view.document.issuer}
+                      Approve and sign {view.installments.length} installments: {formatCredit(view.document.amount)} credit to {view.document.issuer}
                     </button>
-                    <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void reject()}>Tolak invoice {formatCredit(view.document.amount)} credit dari {view.document.issuer}</button>
+                    <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void reject()}>Reject invoice {formatCredit(view.document.amount)} credit from {view.document.issuer}</button>
                   </div>
                 </>
               )}
-              {isIssuer && view.status === 'requested' && <p className="state">Menunggu persetujuan debtor.</p>}
+              {isIssuer && view.status === 'requested' && <p className="state">Waiting for the debtor to approve.</p>}
             </>
           )
         }}
@@ -216,22 +216,22 @@ export function Invoices() {
 
   return (
     <>
-      <h2>Invoice dan cicilan</h2>
-      {!account && <p className="state">Masuk dengan wallet untuk melihat invoice Anda.</p>}
+      <h2>Invoices and installments</h2>
+      {!account && <p className="state">Sign in with your wallet to see your invoices.</p>}
       <div className="filters">
         <label>
           <span>Status</span>
           <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            {STATUS_FILTERS.map((s) => <option key={s} value={s}>{s === '' ? 'Semua' : STATUS_LABEL[s]}</option>)}
+            {STATUS_FILTERS.map((s) => <option key={s} value={s}>{s === '' ? 'All' : STATUS_LABEL[s]}</option>)}
           </select>
         </label>
       </div>
       {account && (
-        <QueryState query={invoices} loadingLabel="Memuat invoice" isEmpty={(d) => d.items.length === 0} empty="Belum ada invoice untuk akun ini.">
+        <QueryState query={invoices} loadingLabel="Loading invoices" isEmpty={(d) => d.items.length === 0} empty="No invoices for this account yet.">
           {(data) => (
             <div className="table-wrap">
-              <table aria-label="Daftar invoice">
-                <thead><tr><th>Nomor</th><th>Penagih</th><th>Debtor</th><th>Jumlah</th><th>Cicilan</th><th>Status</th><th /></tr></thead>
+              <table aria-label="Invoice list">
+                <thead><tr><th>Number</th><th>Issuer</th><th>Debtor</th><th>Amount</th><th>Installments</th><th>Status</th><th /></tr></thead>
                 <tbody>
                   {data.items.map((i) => (
                     <tr key={i.invoiceHash} aria-selected={selected === i.invoiceHash}>
@@ -241,7 +241,7 @@ export function Invoices() {
                       <td>{formatCredit(i.document.amount)}</td>
                       <td>{i.installments.length}</td>
                       <td>{STATUS_LABEL[i.status]}</td>
-                      <td><button type="button" aria-label={`Buka ${i.document.id}`} onClick={() => setSelected(i.invoiceHash)}>Buka</button></td>
+                      <td><button type="button" aria-label={`Open ${i.document.id}`} onClick={() => setSelected(i.invoiceHash)}>Open</button></td>
                     </tr>
                   ))}
                 </tbody>

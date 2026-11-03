@@ -38,13 +38,13 @@ export function Layout() {
   }, [pathname, title])
   return (
     <EpochProvider>
-      <a className="skip-link" href="#isi" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Lewati ke isi halaman</a>
+      <a className="skip-link" href="#isi" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
       <div className="shell">
         <aside className="rail">
           <p className="brand">
             x207 <span>{CIRCLE}</span>
           </p>
-          <nav aria-label="Halaman">
+          <nav aria-label="Pages">
             {pages.map(({ path, title }) => (
               <NavLink key={path} to={{ pathname: path, search }}>
                 {title}
