@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import { ClearingStats } from './pages/ClearingStats'
 import { Governance } from './pages/Governance'
+import { Codes } from './pages/Codes'
 import { Grants } from './pages/Grants'
 import { Invoices } from './pages/Invoices'
 import { Licenses } from './pages/Licenses'
@@ -26,6 +27,7 @@ export const pages: PageRoute[] = [
   { path: '/invoice', title: 'Invoice', perEpoch: false, Page: Invoices },
   { path: '/pesanan', title: 'Pesanan jasa', perEpoch: false, Page: Orders },
   { path: '/lisensi', title: 'Lisensi konten', perEpoch: false, Page: Licenses },
+  { path: '/kode', title: 'Kode sekali tukar', perEpoch: false, Page: Codes },
   { path: '/sewa', title: 'Sewa akses', perEpoch: false, Page: Rent },
   { path: '/akses', title: 'Akses (F8)', perEpoch: false, Page: Grants },
   { path: '/tata-kelola', title: 'Tata kelola', perEpoch: false, Page: Governance },
