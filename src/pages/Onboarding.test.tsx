@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { JOIN_STORAGE_DEPOSIT } from '@x207/core'
 import { apiError, renderApp } from '../test/render'
 import { createMockWallet } from '../test/walletMock'
 
@@ -63,7 +64,7 @@ describe('onboarding F1', () => {
     expect(wallet.txs[0].args).toEqual({ token: 'usdt.tether-token.near', receiver_id: NEW_ACCOUNT, amount: '50000000' })
     expect(wallet.txs[0].args).not.toHaveProperty('msg')
     expect(wallet.txs[1].args).toEqual({ circle_id: 'agents-main', pubkey_voucher: PUBKEY, terms_hash: HASH })
-    expect(BigInt(wallet.txs[1].deposit)).toBeGreaterThanOrEqual(10n ** 22n)
+    expect(BigInt(wallet.txs[1].deposit)).toBeGreaterThanOrEqual(JOIN_STORAGE_DEPOSIT)
     expect(wallet.txs[2].args).toMatchObject({ amount: '50000000', msg: '{"action":"stake"}' })
   })
 

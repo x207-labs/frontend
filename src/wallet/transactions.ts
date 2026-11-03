@@ -1,10 +1,11 @@
+import { JOIN_STORAGE_DEPOSIT as JOIN_DEPOSIT } from '@x207/core'
 import { CIRCLE, CONTRACT_ID } from '../config'
 import type { FunctionCallTx } from './types'
 
 const TGAS = 10n ** 12n
 
-// JOIN_STORAGE_DEPOSIT 0,01 NEAR, Spec Antarmuka Kontrak bagian 4 dan 9.3.
-export const JOIN_STORAGE_DEPOSIT = (10n ** 22n).toString()
+// JOIN_STORAGE_DEPOSIT: satu sumber di `@x207/core` (ADR-41 menaikkannya; kontrak mengembalikan kelebihannya).
+export const JOIN_STORAGE_DEPOSIT = JOIN_DEPOSIT.toString()
 
 export function joinTx(pubkeyVoucher: string, termsHash: string): FunctionCallTx {
   return {

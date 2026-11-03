@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { renderApp } from '../test/render'
 import { createMockWallet } from '../test/walletMock'
+import { JOIN_STORAGE_DEPOSIT as CORE_JOIN_DEPOSIT } from '@x207/core'
 import { JOIN_STORAGE_DEPOSIT } from './transactions'
 
 const PUBKEY = 'ed25519:8hYkQ5Qb2C7XfGmW3sLtVnPz9RdKeHuJa4BcNyTx6M1E'
@@ -58,7 +59,7 @@ describe('NEAR Connect', () => {
         deposit: JOIN_STORAGE_DEPOSIT,
       },
     ])
-    expect(BigInt(wallet.txs[0].deposit)).toBe(10n ** 22n)
+    expect(BigInt(wallet.txs[0].deposit)).toBe(CORE_JOIN_DEPOSIT)
     // Halaman onboarding dan settlement memakai helper tanda tangan yang sama: stake ikut mengisi network, receiver, dan gas.
     expect(wallet.txs[1]).toMatchObject({ network: 'testnet', methodName: 'ft_transfer_call', receiverId: 'usdt.tether-token.near' })
     expect(wallet.txs[1].gas).not.toBe('')
