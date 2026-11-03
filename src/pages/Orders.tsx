@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { ApiError, api } from '../api/client'
-import { useOrder, useOrderProofs, useOrders } from '../api/queries'
+import { useDaoRegistry, useOrder, useOrderProofs, useOrders } from '../api/queries'
 import type { OrderMilestoneView, OrderView } from '../api/types'
 import { QueryState } from '../components/QueryState'
 import { VoucherKeyField } from '../components/VoucherKeyField'
@@ -19,6 +19,16 @@ import { useWallet } from '../wallet/WalletContext'
 const MILESTONE_LABEL: Record<string, string> = { open: 'Terbuka', delivered: 'Terkirim', confirmed: 'Terkonfirmasi', disputed: 'Disengketakan', paid: 'Dibayar', cancelled: 'Dibatalkan' }
 const REASONS = [['not_received', 'Tidak diterima'], ['not_as_described', 'Tidak sesuai uraian'], ['other', 'Lainnya']] as const
 const now = () => Math.floor(Date.now() / 1000)
+
+/** B5-F4 (review BE-062): the backend only checks that the account answers `get_policy`; whether it is the DAO that the buyer means is the buyer's to check, so the page says whether the circle knows the account. */
+function DaoNote({ dao }: { dao: string }) {
+  const registry = useDaoRegistry()
+  if (dao.trim() === '') return null
+  if (registry.isPending) return null
+  if (registry.data === null || registry.data === undefined) return <p className="state" role="note" data-testid="dao-note">Registri DAO lingkaran tidak tersedia: periksa sendiri bahwa <code>{dao}</code> adalah DAO yang Anda maksud.</p>
+  if (registry.data.includes(dao.trim())) return <p className="state" role="note" data-testid="dao-note">DAO ini ada di registri lingkaran.</p>
+  return <p className="state state-error" role="note" data-testid="dao-note">DAO ini tidak ada di registri lingkaran. Backend hanya memeriksa bahwa akun ini menjawab <code>get_policy</code>; periksa alamatnya sebelum menandatangani.</p>
+}
 
 function CreateOrder({ voucherKey, onVoucherKey, onCreated }: { voucherKey: string; onVoucherKey: (v: string) => void; onCreated: (hash: string) => void }) {
   const { account } = useWallet()
@@ -82,6 +92,7 @@ function CreateOrder({ voucherKey, onVoucherKey, onCreated }: { voucherKey: stri
         <fieldset aria-label="Mandat">
           <legend>Mandat publik</legend>
           <label><span>Akun DAO</span><input value={form.dao} onChange={(e) => set('dao', e.target.value)} placeholder="gauge.sputnik-dao.near" /></label>
+          <DaoNote dao={form.dao} />
           <label><span>Jenis proposal yang dibayar (dipisah koma, snake_case)</span><input value={form.kinds} onChange={(e) => set('kinds', e.target.value)} placeholder="transfer, function_call" /></label>
           <label><span>Teks aturan: kapan delegate memilih apa (hanya hash-nya yang dikunci)</span><textarea value={form.rules} onChange={(e) => set('rules', e.target.value)} rows={3} /></label>
         </fieldset>
@@ -262,7 +273,7 @@ function OrderDetail({ hash, voucherKey }: { hash: string; voucherKey: string })
               </dl>
               {kind === 'delegate' && view.mandate && (
                 <dl className="status-panel" aria-label="Mandat" data-testid="order-mandate">
-                  <dt>DAO</dt><dd><code>{view.mandate.dao}</code></dd>
+                  <dt>DAO</dt><dd><code>{view.mandate.dao}</code><DaoNote dao={view.mandate.dao} /></dd>
                   <dt>Jenis proposal</dt><dd>{view.mandate.kinds.map((k) => <code key={k}>{k} </code>)}</dd>
                   <dt>Aturan (hash)</dt><dd><code>{view.mandate.rulesHash}</code></dd>
                   <dt>Hash mandat</dt><dd><code>{view.order.mandateHash}</code></dd>

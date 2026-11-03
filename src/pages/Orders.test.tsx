@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { mandateHash, orderClaimNotice, orderHash, serializeMandate, type DelegateMandate } from '@x207/core'
@@ -406,5 +406,35 @@ describe('FE-027 service orders', () => {
     await user.click(within(claim).getByRole('button', { name: 'Tandatangani dan klaim' }))
     expect(await screen.findByText(/Mandat yang ditampilkan tidak sama dengan mandat yang hash-nya ada di pesanan/)).toBeInTheDocument()
     expect(requests().filter((r) => r.method === 'POST')).toHaveLength(0)
+  })
+
+  it('TC-FE-030-07 [B5-F4] the page says whether the circle knows the DAO of the mandate: listed, not listed (a warning), or the registry is not available', async () => {
+    const user = userEvent.setup()
+    const body = delegateOrder()
+    const withRegistry = (registry: object | null) => (p: string, init?: RequestInit) => {
+      if (p.endsWith('/marketplace/dao-registry')) return registry === null ? { status: 404, body: { error: { code: 'not_found', message: 'x' } } } : { status: 200, body: registry }
+      return delegateApi(body)(p, init)
+    }
+    const check = async (registry: object | null, expected: RegExp) => {
+      cleanup()
+      renderApp('/pesanan', withRegistry(registry), false, asBuyer())
+      const table = await screen.findByRole('table', { name: 'Daftar pesanan' })
+      await user.click(within(table).getByRole('button', { name: /^Buka pesanan/ }))
+      const box = await screen.findByTestId('order-mandate')
+      await waitFor(() => expect(within(box).getByTestId('dao-note')).toHaveTextContent(expected))
+      return within(box).getByTestId('dao-note')
+    }
+    await check({ items: [{ dao: DAO, rentable_vote_kinds: [] }] }, /ada di registri lingkaran/)
+    expect((await check({ items: [{ dao: 'other.sputnik-dao.near', rentable_vote_kinds: [] }] }, /tidak ada di registri lingkaran/)).className).toContain('state-error')
+    await check(null, /Registri DAO lingkaran tidak tersedia/)
+    // the same note under the field of the form
+    cleanup()
+    renderApp('/pesanan', withRegistry({ items: [] }), false, asBuyer())
+    await screen.findByRole('table', { name: 'Daftar pesanan' })
+    const form = screen.getByRole('form', { name: 'Buat pesanan' })
+    await user.selectOptions(within(form).getByLabelText('Jenis jasa'), 'delegate')
+    expect(within(form).queryByTestId('dao-note')).not.toBeInTheDocument() // nothing typed yet
+    await user.type(within(form).getByLabelText('Akun DAO'), DAO)
+    expect(await within(form).findByTestId('dao-note')).toHaveTextContent(/tidak ada di registri lingkaran/)
   })
 })

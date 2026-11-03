@@ -135,6 +135,15 @@ export const api = {
     return { items: (raw.items ?? []).map(toOrderView), nextCursor: raw.nextCursor ?? null }
   },
   order: async (hash: string): Promise<OrderView> => toOrderView(await get<unknown>(`${circle}/orders/${hash}`)),
+  /** Registri DAO milik tata kelola lingkaran (BE-061): daftar akun DAO yang dikenal. `null` bila backend tidak menyediakannya. */
+  daoRegistry: async (): Promise<string[] | null> => {
+    try {
+      const raw = await get<{ items?: Array<{ dao?: unknown }> }>(`${circle}/marketplace/dao-registry`)
+      return (raw.items ?? []).map((i) => String(i.dao))
+    } catch {
+      return null
+    }
+  },
   /** Klaim satu transaksi suara delegate (BE-055): notice bertanda tangan penjual; backend memeriksa transaksinya lewat RPC. */
   claimVote: (hash: string, txHash: string, notice: object, signature: string) => post<unknown>(`${circle}/orders/${hash}/claims`, { tx_hash: txHash, notice, signature }),
   createOrder: (body: { order: object; signatures: Array<{ account: string; signature: string }>; mandate?: object }) => post<{ order_hash?: string; orderHash?: string }>(`${circle}/orders`, body),
