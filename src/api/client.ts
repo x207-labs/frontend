@@ -1,6 +1,7 @@
 import { API_URL, CIRCLE } from '../config'
 import { toInvoiceView } from './invoiceView'
 import { toOrderView } from './orderView'
+import { toPurchaseView } from './purchaseView'
 import type {
   ClearingReport,
   DepositQuote,
@@ -30,7 +31,7 @@ import type {
   AcceptRequest,
   AcceptResult,
   BundleProposal,
-  InvoiceList, InvoiceView, OnchainProofView, OrderList, OrderView, ListingCheck, ListingList,
+  InvoiceList, InvoiceView, OnchainProofView, OrderList, OrderView, PurchaseView, ListingCheck, ListingList,
   ListingView,
   MarketStats,
   OfferView,
@@ -142,6 +143,10 @@ export const api = {
     const raw = await get<{ items?: Array<Record<string, unknown>> }>(`${circle}/orders/${hash}/onchain-proofs`)
     return (raw.items ?? []).map((p) => ({ txHash: String(p.txHash ?? p.tx_hash), method: String(p.method), signer: String(p.signer) }))
   },
+  purchase: async (id: string): Promise<PurchaseView> => toPurchaseView(await get<unknown>(`${circle}/purchases/${encodeURIComponent(id)}`)),
+  createPurchase: (listingHash: string, voucher: object, signature: string) => post<{ purchase_id?: string | number; purchaseId?: string | number }>(`${circle}/listings/${listingHash}/purchases`, { voucher, signature }),
+  purchaseNotice: (id: string, notice: object, signature: string) => post<unknown>(`${circle}/purchases/${encodeURIComponent(id)}`, { notice, signature }),
+  takedown: (listingHash: string, claim: string, evidenceHash: string, signature: string) => post<unknown>(`${circle}/listings/${listingHash}/takedown`, { claim, evidence_hash: evidenceHash, signature }),
   cancelListing: (hash: string, signature: string) => post<ListingView>(`${circle}/listings/${hash}/cancel`, { signature }),
   offers: (hash: string) => get<{ items: OfferView[] }>(`${circle}/listings/${hash}/offers`),
   postOffer: (hash: string, offer: object, signature: string, inReplyTo?: string) =>
