@@ -5,13 +5,14 @@ import { useState } from 'react'
 import { api } from '../api/client'
 import { useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
+import { AssetTemplateForm } from '../components/AssetTemplateForm'
 import { Negotiation } from '../components/Negotiation'
 import { OwnIntents } from '../components/OwnIntents'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { ASSET_CLASSES, listingHash, signListing, type AssetClass, type Listing } from '../lib/barter'
-import { toAtomic } from '../lib/amount'
+import { fromAtomic, toAtomic } from '../lib/amount'
 import { describeMarketError } from '../lib/marketError'
 import { formatCredit, formatNumber, formatTime, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
@@ -130,6 +131,12 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
       }}
     >
       {!account && <p className="state">Masuk dengan wallet untuk membuat listing.</p>}
+      <AssetTemplateForm
+        onApply={(t) => {
+          setOffer({ type: t.side.asset_type, cls: t.side.asset_class, quantity: String(t.side.quantity), value: fromAtomic(t.side.value) })
+          setDetail(t.detail)
+        }}
+      />
       <SideFields legend="Menawarkan" value={offer} onChange={setOffer} />
       <SideFields legend="Mencari" value={want} onChange={setWant} />
       <label>
