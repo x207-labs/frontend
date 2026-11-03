@@ -388,10 +388,15 @@ export type OrderMilestoneView = {
 export type OrderDocView = {
   circle: string; kind: string; buyer: string; seller: string; specHash: string
   sampleHash: string | null; target: string | null; proof: { method: string; amountPerTx: string } | null; nonce: string
+  /** Hanya pesanan `delegate` (SD-072): sha256 dari mandat. */
+  mandateHash: string | null
 }
-export type OrderView = { orderHash: string; order: OrderDocView; status: string; needsBond: boolean; targetVerified: boolean | null; signedBy: string[]; milestones: OrderMilestoneView[] }
+/** Mandat publik pesanan `delegate`: `DelegateMandate` SDK dalam camelCase. */
+export type OrderMandateView = { circle: string; dao: string; kinds: string[]; rulesHash: string }
+export type OrderView = { orderHash: string; order: OrderDocView; status: string; needsBond: boolean; targetVerified: boolean | null; signedBy: string[]; milestones: OrderMilestoneView[]; mandate: OrderMandateView | null }
 export type OrderList = { items: OrderView[]; nextCursor: string | null }
-export type OnchainProofView = { txHash: string; method: string; signer: string }
+/** Bukti on-chain; untuk pesanan `delegate` juga kontrak yang dipanggil, proposal, aksi, dan jenis proposalnya (klaim yang diperiksa backend lewat RPC). */
+export type OnchainProofView = { txHash: string; method: string; signer: string; receiver?: string; proposalId?: number; action?: string; proposalKind?: string; at?: string }
 
 // Penyerahan lisensi (FE-028): Spec API Backend 5g, dibangun dari spec dengan mock; BE-056 belum ada. Dinormalkan oleh `toPurchaseView`.
 export type PurchaseStatus = 'paid_held' | 'cipher_posted' | 'key_released' | 'confirmed' | 'disputed' | 'refuted' | 'cancelled'

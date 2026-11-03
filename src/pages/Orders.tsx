@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { api } from '../api/client'
+import { ApiError, api } from '../api/client'
 import { useOrder, useOrderProofs, useOrders } from '../api/queries'
 import type { OrderMilestoneView, OrderView } from '../api/types'
 import { QueryState } from '../components/QueryState'
@@ -9,7 +9,7 @@ import { CONTRACT_ID } from '../config'
 import { formatCredit, formatTime, shortAccount } from '../lib/format'
 import { describeMarketError } from '../lib/marketError'
 import {
-  CREATABLE_KINDS, EMPTY_ORDER, KIND_LABEL, assertOrderHash, KIND_NOTE, ORDER_PATTERN, PROOF_METHODS, buildCreateOrder, milestoneNotice, orderHashOf, signNotice, toOrderDocument,
+  CLAIM_REASON, CREATABLE_KINDS, EMPTY_ORDER, KIND_LABEL, assertMandate, assertOrderHash, KIND_NOTE, ORDER_PATTERN, PROOF_METHODS, buildCreateOrder, mandateHashOf, milestoneNotice, orderHashOf, signClaim, signNotice, toMandate, toOrderDocument,
   type MilestoneAction, type OrderForm, type OutcomeAction,
 } from '../lib/orderFlow'
 import { useWallet } from '../wallet/WalletContext'
@@ -36,12 +36,18 @@ function CreateOrder({ voucherKey, onVoucherKey, onCreated }: { voucherKey: stri
     setBusy(true)
     setError(null)
     try {
-      const doc = await toOrderDocument(form, CONTRACT_ID, account, crypto.randomUUID().replaceAll('-', '').slice(0, 24))
+      // delegate: the mandate is built first, because its hash is part of the document
+      const mandate = form.kind === 'delegate' ? await toMandate(form, CONTRACT_ID) : undefined
+      if (typeof mandate === 'string') {
+        setError(mandate)
+        return
+      }
+      const doc = await toOrderDocument(form, CONTRACT_ID, account, crypto.randomUUID().replaceAll('-', '').slice(0, 24), mandate ? await mandateHashOf(mandate) : null)
       if (typeof doc === 'string') {
         setError(doc)
         return
       }
-      const body = await buildCreateOrder(doc, account, voucherKey, counterparty.trim() === '' ? undefined : parseCounterparty(counterparty, form.seller))
+      const body = await buildCreateOrder(doc, account, voucherKey, counterparty.trim() === '' ? undefined : parseCounterparty(counterparty, form.seller), mandate)
       await api.createOrder(body)
       await client.invalidateQueries({ queryKey: ['orders'] })
       onCreated(await orderHashOf(doc))
@@ -72,16 +78,24 @@ function CreateOrder({ voucherKey, onVoucherKey, onCreated }: { voucherKey: stri
       {form.kind === 'loadtest' && (
         <label><span>Target uji beban (nama host)</span><input value={form.target} onChange={(e) => set('target', e.target.value)} placeholder="shop.example.com" /></label>
       )}
+      {form.kind === 'delegate' && (
+        <fieldset aria-label="Mandat">
+          <legend>Mandat publik</legend>
+          <label><span>Akun DAO</span><input value={form.dao} onChange={(e) => set('dao', e.target.value)} placeholder="gauge.sputnik-dao.near" /></label>
+          <label><span>Jenis proposal yang dibayar (dipisah koma, snake_case)</span><input value={form.kinds} onChange={(e) => set('kinds', e.target.value)} placeholder="transfer, function_call" /></label>
+          <label><span>Teks aturan: kapan delegate memilih apa (hanya hash-nya yang dikunci)</span><textarea value={form.rules} onChange={(e) => set('rules', e.target.value)} rows={3} /></label>
+        </fieldset>
+      )}
       {pattern === 'proof' && form.kind !== '' && (
         <>
           <label>
             <span>Method yang dihitung sebagai bukti</span>
             <select value={form.proofMethod} onChange={(e) => set('proofMethod', e.target.value)}>
               <option value="">Pilih method</option>
-              {PROOF_METHODS[form.kind as 'keeper' | 'solver'].map((m) => <option key={m} value={m}>{m}</option>)}
+              {PROOF_METHODS[form.kind as 'keeper' | 'solver' | 'delegate'].map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </label>
-          <label><span>Bayaran per transaksi (credit)</span><input value={form.proofAmount} onChange={(e) => set('proofAmount', e.target.value)} inputMode="decimal" /></label>
+          <label><span>{form.kind === 'delegate' ? 'Bayaran per suara (credit)' : 'Bayaran per transaksi (credit)'}</span><input value={form.proofAmount} onChange={(e) => set('proofAmount', e.target.value)} inputMode="decimal" /></label>
         </>
       )}
       <fieldset>
@@ -178,6 +192,32 @@ function MilestoneRow({ view, opened, m, account, voucherKey, busy, run }: {
   )
 }
 
+/** Penjual (delegate) menyatakan satu transaksi suaranya; backend memeriksanya lewat RPC. Mandat dan hash dicek ulang sebelum notice ditandatangani. */
+function ClaimVote({ view, hash, voucherKey, busy, run }: { view: OrderView; hash: string; voucherKey: string; busy: boolean; run: (label: string, fn: () => Promise<void>) => void }) {
+  const [tx, setTx] = useState('')
+  const claim = () => run('suara diklaim', async () => {
+    await assertOrderHash(view, hash)
+    await assertMandate(view)
+    const { notice, signature } = await signClaim(CONTRACT_ID, hash, view.order.seller, now(), tx.trim(), voucherKey)
+    try {
+      await api.claimVote(hash, tx.trim(), notice, signature)
+    } catch (e) {
+      const reason = e instanceof ApiError && typeof e.details?.reason === 'string' ? e.details.reason : null
+      if (reason !== null) throw new Error(`Klaim ditolak (${reason}): ${CLAIM_REASON[reason] ?? (e instanceof Error ? e.message : '')}`)
+      if (e instanceof ApiError && e.code === 'claim_rpc_unavailable') throw new Error('Backend belum bisa memeriksa transaksi (RPC tidak tersedia). Coba lagi nanti.')
+      throw e
+    }
+    setTx('')
+  })
+  return (
+    <div className="form" aria-label="Klaim suara">
+      <h4>Klaim suara</h4>
+      <label><span>Hash transaksi suara di DAO (base58)</span><input value={tx} onChange={(e) => setTx(e.target.value)} /></label>
+      <button type="button" disabled={busy || voucherKey.trim() === '' || tx.trim() === ''} onClick={claim}>Tandatangani dan klaim</button>
+    </div>
+  )
+}
+
 function OrderDetail({ hash, voucherKey }: { hash: string; voucherKey: string }) {
   const { account } = useWallet()
   const client = useQueryClient()
@@ -218,8 +258,16 @@ function OrderDetail({ hash, voucherKey }: { hash: string; voucherKey: string })
                 {view.status === 'proposed' && (<><dt>Tanda tangan</dt><dd>baru dari {view.signedBy.map(shortAccount).join(', ') || 'siapa pun'}; pesanan terbuka setelah kedua pihak menandatangani</dd></>)}
                 {view.order.sampleHash && (<><dt>Contoh (hash)</dt><dd><code>{view.order.sampleHash}</code></dd></>)}
                 {view.order.target && (<><dt>Target</dt><dd><code>{view.order.target}</code> · {view.targetVerified ? 'kepemilikan terbukti' : 'kepemilikan belum terbukti'}</dd></>)}
-                {view.order.proof && (<><dt>Bukti</dt><dd><code>{view.order.proof.method}</code>, {formatCredit(view.order.proof.amountPerTx)} credit per tx</dd></>)}
+                {view.order.proof && (<><dt>Bukti</dt><dd><code>{view.order.proof.method}</code>, {formatCredit(view.order.proof.amountPerTx)} credit per {kind === 'delegate' ? 'suara' : 'tx'}</dd></>)}
               </dl>
+              {kind === 'delegate' && view.mandate && (
+                <dl className="status-panel" aria-label="Mandat" data-testid="order-mandate">
+                  <dt>DAO</dt><dd><code>{view.mandate.dao}</code></dd>
+                  <dt>Jenis proposal</dt><dd>{view.mandate.kinds.map((k) => <code key={k}>{k} </code>)}</dd>
+                  <dt>Aturan (hash)</dt><dd><code>{view.mandate.rulesHash}</code></dd>
+                  <dt>Hash mandat</dt><dd><code>{view.order.mandateHash}</code></dd>
+                </dl>
+              )}
               {view.needsBond && <p className="state state-error" role="status" data-testid="order-bond">Pesanan ini sebesar atau di atas ambang jaminan: perlu jaminan dua sisi dan arbiter (CT-094).</p>}
               {KIND_NOTE[kind] && <p className="state" role="note">{KIND_NOTE[kind]}</p>}
               {view.order.target && view.targetVerified === false && (
@@ -238,11 +286,21 @@ function OrderDetail({ hash, voucherKey }: { hash: string; voucherKey: string })
               {pattern === 'proof' && (
                 <div data-testid="order-proofs">
                   <p className="state">Dibayar per transaksi penyedia yang terlihat di rantai. Voucher ditandatangani otomatis oleh agent pembeli (payForProofs), bukan dari halaman ini.</p>
-                  <QueryState query={proofs} loadingLabel="Memuat bukti" isEmpty={(d) => d.length === 0} empty="Belum ada transaksi penyedia yang cocok.">
-                    {(items) => <ul aria-label="Bukti on-chain">{items.map((p) => <li key={p.txHash}><code>{p.txHash}</code> · {p.method} · <code>{shortAccount(p.signer)}</code></li>)}</ul>}
+                  <QueryState query={proofs} loadingLabel="Memuat bukti" isEmpty={(d) => d.length === 0} empty={kind === 'delegate' ? 'Belum ada suara yang diklaim.' : 'Belum ada transaksi penyedia yang cocok.'}>
+                    {(items) => (
+                      <ul aria-label="Bukti on-chain">
+                        {items.map((p) => (
+                          <li key={p.txHash}>
+                            <code>{p.txHash}</code> · {p.method} · <code>{shortAccount(p.signer)}</code>
+                            {p.proposalId !== undefined && <> · proposal {p.proposalId} · {p.action} · <code>{p.proposalKind}</code></>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </QueryState>
                 </div>
               )}
+              {kind === 'delegate' && account === view.order.seller && view.status === 'open' && <ClaimVote view={view} hash={hash} voucherKey={voucherKey} busy={busy} run={run} />}
             </>
           )
         }}

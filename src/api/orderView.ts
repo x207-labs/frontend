@@ -1,4 +1,4 @@
-import type { MilestoneStatus, OrderView } from './types'
+import type { MilestoneStatus, OrderMandateView, OrderView } from './types'
 
 // Jawaban pesanan dari backend (BE-054) dinormalkan ke satu bentuk: `order_hash`, `needs_bond`, `target_verified`, `deliverable_hash` seperti di spec 5f atau camelCase.
 // Status yang tidak dikenal ditolak dengan galat, bukan ditebak.
@@ -6,6 +6,13 @@ type Raw = Record<string, unknown>
 const pick = (raw: Raw, snake: string, camel: string): unknown => raw[camel] ?? raw[snake]
 const MILESTONE_STATUSES: readonly MilestoneStatus[] = ['open', 'delivered', 'confirmed', 'disputed', 'paid', 'cancelled']
 const orNull = <T,>(v: T | undefined | null): T | null => v ?? null
+
+function toMandate(input: unknown): OrderMandateView | null {
+  if (input === undefined || input === null) return null
+  const m = input as Raw
+  if (!Array.isArray(m.kinds)) throw new Error('Mandat dari server tidak sah: kinds bukan daftar')
+  return { circle: String(m.circle), dao: String(m.dao), kinds: m.kinds.map(String), rulesHash: String(pick(m, 'rules_hash', 'rulesHash')) }
+}
 
 export function toOrderView(input: unknown): OrderView {
   const raw = (input ?? {}) as Raw
@@ -21,7 +28,9 @@ export function toOrderView(input: unknown): OrderView {
       circle: String(order.circle), kind: String(order.kind), buyer: String(order.buyer), seller: String(order.seller), specHash: String(pick(order, 'spec_hash', 'specHash')),
       sampleHash: orNull(pick(order, 'sample_hash', 'sampleHash') as string | null | undefined), target: orNull(order.target as string | null | undefined),
       proof: proof === null ? null : { method: String(proof.method), amountPerTx: String(pick(proof, 'amount_per_tx', 'amountPerTx')) }, nonce: String(order.nonce),
+      mandateHash: orNull(pick(order, 'mandate_hash', 'mandateHash') as string | null | undefined),
     },
+    mandate: toMandate(raw.mandate),
     status: raw.status,
     needsBond: Boolean(pick(raw, 'needs_bond', 'needsBond')),
     targetVerified: typeof verified === 'boolean' ? verified : null,

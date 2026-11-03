@@ -1,10 +1,11 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { orderHash } from '@x207/core'
+import { mandateHash, orderClaimNotice, orderHash, serializeMandate, type DelegateMandate } from '@x207/core'
 import { orderDocs, orderHashes, orders } from '../api/fixtures'
 import { toOrderView } from '../api/orderView'
 import { base58Encode, sha256Hex, signMessageWithVoucher } from '../lib/barter'
+import { CONTRACT_ID } from '../config'
 import { isHumanListing, toOrderDocument, withHumanMark, EMPTY_ORDER } from '../lib/orderFlow'
 import { apiError, renderApp } from '../test/render'
 import { createMockWallet } from '../test/walletMock'
@@ -258,5 +259,152 @@ describe('FE-027 service orders', () => {
     await user.click(screen.getByRole('button', { name: 'Terima hasil 1' }))
     expect(await screen.findByText(/Hash pesanan yang dihitung dari dokumen yang ditampilkan tidak sama/)).toBeInTheDocument()
     expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/'))).toHaveLength(0)
+  })
+
+  // ---- FE-030 delegate order (SD-072, BE-055) ----
+  const DAO = 'gauge.sputnik-dao.near'
+  const mandate: DelegateMandate = { circle: CONTRACT_ID, dao: DAO, kinds: ['function_call', 'transfer'], rules_hash: 'c'.repeat(64) }
+  const delegateDoc = {
+    circle: CONTRACT_ID, kind: 'delegate', buyer: BUYER, seller: SELLER, spec_hash: 'a'.repeat(64), milestones: [{ amount: '2000000', due_at: 1793100000 }], sample_hash: null, target: null,
+    proof: { method: 'act_proposal', amount_per_tx: '500000' }, mandate_hash: mandateHash(mandate), nonce: 'd1',
+  }
+  const delegateOrder = (over: Record<string, unknown> = {}) => ({
+    orderHash: orderHash(delegateDoc as never), order: delegateDoc, buyer: BUYER, seller: SELLER, status: 'open', needsBond: false, targetVerified: null, signedBy: [BUYER, SELLER],
+    mandate: { circle: CONTRACT_ID, dao: DAO, kinds: ['function_call', 'transfer'], rules_hash: 'c'.repeat(64) }, budget: '2000000', unit: 'credit', decimals: 6,
+    milestones: [{ index: 1, amount: '2000000', dueAt: 1793100000, status: 'open', outcome: null, deliverableHash: null, at: null, confirmBy: null, autoConfirmed: false, disputeReason: null }], ...over,
+  })
+  const proofsBody = { items: [{ txHash: 'Tx1abcdefghijklmnopqrstuvwxyz0123456789ABCD', method: 'act_proposal', signer: SELLER, receiver: DAO, proposalId: 7, action: 'VoteApprove', proposalKind: 'transfer', at: '2026-11-04T10:00:00Z' }] }
+  const delegateApi = (body: object, claim?: (init: RequestInit) => { status: number; body: unknown }) => (p: string, init?: RequestInit) => {
+    if (p.endsWith('/claims') && init?.method === 'POST') return claim ? claim(init) : { status: 200, body: {} }
+    if (p.endsWith('/onchain-proofs')) return { status: 200, body: proofsBody }
+    if (p.startsWith('/x207/circles/agents-main/orders/') && !init?.method) return { status: 200, body }
+    if (p.includes('/orders?')) return { status: 200, body: { items: [body], nextCursor: null } }
+    return undefined
+  }
+  const TX = '8AXdP1c3JTqDyhsVSpfwLnPL1n9FnVZqkbtRMbLAA9ct'
+
+  it('TC-FE-030-01 creating a delegate order: the mandate is built in the browser, its hash is in the order, the order hash is the SDK one, and the body carries the mandate', async () => {
+    const user = userEvent.setup()
+    const { requests } = renderApp('/pesanan', (p, init) => (init?.method === 'POST' && p.endsWith('/orders') ? { status: 201, body: { order_hash: orderHashes.keeper } } : undefined), false, asBuyer())
+    await screen.findByRole('table', { name: 'Daftar pesanan' })
+    const form = screen.getByRole('form', { name: 'Buat pesanan' })
+    await user.selectOptions(within(form).getByLabelText('Jenis jasa'), 'delegate')
+    expect(screen.getByTestId('order-note')).toHaveTextContent('satu proposal dibayar sekali')
+    await user.type(within(form).getByLabelText(/^Penjual/), SELLER)
+    await user.type(within(form).getByLabelText(/^Spesifikasi kerja/), 'Research and vote on gauge proposals')
+    await user.type(within(form).getByLabelText('Akun DAO'), DAO)
+    await user.type(within(form).getByLabelText(/^Jenis proposal yang dibayar/), 'transfer, function_call')
+    await user.type(within(form).getByLabelText(/^Teks aturan/), 'Vote approve when the audit passes')
+    await user.selectOptions(within(form).getByLabelText('Method yang dihitung sebagai bukti'), 'act_proposal')
+    await user.type(within(form).getByLabelText('Bayaran per suara (credit)'), '0.5')
+    await user.type(within(form).getByLabelText('Jumlah 1 (credit)'), '2')
+    fireEvent.change(within(form).getByLabelText('Tenggat 1 (UTC)'), { target: { value: '2030-01-01T10:00' } })
+    await user.type(within(form).getByLabelText(/Kunci voucher/), KEY)
+    await user.click(within(form).getByRole('button', { name: /Tanda tangani dan buat pesanan/ }))
+    await waitFor(() => expect(requests().some((r) => r.method === 'POST')).toBe(true))
+    const post = requests().find((r) => r.method === 'POST')!
+    const expected: DelegateMandate = { circle: CONTRACT_ID, dao: DAO, kinds: ['function_call', 'transfer'], rules_hash: await sha256Hex('Vote approve when the audit passes') }
+    expect(post.body.mandate).toEqual(expected)
+    expect(post.body.order.mandate_hash).toBe(await sha256Hex(serializeMandate(expected)))
+    expect(post.body.order).toMatchObject({ kind: 'delegate', proof: { method: 'act_proposal', amount_per_tx: '500000' } })
+    expect(Object.keys(post.body.order).slice(-3)).toEqual(['proof', 'mandate_hash', 'nonce'])
+    expect(post.body.signatures[0].signature).toBe(await signMessageWithVoucher(JSON.stringify(post.body.order), CONTRACT_ID, KEY))
+    expect(JSON.stringify(post.body)).not.toContain(KEY)
+  })
+
+  it('TC-FE-030-02 a bad mandate is refused before anything is signed: no kinds, a kind that is not snake_case, and no rules text', async () => {
+    const user = userEvent.setup()
+    const { requests } = renderApp('/pesanan', undefined, false, asBuyer())
+    await screen.findByRole('table', { name: 'Daftar pesanan' })
+    const form = screen.getByRole('form', { name: 'Buat pesanan' })
+    await user.selectOptions(within(form).getByLabelText('Jenis jasa'), 'delegate')
+    await user.type(within(form).getByLabelText(/^Penjual/), SELLER)
+    await user.type(within(form).getByLabelText(/^Spesifikasi kerja/), 'spec')
+    await user.type(within(form).getByLabelText('Akun DAO'), DAO)
+    await user.type(within(form).getByLabelText(/Kunci voucher/), KEY)
+    const submit = () => user.click(within(form).getByRole('button', { name: /Tanda tangani dan buat pesanan/ }))
+    await submit()
+    expect(await within(form).findByRole('alert')).toHaveTextContent('Isi teks aturan mandat')
+    await user.type(within(form).getByLabelText(/^Teks aturan/), 'rules')
+    await submit()
+    await waitFor(() => expect(within(form).getByRole('alert')).toHaveTextContent('order_bad_mandate'))
+    await user.type(within(form).getByLabelText(/^Jenis proposal yang dibayar/), 'Transfer')
+    await submit()
+    await waitFor(() => expect(within(form).getByRole('alert')).toHaveTextContent('jenis proposal tidak sah'))
+    expect(requests().filter((r) => r.method === 'POST')).toHaveLength(0)
+  })
+
+  it('TC-FE-030-03 the detail shows the mandate and the claimed votes; only the seller sees the claim form, and the buyer does not', async () => {
+    const user = userEvent.setup()
+    const body = delegateOrder()
+    renderApp('/pesanan', delegateApi(body), false, asBuyer())
+    const table = await screen.findByRole('table', { name: 'Daftar pesanan' })
+    await user.click(within(table).getByRole('button', { name: /^Buka pesanan/ }))
+    const mandateBox = await screen.findByTestId('order-mandate')
+    expect(mandateBox).toHaveTextContent(DAO)
+    expect(mandateBox).toHaveTextContent('transfer')
+    expect(mandateBox).toHaveTextContent('c'.repeat(64))
+    const proofs = await screen.findByTestId('order-proofs')
+    expect(await within(proofs).findByText(/proposal 7/)).toHaveTextContent('VoteApprove')
+    expect(screen.queryByRole('button', { name: 'Tandatangani dan klaim' })).not.toBeInTheDocument()
+  })
+
+  it('TC-FE-030-04 the seller claims a vote: the notice has the keys of the SDK in order, is signed with the voucher key, and the key is not sent', async () => {
+    const user = userEvent.setup()
+    const body = delegateOrder()
+    const { requests } = renderApp('/pesanan', delegateApi(body), false, asSeller())
+    const table = await screen.findByRole('table', { name: 'Daftar pesanan' })
+    await user.click(within(table).getByRole('button', { name: /^Buka pesanan/ }))
+    const claim = await screen.findByLabelText('Klaim suara')
+    await user.type(screen.getByLabelText(/Kunci voucher/), KEY)
+    await user.type(within(claim).getByLabelText(/^Hash transaksi suara/), TX)
+    await user.click(within(claim).getByRole('button', { name: 'Tandatangani dan klaim' }))
+    await screen.findByText(/Terkirim: suara diklaim/)
+    const post = requests().find((r) => r.method === 'POST' && r.path.endsWith('/claims'))!
+    const hash = orderHash(delegateDoc as never)
+    expect(post.path).toContain(`/orders/${hash}/claims`)
+    expect(post.body.tx_hash).toBe(TX)
+    expect(Object.keys(post.body.notice)).toEqual(['circle', 'order_hash', 'actor', 'action', 'at', 'tx_hash'])
+    expect(post.body.notice).toMatchObject({ circle: CONTRACT_ID, order_hash: hash, actor: SELLER, action: 'claim', tx_hash: TX })
+    expect(post.body.signature).toBe(await signMessageWithVoucher(JSON.stringify(orderClaimNotice({ circle: CONTRACT_ID, orderHash: hash, actor: SELLER, at: post.body.notice.at, txHash: TX })), CONTRACT_ID, KEY))
+    expect(JSON.stringify(post.body)).not.toContain(KEY)
+  })
+
+  it('TC-FE-030-05 a refused claim shows the reason in words (before_order, already_claimed) and an RPC that is down says so', async () => {
+    const user = userEvent.setup()
+    const body = delegateOrder()
+    const answers = [
+      { status: 400, body: { error: { code: 'claim_invalid', message: 'x', details: { reason: 'before_order' } } } },
+      { status: 400, body: { error: { code: 'claim_invalid', message: 'x', details: { reason: 'already_claimed' } } } },
+      { status: 503, body: { error: { code: 'claim_rpc_unavailable', message: 'RPC belum dikonfigurasi' } } },
+    ]
+    let n = 0
+    renderApp('/pesanan', delegateApi(body, () => answers[n++]!), false, asSeller())
+    const table = await screen.findByRole('table', { name: 'Daftar pesanan' })
+    await user.click(within(table).getByRole('button', { name: /^Buka pesanan/ }))
+    const claim = await screen.findByLabelText('Klaim suara')
+    await user.type(screen.getByLabelText(/Kunci voucher/), KEY)
+    await user.type(within(claim).getByLabelText(/^Hash transaksi suara/), TX)
+    const send = () => user.click(within(claim).getByRole('button', { name: 'Tandatangani dan klaim' }))
+    await send()
+    expect(await screen.findByText(/Klaim ditolak \(before_order\).*sebelum pesanan dibuat/)).toBeInTheDocument()
+    await send()
+    expect(await screen.findByText(/Klaim ditolak \(already_claimed\).*sudah diklaim/)).toBeInTheDocument()
+    await send()
+    expect(await screen.findByText(/RPC tidak tersedia/)).toBeInTheDocument()
+  })
+
+  it('TC-FE-030-06 the mandate that is shown must be the one whose hash is in the order: a server that shows another mandate gets no signature', async () => {
+    const user = userEvent.setup()
+    const lying = delegateOrder({ mandate: { circle: CONTRACT_ID, dao: 'evil.sputnik-dao.near', kinds: ['function_call', 'transfer'], rules_hash: 'c'.repeat(64) } })
+    const { requests } = renderApp('/pesanan', delegateApi(lying), false, asSeller())
+    const table = await screen.findByRole('table', { name: 'Daftar pesanan' })
+    await user.click(within(table).getByRole('button', { name: /^Buka pesanan/ }))
+    const claim = await screen.findByLabelText('Klaim suara')
+    await user.type(screen.getByLabelText(/Kunci voucher/), KEY)
+    await user.type(within(claim).getByLabelText(/^Hash transaksi suara/), TX)
+    await user.click(within(claim).getByRole('button', { name: 'Tandatangani dan klaim' }))
+    expect(await screen.findByText(/Mandat yang ditampilkan tidak sama dengan mandat yang hash-nya ada di pesanan/)).toBeInTheDocument()
+    expect(requests().filter((r) => r.method === 'POST')).toHaveLength(0)
   })
 })

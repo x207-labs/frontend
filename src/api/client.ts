@@ -135,13 +135,19 @@ export const api = {
     return { items: (raw.items ?? []).map(toOrderView), nextCursor: raw.nextCursor ?? null }
   },
   order: async (hash: string): Promise<OrderView> => toOrderView(await get<unknown>(`${circle}/orders/${hash}`)),
-  createOrder: (body: { order: object; signatures: Array<{ account: string; signature: string }> }) => post<{ order_hash?: string; orderHash?: string }>(`${circle}/orders`, body),
+  /** Klaim satu transaksi suara delegate (BE-055): notice bertanda tangan penjual; backend memeriksa transaksinya lewat RPC. */
+  claimVote: (hash: string, txHash: string, notice: object, signature: string) => post<unknown>(`${circle}/orders/${hash}/claims`, { tx_hash: txHash, notice, signature }),
+  createOrder: (body: { order: object; signatures: Array<{ account: string; signature: string }>; mandate?: object }) => post<{ order_hash?: string; orderHash?: string }>(`${circle}/orders`, body),
   orderMilestone: (hash: string, index: number, notice: object, signature: string) => post<unknown>(`${circle}/orders/${hash}/milestones/${index}`, { notice, signature }),
   orderOutcome: (hash: string, notice: object, signature: string) => post<unknown>(`${circle}/orders/${hash}/outcomes`, { notice, signature }),
   orderTargetCheck: (hash: string) => post<{ target_verified?: boolean; targetVerified?: boolean }>(`${circle}/orders/${hash}/target-check`, {}),
   orderProofs: async (hash: string): Promise<OnchainProofView[]> => {
     const raw = await get<{ items?: Array<Record<string, unknown>> }>(`${circle}/orders/${hash}/onchain-proofs`)
-    return (raw.items ?? []).map((p) => ({ txHash: String(p.txHash ?? p.tx_hash), method: String(p.method), signer: String(p.signer) }))
+    return (raw.items ?? []).map((p) => ({
+      txHash: String(p.txHash ?? p.tx_hash), method: String(p.method), signer: String(p.signer),
+      ...(p.receiver === undefined ? {} : { receiver: String(p.receiver), proposalId: Number(p.proposalId ?? p.proposal_id), action: String(p.action), proposalKind: String(p.proposalKind ?? p.proposal_kind) }),
+      ...(p.at === undefined ? {} : { at: String(p.at) }),
+    }))
   },
   purchase: async (id: string): Promise<PurchaseView> => toPurchaseView(await get<unknown>(`${circle}/purchases/${encodeURIComponent(id)}`)),
   createPurchase: (listingHash: string, voucher: object, signature: string) => post<{ purchase_id?: string | number; purchaseId?: string | number }>(`${circle}/listings/${listingHash}/purchases`, { voucher, signature }),
