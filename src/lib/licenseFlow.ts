@@ -27,6 +27,8 @@ export type PreparedLicense = {
   detail: string
   assetType: string
   ciphertext: Uint8Array
+  /** Ukuran berkas asli (byte): ikut ditandatangani di rilis. */
+  contentSize: number
   cipherHash: string
   /** Kunci berkas (heks): hanya penjual yang memegangnya; dilepas ke pembeli dalam bentuk tersegel setelah pembeli membayar (ditahan). */
   contentKey: string
@@ -46,7 +48,7 @@ export async function prepareLicense(i: SellInput): Promise<PreparedLicense> {
       kind: 'license', asset_type: i.assetType, license_id: document.license_id, license_hash: document.license_hash, content_hash: document.content_hash, exclusive: document.exclusive, license_doc: documentHash,
       ...(i.previewText.trim() === '' ? {} : { preview: i.previewText.trim(), preview_hash: document.preview_hash }),
     }),
-    ciphertext, cipherHash: contentHash(ciphertext), contentKey: toHex(key),
+    ciphertext, contentSize: i.bytes.length, cipherHash: contentHash(ciphertext), contentKey: toHex(key),
   }
 }
 
@@ -112,7 +114,7 @@ export const signSellerNotice = (notice: object, circle: string, secretKey: stri
 /** Rilis kunci untuk satu pembelian: kunci berkas disegel ke kunci publik pembeli dan ditandatangani penjual dengan `signRelease` SDK; ini sendiri adalah notice `key_released`. */
 export function buildKeyRelease(args: { circle: string; licenseDoc: string; buyer: string; buyerPublicKey: string; contentHash: string; prepared: PreparedLicense; at: number; sellerSecretKey: string }) {
   return createRelease({
-    circle: args.circle, license_hash: args.licenseDoc, buyer: args.buyer, buyerPublicKey: args.buyerPublicKey, content_hash: args.contentHash, ciphertext: args.prepared.ciphertext,
+    circle: args.circle, license_hash: args.licenseDoc, buyer: args.buyer, buyerPublicKey: args.buyerPublicKey, content_hash: args.contentHash, content_size: args.prepared.contentSize, ciphertext: args.prepared.ciphertext,
     contentKey: fromHex(args.prepared.contentKey), at: args.at, sellerSecretKey: args.sellerSecretKey,
   })
 }

@@ -28,7 +28,7 @@ afterEach(() => {
 function delivered(data: Uint8Array, claimedHash: string, served?: Uint8Array) {
   const { ciphertext, key } = encryptContent(data)
   const { release, signature } = createRelease({
-    circle: CIRCLE, license_hash: 'c'.repeat(64), buyer: BUYER, buyerPublicKey: licensePublicKey(KEY), content_hash: claimedHash, ciphertext, contentKey: key, at: 1_800_000_000, sellerSecretKey: seller.secretKey,
+    circle: CIRCLE, license_hash: 'c'.repeat(64), buyer: BUYER, buyerPublicKey: licensePublicKey(KEY), content_hash: claimedHash, content_size: data.length, ciphertext, contentKey: key, at: 1_800_000_000, sellerSecretKey: seller.secretKey,
   })
   const bytes = served ?? ciphertext
   const source: ContentSource = {
@@ -253,7 +253,7 @@ describe('FE-028 content license', () => {
     await within(serve).findByText(/Kunci dilepas/)
     const released = requests().filter((r) => r.method === 'POST')[1]!
     // the notice is a LicenseRelease: the buyer's SDK opens it, and nothing in the request holds the key of the file or the key of the voucher
-    expect(Object.keys(released.body.notice)).toEqual(['circle', 'license_hash', 'buyer', 'content_hash', 'cipher_hash', 'sealed_key', 'at'])
+    expect(Object.keys(released.body.notice)).toEqual(['circle', 'license_hash', 'buyer', 'content_hash', 'cipher_hash', 'sealed_key', 'at', 'content_size', 'cipher_size'])
     expect(JSON.stringify(released.body)).not.toContain(KEY)
     const prepared = screen.getByTestId('license-key').textContent!
     expect(JSON.stringify(released.body)).not.toContain(prepared)
