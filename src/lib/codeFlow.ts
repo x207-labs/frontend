@@ -1,5 +1,5 @@
 import {
-  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, checkCodeDocument, codeDocumentHash, codeNeedsBond, codeResource, contentHash, createCodeRelease, encryptCode,
+  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, checkCodeDocument, splitCodePayload, codeDocumentHash, codeNeedsBond, codeResource, contentHash, createCodeRelease, encryptCode,
   type CodeDocument,
 } from '@x207/core'
 import type { ListingView, PurchaseView } from '../api/types'
@@ -19,6 +19,8 @@ export type PreparedCode = {
   /** `Listing.detail` untuk listing kode: tanpa kode dan tanpa kunci. */
   detail: string
   code: string
+  /** Salt acak 32 byte (heks): ada di payload terenkripsi, tidak di listing. */
+  salt: string
   ciphertext: Uint8Array
   cipherHash: string
   contentKey: string
@@ -27,19 +29,19 @@ export type PreparedCode = {
 /** Dokumen kode dari isian. Melempar `CodeError` (mis. `code_over_limit_unbonded`) bila SDK menolak. Kode dienkripsi di sini. */
 export function prepareCode(i: CodeSellInput): PreparedCode {
   const arbiter = i.arbiter.trim() === '' ? null : i.arbiter.trim()
-  const { ciphertext, key, code_hash } = encryptCode(i.code)
-  const document = checkCodeDocument({ circle: i.circle, seller: i.seller, code_hash, issuer: i.issuer.trim(), value: i.value, verifiable: i.verifiable, arbiter, nonce: i.nonce })
+  const { ciphertext, key, code_commitment, salt } = encryptCode(i.code)
+  const document = checkCodeDocument({ circle: i.circle, seller: i.seller, code_commitment, issuer: i.issuer.trim(), value: i.value, verifiable: i.verifiable, arbiter, nonce: i.nonce })
   const documentHash = codeDocumentHash(document)
   return {
     document, documentHash, resource: codeResource(documentHash), code: i.code,
     detail: JSON.stringify({
-      kind: 'code', code_doc: documentHash, code_hash, issuer: document.issuer, value: document.value, verifiable: document.verifiable, ...(arbiter === null ? {} : { arbiter, bond: true }),
+      kind: 'code', code_doc: documentHash, code_commitment, issuer: document.issuer, value: document.value, verifiable: document.verifiable, ...(arbiter === null ? {} : { arbiter, bond: true }),
     }),
-    ciphertext, cipherHash: contentHash(ciphertext), contentKey: toHex(key),
+    salt: toHex(salt), ciphertext, cipherHash: contentHash(ciphertext), contentKey: toHex(key),
   }
 }
 
-export type CodeListing = { docHash: string; codeHash: string; issuer: string; value: string; verifiable: boolean; bonded: boolean; overLimit: boolean }
+export type CodeListing = { docHash: string; codeCommitment: string; issuer: string; value: string; verifiable: boolean; bonded: boolean; overLimit: boolean }
 
 /** Membaca detail listing kode; `null` bila bukan listing kode. Kode tidak pernah ada di listing, hanya hash-nya. */
 export function parseCodeListing(view: ListingView): CodeListing | null {
@@ -51,7 +53,7 @@ export function parseCodeListing(view: ListingView): CodeListing | null {
   }
   if (typeof raw !== 'object' || raw === null) return null
   const d = raw as Record<string, unknown>
-  if (d.kind !== 'code' || typeof d.code_doc !== 'string' || typeof d.code_hash !== 'string' || typeof d.issuer !== 'string') return null
+  if (d.kind !== 'code' || typeof d.code_doc !== 'string' || typeof d.code_commitment !== 'string' || typeof d.issuer !== 'string') return null
   const value = typeof d.value === 'string' ? d.value : view.offer.value
   const verifiable = typeof d.verifiable === 'boolean' ? d.verifiable : d.issuer !== 'none'
   const bonded = typeof d.arbiter === 'string' || d.bond === true
@@ -61,7 +63,7 @@ export function parseCodeListing(view: ListingView): CodeListing | null {
   } catch {
     overLimit = true
   }
-  return { docHash: d.code_doc, codeHash: d.code_hash, issuer: d.issuer, value, verifiable, bonded, overLimit }
+  return { docHash: d.code_doc, codeCommitment: d.code_commitment, issuer: d.issuer, value, verifiable, bonded, overLimit }
 }
 
 export type CodeReceive = { state: 'ok'; code: string } | Exclude<DownloadResult, { state: 'ok' }>
@@ -70,8 +72,9 @@ export type CodeReceive = { state: 'ok'; code: string } | Exclude<DownloadResult
 export async function receiveCode(view: PurchaseView, sellerPublicKey: string, buyerSecretKey: string, onProgress: (received: number) => void): Promise<CodeReceive> {
   const result = await receiveLicense(view, sellerPublicKey, buyerSecretKey, onProgress)
   if (result.state !== 'ok') return result
-  const code = new TextDecoder().decode(result.content)
-  return view.contentHash !== null && contentHash(new TextEncoder().encode(code)) !== view.contentHash ? { state: 'refused', reason: 'Kode yang dibuka tidak cocok dengan code_hash listing.' } : { state: 'ok', code }
+  const parts = splitCodePayload(result.content)
+  if (parts === null || (view.contentHash !== null && contentHash(result.content) !== view.contentHash)) return { state: 'refused', reason: 'Isi yang dibuka tidak cocok dengan code_commitment listing.' }
+  return { state: 'ok', code: parts.code }
 }
 
 /** Voucher pembelian kode: sama dengan lisensi, resource `x207:code:<hash dokumen>`. */
@@ -86,7 +89,7 @@ export async function buildCodePurchase(args: { circle: string; buyer: string; s
 /** Rilis kunci kode untuk satu pembeli (notice `key_released` BE-056). */
 export function buildCodeKeyRelease(args: { prepared: PreparedCode; purchaseId: string; buyer: string; buyerPublicKey: string; at: number; sellerSecretKey: string }) {
   return createCodeRelease({
-    doc: args.prepared.document, code: args.prepared.code, buyer: args.buyer, buyerPublicKey: args.buyerPublicKey, purchase_id: args.purchaseId, ciphertext: args.prepared.ciphertext,
+    doc: args.prepared.document, code: args.prepared.code, buyer: args.buyer, buyerPublicKey: args.buyerPublicKey, salt: fromHex(args.prepared.salt), purchase_id: args.purchaseId, ciphertext: args.prepared.ciphertext,
     contentKey: fromHex(args.prepared.contentKey), at: args.at, sellerSecretKey: args.sellerSecretKey,
   })
 }

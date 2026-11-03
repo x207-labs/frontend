@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
-  checkCheatProof, codeDocumentHash, codeHash, createRelease, createCodeRelease, encryptCode, encryptContent, generateVoucherKeypair, licensePublicKey, listingHash, signListing, verifyVoucher,
+  checkCheatProof, contentHash, codeDocumentHash, codeCommitment, codePayload, createRelease, createCodeRelease, encryptCode, encryptContent, generateVoucherKeypair, licensePublicKey, listingHash, signListing, verifyVoucher,
   voucherPublicKey, type CodeDocument, type ContentSource,
 } from '@x207/core'
 import { base58Encode } from '../lib/barter'
@@ -18,19 +18,20 @@ const SEED = Uint8Array.from(new Array<number>(32).fill(5))
 const KEY = `ed25519:${base58Encode(SEED)}`
 const seller = generateVoucherKeypair()
 const CODE = 'GIFT-7QK2-M9XD-41LP'
+const SALT = new Uint8Array(32).fill(9)
 const text = (s: string) => new TextEncoder().encode(s)
 const original = licenseSources.current
 afterEach(() => {
   licenseSources.current = original
 })
 
-const docOf = (over: Partial<CodeDocument> = {}): CodeDocument => ({ circle: CIRCLE, seller: SELLER, code_hash: codeHash(CODE), issuer: 'shop.example', value: '5000000', verifiable: false, arbiter: null, nonce: 'n1', ...over })
+const docOf = (over: Partial<CodeDocument> = {}): CodeDocument => ({ circle: CIRCLE, seller: SELLER, code_commitment: codeCommitment(CODE, SALT), issuer: 'shop.example', value: '5000000', verifiable: false, arbiter: null, nonce: 'n1', ...over })
 const rpcResult = (value: unknown) => ({ status: 200, body: { jsonrpc: '2.0', id: 'x207', result: { result: Array.from(new TextEncoder().encode(JSON.stringify(value))) } } })
 const rpcMethod = (init?: RequestInit): string | undefined => (init?.body ? (JSON.parse(String(init.body)) as { params?: { method_name?: string } }).params?.method_name : undefined)
 
 /** A signed listing of a code, as the read API would answer it. */
 function signedCodeListing(sellerKeys: { secretKey: string }, detailOver: Record<string, unknown> = {}, value = '5000000') {
-  const detail = JSON.stringify({ kind: 'code', code_doc: 'd'.repeat(64), code_hash: codeHash(CODE), issuer: 'shop.example', value, verifiable: false, ...detailOver })
+  const detail = JSON.stringify({ kind: 'code', code_doc: 'd'.repeat(64), code_commitment: codeCommitment(CODE, SALT), issuer: 'shop.example', value, verifiable: false, ...detailOver })
   const listing = {
     circle: CIRCLE, account: SELLER, offer: { asset_type: 'code:gift', asset_class: 'D' as const, quantity: 1, value }, want: { asset_type: 'x', asset_class: 'D' as const, quantity: 1, value },
     terms: '', detail, expires_at: 1_893_456_000, discount_bps: 0, accept_payment: true, discoverable: true, nonce: 'n1',
@@ -45,13 +46,13 @@ function signedCodeListing(sellerKeys: { secretKey: string }, detailOver: Record
 /** A purchase with the key released: the code `data` encrypted, the release for the buyer, and a fake https source that serves it. */
 function delivered(data: string, claimed = CODE, disputeUntil = 4_000_000_000) {
   const doc = docOf()
-  const enc = data === claimed ? encryptCode(claimed) : { ...encryptContent(text(data)), code_hash: codeHash(claimed) }
+  const enc = data === claimed ? encryptCode(claimed, { salt: SALT }) : { ...encryptContent(codePayload(data, SALT)) }
   const { release, signature } = data === claimed
-    ? createCodeRelease({ doc, code: claimed, buyer: BUYER, buyerPublicKey: licensePublicKey(KEY), purchase_id: 'p1', ciphertext: enc.ciphertext, contentKey: enc.key, at: 1_800_000_000, sellerSecretKey: seller.secretKey })
-    : createRelease({ circle: CIRCLE, license_hash: codeDocumentHash(doc), buyer: BUYER, buyerPublicKey: licensePublicKey(KEY), content_hash: codeHash(claimed), content_size: text(data).length, purchase_id: 'p1', ciphertext: enc.ciphertext, contentKey: enc.key, at: 1_800_000_000, sellerSecretKey: seller.secretKey })
+    ? createCodeRelease({ doc, code: claimed, salt: SALT, buyer: BUYER, buyerPublicKey: licensePublicKey(KEY), purchase_id: 'p1', ciphertext: enc.ciphertext, contentKey: enc.key, at: 1_800_000_000, sellerSecretKey: seller.secretKey })
+    : createRelease({ circle: CIRCLE, license_hash: codeDocumentHash(doc), buyer: BUYER, buyerPublicKey: licensePublicKey(KEY), content_hash: codeCommitment(claimed, SALT), content_size: 32 + text(data).length, purchase_id: 'p1', ciphertext: enc.ciphertext, contentKey: enc.key, at: 1_800_000_000, sellerSecretKey: seller.secretKey })
   const source: ContentSource = { kind: 'https', fetch: async () => enc.ciphertext }
   licenseSources.current = { https: source }
-  return { purchase_id: 'p1', listing_hash: 'a'.repeat(64), buyer: BUYER, seller: SELLER, status: 'key_released', content_hash: codeHash(claimed), source: { kind: 'https', ref: 'https://cdn.example.com/c.enc' }, cipher_hash: release.cipher_hash, release, release_signature: signature, dispute_until: disputeUntil }
+  return { purchase_id: 'p1', listing_hash: 'a'.repeat(64), buyer: BUYER, seller: SELLER, status: 'key_released', content_hash: codeCommitment(claimed, SALT), source: { kind: 'https', ref: 'https://cdn.example.com/c.enc' }, cipher_hash: release.cipher_hash, release, release_signature: signature, dispute_until: disputeUntil }
 }
 const reply = (body: Record<string, unknown>) => (p: string, init?: RequestInit) =>
   !init?.method && p.endsWith('/purchases/p1') ? { status: 200, body } : init?.method === 'POST' && p.endsWith('/purchases/p1') ? { status: 200, body: {} } : undefined
@@ -71,11 +72,13 @@ describe('FE-032 one-time codes', () => {
   it('TC-FE-032-01 the code is prepared in the browser: hash, resource, detail of the listing without the code or the key, and an over-limit code without a bond is refused by the SDK', () => {
     const base = { circle: CIRCLE, seller: SELLER, code: CODE, issuer: 'shop.example', verifiable: false, value: '5000000', arbiter: '', nonce: 'n1' }
     const p = prepareCode(base)
-    expect(p.document.code_hash).toBe(codeHash(CODE))
+    expect(p.document.code_commitment).toMatch(/^[0-9a-f]{64}$/)
+    expect(p.document.code_commitment).not.toBe(contentHash(text(CODE))) // not the plain hash of the code
     expect(p.resource).toBe(`x207:code:${p.documentHash}`)
-    expect(JSON.parse(p.detail)).toMatchObject({ kind: 'code', code_doc: p.documentHash, code_hash: codeHash(CODE), issuer: 'shop.example', value: '5000000', verifiable: false })
+    expect(JSON.parse(p.detail)).toMatchObject({ kind: 'code', code_doc: p.documentHash, code_commitment: p.document.code_commitment, issuer: 'shop.example', value: '5000000', verifiable: false })
     expect(p.detail).not.toContain(CODE)
     expect(p.detail).not.toContain(p.contentKey)
+    expect(p.detail).not.toContain(p.salt)
     expect(() => prepareCode({ ...base, value: '20000001' })).toThrow(/code_over_limit_unbonded/)
     expect(JSON.parse(prepareCode({ ...base, value: '50000000', arbiter: 'arbiter.near' }).detail)).toMatchObject({ arbiter: 'arbiter.near', bond: true })
     expect(() => prepareCode({ ...base, value: '50000000', verifiable: true })).not.toThrow()
@@ -94,7 +97,7 @@ describe('FE-032 one-time codes', () => {
     expect(within(form).queryByRole('note')).not.toBeInTheDocument()
     await user.click(within(form).getByRole('button', { name: 'Hash dan enkripsi kode' }))
     const out = await screen.findByTestId('code-prepared')
-    expect(out).toHaveTextContent(codeHash(CODE))
+    expect(out).toHaveTextContent('code_commitment')
     expect(screen.getByTestId('code-detail').textContent).not.toContain(CODE)
     expect(screen.getByTestId('code-keep-page')).toHaveTextContent('hanya ada di halaman ini')
     expect(requests().filter((r) => r.method === 'POST')).toHaveLength(0)
@@ -251,7 +254,7 @@ describe('FE-032 one-time codes', () => {
     const user = userEvent.setup()
     const buyerKeys = generateVoucherKeypair()
     let status = 'paid_held'
-    const view = () => ({ purchase_id: 'p7', listing_hash: 'a'.repeat(64), buyer: BUYER, seller: SELLER, status, content_hash: codeHash(CODE), source: null, cipher_hash: null, release: null, release_signature: null })
+    const view = () => ({ purchase_id: 'p7', listing_hash: 'a'.repeat(64), buyer: BUYER, seller: SELLER, status, content_hash: codeCommitment(CODE, SALT), source: null, cipher_hash: null, release: null, release_signature: null })
     const { requests } = renderApp('/kode', (p, init) => {
       if (!init?.method && p.endsWith('/purchases/p7')) return { status: 200, body: view() }
       if (rpcMethod(init) === 'member') return rpcResult({ account_id: BUYER, pubkey_voucher: buyerKeys.publicKey, status: 'active' })
@@ -277,7 +280,9 @@ describe('FE-032 one-time codes', () => {
     await user.click(await within(serve).findByRole('button', { name: `Lepas kunci ke ${BUYER} (sidik jari ${fingerprint})` }))
     await within(serve).findByText(/Jendela sengketa satu jam dimulai/)
     const released = requests().filter((r) => r.method === 'POST' && r.path.includes('/purchases/p7'))[1]!
-    expect(released.body.notice).toMatchObject({ circle: expect.any(String), buyer: BUYER, content_hash: codeHash(CODE), purchase_id: 'p7' })
+    expect(released.body.notice).toMatchObject({ circle: expect.any(String), buyer: BUYER, content_hash: expect.stringMatching(/^[0-9a-f]{64}$/), purchase_id: 'p7' })
+    const listed = JSON.parse(screen.getByTestId('code-detail').textContent!) as { code_commitment: string }
+    expect(released.body.notice.content_hash).toBe(listed.code_commitment)
     expect(JSON.stringify(released.body)).not.toContain(CODE)
     expect(JSON.stringify(released.body)).not.toContain(KEY)
   })

@@ -56,8 +56,8 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
     <form className="form" aria-label="Siapkan kode" onSubmit={(e) => { e.preventDefault(); prepare() }}>
       <h3>Jual kode (penjual)</h3>
       {!account && <p className="state">Masuk dengan wallet untuk menyiapkan kode.</p>}
-      <label><span>Kode (tidak dikirim ke mana pun; hanya hash-nya di listing)</span><input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" /></label>
-      <small>Kode paling sedikit 8 karakter dan acak: hash di listing bisa dicoba satu per satu terhadap kode yang pendek atau mudah ditebak.</small>
+      <label><span>Kode (tidak dikirim ke mana pun; hanya komitmen berhash-nya di listing)</span><input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" /></label>
+      <small>Kode paling sedikit 8 karakter. Listing hanya memuat komitmen dengan salt acak, jadi kode yang pendek pun tidak bisa ditebak dari listing.</small>
       <label><span>Penerbit (nama layanan, atau none)</span><input value={issuer} onChange={(e) => setIssuer(e.target.value)} /></label>
       <label className="check"><input type="checkbox" checked={verifiable} onChange={(e) => setVerifiable(e.target.checked)} /><span>Penerbit punya API cek (kode dicek sebelum kunci dilepas)</span></label>
       <label><span>Nilai (credit)</span><input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="5" /></label>
@@ -69,11 +69,11 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
       {done && (
         <div data-testid="code-prepared">
           <dl className="status-panel">
-            <dt>code_hash</dt><dd><code>{done.document.code_hash}</code></dd>
+            <dt>code_commitment</dt><dd><code>{done.document.code_commitment}</code></dd>
             <dt>cipher_hash</dt><dd><code>{done.cipherHash}</code></dd>
             <dt>Resource</dt><dd><code>{done.resource}</code></dd>
           </dl>
-          <p className="state state-warn" data-testid="code-keep-page" role="note">Kode dan kunci hanya ada di halaman ini. Menutup atau memuat ulang tab menghilangkannya: Anda tidak bisa melepas kunci ke pembeli, dan voucher yang ditahan dibatalkan. Satu kode hanya boleh dijual sekali; menjual kode yang sama dua kali ditolak.</p>
+          <p className="state state-warn" data-testid="code-keep-page" role="note">Kode, salt, dan kunci hanya ada di halaman ini. Menutup atau memuat ulang tab menghilangkannya: Anda tidak bisa melepas kunci ke pembeli, dan voucher yang ditahan dibatalkan. Satu kode hanya boleh dijual sekali; listing ganda untuk kode yang sama tidak terdeteksi lewat hash, jadi penjual yang menjualnya dua kali dikenali dari cek penerbit, sengketa, dan reputasi.</p>
           <p>Detail listing (salin ke kolom Detail listing kelas D):</p>
           <pre data-testid="code-detail">{done.detail}</pre>
         </div>
@@ -251,7 +251,7 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
       {checked && (
         <div data-testid="code-summary">
           <dl className="status-panel">
-            <dt>Kode</dt><dd data-testid="code-hidden">disembunyikan sampai dibeli; hash <code>{checked.listing.codeHash}</code></dd>
+            <dt>Kode</dt><dd data-testid="code-hidden">disembunyikan sampai dibeli; komitmen <code>{checked.listing.codeCommitment}</code></dd>
             <dt>Nilai</dt><dd>{formatCredit(checked.listing.value)} credit</dd>
             <dt>Penerbit</dt><dd><code>{checked.listing.issuer}</code> · {checked.listing.verifiable ? 'bisa dicek' : 'tidak bisa dicek'}{checked.listing.bonded ? ' · dengan jaminan' : ''}</dd>
             <dt>Dibayar kepada</dt><dd><code>{checked.view.account}</code> · sidik jari kunci penjual <code>{checked.fingerprint}</code></dd>
@@ -263,7 +263,7 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
           </button>
         </div>
       )}
-      <small>Voucher tidak diberikan ke penjual: backend mendaftarkannya hanya setelah kode cocok atau konfirmasi otomatis. Satu kode hanya terjual sekali.</small>
+      <small>Voucher tidak diberikan ke penjual: backend mendaftarkannya hanya setelah kode cocok atau konfirmasi otomatis. Penjual yang menjual kode yang sama dua kali tidak terdeteksi lewat hash: lindungi diri dengan sengketa satu jam.</small>
       {error && <p className="state state-error" role="alert">{error}</p>}
     </div>
   )
@@ -345,7 +345,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
                 )}
                 {result?.state === 'ok' && (
                   <div data-testid="code-ok">
-                    <p className="state" role="status">Kode cocok dengan code_hash. Coba tebus di penerbit sebelum menutup jendela sengketa; bila ditolak karena sudah terpakai, sengketakan.</p>
+                    <p className="state" role="status">Kode cocok dengan code_commitment. Coba tebus di penerbit sebelum menutup jendela sengketa; bila ditolak karena sudah terpakai, sengketakan.</p>
                     {shown ? <p>Kode: <code data-testid="code-value">{result.code}</code></p> : <button type="button" onClick={() => setShown(true)}>Tampilkan kode</button>}
                     <button type="button" disabled={busy} onClick={() => void notify('confirmed', null, null)}>Konfirmasi</button>
                   </div>
