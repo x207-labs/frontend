@@ -1,6 +1,6 @@
 import {
   ContentHasher, LicenseError, createRelease, encryptContent, fetchCiphertext, httpsSource, ipfsSource, licenseDocumentHash, licenseResource, verifyDelivery, contentHash, makeCheatProof,
-  type CheatProof, type ContentSource, type LicenseDocument, type LicenseRelease,
+  type CheatProof, type CheatReason, type ContentSource, type LicenseDocument, type LicenseRelease,
 } from '@x207/core'
 import type { PurchaseView } from '../api/types'
 import { sha256Hex, signMessageWithVoucher, signVoucherInBrowser } from './barter'
@@ -54,7 +54,7 @@ export async function prepareLicense(i: SellInput): Promise<PreparedLicense> {
 
 export type DownloadResult =
   | { state: 'ok'; content: Uint8Array }
-  | { state: 'cheated'; reason: 'content_mismatch' | 'decrypt_failed'; proof: CheatProof }
+  | { state: 'cheated'; reason: CheatReason; proof: CheatProof }
   | { state: 'refused'; reason: string }
 
 /**

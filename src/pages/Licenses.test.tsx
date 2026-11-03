@@ -69,7 +69,7 @@ describe('FE-028 content license', () => {
     expect(p.resource).toBe(`x207:license:${p.documentHash}`)
     expect(JSON.parse(p.detail)).toMatchObject({ kind: 'license', asset_type: 'data:dataset', license_id: 'personal', content_hash: contentHash(data), exclusive: false, license_doc: p.documentHash })
     expect(p.cipherHash).toBe(contentHash(p.ciphertext))
-    expect(Buffer.from(decryptContent(p.ciphertext, fromHex(p.contentKey))).equals(Buffer.from(data))).toBe(true)
+    expect(Array.from(decryptContent(p.ciphertext, fromHex(p.contentKey)))).toEqual(Array.from(data))
     expect(p.detail).not.toContain(p.contentKey)
     await expect(prepareLicense({ circle: CIRCLE, seller: SELLER, bytes: data, assetType: 'data:dataset', licenseId: 'Bad Id', licenseText: 'x', previewText: '', exclusive: false, nonce: 'n1' })).rejects.toThrow(/license_bad_license_id/)
   })
