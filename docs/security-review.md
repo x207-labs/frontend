@@ -30,6 +30,8 @@ Date: 2026-11-03. Scope: `frontend/src` and `index.html` at the commit that carr
 ### FE-2 (low, partly fixed): no Content-Security-Policy
 `index.html` had none. Added: `object-src 'none'; base-uri 'none'; form-action 'self'` and `referrer no-referrer`. A policy that also limits scripts and connections (`script-src 'self'`, `connect-src` to the API, the RPC and the wallet's hosts) was **not** added: the wallet connector loads code and frames from hosts that were not checked here, the dev server needs inline scripts, and a wrong policy would stop the wallet in production without any test noticing. The owner should set it as an HTTP header on the host, after trying the real wallet.
 
+*Update, batch 3 F4 (review BE-063)*: the production build now injects a second policy (`src/lib/csp.ts`, Vite plugin `x207-csp`, build only): `default-src 'self'`, `script-src 'self' 'wasm-unsafe-eval'`, `connect-src` to `'self'`, the read API, the broker, the NEAR RPC and the origins in `VITE_X207_WALLET_ORIGINS`, `base-uri 'self'`. The two policies apply together, so the stricter one wins. The dev server is not changed. **Not yet tried with a real wallet**: the connector loads manifests and executors from hosts that must be listed in `VITE_X207_WALLET_ORIGINS`; try the login on testnet before a release. `VITE_X207_CSP=off` removes the second policy as a temporary escape. `frame-ancestors` and `X-Content-Type-Options` are response headers of the host and cannot be set in a meta element.
+
 ## Not fixed, and why
 
 | Item | Why it stays |
