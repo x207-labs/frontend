@@ -87,6 +87,8 @@ describe('FE-028 content license', () => {
     expect(out).toHaveTextContent(contentHash(data))
     expect(JSON.parse(screen.getByTestId('license-detail').textContent!)).toMatchObject({ content_hash: contentHash(data), asset_type: 'data:dataset' })
     expect(screen.getByTestId('license-key').textContent).toMatch(/^[0-9a-f]{64}$/)
+    // Batch 3 F9: the seller is told that the key and the file live only in this page
+    expect(screen.getByTestId('license-keep-page')).toHaveTextContent('hanya ada di halaman ini')
     expect(requests().filter((r) => r.method === 'POST')).toHaveLength(0)
   })
 
@@ -101,6 +103,8 @@ describe('FE-028 content license', () => {
     await within(section).findByTestId('purchase')
     await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
     await user.type(within(section).getByLabelText(/Kunci publik penjual/), seller.publicKey)
+    // Batch 3 F6: the host that the download contacts is shown before the button is pressed
+    expect(within(section).getByTestId('download-host')).toHaveTextContent(new URL(body.source.ref).host)
     await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa hash' }))
     expect(await within(section).findByTestId('license-ok')).toHaveTextContent('Isi cocok')
     expect(within(section).getByTestId('download-progress')).toHaveTextContent(`Diunduh ${body.ciphertext.length} byte`)

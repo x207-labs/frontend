@@ -85,6 +85,7 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
             <dt>Resource</dt><dd><code>{done.resource}</code></dd>
           </dl>
           <p className="state">Pasang ciphertext di sumber mana saja (https atau ipfs) lalu catat cipher_hash di pembelian. Simpan kunci berkas: hanya Anda yang memegangnya, dan ia dilepas ke pembeli dalam bentuk tersegel setelah pembeli membayar.</p>
+          <p className="state state-warn" data-testid="license-keep-page" role="note">Kunci berkas dan berkas asli hanya ada di halaman ini. Menutup atau memuat ulang tab menghilangkannya: Anda tidak bisa melepas kunci ke pembeli, dan voucher yang ditahan dibatalkan. Biarkan tab terbuka sampai semua pembeli dilayani, dan simpan kunci berkas di tempat aman.</p>
           <p>Detail listing (salin ke kolom Detail listing kelas D):</p>
           <pre data-testid="license-detail">{done.detail}</pre>
           <button type="button" onClick={() => download('license.enc', done.ciphertext)}>Unduh ciphertext</button>
@@ -93,6 +94,16 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
       )}
     </form>
   )
+}
+
+// Batch 3 F6: the buyer sees which host the download will contact before it starts; the seller chose the address.
+function sourceHost(source: { kind: string; ref: string }): string {
+  if (source.kind === 'ipfs') return `gerbang IPFS untuk ${source.ref}`
+  try {
+    return new URL(source.ref).host
+  } catch {
+    return source.ref
+  }
 }
 
 function Serve({ voucherKey, onVoucherKey, prepared }: { voucherKey: string; onVoucherKey: (value: string) => void; prepared: PreparedLicense | null }) {
@@ -257,6 +268,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
               {view.source && <p>Sumber: <code>{view.source.kind}</code> <code>{view.source.ref}</code></p>}
               {view.status === 'key_released' && (
                 <>
+                  {view.source && <p className="state" data-testid="download-host">Tombol di bawah menghubungi <strong>{sourceHost(view.source)}</strong> dari browser ini; pemilik alamat itu melihat IP dan waktu Anda. Lanjutkan hanya bila Anda mengenalnya.</p>}
                   <label><span>Kunci publik penjual (ed25519:…)</span><input value={sellerKey} onChange={(e) => setSellerKey(e.target.value)} /></label>
                   <button type="button" disabled={busy || voucherKey.trim() === '' || sellerKey.trim() === ''} onClick={() => void check()}>Unduh dan periksa hash</button>
                   {progress !== null && <p data-testid="download-progress" role="status">Diunduh {progress} byte</p>}
