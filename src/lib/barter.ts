@@ -213,3 +213,24 @@ export async function signVoucherInBrowser(v: VoucherFields, secretKey: string):
   const nonce = await sha256(`x207:${v.payer}:${v.payee}:${v.epoch}:${v.seq}`)
   return signDigest(await nep413SigningHash(message, nonce, v.circle), secretKey)
 }
+
+/** Memeriksa tanda tangan NEP-413 atas `message` dengan kunci publik `ed25519:<base58>` (WebCrypto); `false` untuk apa pun yang tidak sah. */
+export async function verifyMessageWithVoucher(message: string, recipient: string, signature: string, publicKey: string): Promise<boolean> {
+  try {
+    if (!signature.startsWith('ed25519:') || !publicKey.startsWith('ed25519:')) return false
+    const pub = base58Decode(publicKey.slice('ed25519:'.length))
+    const sig = base58Decode(signature.slice('ed25519:'.length))
+    if (pub.length !== 32 || sig.length !== 64) return false
+    const key = await crypto.subtle.importKey('raw', pub as BufferSource, { name: 'Ed25519' }, false, ['verify'])
+    return await crypto.subtle.verify('Ed25519', key, sig as BufferSource, (await nep413SigningHash(message, await sha256(message), recipient)) as BufferSource)
+  } catch {
+    return false
+  }
+}
+export const verifyListingSignature = (l: Listing, signature: string, publicKey: string): Promise<boolean> => verifyMessageWithVoucher(serializeListing(l), l.circle, signature, publicKey)
+
+/** Sidik jari kunci publik untuk dibandingkan dengan mata: 8 byte pertama sha256 dari kunci, heks berkelompok. */
+export async function keyFingerprint(publicKey: string): Promise<string> {
+  const digest = await sha256(publicKey)
+  return toHex(digest.slice(0, 8)).replace(/(.{4})/g, '$1 ').trim()
+}

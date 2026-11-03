@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
-  checkCheatProof, contentHash, createRelease, decryptContent, encryptContent, generateVoucherKeypair, licensePublicKey, openSealedKey, verifyRelease, verifyVoucher, voucherPublicKey, type ContentSource,
+  checkCheatProof, contentHash, listingHash, signListing, createRelease, decryptContent, encryptContent, generateVoucherKeypair, licensePublicKey, openSealedKey, verifyRelease, verifyVoucher, voucherPublicKey, type ContentSource,
 } from '@x207/core'
 import { base58Encode, sha256Hex } from '../lib/barter'
 import { IPFS_GATEWAYS, licenseSources, prepareLicense, proofForApi } from '../lib/licenseFlow'
@@ -149,44 +149,115 @@ describe('FE-028 content license', () => {
     await waitFor(() => expect(within(section).getByTestId('license-refused')).toHaveTextContent('Tanda tangan rilis tidak cocok'))
   })
 
-  it('TC-FE-028-06 the buyer buys: the voucher continues the state of the pair in the open epoch, carries the resource of the license document, and goes to purchases (held by the backend)', async () => {
-    const user = userEvent.setup()
-    const docHash = 'd'.repeat(64)
+  /** A listing of the seller, really signed, as the read API would answer it; `typed` is the hash that the user types. */
+  const signedListingView = (sellerKeys: { secretKey: string }, over: Record<string, unknown> = {}, detail = JSON.stringify({ kind: 'license', license_doc: 'd'.repeat(64) })) => {
     const listing = {
-      listingHash: 'a'.repeat(64), account: SELLER, offer: { assetType: 'data:dataset', assetClass: 'D', quantity: 1, value: '5000000' }, want: { assetType: 'x', assetClass: 'D', quantity: 1, value: '5000000' },
-      terms: '', detail: JSON.stringify({ kind: 'license', license_doc: docHash }), expiresAt: '2030-01-01T00:00:00Z', discountBps: 0, acceptPayment: true, discoverable: true, nonce: 'n', signature: 'ed25519:x', status: 'open',
+      circle: CIRCLE, account: SELLER, offer: { asset_type: 'data:dataset', asset_class: 'D' as const, quantity: 1, value: '5000000' }, want: { asset_type: 'x', asset_class: 'D' as const, quantity: 1, value: '5000000' },
+      terms: '', detail, expires_at: 1_893_456_000, discount_bps: 0, accept_payment: true, discoverable: true, nonce: 'n1',
     }
+    const view = {
+      listingHash: listingHash(listing), account: listing.account, offer: { assetType: 'data:dataset', assetClass: 'D', quantity: 1, value: '5000000' }, want: { assetType: 'x', assetClass: 'D', quantity: 1, value: '5000000' },
+      terms: '', detail, expiresAt: '2030-01-01T00:00:00Z', discountBps: 0, acceptPayment: true, discoverable: true, nonce: 'n1', signature: signListing(listing, sellerKeys.secretKey as `ed25519:${string}`), status: 'open', ...over,
+    }
+    return { typed: listingHash(listing), view }
+  }
+  const rpcResult = (value: unknown) => ({ status: 200, body: { jsonrpc: '2.0', id: 'x207', result: { result: Array.from(new TextEncoder().encode(JSON.stringify(value))) } } })
+  const rpcMethod = (init?: RequestInit): string | undefined => (init?.body ? (JSON.parse(String(init.body)) as { params?: { method_name?: string } }).params?.method_name : undefined)
+
+  it('TC-FE-028-06 the buyer buys: the listing is checked first (hash typed, signature against the key of the seller in the contract), payee and price are shown, then the voucher continues the state of the pair and goes to purchases', async () => {
+    const user = userEvent.setup()
+    const sellerKeys = generateVoucherKeypair()
+    const { typed, view } = signedListingView(sellerKeys)
     const { requests } = renderApp('/lisensi', (p, init) => {
-      if (!init?.method && p.endsWith(`/listings/${'a'.repeat(64)}`)) return { status: 200, body: listing }
+      if (!init?.method && p.endsWith(`/listings/${typed}`)) return { status: 200, body: view }
       if (init?.method === 'POST' && p.endsWith('/purchases')) return { status: 201, body: { purchase_id: 'p9' } }
       if (!init?.method && p.endsWith('/epochs')) return { status: 200, body: { items: [{ epoch: 42, phase: 'open', proposalDeadline: null }], nextCursor: null } }
-      const rpc = init?.body ? (JSON.parse(String(init.body)) as { params?: { method_name?: string } }).params : undefined
-      if (rpc?.method_name === 'obligation') {
-        const bytes = new TextEncoder().encode(JSON.stringify({ cumulative: '2000000', last_seq: 3 }))
-        return { status: 200, body: { jsonrpc: '2.0', id: 'x207', result: { result: Array.from(bytes) } } }
-      }
+      if (rpcMethod(init) === 'member') return rpcResult({ account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' })
+      if (rpcMethod(init) === 'obligation') return rpcResult({ cumulative: '2000000', last_seq: 3 })
       return undefined
     }, false, createMockWallet(BUYER, BUYER))
     const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
     await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.type(within(section).getByLabelText('Hash listing lisensi'), 'a'.repeat(64))
-    await user.click(within(section).getByRole('button', { name: /Beli/ }))
+    await user.type(within(section).getByLabelText('Hash listing lisensi'), typed)
+    await user.click(within(section).getByRole('button', { name: 'Periksa listing' }))
+    const summary = await within(section).findByTestId('buy-summary')
+    expect(summary).toHaveTextContent(SELLER)
+    expect(summary).toHaveTextContent('5 credit')
+    expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/'))).toHaveLength(0) // nothing signed before the click on the button with the payee and the price
+    await user.click(within(summary).getByRole('button', { name: `Beli 5 credit dari ${SELLER} (voucher ditahan backend)` }))
     await waitFor(() => expect(requests().some((r) => r.method === 'POST' && r.path.endsWith('/purchases'))).toBe(true))
     const post = requests().find((r) => r.method === 'POST' && r.path.endsWith('/purchases'))!
-    expect(post.body.voucher).toMatchObject({ payer: BUYER, payee: SELLER, epoch: 42, seq: 4, cumulativeAmount: '7000000', unit: 'credit', resource: `x207:license:${docHash}` })
+    expect(post.body.voucher).toMatchObject({ payer: BUYER, payee: SELLER, epoch: 42, seq: 4, cumulativeAmount: '7000000', unit: 'credit', resource: `x207:license:${'d'.repeat(64)}` })
     expect(verifyVoucher({ ...post.body.voucher, signature: post.body.signature }, voucherPublicKey(SEED))).toBe(true)
     expect(JSON.stringify(post.body)).not.toContain(KEY)
   })
 
-  it('TC-FE-028-07 a listing that is not a license cannot be bought, and an exclusive license already taken shows the code of the backend', async () => {
+  it('TC-FE-028-12 [batch 3 F1] a hostile API: another payee and price with a bad signature, a listing of another hash than the typed one, a forged signature and a seller who is not in the contract all stop before any voucher is signed', async () => {
     const user = userEvent.setup()
-    const plain = { listingHash: 'a'.repeat(64), account: SELLER, offer: { assetType: 'x', assetClass: 'D', quantity: 1, value: '1' }, want: { assetType: 'y', assetClass: 'D', quantity: 1, value: '1' }, terms: '', detail: 'plain note', expiresAt: '2030-01-01T00:00:00Z', discountBps: 0, acceptPayment: true, discoverable: true, nonce: 'n', signature: 's', status: 'open' }
-    renderApp('/lisensi', (p, init) => (!init?.method && p.endsWith(`/listings/${'a'.repeat(64)}`) ? { status: 200, body: plain } : undefined), false, createMockWallet(BUYER, BUYER))
+    const sellerKeys = generateVoucherKeypair()
+    const attacker = generateVoucherKeypair()
+    const good = signedListingView(sellerKeys)
+    const cases: Array<[string, ReturnType<typeof signedListingView>['view'], RegExp, { member: unknown }]> = [
+      ['attacker payee, 999 credit, signature not valid', { ...good.view, account: 'attacker.x207-circle.near', offer: { ...good.view.offer, value: '999000000' }, signature: 'ed25519:not-valid' }, /Hash listing dari server tidak sama/, { member: { account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' } }],
+      ['same hash typed but the signature is the attacker\'s', { ...good.view, signature: signedListingView(attacker).view.signature }, /Tanda tangan listing tidak cocok/, { member: { account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' } }],
+      ['the API names the attacker key but the contract has the real one', good.view, /Tanda tangan listing tidak cocok/, { member: { account_id: SELLER, pubkey_voucher: attacker.publicKey, status: 'active' } }],
+      ['the seller is not a member', good.view, /bukan anggota aktif/, { member: null }],
+      ['the seller is suspended', good.view, /bukan anggota aktif/, { member: { account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'suspended' } }],
+    ]
+    for (const [name, view, reason, chain] of cases) {
+      const { requests, unmount } = renderApp('/lisensi', (p, init) => {
+        if (!init?.method && p.endsWith(`/listings/${good.typed}`)) return { status: 200, body: view }
+        if (rpcMethod(init) === 'member') return rpcResult(chain.member)
+        return undefined
+      }, false, createMockWallet(BUYER, BUYER))
+      const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
+      await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
+      await user.type(within(section).getByLabelText('Hash listing lisensi'), good.typed)
+      await user.click(within(section).getByRole('button', { name: 'Periksa listing' }))
+      expect(await within(section).findByText(reason), name).toBeInTheDocument()
+      expect(within(section).queryByTestId('buy-summary'), name).not.toBeInTheDocument()
+      expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/')), name).toHaveLength(0)
+      unmount()
+    }
+  })
+
+  it('TC-FE-028-07 a listing that is not a license cannot be bought', async () => {
+    const user = userEvent.setup()
+    const sellerKeys = generateVoucherKeypair()
+    const { typed, view } = signedListingView(sellerKeys, {}, 'plain note')
+    renderApp('/lisensi', (p, init) => {
+      if (!init?.method && p.endsWith(`/listings/${typed}`)) return { status: 200, body: view }
+      if (rpcMethod(init) === 'member') return rpcResult({ account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' })
+      return undefined
+    }, false, createMockWallet(BUYER, BUYER))
     const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
     await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-    await user.type(within(section).getByLabelText('Hash listing lisensi'), 'a'.repeat(64))
-    await user.click(within(section).getByRole('button', { name: /Beli/ }))
+    await user.type(within(section).getByLabelText('Hash listing lisensi'), typed)
+    await user.click(within(section).getByRole('button', { name: 'Periksa listing' }))
     expect(await within(section).findByText(/bukan listing lisensi/)).toBeInTheDocument()
+  })
+
+  it('TC-FE-028-13 [batch 3 F2] a buyer that is not an active member of the contract gets no key, whatever the API says', async () => {
+    const user = userEvent.setup()
+    const data = text('rows')
+    renderApp('/lisensi', (p, init) => {
+      if (!init?.method && p.endsWith('/purchases/p7')) return { status: 200, body: { purchase_id: 'p7', listing_hash: 'a'.repeat(64), buyer: BUYER, seller: SELLER, status: 'cipher_posted', content_hash: contentHash(data), license_id: 'personal', exclusive: false, source: null, cipher_hash: null, release: null, release_signature: null } }
+      if (!init?.method && p.endsWith(`/members/${BUYER}`)) return { status: 200, body: { account: BUYER, pubkeyVoucher: generateVoucherKeypair().publicKey } }
+      if (rpcMethod(init) === 'member') return rpcResult(null)
+      return undefined
+    }, false, createMockWallet(SELLER, SELLER))
+    const form = await screen.findByRole('form', { name: 'Siapkan lisensi' })
+    fireEvent.change(within(form).getByLabelText(/^Berkas/), { target: { files: [new File([data], 'd.csv')] } })
+    await user.type(within(form).getByLabelText(/^Teks lisensi/), 'terms')
+    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
+    await user.click(within(form).getByRole('button', { name: 'Hitung hash dan enkripsi' }))
+    await screen.findByTestId('license-prepared')
+    const serve = screen.getByRole('region', { name: 'Layani pembelian' })
+    await user.type(within(serve).getByLabelText('Nomor pembelian'), 'p7')
+    await user.click(within(serve).getByRole('button', { name: 'Buka pembelian' }))
+    await user.click(await within(serve).findByRole('button', { name: 'Periksa kunci pembeli di kontrak' }))
+    expect(await within(serve).findByText(/bukan anggota aktif di kontrak/)).toBeInTheDocument()
+    expect(within(serve).queryByTestId('buyer-key')).not.toBeInTheDocument()
   })
 
   it('TC-FE-028-08 takedown sends the claim, the hash of the evidence and a signature; the backend error is shown', async () => {
@@ -221,6 +292,7 @@ describe('FE-028 content license', () => {
   it('TC-FE-028-10 the seller serves a purchase: the ciphertext is recorded with a signed cipher_posted notice, then the key is released as a LicenseRelease that the buyer verifies and opens', async () => {
     const user = userEvent.setup()
     const buyerKeys = generateVoucherKeypair()
+    const attackerKeys = generateVoucherKeypair()
     const data = text('a,b\n1,2\n3,4\n')
     let status = 'paid_held'
     const view = () => ({
@@ -228,7 +300,9 @@ describe('FE-028 content license', () => {
     })
     const { requests } = renderApp('/lisensi', (p, init) => {
       if (!init?.method && p.endsWith('/purchases/p7')) return { status: 200, body: view() }
-      if (!init?.method && p.endsWith(`/members/${BUYER}`)) return { status: 200, body: { account: BUYER, pubkeyVoucher: buyerKeys.publicKey } }
+      // the read API names the key of the attacker; the contract has the real one, and the page reads the contract (batch 3 F2)
+      if (!init?.method && p.endsWith(`/members/${BUYER}`)) return { status: 200, body: { account: BUYER, pubkeyVoucher: attackerKeys.publicKey } }
+      if (rpcMethod(init) === 'member') return rpcResult({ account_id: BUYER, pubkey_voucher: buyerKeys.publicKey, status: 'active' })
       if (init?.method === 'POST' && p.endsWith('/purchases/p7')) return { status: 200, body: {} }
       return undefined
     }, false, createMockWallet(SELLER, SELLER))
@@ -246,12 +320,15 @@ describe('FE-028 content license', () => {
     status = 'cipher_posted' // what the book answers once the notice is in: the page reads it again
     await user.click(within(serve).getByRole('button', { name: 'Catat ciphertext' }))
     await within(serve).findByText('Ciphertext dicatat.')
-    const posted = requests().find((r) => r.method === 'POST')!
+    const posted = requests().find((r) => r.method === 'POST' && r.path.includes('/purchases/p7'))!
     expect(posted.body.notice).toMatchObject({ purchase_id: 'p7', actor: SELLER, action: 'cipher_posted', source: { kind: 'https', ref: 'https://cdn.example.com/d.enc' }, cipher_hash: expect.stringMatching(/^[0-9a-f]{64}$/) })
     expect(Object.keys(posted.body.notice)).toEqual(['circle', 'purchase_id', 'actor', 'action', 'at', 'source', 'cipher_hash'])
-    await user.click(await within(serve).findByRole('button', { name: 'Lepas kunci ke pembeli' }))
+    await user.click(await within(serve).findByRole('button', { name: 'Periksa kunci pembeli di kontrak' }))
+    const fingerprint = (await within(serve).findByTestId('buyer-fingerprint')).textContent!
+    expect(fingerprint).toMatch(/^[0-9a-f]{4}( [0-9a-f]{4}){3}$/)
+    await user.click(await within(serve).findByRole('button', { name: `Lepas kunci ke ${BUYER} (sidik jari ${fingerprint})` }))
     await within(serve).findByText(/Kunci dilepas/)
-    const released = requests().filter((r) => r.method === 'POST')[1]!
+    const released = requests().filter((r) => r.method === 'POST' && r.path.includes('/purchases/p7'))[1]!
     // the notice is a LicenseRelease: the buyer's SDK opens it, and nothing in the request holds the key of the file or the key of the voucher
     expect(Object.keys(released.body.notice)).toEqual(['circle', 'license_hash', 'buyer', 'content_hash', 'cipher_hash', 'sealed_key', 'at', 'content_size', 'cipher_size', 'key_commitment', 'purchase_id'])
     expect(JSON.stringify(released.body)).not.toContain(KEY)
@@ -260,6 +337,7 @@ describe('FE-028 content license', () => {
     expect(verifyRelease(released.body.notice, released.body.signature, licensePublicKey(KEY))).toBe(true)
     const opened = openSealedKey(fromHex(released.body.notice.sealed_key), buyerKeys.secretKey)
     expect(toHex(opened)).toBe(prepared)
+    expect(() => openSealedKey(fromHex(released.body.notice.sealed_key), attackerKeys.secretKey)).toThrow() // the key the API named cannot open it
   })
 
   it('TC-FE-028-11 the detail of a license listing holds what BE-056 asks (license_doc, content_hash, license_id, exclusive, kind) and the preview with its hash only when there is one', async () => {

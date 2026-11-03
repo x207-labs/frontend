@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { api } from '../api/client'
 import { viewContract } from '../api/chain'
 import { usePurchase } from '../api/queries'
+import type { ListingView } from '../api/types'
 import { QueryState } from '../components/QueryState'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
@@ -10,8 +11,10 @@ import {
   LICENSE_ASSET_TYPES, buildKeyRelease, buildPurchase, cipherPostedNotice, prepareLicense, signSellerNotice, proofForApi, purchaseNotice, receiveLicense, signPurchaseNotice, takedownMessage,
   type DownloadResult, type PreparedLicense,
 } from '../lib/licenseFlow'
+import { formatCredit } from '../lib/format'
+import { checkListingToBuy, memberOnChain } from '../lib/listingCheck'
 import { describeMarketError } from '../lib/marketError'
-import { sha256Hex, signMessageWithVoucher } from '../lib/barter'
+import { keyFingerprint, sha256Hex, signMessageWithVoucher } from '../lib/barter'
 import { useWallet } from '../wallet/WalletContext'
 
 // FE-028: lisensi konten (pipeline P7, ADR-46), dari Spec API Backend 5g. Penjual menyiapkan lisensi dari berkas lokal (hash, enkripsi di browser, detail listing); pembeli membeli
@@ -122,13 +125,29 @@ function Serve({ voucherKey, prepared }: { voucherKey: string; prepared: Prepare
     const notice = cipherPostedNotice(CONTRACT_ID, query.data!.purchaseId, account!, now(), { kind, ref: ref.trim() }, prepared!.cipherHash)
     await api.purchaseNotice(query.data!.purchaseId, notice, await signSellerNotice(notice, CONTRACT_ID, voucherKey))
   })
+  // Batch 3 F2: the key of the buyer is read from the contract, never from the read API, and its fingerprint is shown before the key of the file is sealed to it.
+  const [buyerKey, setBuyerKey] = useState<{ buyer: string; publicKey: string; fingerprint: string } | null>(null)
+  async function checkBuyer() {
+    setError(null)
+    setBuyerKey(null)
+    try {
+      const view = query.data!
+      const member = await memberOnChain(view.buyer)
+      if (member === null || member.status !== 'active') throw new Error(`${view.buyer} bukan anggota aktif di kontrak: kunci tidak dilepas.`)
+      setBuyerKey({ buyer: view.buyer, publicKey: member.pubkey_voucher, fingerprint: await keyFingerprint(member.pubkey_voucher) })
+    } catch (e) {
+      setError(describeMarketError(e))
+    }
+  }
   const releaseKey = () => send('Kunci dilepas ke pembeli (tersegel).', async () => {
     const view = query.data!
-    const buyer = await api.member(view.buyer)
+    if (buyerKey === null || buyerKey.buyer !== view.buyer) throw new Error('Periksa kunci pembeli dulu.')
     const { release, signature } = buildKeyRelease({
-      circle: CONTRACT_ID, licenseDoc: prepared!.documentHash, purchaseId: view.purchaseId, buyer: view.buyer, buyerPublicKey: buyer.pubkeyVoucher, contentHash: prepared!.document.content_hash, prepared: prepared!, at: now(), sellerSecretKey: voucherKey,
+      circle: CONTRACT_ID, licenseDoc: prepared!.documentHash, purchaseId: view.purchaseId, buyer: view.buyer, buyerPublicKey: buyerKey.publicKey, contentHash: prepared!.document.content_hash,
+      prepared: prepared!, at: now(), sellerSecretKey: voucherKey,
     })
     await api.purchaseNotice(view.purchaseId, release, signature)
+    setBuyerKey(null)
   })
 
   return (
@@ -151,7 +170,15 @@ function Serve({ voucherKey, prepared }: { voucherKey: string; prepared: Prepare
                 </>
               )}
               {view.status === 'cipher_posted' && prepared && (
-                <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void releaseKey()}>Lepas kunci ke pembeli</button>
+                <>
+                  <button type="button" disabled={busy} onClick={() => void checkBuyer()}>Periksa kunci pembeli di kontrak</button>
+                  {buyerKey && (
+                    <div data-testid="buyer-key">
+                      <p>Kunci berkas akan disegel ke kunci voucher <code>{buyerKey.buyer}</code> menurut kontrak, sidik jari <code data-testid="buyer-fingerprint">{buyerKey.fingerprint}</code>. Cocokkan dengan sidik jari yang pembeli kirim lewat jalur lain.</p>
+                      <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void releaseKey()}>Lepas kunci ke {buyerKey.buyer} (sidik jari {buyerKey.fingerprint})</button>
+                    </div>
+                  )}
+                </>
               )}
               {view.status === 'confirmed' && <p className="state" role="status">Terkonfirmasi{view.autoConfirmed ? ' otomatis' : ''}: voucher pembeli sudah dilepas ke Anda untuk didaftarkan.</p>}
             </div>
@@ -258,29 +285,50 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
   const [hash, setHash] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  async function buy() {
-    if (!account) return
+  // The voucher is signed only after the listing is checked (batch 3 F1): the hash typed, the signature of the seller against the key in the contract, and the payee and price shown.
+  const [checked, setChecked] = useState<{ view: ListingView; docHash: string; fingerprint: string } | null>(null)
+
+  async function check() {
     setBusy(true)
     setError(null)
+    setChecked(null)
     try {
-      const listing = await api.listing(hash.trim())
+      const typed = hash.trim()
+      const view = await api.listing(typed)
       let docHash: string | null = null
       try {
-        const parsed: unknown = JSON.parse(listing.detail)
+        const parsed: unknown = JSON.parse(view.detail)
         docHash = typeof parsed === 'object' && parsed !== null && typeof (parsed as { license_doc?: unknown }).license_doc === 'string' ? (parsed as { license_doc: string }).license_doc : null
       } catch {
         docHash = null
       }
       if (docHash === null) throw new Error('Listing ini bukan listing lisensi (detail tidak memuat license_doc).')
+      const result = await checkListingToBuy(view, typed)
+      if (!result.ok) throw new Error(result.reason)
+      setChecked({ view, docHash, fingerprint: result.sellerFingerprint })
+    } catch (e) {
+      setError(describeMarketError(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function buy() {
+    if (!account || !checked) return
+    setBusy(true)
+    setError(null)
+    try {
+      const { view, docHash } = checked
       const epochs = await api.epochs()
       const open = epochs.items.find((e) => e.phase === 'open')
       if (!open) throw new Error('Tidak ada epoch open: voucher belum bisa dibuat.')
-      const ob = await viewContract<{ cumulative: string; last_seq: number } | null>('obligation', { epoch: open.epoch, debtor: account, creditor: listing.account })
+      const ob = await viewContract<{ cumulative: string; last_seq: number } | null>('obligation', { epoch: open.epoch, debtor: account, creditor: view.account })
       const built = await buildPurchase({
-        circle: CONTRACT_ID, buyer: account, seller: listing.account, epoch: open.epoch, amount: listing.offer.value, state: { seq: ob?.last_seq ?? 0, cumulativeAmount: ob?.cumulative ?? '0' },
+        circle: CONTRACT_ID, buyer: account, seller: view.account, epoch: open.epoch, amount: view.offer.value, state: { seq: ob?.last_seq ?? 0, cumulativeAmount: ob?.cumulative ?? '0' },
         licenseDocHash: docHash, secretKey: voucherKey,
       })
       const created = await api.createPurchase(hash.trim(), built.voucher, built.signature)
+      setChecked(null)
       onBought(String(created.purchase_id ?? created.purchaseId ?? ''))
     } catch (e) {
       setError(describeMarketError(e))
@@ -290,8 +338,21 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
   }
   return (
     <div>
-      <label><span>Hash listing lisensi</span><input value={hash} onChange={(e) => setHash(e.target.value)} placeholder="64 heks" /></label>
-      <button type="button" disabled={!account || busy || voucherKey.trim() === '' || !/^[0-9a-f]{64}$/.test(hash.trim())} onClick={() => void buy()}>Beli (voucher ditahan backend)</button>
+      <label><span>Hash listing lisensi</span><input value={hash} onChange={(e) => { setHash(e.target.value); setChecked(null) }} placeholder="64 heks" /></label>
+      <button type="button" disabled={!account || busy || !/^[0-9a-f]{64}$/.test(hash.trim())} onClick={() => void check()}>Periksa listing</button>
+      {checked && (
+        <div data-testid="buy-summary">
+          <dl className="status-panel">
+            <dt>Dibayar kepada</dt><dd><code>{checked.view.account}</code> · sidik jari kunci penjual <code>{checked.fingerprint}</code></dd>
+            <dt>Harga</dt><dd>{formatCredit(checked.view.offer.value)} credit</dd>
+            <dt>Dokumen lisensi</dt><dd><code>{checked.docHash}</code></dd>
+            <dt>Pemeriksaan</dt><dd>hash sama dengan yang diketik; tanda tangan cocok dengan kunci penjual di kontrak</dd>
+          </dl>
+          <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void buy()}>
+            Beli {formatCredit(checked.view.offer.value)} credit dari {checked.view.account} (voucher ditahan backend)
+          </button>
+        </div>
+      )}
       <small>Voucher tidak diberikan ke penjual: backend mendaftarkannya hanya setelah isi cocok atau konfirmasi otomatis.</small>
       {error && <p className="state state-error" role="alert">{error}</p>}
     </div>
