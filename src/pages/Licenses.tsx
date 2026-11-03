@@ -126,7 +126,7 @@ function Serve({ voucherKey, prepared }: { voucherKey: string; prepared: Prepare
     const view = query.data!
     const buyer = await api.member(view.buyer)
     const { release, signature } = buildKeyRelease({
-      circle: CONTRACT_ID, licenseDoc: prepared!.documentHash, buyer: view.buyer, buyerPublicKey: buyer.pubkeyVoucher, contentHash: prepared!.document.content_hash, prepared: prepared!, at: now(), sellerSecretKey: voucherKey,
+      circle: CONTRACT_ID, licenseDoc: prepared!.documentHash, purchaseId: view.purchaseId, buyer: view.buyer, buyerPublicKey: buyer.pubkeyVoucher, contentHash: prepared!.document.content_hash, prepared: prepared!, at: now(), sellerSecretKey: voucherKey,
     })
     await api.purchaseNotice(view.purchaseId, release, signature)
   })

@@ -395,7 +395,7 @@ export type OnchainProofView = { txHash: string; method: string; signer: string 
 
 // Penyerahan lisensi (FE-028): Spec API Backend 5g, dibangun dari spec dengan mock; BE-056 belum ada. Dinormalkan oleh `toPurchaseView`.
 export type PurchaseStatus = 'paid_held' | 'cipher_posted' | 'key_released' | 'confirmed' | 'disputed' | 'refuted' | 'cancelled'
-export type PurchaseRelease = { circle: string; license_hash: string; buyer: string; content_hash: string; cipher_hash: string; sealed_key: string; at: number; content_size: number; cipher_size: number }
+export type PurchaseRelease = { circle: string; license_hash: string; buyer: string; content_hash: string; cipher_hash: string; sealed_key: string; at: number; content_size: number; cipher_size: number; key_commitment: string; purchase_id: string }
 export type PurchaseView = {
   purchaseId: string; listingHash: string; status: PurchaseStatus; source: { kind: 'https' | 'ipfs'; ref: string } | null; cipherHash: string | null
   release: PurchaseRelease | null; releaseSignature: string | null; disputeUntil: number | null

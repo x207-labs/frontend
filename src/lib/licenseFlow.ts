@@ -71,13 +71,14 @@ export async function receiveLicense(view: PurchaseView, sellerPublicKey: string
     if (e instanceof LicenseError && e.code === 'cipher_hash_mismatch') return { state: 'refused', reason: 'Byte yang diunduh tidak cocok dengan cipher_hash: salah sumber, bukan bukti curang.' }
     return { state: 'refused', reason: e instanceof Error ? e.message : String(e) }
   }
-  const verdict = verifyDelivery({ ciphertext, release: view.release as LicenseRelease, signature: view.releaseSignature, sellerPublicKey, buyerSecretKey })
+  const verdict = verifyDelivery({ ciphertext, release: view.release as LicenseRelease, signature: view.releaseSignature, sellerPublicKey, buyerSecretKey, purchaseId: view.purchaseId })
   if (verdict.ok) return { state: 'ok', content: verdict.content }
   if ('proof' in verdict) return { state: 'cheated', reason: verdict.reason, proof: verdict.proof }
   const text: Record<string, string> = {
     cipher_hash_mismatch: 'Byte yang diunduh tidak cocok dengan cipher_hash: salah sumber, bukan bukti curang.',
     bad_signature: 'Tanda tangan rilis tidak cocok dengan kunci penjual.',
     sealed_key_unopenable: 'Kunci tersegel tidak bisa dibuka dengan kunci voucher Anda. Ini tidak bisa dibuktikan sebagai kecurangan; sengketakan dengan alasan lain.',
+    wrong_purchase: 'Rilis kunci ini untuk pembelian lain: jangan dipakai.',
   }
   return { state: 'refused', reason: text[verdict.reason] ?? verdict.reason }
 }
@@ -112,9 +113,9 @@ export const cipherPostedNotice = (circle: string, purchaseId: string, actor: st
 export const signSellerNotice = (notice: object, circle: string, secretKey: string): Promise<string> => signMessageWithVoucher(JSON.stringify(notice), circle, secretKey)
 
 /** Rilis kunci untuk satu pembelian: kunci berkas disegel ke kunci publik pembeli dan ditandatangani penjual dengan `signRelease` SDK; ini sendiri adalah notice `key_released`. */
-export function buildKeyRelease(args: { circle: string; licenseDoc: string; buyer: string; buyerPublicKey: string; contentHash: string; prepared: PreparedLicense; at: number; sellerSecretKey: string }) {
+export function buildKeyRelease(args: { circle: string; licenseDoc: string; purchaseId: string; buyer: string; buyerPublicKey: string; contentHash: string; prepared: PreparedLicense; at: number; sellerSecretKey: string }) {
   return createRelease({
-    circle: args.circle, license_hash: args.licenseDoc, buyer: args.buyer, buyerPublicKey: args.buyerPublicKey, content_hash: args.contentHash, content_size: args.prepared.contentSize, ciphertext: args.prepared.ciphertext,
+    circle: args.circle, license_hash: args.licenseDoc, buyer: args.buyer, buyerPublicKey: args.buyerPublicKey, content_hash: args.contentHash, content_size: args.prepared.contentSize, purchase_id: args.purchaseId, ciphertext: args.prepared.ciphertext,
     contentKey: fromHex(args.prepared.contentKey), at: args.at, sellerSecretKey: args.sellerSecretKey,
   })
 }
