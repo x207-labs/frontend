@@ -8,7 +8,7 @@ import { useOffers, useProposals } from '../api/queries'
 import type { AcceptPreview, AcceptResult, BundleProposal, ListingView, OfferView, QuickBreakdown } from '../api/types'
 import { CONTRACT_ID } from '../config'
 import { toAtomic } from '../lib/amount'
-import { serializeBundleTerms, sha256Hex, signMessageWithVoucher, signOffer, type Offer } from '../lib/barter'
+import { checkBundleToSign, serializeBundleTerms, sha256Hex, signMessageWithVoucher, signOffer, type Offer } from '../lib/barter'
 import { formatCredit, formatNumber, formatTime, shortAccount } from '../lib/format'
 import { describeMarketError } from '../lib/marketError'
 import { useWallet } from '../wallet/WalletContext'
@@ -158,7 +158,10 @@ function AcceptPanel({ listing, offer, voucherKey, onVoucherKey }: {
         if ((await sha256Hex(preview.bundle.message)) !== preview.bundle.termsHash) {
           throw new Error('Pesan yang akan ditandatangani tidak cocok dengan terms_hash dari server. Dibatalkan.')
         }
-        signature = await signMessageWithVoucher(preview.bundle.message, preview.bundle.recipient, voucherKey)
+        // FE-1: the hash above comes from the same server, so the message itself is checked before the key signs it
+        const check = checkBundleToSign({ message: preview.bundle.message, recipient: preview.bundle.recipient, account: account ?? '', contract: CONTRACT_ID, epoch: preview.epoch, breakdown: preview.breakdown as unknown as Record<string, string> })
+        if (!check.ok) throw new Error(check.reason)
+        signature = await signMessageWithVoucher(preview.bundle.message, CONTRACT_ID, voucherKey)
       }
       setResult(await api.accept(listing.listingHash, offer.offerHash, { ...body, epoch: preview.epoch, ...(signature ? { signature } : {}) }))
       await client.invalidateQueries({ queryKey: ['offers', listing.listingHash] })
@@ -183,7 +186,8 @@ function AcceptPanel({ listing, offer, voucherKey, onVoucherKey }: {
     )
   }
 
-  const legs = preview?.bundle ? (JSON.parse(preview.bundle.message) as { legs: Array<{ payer: string; payee: string; max_amount: string }> }).legs : []
+  const shown = preview?.bundle ? checkBundleToSign({ message: preview.bundle.message, recipient: preview.bundle.recipient, account: account ?? '', contract: CONTRACT_ID, epoch: preview.epoch, breakdown: preview.breakdown as unknown as Record<string, string> }) : null
+  const legs = shown?.ok ? shown.terms.legs : []
   return (
     <section className="accept" aria-label="Terima penawaran">
       <h4>Terima penawaran ronde {offer.round}</h4>
@@ -237,7 +241,10 @@ function ProposalSigner({ proposal, voucherKey }: { proposal: BundleProposal; vo
     try {
       const message = serializeBundleTerms(proposal.terms)
       if ((await sha256Hex(message)) !== proposal.termsHash) throw new Error('Syarat bundle tidak cocok dengan terms_hash. Dibatalkan.')
-      await api.signProposal(proposal.termsHash, account, await signMessageWithVoucher(message, proposal.terms.circle, voucherKey))
+      // FE-1: lingkaran dan epoch pada usulan dari server harus lingkaran ini, dan akun ini harus ikut
+      const check = checkBundleToSign({ message, recipient: CONTRACT_ID, account, contract: CONTRACT_ID, epoch: proposal.epoch })
+      if (!check.ok) throw new Error(check.reason)
+      await api.signProposal(proposal.termsHash, account, await signMessageWithVoucher(message, CONTRACT_ID, voucherKey))
       await client.invalidateQueries({ queryKey: ['proposals'] })
     } catch (e) {
       setError(describeMarketError(e))

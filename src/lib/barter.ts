@@ -138,11 +138,11 @@ export const cancelListingMessage = (hash: string): string => `x207:cancel_listi
 export const signCancelListing = (hash: string, circle: string, secretKey: string) =>
   signMessageWithVoucher(cancelListingMessage(hash), circle, secretKey)
 
-export type BundleTerms = { circle: string; epoch: number; legs: Array<{ payer: string; payee: string; max_amount: string }> }
+export type BundleTerms = { circle: string; epoch: number; legs: Array<{ payer: string; payee: string; max_amount: string }>; search_leg?: { payer: string; payee: string } }
 
 const byBytes = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
 
-/** JSON kanonik syarat bundle: leg diurutkan menurut (payer, payee); sama dengan `serializeBundleTerms` SDK. */
+/** JSON kanonik syarat bundle: leg diurutkan menurut (payer, payee), `search_leg` kunci terakhir bila ada; sama dengan `serializeBundleTerms` SDK. */
 export const serializeBundleTerms = (t: BundleTerms): string =>
   JSON.stringify({
     circle: t.circle,
@@ -150,7 +150,57 @@ export const serializeBundleTerms = (t: BundleTerms): string =>
     legs: [...t.legs]
       .sort((a, b) => byBytes(a.payer, b.payer) || byBytes(a.payee, b.payee))
       .map((l) => ({ payer: l.payer, payee: l.payee, max_amount: l.max_amount })),
+    ...(t.search_leg ? { search_leg: { payer: t.search_leg.payer, payee: t.search_leg.payee } } : {}),
   })
+
+const MAX_BUNDLE_LEGS = 64
+const sameKeys = (value: object, keys: string[]): boolean => {
+  const have = Object.keys(value).sort()
+  return have.length === keys.length && have.every((k, i) => k === [...keys].sort()[i])
+}
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+
+export type BundleCheck = { ok: true; terms: BundleTerms } | { ok: false; reason: string }
+
+/**
+ * Pemeriksaan sebelum kunci voucher menandatangani pesan dari server (temuan FE-1). Server memberi `message`, `recipient` dan `terms_hash`, jadi
+ * `sha256(message) = terms_hash` tidak membuktikan apa pun. Yang diperiksa di browser: penerima tanda tangan adalah kontrak lingkaran ini; pesan
+ * adalah persis syarat bundle kanonik (bukan voucher, listing, atau pesan lain); lingkaran dan epoch di dalamnya cocok; akun penandatangan ikut
+ * sebagai payer atau payee; dan leg keluar akun itu tidak melebihi jumlah angka pada rincian yang ditampilkan (bila rincian ada).
+ */
+export function checkBundleToSign(input: { message: string; recipient: string; account: string; contract: string; epoch: number; breakdown?: Record<string, string> }): BundleCheck {
+  const fail = (reason: string): BundleCheck => ({ ok: false, reason })
+  if (input.recipient !== input.contract) return fail(`Penerima tanda tangan (${input.recipient}) bukan kontrak lingkaran ini (${input.contract}). Dibatalkan.`)
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(input.message)
+  } catch {
+    return fail('Pesan bukan syarat bundle (bukan JSON). Dibatalkan.')
+  }
+  const shapeOk =
+    isObject(parsed) &&
+    (sameKeys(parsed, ['circle', 'epoch', 'legs']) || sameKeys(parsed, ['circle', 'epoch', 'legs', 'search_leg'])) &&
+    typeof parsed.circle === 'string' &&
+    Number.isSafeInteger(parsed.epoch) &&
+    (parsed.epoch as number) >= 1 &&
+    Array.isArray(parsed.legs) &&
+    parsed.legs.length >= 2 &&
+    parsed.legs.length <= MAX_BUNDLE_LEGS &&
+    parsed.legs.every((l) => isObject(l) && sameKeys(l, ['payer', 'payee', 'max_amount']) && typeof l.payer === 'string' && typeof l.payee === 'string' && typeof l.max_amount === 'string' && /^[1-9]\d*$/.test(l.max_amount)) &&
+    (parsed.search_leg === undefined || (isObject(parsed.search_leg) && sameKeys(parsed.search_leg, ['payer', 'payee']) && typeof parsed.search_leg.payer === 'string' && typeof parsed.search_leg.payee === 'string'))
+  if (!shapeOk) return fail('Pesan bukan syarat bundle. Dibatalkan.')
+  const terms = parsed as unknown as BundleTerms
+  if (serializeBundleTerms(terms) !== input.message) return fail('Pesan bukan syarat bundle kanonik (spasi, urutan kunci, atau urutan leg berbeda). Dibatalkan.')
+  if (terms.circle !== input.contract) return fail(`Syarat bundle untuk lingkaran lain (${terms.circle}), bukan kontrak lingkaran ini (${input.contract}). Dibatalkan.`)
+  if (terms.epoch !== input.epoch) return fail(`Epoch pada pesan (${terms.epoch}) berbeda dari epoch rincian (${input.epoch}). Dibatalkan.`)
+  if (!terms.legs.some((l) => l.payer === input.account || l.payee === input.account)) return fail('Akun Anda tidak ikut sebagai payer atau payee di leg mana pun. Dibatalkan.')
+  if (input.breakdown) {
+    const bound = Object.values(input.breakdown).reduce((sum, v) => (typeof v === 'string' && /^\d+$/.test(v) ? sum + BigInt(v) : sum), 0n)
+    const outgoing = terms.legs.filter((l) => l.payer === input.account).reduce((sum, l) => sum + BigInt(l.max_amount), 0n)
+    if (outgoing > bound) return fail(`Leg keluar Anda (${outgoing}) melebihi rincian yang ditampilkan (${bound}). Dibatalkan.`)
+  }
+  return { ok: true, terms }
+}
 
 export const termsHash = async (t: BundleTerms): Promise<string> => toHex(await sha256(serializeBundleTerms(t)))
 export const sha256Hex = async (text: string): Promise<string> => toHex(await sha256(text))

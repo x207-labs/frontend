@@ -18,7 +18,8 @@ const offer = (over: Partial<OfferView> = {}): OfferView => ({
   value: C(100), quantity: 5000, deliverBy: '2026-11-08T10:00:00Z', signature: 'ed25519:x', inReplyTo: null, status: 'pending', ...over,
 })
 
-const terms = { circle: 'x207-circle.near', epoch: 42, legs: [
+const CIRCLE_ACCOUNT = 'x207-circle.testnet' // CONTRACT_ID of the test configuration
+const terms = { circle: CIRCLE_ACCOUNT, epoch: 42, legs: [
   { payer: OWNER, payee: BUDI, max_amount: C(107) },
   { payer: BUDI, payee: OWNER, max_amount: C(100) },
   { payer: OWNER, payee: PENCARI, max_amount: C(3) },
@@ -27,7 +28,7 @@ const message = serializeBundleTerms(terms)
 const previewBundle = async (over: Partial<AcceptPreview> = {}): Promise<AcceptPreview> => ({
   kind: 'bundle', epoch: 42, mode: 'barter', discountValue: C(10), searcherValue: C(3), searcher: PENCARI,
   breakdown: { mode: 'barter', cashback: C(7), searcher: C(3), sellerBears: C(10), counterpartyGives: C(100) },
-  bundle: { termsHash: await sha256Hex(message), message, nonce: 'n', recipient: 'x207-circle.near', terms, participants: [BUDI, OWNER, PENCARI] },
+  bundle: { termsHash: await sha256Hex(message), message, nonce: 'n', recipient: CIRCLE_ACCOUNT, terms, participants: [BUDI, OWNER, PENCARI] },
   payment: null, ...over,
 })
 
@@ -120,7 +121,7 @@ describe('negosiasi dan barter cepat (FE-020)', () => {
     expect(await screen.findByText(/Usulan bundle dibuat untuk epoch 42/)).toHaveTextContent('summarizer, scraper')
     const accept = calls.find((c) => c.path.endsWith('/accept'))!
     expect(accept.body.epoch).toBe(42)
-    expect(accept.body.signature).toBe(await signMessageWithVoucher(message, 'x207-circle.near', KEY))
+    expect(accept.body.signature).toBe(await signMessageWithVoucher(message, CIRCLE_ACCOUNT, KEY))
     expect(JSON.stringify(accept.body)).not.toContain(KEY)
   })
 
@@ -196,6 +197,84 @@ describe('negosiasi dan barter cepat (FE-020)', () => {
     await waitFor(() => expect(calls.some((c) => c.path.includes('/signatures'))).toBe(true))
     const sent = calls.find((c) => c.path.includes('/signatures'))!
     expect(sent.path).toContain(termsHash)
-    expect(sent.body).toEqual({ account: BUDI, signature: await signMessageWithVoucher(message, 'x207-circle.near', KEY) })
+    expect(sent.body).toEqual({ account: BUDI, signature: await signMessageWithVoucher(message, CIRCLE_ACCOUNT, KEY) })
+  })
+})
+
+// Security review of the frontend (finding FE-1): the message and the recipient to sign come from the server, and the server also supplies the hash
+// that "checks" the message, so that check proves nothing. The browser must check the message itself before the voucher key signs it.
+describe('keamanan: apa yang ditandatangani kunci voucher (FE-1)', () => {
+  async function trySign(preview: AcceptPreview, calls: Calls, who = OWNER) {
+    const { user } = await open(who, { offers: [offer()], preview }, calls)
+    await user.click(await neg().findByRole('button', { name: 'Terima' }))
+    await user.click(neg().getByRole('button', { name: 'Hitung rincian' }))
+    await screen.findByLabelText('Rincian barter')
+    await user.type(neg().getByLabelText(/Kunci voucher/), KEY)
+    await user.click(neg().getByRole('button', { name: 'Tanda tangani dan terima' }))
+  }
+  const withMessage = async (text: string, over: Partial<AcceptPreview['bundle'] & object> = {}): Promise<AcceptPreview> => {
+    const base = await previewBundle()
+    return { ...base, bundle: { ...base.bundle!, message: text, termsHash: await sha256Hex(text), ...over } }
+  }
+  const refused = async (calls: Calls, text: RegExp) => {
+    expect(await screen.findByRole('alert')).toHaveTextContent(text)
+    expect(calls.some((c) => c.path.endsWith('/accept'))).toBe(false)
+  }
+
+  it('TC-FE-SEC-01 recipient bukan kontrak lingkaran ini: tidak menandatangani', async () => {
+    const calls: Calls = []
+    await trySign(await withMessage(message, { recipient: 'evil.testnet' }), calls)
+    await refused(calls, /kontrak lingkaran/)
+  })
+
+  it('TC-FE-SEC-02 syarat bundle untuk lingkaran lain (hash cocok dengan pesannya): tidak menandatangani', async () => {
+    const calls: Calls = []
+    await trySign(await withMessage(serializeBundleTerms({ ...terms, circle: 'evil.testnet' })), calls)
+    await refused(calls, /kontrak lingkaran/)
+  })
+
+  it('TC-FE-SEC-03 pesan yang bukan syarat bundle (kunci tambahan atau bentuk lain): tidak menandatangani dan halaman tidak rusak', async () => {
+    const calls: Calls = []
+    const voucherLike = JSON.stringify({ circle: CIRCLE_ACCOUNT, payer: OWNER, payee: 'evil.testnet', epoch: 42, seq: 1, cumulativeAmount: C(1000), unit: 'credit', resource: 'x' })
+    await trySign(await withMessage(voucherLike), calls)
+    await refused(calls, /bukan syarat bundle/)
+  })
+
+  it('TC-FE-SEC-04 pesan bukan JSON kanonik (spasi, urutan kunci, leg tidak terurut): tidak menandatangani', async () => {
+    const calls: Calls = []
+    await trySign(await withMessage(JSON.stringify(terms, null, 1)), calls)
+    await refused(calls, /bukan syarat bundle|kanonik/)
+  })
+
+  it('TC-FE-SEC-05 leg keluar penandatangan melebihi rincian yang ditampilkan: tidak menandatangani', async () => {
+    const calls: Calls = []
+    const greedy = { ...terms, legs: terms.legs.map((l) => (l.payer === OWNER && l.payee === BUDI ? { ...l, max_amount: C(5000) } : l)) }
+    await trySign(await withMessage(serializeBundleTerms(greedy)), calls)
+    await refused(calls, /melebihi rincian/)
+  })
+
+  it('TC-FE-SEC-06 penandatangan tidak ada di leg mana pun: tidak menandatangani', async () => {
+    const calls: Calls = []
+    const others = { ...terms, legs: [{ payer: BUDI, payee: PENCARI, max_amount: C(1) }, { payer: PENCARI, payee: BUDI, max_amount: C(1) }] }
+    await trySign(await withMessage(serializeBundleTerms(others)), calls)
+    await refused(calls, /tidak ikut/)
+  })
+
+  it('TC-FE-SEC-07 epoch pesan berbeda dari epoch rincian: tidak menandatangani', async () => {
+    const calls: Calls = []
+    await trySign(await withMessage(serializeBundleTerms({ ...terms, epoch: 43 })), calls)
+    await refused(calls, /epoch/)
+  })
+
+  it('TC-FE-SEC-08 usulan bundle dengan lingkaran lain: tombol tanda tangan tidak menandatangani', async () => {
+    const calls: Calls = []
+    const evil = { ...terms, circle: 'evil.testnet' }
+    const proposal = { termsHash: await sha256Hex(serializeBundleTerms(evil)), status: 'proposed', epoch: 42, terms: evil, participants: [BUDI, OWNER, PENCARI], missing: [BUDI], listingHash: listingHashA }
+    const { user } = await open(BUDI, { offers: [offer({ status: 'accepted' })], proposals: [proposal] }, calls)
+    await screen.findByLabelText('Usulan bundle')
+    await user.type(neg().getByLabelText(/Kunci voucher/), KEY)
+    await user.click(neg().getByRole('button', { name: 'Tanda tangani bundle' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/kontrak lingkaran/)
+    expect(calls.some((c) => c.path.includes('/signatures'))).toBe(false)
   })
 })
