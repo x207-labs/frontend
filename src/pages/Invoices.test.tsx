@@ -57,7 +57,7 @@ describe('FE-025 invoice and installments', () => {
     expect(screen.queryByRole('button', { name: /Setujui dan tandatangani/ })).not.toBeInTheDocument()
     await user.click(within(table).getByRole('button', { name: 'Buka INV-2026-001' }))
     expect(await screen.findByText('Menunggu persetujuan debtor.')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Tolak' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Tolak invoice/ })).not.toBeInTheDocument()
     expect(requests().filter((r) => r.method === 'POST')).toHaveLength(0)
   })
 
@@ -136,7 +136,7 @@ describe('FE-025 invoice and installments', () => {
     await user.click(within(table).getByRole('button', { name: 'Buka INV-2026-002' }))
     await screen.findByTestId('invoice-advance-note')
     await user.type(screen.getByLabelText(/Kunci voucher/), KEY)
-    await user.click(screen.getByRole('button', { name: 'Tolak' }))
+    await user.click(screen.getByRole('button', { name: /^Tolak invoice 90 credit dari retailer\.x207-circle\.near$/ }))
     await screen.findByText('Invoice ditolak.')
     const post = requests().find((r) => r.method === 'POST' && r.path.endsWith('/reject'))!
     expect(post.body.notice).toMatchObject({ invoice_hash: invoiceHashes[1], actor: SUPPLIER, action: 'rejected' })
@@ -251,5 +251,25 @@ describe('FE-025 invoice and installments', () => {
     const rejected = { ...real, status: 'rejected', rejectReason: 'wrong amount', installments: real.installments.map((i) => ({ ...i, status: 'scheduled', reason: null, shifted: false })) }
     expect(toInvoiceView(rejected)).toMatchObject({ rejectReason: 'wrong amount', createdAt: '2026-11-03T10:00:00Z' })
     expect(toInvoiceView(real).installments[1]).toMatchObject({ voucherEpoch: 46, shifted: true })
+  })
+
+  it('TC-FE-025-13 [batch 3 F3] the buttons carry the amount and the other party; an API that shows one invoice and carries the hash of another gets no signature', async () => {
+    const user = userEvent.setup()
+    const requested = { ...invoices[1]!, status: 'requested', installments: invoices[1]!.installments.map((i) => ({ ...i, status: 'scheduled', reason: null })) }
+    const lying = { ...requested, invoice_hash: invoiceHashes[0] } // shows invoice 2, carries the hash of invoice 1
+    const { requests } = renderApp('/invoice', (p, init) => {
+      if (p.startsWith('/x207/circles/agents-main/invoices/') && !init?.method) return { status: 200, body: lying }
+      if (p.includes('/invoices?')) return { status: 200, body: { items: [lying], nextCursor: null } }
+      return { status: 200, body: lying }
+    }, false, createMockWallet(SUPPLIER, SUPPLIER))
+    const table = await screen.findByRole('table', { name: 'Daftar invoice' })
+    await user.click(within(table).getByRole('button', { name: 'Buka INV-2026-002' }))
+    const approve = await screen.findByRole('button', { name: /Setujui dan tandatangani 3 cicilan: 90 credit kepada retailer\.x207-circle\.near/ })
+    await user.type(screen.getByLabelText(/Kunci voucher/), KEY)
+    await user.click(approve)
+    expect(await screen.findByText(/Hash invoice tidak cocok dengan dokumennya/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^Tolak invoice 90 credit/ }))
+    expect(await screen.findByText(/Hash invoice yang dihitung dari dokumen yang ditampilkan tidak sama/)).toBeInTheDocument()
+    expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/'))).toHaveLength(0)
   })
 })

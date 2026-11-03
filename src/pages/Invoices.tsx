@@ -7,7 +7,7 @@ import type { InstallmentReason, InstallmentView, InvoiceStatus, InvoiceView } f
 import { QueryState } from '../components/QueryState'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
-import { buildApproval, buildCatchUp, buildCreateInvoice, buildRejection } from '../lib/invoiceFlow'
+import { assertInvoiceHash, buildApproval, buildCatchUp, buildCreateInvoice, buildRejection } from '../lib/invoiceFlow'
 import { describeMarketError } from '../lib/marketError'
 import { formatCredit, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
@@ -120,12 +120,13 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
   const fail = (text: string): null => (setError(text), null)
 
   const approve = () => act(async (view) => {
-    const vouchers = await buildApproval(CONTRACT_ID, view, voucherKey)
+    const vouchers = await buildApproval(CONTRACT_ID, view, voucherKey, hash)
     if (typeof vouchers === 'string') return fail(vouchers)
     await api.approveInvoice(hash, vouchers)
     return `Disetujui: ${vouchers.length} voucher cicilan ditandatangani, satu per epoch.`
   })
   const reject = () => act(async (view) => {
+    await assertInvoiceHash(view, hash)
     const { notice, signature } = await buildRejection(CONTRACT_ID, view, account!, '', Math.floor(Date.now() / 1000), voucherKey)
     await api.rejectInvoice(hash, notice, signature)
     return 'Invoice ditolak.'
@@ -187,8 +188,10 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
                     membolehkan voucher ber-seq lebih tinggi mendahului. Tidak ada voucher cadangan; bila cicilan gagal, voucher susulan baru ditandatangani setelah gagal.
                   </p>
                   <div className="actions">
-                    <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void approve()}>Setujui dan tandatangani cicilan</button>
-                    <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void reject()}>Tolak</button>
+                    <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void approve()}>
+                      Setujui dan tandatangani {view.installments.length} cicilan: {formatCredit(view.document.amount)} credit kepada {view.document.issuer}
+                    </button>
+                    <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void reject()}>Tolak invoice {formatCredit(view.document.amount)} credit dari {view.document.issuer}</button>
                   </div>
                 </>
               )}

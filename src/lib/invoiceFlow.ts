@@ -35,9 +35,15 @@ export async function buildCreateInvoice(i: CreateInput): Promise<{ body: { docu
  * Voucher cicilan yang ditandatangani debtor saat menyetujui: satu per cicilan, seq 1 di epochnya. Sebelum menandatangani, dokumen diperiksa terhadap hash dan jadwal dari server
  * dihitung ulang dengan rencana SDK (epoch berurutan, jumlah sama): debtor tidak menandatangani apa pun yang tidak cocok (CT-076).
  */
-export async function buildApproval(circle: string, view: InvoiceView, secretKey: string): Promise<Array<{ voucher: object; signature: string }> | string> {
+/** Batch 3 F3 (review BE-063): hash dihitung ulang dari dokumen yang ditampilkan dan harus sama dengan hash yang dibuka pengguna dan yang disebut jawaban API. */
+export async function assertInvoiceHash(view: InvoiceView, opened: string): Promise<void> {
+  if (view.invoiceHash !== opened || (await invoiceHashOf(view.document)) !== opened) throw new Error('Hash invoice yang dihitung dari dokumen yang ditampilkan tidak sama dengan hash yang dibuka: tidak ditandatangani.')
+}
+
+export async function buildApproval(circle: string, view: InvoiceView, secretKey: string, opened: string = view.invoiceHash): Promise<Array<{ voucher: object; signature: string }> | string> {
   const doc = view.document
   try {
+    if (view.invoiceHash !== opened) return 'Hash invoice dari server bukan yang Anda buka: jangan setujui.'
     if ((await invoiceHashOf(doc)) !== view.invoiceHash) return 'Hash invoice tidak cocok dengan dokumennya: jangan setujui.'
     const first = view.installments[0]
     if (!first) return 'Invoice tidak punya jadwal cicilan.'
