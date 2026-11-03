@@ -48,7 +48,7 @@ describe('FE-029 daily rent of an access', () => {
     expect(within(section).getByTestId('rent-view')).toHaveTextContent('Aktif')
     expect(within(section).getByTestId('rent-today')).toHaveTextContent('1,5 credit')
     await user.click(within(section).getByRole('button', { name: /Periksa sebelum bayar/ }))
-    expect(within(section).getByTestId('rent-check')).toHaveTextContent('aman membayar hari berikutnya')
+    expect(within(section).getByTestId('rent-check')).toHaveTextContent('bukan bukti dari penyedia')
   })
 
   it('TC-FE-029-03 an access taken back early or not paid any more is not paid for the next day, with the code of the SDK', async () => {

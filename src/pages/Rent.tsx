@@ -83,7 +83,7 @@ function Renter({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey
     if (!view) return
     try {
       await checkAccessBeforeNextDay({ grantId: view.grantId, view: { grantId: view.grantId, status: view.status, paidUntil: Date.parse(view.paidUntil) }, nowMs: Date.now() })
-      setCheck({ ok: true, text: 'Akses masih berjalan: aman membayar hari berikutnya (lewat klien x402 atau agent Anda).' })
+      setCheck({ ok: true, text: `Broker melaporkan akses berjalan sampai ${view.paidUntil}. Itu keterangan broker, bukan bukti dari penyedia (broker bisa mencabut lebih awal): coba aksesnya langsung ke penyedia hari ini, lalu bayar hari berikutnya hanya sehari sekali lewat klien x402 atau agent Anda.` })
     } catch (e) {
       setCheck({ ok: false, text: e instanceof RentError ? `${e.code}: hari berikutnya tidak dibayar.` : String(e) })
     }
