@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
-import { buildCsp, cspMeta } from './src/lib/csp'
+import { buildCsp, cspMeta } from './src/lib/csp.ts'
 
 export default defineConfig(({ mode }) => ({
   plugins: [
