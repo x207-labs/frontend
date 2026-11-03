@@ -1,7 +1,7 @@
-import { RentError, checkAccessBeforeNextDay } from '@x207/core'
+import { GranteeProofError, RentError, buildGistContent, checkAccessBeforeNextDay, encodeGranteeProof, granteeChallenge, parseGranteeProof, type GranteeProof } from '@x207/core'
 import { useState } from 'react'
 import { api } from '../api/client'
-import type { RentView } from '../api/types'
+import type { RentChallenge, RentView } from '../api/types'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { signMessageWithVoucher } from '../lib/barter'
@@ -55,6 +55,92 @@ function Offer() {
         </>
       )}
     </section>
+  )
+}
+
+// FE-029, BE-057: the proof that the renter controls the reference `grantee_ref`. The broker is not trusted for the text that is signed: it is built again here from the circle of the
+// configuration, the grant and the reference that the page shows, and only the nonce comes from the broker. The payment of the day and the field `proof` of
+// `POST /grants/{id}/access` are sent by the x402 client or the agent of the renter; this panel only builds the text of the proof.
+function GranteeProofPanel({ view, voucherKey, account }: { view: RentView; voucherKey: string; account: string | null }) {
+  const [challenge, setChallenge] = useState<RentChallenge | null>(null)
+  const [gist, setGist] = useState('')
+  const [signature, setSignature] = useState('')
+  const [proof, setProof] = useState<string | null>(null)
+  const [content, setContent] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const kind: GranteeProof['kind'] | null = view.provider === 'github' ? 'near-gist' : view.provider === 'ssh' ? 'ssh-signature' : view.provider === 'discord' ? 'oauth' : null
+
+  async function fetchChallenge() {
+    setError(null)
+    setProof(null)
+    setContent(null)
+    try {
+      const c = await api.rentChallenge(view.grantId)
+      if (c.required) {
+        if (c.grantId !== view.grantId || c.circle !== CONTRACT_ID || c.granteeRef !== view.granteeRef || typeof c.nonce !== 'string') throw new Error('Tantangan broker bukan untuk grant, lingkaran, atau referensi ini: tidak ditandatangani.')
+        const expected = granteeChallenge({ circle: CONTRACT_ID, grantId: view.grantId, granteeRef: view.granteeRef, nonce: c.nonce })
+        if (c.challenge !== expected) throw new Error('Teks tantangan dari broker berbeda dari yang dihitung di sini: tidak ditandatangani.')
+      }
+      setChallenge(c)
+    } catch (e) {
+      setChallenge(null)
+      setError(describeMarketError(e))
+    }
+  }
+  const input = () => ({ circle: CONTRACT_ID, grantId: view.grantId, granteeRef: view.granteeRef, nonce: challenge!.nonce! })
+  function makeContent() {
+    setError(null)
+    try {
+      if (account === null) throw new Error('Masuk dengan wallet dulu.')
+      setContent(buildGistContent(input(), account, voucherKey))
+    } catch (e) {
+      setError(e instanceof GranteeProofError ? e.message : describeMarketError(e))
+    }
+  }
+  function makeProof() {
+    setError(null)
+    try {
+      const text = encodeGranteeProof(kind === 'near-gist' ? { kind, gist: gist.trim() } : { kind: 'ssh-signature', signature: signature.trim() })
+      parseGranteeProof(text) // the broker would refuse a malformed proof and use up the challenge: fail here instead
+      setProof(text)
+    } catch (e) {
+      setProof(null)
+      setError(e instanceof GranteeProofError ? e.message : describeMarketError(e))
+    }
+  }
+  return (
+    <div data-testid="rent-proof-panel">
+      <h4>Bukti pemilik referensi</h4>
+      <p data-testid="rent-proof-state" className={view.proof?.startsWith('unproven') ? 'state state-error' : 'state'}>
+        {view.proof === 'verified' ? 'Referensi terbukti: broker sudah memeriksa bahwa Anda mengendalikannya.' : view.proof ? `Referensi belum terbukti (${view.proof}). Akses tetap dibuka dengan peringatan grantee_unproven; siapa pun yang mengetahui nama akun itu tidak bisa dibedakan dari Anda.` : 'Belum ada keterangan bukti dari broker.'}
+      </p>
+      {kind === null && <p className="state">Penyedia ini tidak memakai bukti dari halaman ini.</p>}
+      {kind === 'oauth' && <p className="state">Bukti Discord lewat OAuth dibuat di sisi penyedia; halaman ini tidak menyimpan token OAuth.</p>}
+      {(kind === 'near-gist' || kind === 'ssh-signature') && (
+        <>
+          <div><button type="button" onClick={() => void fetchChallenge()}>Ambil tantangan dari broker</button></div>
+          {challenge && !challenge.required && <p className="state" data-testid="rent-challenge-none">Broker tidak meminta bukti untuk grant ini.</p>}
+          {challenge?.required && (
+            <>
+              <pre data-testid="rent-challenge">{challenge.challenge}</pre>
+              <p className="state">Berlaku sampai {challenge.expiresAt}. Bukti pertama yang diperiksa menghabiskan tantangan ini; bukti tidak bisa dicoba ulang.</p>
+              {kind === 'near-gist' ? (
+                <>
+                  <div><button type="button" disabled={voucherKey.trim() === ''} onClick={makeContent}>Tandatangani untuk gist</button></div>
+                  {content && <><p>Isi gist publik milik akun GitHub <code>{view.granteeRef}</code> (satu berkas):</p><pre data-testid="rent-gist-content">{content}</pre></>}
+                  <label><span>ID gist</span><input value={gist} onChange={(e) => setGist(e.target.value)} placeholder="0123abcd…" /></label>
+                </>
+              ) : (
+                <label><span>Tanda tangan ed25519 atas tantangan oleh kunci SSH (base64; dibuat di mesin Anda dengan <code>signSshChallenge</code>)</span><input value={signature} onChange={(e) => setSignature(e.target.value)} /></label>
+              )}
+              <div><button type="button" disabled={kind === 'near-gist' ? gist.trim() === '' : signature.trim() === ''} onClick={makeProof}>Susun bukti</button></div>
+            </>
+          )}
+          {proof && <><p>Kirim teks ini sebagai <code>proof</code> pada <code>POST /grants/{view.grantId}/access</code> hari pertama (klien x402 atau agent Anda):</p><pre data-testid="rent-proof">{proof}</pre></>}
+          {error && <p className="state state-error" role="alert" data-testid="rent-proof-error">{error}</p>}
+        </>
+      )}
+    </div>
   )
 }
 
@@ -120,6 +206,7 @@ function Renter({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey
           </div>
           {check && <p className={check.ok ? 'state' : 'state state-error'} role="status" data-testid="rent-check">{check.text}</p>}
           <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
+          <GranteeProofPanel view={view} voucherKey={voucherKey} account={account} />
         </div>
       )}
       {message && <p className="state" role="status">{message}</p>}

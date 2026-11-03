@@ -31,7 +31,7 @@ import type {
   AcceptRequest,
   AcceptResult,
   BundleProposal,
-  InvoiceList, InvoiceView, OnchainProofView, OrderList, OrderView, PurchaseView, RentView, ListingCheck, ListingList,
+  InvoiceList, InvoiceView, OnchainProofView, OrderList, OrderView, PurchaseView, RentChallenge, RentView, ListingCheck, ListingList,
   ListingView,
   MarketStats,
   OfferView,
@@ -153,6 +153,13 @@ export const api = {
     const body = await res.json().catch(() => null)
     if (!res.ok) throw new ApiError(res.status, body?.error ?? 'http_error', body?.message ?? `Broker menjawab HTTP ${res.status}`, undefined)
     return body as RentView
+  },
+  /** Tantangan bukti `grantee_ref` (BE-057): `{required:false}` untuk penyedia yang tidak memintanya. */
+  rentChallenge: async (grantId: number): Promise<RentChallenge> => {
+    const res = await fetch(`${BROKER_URL}/grants/${grantId}/access/challenge`)
+    const body = await res.json().catch(() => null)
+    if (!res.ok) throw new ApiError(res.status, body?.error ?? 'http_error', body?.message ?? `Broker menjawab HTTP ${res.status}`, undefined)
+    return body as RentChallenge
   },
   stopRent: async (grantId: number, notice: object, signature: string): Promise<RentView> => {
     const res = await fetch(`${BROKER_URL}/grants/${grantId}/access/stop`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notice, signature }) })

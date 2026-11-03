@@ -1,6 +1,8 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { buildGistContent, granteeChallenge, parseGranteeProof, signSshChallenge } from '@x207/core'
 import { describe, expect, it } from 'vitest'
+import { CONTRACT_ID } from '../config'
 import { base58Encode } from '../lib/barter'
 import { renderApp } from '../test/render'
 import { createMockWallet } from '../test/walletMock'
@@ -87,5 +89,73 @@ describe('FE-029 daily rent of an access', () => {
     await user.type(within(second).getByLabelText('Nomor grant'), '9')
     await user.click(within(second).getByRole('button', { name: 'Lihat akses' }))
     expect(await within(second).findByRole('alert')).toHaveTextContent('access_not_found')
+  })
+
+  // BE-057: the proof of the reference
+  const NONCE = 'nonce-12345678'
+  const challengeBody = (over: Record<string, unknown> = {}) => {
+    const granteeRef = String(over.granteeRef ?? 'octocat')
+    return { required: true, grantId: 7, circle: CONTRACT_ID, granteeRef, nonce: NONCE, challenge: granteeChallenge({ circle: CONTRACT_ID, grantId: 7, granteeRef, nonce: NONCE }), expiresAt: '2026-11-04T10:15:00Z', ...over }
+  }
+  const withChallenge = (body: object, challenge: object) => (p: string, init?: RequestInit) => (p === '/grants/7/access/challenge' && !init?.method ? { status: 200, body: challenge } : broker(body)(p, init))
+  const openWith = async (user: ReturnType<typeof userEvent.setup>, body: object, challenge: object) => {
+    const r = renderApp('/sewa', withChallenge(body, challenge), false, createMockWallet(RENTER, RENTER))
+    const section = await screen.findByRole('region', { name: 'Akses saya' })
+    await user.type(within(section).getByLabelText('Nomor grant'), '7')
+    await user.click(within(section).getByRole('button', { name: 'Lihat akses' }))
+    await within(section).findByTestId('rent-view')
+    return { section, ...r }
+  }
+
+  it('TC-FE-029-06 github: the challenge is fetched, the gist content is signed with the voucher key, and the proof text has the format of the SDK', async () => {
+    const user = userEvent.setup()
+    const { section } = await openWith(user, view({ proof: 'unproven: tidak ada tantangan' }), challengeBody())
+    expect(within(section).getByTestId('rent-proof-state')).toHaveTextContent('grantee_unproven')
+    await user.click(within(section).getByRole('button', { name: 'Ambil tantangan dari broker' }))
+    expect(await within(section).findByTestId('rent-challenge')).toHaveTextContent('x207-grantee-proof v1')
+    await user.type(within(section).getByLabelText(/Kunci voucher/), KEY)
+    await user.click(within(section).getByRole('button', { name: 'Tandatangani untuk gist' }))
+    const content = within(section).getByTestId('rent-gist-content').textContent!
+    expect(content).toBe(buildGistContent({ circle: CONTRACT_ID, grantId: 7, granteeRef: 'octocat', nonce: NONCE }, RENTER, KEY))
+    expect(JSON.parse(content)).toMatchObject({ account: RENTER, signature: expect.stringMatching(/^ed25519:/) })
+    await user.type(within(section).getByLabelText('ID gist'), 'abc123def456')
+    await user.click(within(section).getByRole('button', { name: 'Susun bukti' }))
+    expect(parseGranteeProof(within(section).getByTestId('rent-proof').textContent!)).toEqual({ kind: 'near-gist', gist: 'abc123def456' })
+    expect(within(section).getByTestId('rent-proof')).not.toHaveTextContent(KEY)
+  })
+
+  it('TC-FE-029-07 a challenge whose text, circle, grant, or reference differs from what the page computes is refused and nothing is signed', async () => {
+    const user = userEvent.setup()
+    for (const bad of [{ challenge: challengeBody().challenge.replace('octocat', 'mallory') }, { circle: 'evil.near' }, { grantId: 8 }, { granteeRef: 'mallory' }]) {
+      cleanup()
+      const { section } = await openWith(user, view(), challengeBody(bad))
+      await user.click(within(section).getAllByRole('button', { name: 'Ambil tantangan dari broker' }).at(-1)!)
+      expect(await within(section).findByTestId('rent-proof-error')).toHaveTextContent(/tidak ditandatangani/)
+      expect(within(section).queryByTestId('rent-challenge')).toBeNull()
+    }
+  })
+
+  it('TC-FE-029-08 ssh: the signature made on the machine of the renter becomes the proof; a provider that needs no proof says so; discord says OAuth is on the provider side', async () => {
+    const user = userEvent.setup()
+    const { section } = await openWith(user, view({ provider: 'ssh', granteeRef: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample', proof: 'verified' }), challengeBody({ granteeRef: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample' }))
+    expect(within(section).getByTestId('rent-proof-state')).toHaveTextContent('Referensi terbukti')
+    await user.click(within(section).getByRole('button', { name: 'Ambil tantangan dari broker' }))
+    await within(section).findByTestId('rent-challenge')
+    const made = signSshChallenge({ circle: CONTRACT_ID, grantId: 7, granteeRef: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample', nonce: NONCE }, new Uint8Array(32).fill(5))
+    await user.type(within(section).getByLabelText(/Tanda tangan ed25519/), (made as { signature: string }).signature)
+    await user.click(within(section).getByRole('button', { name: 'Susun bukti' }))
+    expect(parseGranteeProof(within(section).getByTestId('rent-proof').textContent!)).toEqual(made)
+    await user.clear(within(section).getByLabelText(/Tanda tangan ed25519/))
+    await user.type(within(section).getByLabelText(/Tanda tangan ed25519/), 'bukan tanda tangan')
+    await user.click(within(section).getByRole('button', { name: 'Susun bukti' }))
+    expect(within(section).getByTestId('rent-proof-error')).toHaveTextContent('grantee_proof_bad_format')
+    expect(within(section).queryByTestId('rent-proof')).toBeNull()
+    cleanup()
+    const discord = await openWith(user, view({ provider: 'discord', granteeRef: '1234567890' }), { required: false })
+    expect(within(discord.section).getByTestId('rent-proof-panel')).toHaveTextContent('OAuth')
+    expect(within(discord.section).queryByRole('button', { name: 'Ambil tantangan dari broker' })).toBeNull()
+    cleanup()
+    const none = await openWith(user, view({ provider: 'mock' }), { required: false })
+    expect(within(none.section).getByTestId('rent-proof-panel')).toHaveTextContent('tidak memakai bukti')
   })
 })
