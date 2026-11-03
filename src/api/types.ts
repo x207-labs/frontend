@@ -312,7 +312,17 @@ export type DaoProposals = { circle: string; dao: string; items: DaoProposal[]; 
 // GET …/grants (BE-038, FE-017): grant D11 seperti event menceritakannya.
 export type GrantStatus = 'offered' | 'active' | 'revoked' | 'expired'
 export type RevokeReason = 'grantor' | 'grantee' | 'operator' | 'expired' | 'defaulted'
+/**
+ * Escrow kelas A dari `GET /grants` (BE-038, BE-046). `nft`: NFT dan token-nya. `ft` (CT-090): kontrak token dan jumlah persis dalam satuan TOKEN itu
+ * (teks, bukan credit). `state`: held, completing, cancelling, delivered, cancelled, atau stuck.
+ */
+export type GrantEscrow =
+  | { kind: 'nft'; nftContract: string; tokenId: string; state: string }
+  | { kind: 'ft'; ftContract: string; amount: string; state: string }
+
 export type Grant = {
+  /** `null` untuk grant tanpa escrow (kelas B sampai D); ada untuk grant kelas A. */
+  escrow?: GrantEscrow | null
   grantId: number
   assetType: string
   grantor: string
