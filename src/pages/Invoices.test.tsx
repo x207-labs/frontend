@@ -88,7 +88,7 @@ describe('FE-025 invoice and installments', () => {
     expect(sent.map((s) => [s.voucher.epoch, s.voucher.seq, s.voucher.cumulativeAmount])).toEqual([[44, 1, '30000000'], [45, 1, '30000000'], [46, 1, '30000000']])
     for (const s of sent) {
       expect(s.voucher).toMatchObject({ payer: SUPPLIER, payee: 'retailer.x207-circle.near', unit: 'credit', resource: `x207:invoice:${invoiceHashes[1]}` })
-      expect(verifyVoucher({ ...(s.voucher as never), signature: s.signature }, PUBLIC)).toBe(true)
+      expect(verifyVoucher({ ...s.voucher, signature: s.signature } as never, PUBLIC)).toBe(true)
     }
     expect(JSON.stringify(post.body)).not.toContain(KEY)
   })
