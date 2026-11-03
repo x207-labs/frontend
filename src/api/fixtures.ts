@@ -211,13 +211,11 @@ export const rpcResult = (value: unknown): FixtureReply => ({
   body: { jsonrpc: '2.0', id: 'x207', result: { result: Array.from(new TextEncoder().encode(JSON.stringify(value))), logs: [], block_height: 1 } },
 })
 
-/** View kontrak bawaan: tidak ada saldo Intents, intent tidak ditemukan, satu pasangan epoch masih tersimpan. */
+/** View kontrak bawaan: tidak ada saldo Intents, satu pasangan epoch masih tersimpan. */
 export function chainFixture(methodName: string): FixtureReply {
   switch (methodName) {
     case 'intents_balance':
       return rpcResult('0')
-    case 'get_intent':
-      return rpcResult(null)
     case 'list_obligations':
       return rpcResult([{ debtor: near('scraper'), creditor: near('gpu') }])
     default:
@@ -252,6 +250,8 @@ export function fixtureReply(path: string): FixtureReply {
   }
 
   if (rest === '/intents') return ok({ items: [], nextCursor: null })
+  if (rest === '/intents/hashes') return ok({ circle, items: [], nextCursor: null })
+  if (rest === '/intents/withdrawals') return ok({ circle, ...amounts, totalWithdrawn: '0', withdrawals: 0, items: [], nextCursor: null })
   if (rest === '/marketplace/stats') return ok(marketStats)
   if (rest === '/listings') {
     const status = url.searchParams.get('status') ?? 'open'

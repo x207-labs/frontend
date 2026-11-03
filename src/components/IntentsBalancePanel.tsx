@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useIntentsBalance } from '../api/queries'
+import { useIntentWithdrawals, useIntentsBalance } from '../api/queries'
 import { QueryState } from './QueryState'
 import { TxResult } from './TxResult'
 import { formatCredit } from '../lib/format'
@@ -10,13 +10,17 @@ import { withdrawIntentsBalanceTx } from '../wallet/transactions'
 // akun NEAR membayar dengan `ft_transfer` dari saldo NEP-141 kontrak, jadi klaim bisa gagal sampai saldo ini ditarik. Siapa pun boleh menarik.
 export function IntentsBalancePanel() {
   const balance = useIntentsBalance()
+  const history = useIntentWithdrawals()
   const { account } = useWallet()
   const { state, sign } = useSignTransaction()
   const client = useQueryClient()
   const signing = state.kind === 'signing'
 
   async function withdraw() {
-    if (await sign(withdrawIntentsBalanceTx())) await client.invalidateQueries({ queryKey: ['chain', 'intents_balance'] })
+    if (await sign(withdrawIntentsBalanceTx())) {
+      await client.invalidateQueries({ queryKey: ['chain', 'intents_balance'] })
+      await client.invalidateQueries({ queryKey: ['intent-withdrawals'] })
+    }
   }
 
   return (
@@ -46,6 +50,12 @@ export function IntentsBalancePanel() {
           )
         }}
       </QueryState>
+      {history.data && history.data.withdrawals > 0 && (
+        <p className="state" data-testid="withdrawal-history">
+          Sudah ditarik {history.data.withdrawals} kali, total <strong>{formatCredit(history.data.totalWithdrawn)}</strong> USDT. Terakhir{' '}
+          {formatCredit(history.data.items[0]?.amount)} USDT di blok {history.data.items[0]?.changedBlock}.
+        </p>
+      )}
     </section>
   )
 }

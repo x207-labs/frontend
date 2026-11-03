@@ -1,7 +1,7 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { api } from './client'
 import { viewContract } from './chain'
-import type { ChainIntent, ObligationStage } from './types'
+import type { ObligationStage } from './types'
 
 export const useEpochs = () => useQuery({ queryKey: ['epochs'], queryFn: api.epochs })
 export const useMember = (account: string | null) =>
@@ -68,14 +68,11 @@ export const useIntentsBalance = () =>
   useQuery({ queryKey: ['chain', 'intents_balance'], queryFn: () => viewContract<string>('intents_balance') })
 export const useOwnIntents = (account: string | null) =>
   useQuery({ queryKey: ['own-intents', account], queryFn: () => api.intents(account!), enabled: account !== null, retry: false })
-/** `get_intent` per hash: ada atau null (sudah dihapus). Satu query per intent yang tercatat terpasang. */
-export const useChainIntents = (hashes: string[]) =>
-  useQueries({
-    queries: hashes.map((hash) => ({
-      queryKey: ['chain', 'intent', hash],
-      queryFn: () => viewContract<ChainIntent>('get_intent', { intent_hash: hash }),
-    })),
-  })
+/** Hash yang akun ini pasang di kontrak dan belum dihapus (event `intent_posted` dikurangi `intent_removed`, BE-045). */
+export const usePostedIntents = (account: string | null) =>
+  useQuery({ queryKey: ['posted-intents', account], queryFn: () => api.intentHashes(account!, 'posted'), enabled: account !== null, retry: false })
+/** Penarikan terakhir dari Intents ke akun NEP-141 kontrak (BE-045). */
+export const useIntentWithdrawals = () => useQuery({ queryKey: ['intent-withdrawals'], queryFn: api.intentWithdrawals })
 /** Pasangan (edge) epoch yang masih ada; kosong setelah `prune_epoch` menghapusnya. Satu halaman cukup untuk tahu ada atau tidak. */
 export const useEpochPairsLeft = (epoch: number | null, enabled: boolean) =>
   useQuery({

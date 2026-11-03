@@ -342,5 +342,15 @@ export type IntentView = {
 }
 export type IntentList = { items: IntentView[]; nextCursor: string | null }
 
-/** Jawaban view `get_intent`: null bila belum atau sudah tidak ada di kontrak. */
-export type ChainIntent = { intent_hash: string; account_id: string; posted_at: string } | null
+/** `GET /x207/circles/{circle}/intents/hashes` (BE-045): hash yang dipasang anggota di kontrak (`posted`) atau sudah dihapus (`removed`), dari event `intent_posted` dan `intent_removed`. */
+export type IntentHashItem = { intentHash: string; accountId: string; status: 'posted' | 'removed'; postedAtNs: string; changedBlock: number }
+export type IntentHashList = { circle: string; items: IntentHashItem[]; nextCursor: string | null }
+
+/** `GET /x207/circles/{circle}/intents/withdrawals` (BE-045): penarikan saldo dari Intents (`withdraw_intents_balance`), terbaru dulu. */
+export type IntentWithdrawals = Amounts & {
+  circle: string
+  totalWithdrawn: string
+  withdrawals: number
+  items: Array<{ amount: string; changedBlock: number; receiptId: string }>
+  nextCursor: string | null
+}
