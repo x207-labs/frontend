@@ -169,8 +169,9 @@ describe('FE-027 service orders', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('order_unavailable')
   })
 
+  const leadDoc = { ...orderDocs.research, kind: 'lead', milestones: [{ amount: '5000000', due_at: 1793100000 }, { amount: '5000000', due_at: 1793186400 }] }
   const leadOrder = (over: Record<string, unknown> = {}) => ({
-    orderHash: 'e'.repeat(64), order: { ...orderDocs.research, kind: 'lead', milestones: [{ amount: '5000000', due_at: 1793100000 }, { amount: '5000000', due_at: 1793186400 }] },
+    orderHash: orderHash(leadDoc as never), order: leadDoc,
     buyer: BUYER, seller: SELLER, status: 'open', needsBond: false, targetVerified: null, signedBy: [BUYER, SELLER], budget: '10000000', unit: 'credit', decimals: 6,
     milestones: [
       { index: 1, amount: '5000000', dueAt: 1793100000, status: 'delivered', outcome: null, deliverableHash: 'a'.repeat(64), at: 1793090000, confirmBy: null, autoConfirmed: false, disputeReason: null },
@@ -196,7 +197,7 @@ describe('FE-027 service orders', () => {
     await user.click(screen.getByRole('button', { name: 'Terima hasil 1' }))
     await screen.findByText(/Terkirim: hasil accepted/)
     const post = requests().find((r) => r.method === 'POST')!
-    expect(post.path).toMatch(/\/orders\/e{64}\/outcomes$/)
+    expect(post.path).toMatch(/\/orders\/[0-9a-f]{64}\/outcomes$/)
     expect(post.body.notice).toMatchObject({ milestone: 1, actor: BUYER, action: 'accepted', deliverable_hash: null })
     await user.click(screen.getByRole('button', { name: 'Tolak hasil 1' }))
     await waitFor(() => expect(requests().filter((r) => r.method === 'POST')).toHaveLength(2))
@@ -237,5 +238,25 @@ describe('FE-027 service orders', () => {
     expect(await screen.findByText(/pesanan terbuka setelah kedua pihak menandatangani/)).toBeInTheDocument()
     const view = toOrderView(leadOrder({ milestones: [{ index: 1, amount: '1', dueAt: 1, status: 'confirmed', outcome: 'accepted', deliverableHash: null, at: 5, confirmBy: 9, autoConfirmed: true, disputeReason: null }] }))
     expect(view.milestones[0]).toMatchObject({ outcome: 'accepted', confirmBy: 9, autoConfirmed: true })
+  })
+
+  it('TC-FE-027-15 [batch 3 F3] the hash is computed again from the order that is shown: an API that shows one order and carries the hash of another gets no signature', async () => {
+    const user = userEvent.setup()
+    const shown = leadOrder()
+    const other = orderHash({ ...(leadDoc as never as Record<string, unknown>), nonce: 'other' } as never)
+    const lying = { ...shown, orderHash: other } // the list and the detail both name the hash of another order
+    const { requests } = renderApp('/pesanan', (p, init) => {
+      if (p.startsWith('/x207/circles/agents-main/orders/') && !init?.method) return { status: 200, body: lying }
+      if (p.includes('/orders?')) return { status: 200, body: { items: [lying], nextCursor: null } }
+      if (init?.method === 'POST') return { status: 200, body: lying }
+      return undefined
+    }, false, asBuyer())
+    const table = await screen.findByRole('table', { name: 'Daftar pesanan' })
+    await user.click(within(table).getByRole('button', { name: /^Buka pesanan/ }))
+    await screen.findByRole('table', { name: 'Tonggak' })
+    await user.type(screen.getByLabelText(/Kunci voucher/), KEY)
+    await user.click(screen.getByRole('button', { name: 'Terima hasil 1' }))
+    expect(await screen.findByText(/Hash pesanan yang dihitung dari dokumen yang ditampilkan tidak sama/)).toBeInTheDocument()
+    expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/'))).toHaveLength(0)
   })
 })

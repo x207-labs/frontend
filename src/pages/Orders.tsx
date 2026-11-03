@@ -9,7 +9,7 @@ import { CONTRACT_ID } from '../config'
 import { formatCredit, formatTime, shortAccount } from '../lib/format'
 import { describeMarketError } from '../lib/marketError'
 import {
-  EMPTY_ORDER, KIND_LABEL, KIND_NOTE, ORDER_KINDS, ORDER_PATTERN, PROOF_METHODS, buildCreateOrder, milestoneNotice, orderHashOf, signNotice, toOrderDocument,
+  EMPTY_ORDER, KIND_LABEL, assertOrderHash, KIND_NOTE, ORDER_KINDS, ORDER_PATTERN, PROOF_METHODS, buildCreateOrder, milestoneNotice, orderHashOf, signNotice, toOrderDocument,
   type MilestoneAction, type OrderForm, type OutcomeAction,
 } from '../lib/orderFlow'
 import { useWallet } from '../wallet/WalletContext'
@@ -108,8 +108,8 @@ function parseCounterparty(text: string, seller: string): { account: string; sig
   return { account, signature }
 }
 
-function MilestoneRow({ view, m, account, voucherKey, busy, run }: {
-  view: OrderView; m: OrderMilestoneView; account: string | null; voucherKey: string; busy: boolean
+function MilestoneRow({ view, opened, m, account, voucherKey, busy, run }: {
+  view: OrderView; opened: string; m: OrderMilestoneView; account: string | null; voucherKey: string; busy: boolean
   run: (label: string, fn: () => Promise<void>) => void
 }) {
   const [reason, setReason] = useState('not_received')
@@ -121,10 +121,12 @@ function MilestoneRow({ view, m, account, voucherKey, busy, run }: {
   const goodHash = /^[0-9a-f]{64}$/.test(deliverable.trim())
   // milestone notices go to .../milestones/{index}; outcomes of lead and bug go to .../outcomes with the place in `milestone`
   const act = (action: MilestoneAction) => run(action, async () => {
+    await assertOrderHash(view, opened)
     const notice = milestoneNotice(CONTRACT_ID, view.orderHash, m.index, account!, action, now(), action === 'delivered' ? deliverable.trim() : null, action === 'disputed' ? reason : null)
     await api.orderMilestone(view.orderHash, m.index, notice, await signNotice(notice, voucherKey))
   })
   const outcome = (action: OutcomeAction) => run(`hasil ${action}`, async () => {
+    await assertOrderHash(view, opened)
     // BE-054: deliverable_hash only for `proposed`; `accepted` and `rejected` name the place and carry no hash
     const notice = milestoneNotice(CONTRACT_ID, view.orderHash, m.index, account!, action, now(), action === 'proposed' ? deliverable.trim() : null, action === 'rejected' ? reason : null)
     await api.orderOutcome(view.orderHash, notice, await signNotice(notice, voucherKey))
@@ -231,7 +233,7 @@ function OrderDetail({ hash, voucherKey }: { hash: string; voucherKey: string })
                 <table aria-label="Tonggak">
                   <thead><tr><th>#</th><th>Jumlah</th><th>Tenggat</th><th>Status</th><th>Kiriman</th><th /></tr></thead>
                   <tbody>
-                    {view.milestones.map((m) => <MilestoneRow key={m.index} view={view} m={m} account={account} voucherKey={voucherKey} busy={busy} run={run} />)}
+                    {view.milestones.map((m) => <MilestoneRow key={m.index} view={view} opened={hash} m={m} account={account} voucherKey={voucherKey} busy={busy} run={run} />)}
                   </tbody>
                 </table>
               </div>

@@ -1,4 +1,5 @@
 import { ORDER_CATALOG_NO, ORDER_KINDS, ORDER_PATTERN, PROOF_METHODS, normalizeOrder, serializeOrder, type OrderDocument, type OrderKind } from '@x207/core'
+import type { OrderView } from '../api/types'
 import { sha256Hex, signMessageWithVoucher } from './barter'
 import { toAtomic } from './amount'
 
@@ -55,6 +56,30 @@ export async function toOrderDocument(f: OrderForm, circle: string, buyer: strin
 }
 
 export const orderHashOf = (doc: OrderDocument): Promise<string> => sha256Hex(serializeOrder(doc))
+
+/** Dokumen pesanan dari jawaban API (bentuk yang dihash SDK): tonggak diambil dari daftar tonggak jawaban itu. */
+export function orderDocFromView(view: OrderView): OrderDocument {
+  const o = view.order
+  return {
+    circle: o.circle, kind: o.kind as OrderKind, buyer: o.buyer, seller: o.seller, spec_hash: o.specHash, sample_hash: o.sampleHash, target: o.target,
+    proof: o.proof === null ? null : { method: o.proof.method, amount_per_tx: o.proof.amountPerTx }, nonce: o.nonce,
+    milestones: view.milestones.map((m) => ({ amount: m.amount, due_at: m.dueAt })),
+  }
+}
+
+/**
+ * Batch 3 F3 (review BE-063): sebelum menandatangani notice untuk sebuah pesanan, hash dihitung ulang dari dokumen yang DITAMPILKAN dan harus sama dengan hash yang dibuka pengguna dan
+ * yang disebut jawaban API. API yang jahat tidak bisa memperlihatkan pesanan yang dikenal sambil membawa hash pesanan lain.
+ */
+export async function assertOrderHash(view: OrderView, opened: string): Promise<void> {
+  let computed: string
+  try {
+    computed = await orderHashOf(orderDocFromView(view))
+  } catch (e) {
+    throw new Error(`Dokumen pesanan dari server tidak sah: ${e instanceof Error ? e.message : String(e)}`)
+  }
+  if (computed !== opened || view.orderHash !== opened) throw new Error('Hash pesanan yang dihitung dari dokumen yang ditampilkan tidak sama dengan hash yang dibuka: notice tidak ditandatangani.')
+}
 
 /** Isi `POST orders`: dokumen dan tanda tangan pihak ini atas JSON kanonik; tanda tangan pihak lawan bisa ditempel (akun dan tanda tangan). */
 export async function buildCreateOrder(doc: OrderDocument, account: string, secretKey: string, counterparty?: { account: string; signature: string }) {
