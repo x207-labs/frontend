@@ -28,7 +28,7 @@ import type {
   AcceptRequest,
   AcceptResult,
   BundleProposal,
-  ListingList,
+  ListingCheck, ListingList,
   ListingView,
   MarketStats,
   OfferView,
@@ -115,6 +115,7 @@ export const api = {
   },
   listing: (hash: string) => get<ListingView>(`${circle}/listings/${hash}`),
   createListing: (listing: object, signature: string) => post<ListingView>(`${circle}/listings`, { listing, signature }),
+  checkListing: (listing: object, signature: string) => post<ListingCheck>(`${circle}/listings/check`, { listing, signature }),
   cancelListing: (hash: string, signature: string) => post<ListingView>(`${circle}/listings/${hash}/cancel`, { signature }),
   offers: (hash: string) => get<{ items: OfferView[] }>(`${circle}/listings/${hash}/offers`),
   postOffer: (hash: string, offer: object, signature: string, inReplyTo?: string) =>

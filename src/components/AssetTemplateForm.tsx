@@ -41,7 +41,11 @@ function FieldInput({ field, value, onChange }: { field: Field; value: string; o
   )
 }
 
-export function AssetTemplateForm({ onApply }: { onApply: (template: AssetTemplate) => void }) {
+export type TemplateCheck = { state: 'idle' } | { state: 'busy' } | { state: 'ok'; hash: string } | { state: 'error'; message: string }
+
+type FormProps = { onApply: (template: AssetTemplate) => void; check?: TemplateCheck; onCheck?: () => void; canCheck?: boolean }
+
+export function AssetTemplateForm({ onApply, check, onCheck, canCheck = false }: FormProps) {
   const [kind, setKind] = useState<AssetKind | ''>('')
   const [values, setValues] = useState<Record<string, string>>({ hours: '24' })
   const [now] = useState(() => Math.floor(Date.now() / 1000))
@@ -80,6 +84,20 @@ export function AssetTemplateForm({ onApply }: { onApply: (template: AssetTempla
           <div>
             <button type="button" onClick={() => onApply(result.template)}>Isi sisi “Menawarkan” dari template</button>
           </div>
+          {onCheck && (
+            <div className="listing-check" aria-label="Pemeriksaan sebelum titipan">
+              <p>
+                Periksa listing ini ke backend <strong>sebelum</strong> memanggil <code>offer_grant</code> dan menitipkan aset: aset yang sudah dititipkan untuk listing yang ditolak
+                baru bisa diambil kembali setelah grant kedaluwarsa. Isi sisi “Menawarkan”, sisi “Mencari”, dan kunci voucher dulu.
+              </p>
+              <button type="button" disabled={!canCheck || check?.state === 'busy'} onClick={onCheck}>
+                {check?.state === 'busy' ? 'Memeriksa…' : 'Periksa listing sebelum titipan'}
+              </button>
+              {check?.state === 'ok' && <p className="state" role="status" data-testid="listing-check-ok">Lulus pemeriksaan (<code>{check.hash.slice(0, 12)}</code>): aman memanggil offer_grant dan menitipkan aset. Lulus belum menjamin: pemeriksaan diulang saat listing dipasang.</p>}
+              {check?.state === 'error' && <p className="state state-error" role="alert" data-testid="listing-check-error">Listing ditolak: {check.message}. Jangan panggil offer_grant dan jangan titipkan aset.</p>}
+              {(check === undefined || check.state === 'idle') && <p className="state" data-testid="listing-check-idle">Belum diperiksa: jangan panggil offer_grant atau titipkan aset dulu.</p>}
+            </div>
+          )}
         </>
       )}
     </section>

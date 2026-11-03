@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { api } from '../api/client'
 import { useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
-import { AssetTemplateForm } from '../components/AssetTemplateForm'
+import { AssetTemplateForm, type TemplateCheck } from '../components/AssetTemplateForm'
 import { Negotiation } from '../components/Negotiation'
 import { OwnIntents } from '../components/OwnIntents'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
@@ -90,25 +90,47 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
   const hoursOk = /^[1-9]\d{0,3}$/.test(hours)
   const valid = Boolean(account) && sideOk(offer) && sideOk(want) && discountBps !== null && hoursOk && voucherKey.trim() !== ''
 
+  // FE-026 (X4): the dry run (BE-052) of the listing, signed like the real one. The owner calls offer_grant and the deposit only after it passes: a listing the backend
+  // refuses (type not registered, RWA token not on the circle list, the USDT of the circle) must not be found out after the asset is in escrow.
+  // a pass belongs to the form it was made for: any change to the form makes it idle again
+  const draftKey = JSON.stringify([offer, want, terms, detail, hours, discount, acceptPayment, discoverable, voucherKey, account])
+  const [checked, setChecked] = useState<{ draftKey: string; result: TemplateCheck }>({ draftKey: '', result: { state: 'idle' } })
+  const check: TemplateCheck = checked.draftKey === draftKey ? checked.result : { state: 'idle' }
+  const setCheck = (result: TemplateCheck) => setChecked({ draftKey, result })
+
+  const buildListing = (): Listing => ({
+    circle: CONTRACT_ID,
+    account: account!,
+    offer: { asset_type: offer.type, asset_class: offer.cls, quantity: Number(offer.quantity), value: toAtomic(offer.value)! },
+    want: { asset_type: want.type, asset_class: want.cls, quantity: Number(want.quantity), value: toAtomic(want.value)! },
+    terms,
+    detail,
+    expires_at: Math.floor(Date.now() / 1000) + Number(hours) * SECONDS_PER_HOUR,
+    discount_bps: discountBps!,
+    accept_payment: acceptPayment,
+    discoverable,
+    nonce: crypto.randomUUID().replaceAll('-', '').slice(0, 24),
+  })
+
+  async function runCheck() {
+    if (!account || discountBps === null) return
+    setCheck({ state: 'busy' })
+    try {
+      const listing = buildListing()
+      const result = await api.checkListing(listing, await signListing(listing, voucherKey))
+      setCheck({ state: 'ok', hash: result.listingHash })
+    } catch (e) {
+      setCheck({ state: 'error', message: describeMarketError(e) })
+    }
+  }
+
   async function submit() {
     if (!account || discountBps === null) return
     setBusy(true)
     setError(null)
     setCreated(null)
     try {
-      const listing: Listing = {
-        circle: CONTRACT_ID,
-        account,
-        offer: { asset_type: offer.type, asset_class: offer.cls, quantity: Number(offer.quantity), value: toAtomic(offer.value)! },
-        want: { asset_type: want.type, asset_class: want.cls, quantity: Number(want.quantity), value: toAtomic(want.value)! },
-        terms,
-        detail,
-        expires_at: Math.floor(Date.now() / 1000) + Number(hours) * SECONDS_PER_HOUR,
-        discount_bps: discountBps,
-        accept_payment: acceptPayment,
-        discoverable,
-        nonce: crypto.randomUUID().replaceAll('-', '').slice(0, 24),
-      }
+      const listing = buildListing()
       const signature = await signListing(listing, voucherKey)
       const view = await api.createListing(listing, signature)
       setCreated(view.listingHash ?? (await listingHash(listing)))
@@ -136,6 +158,9 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
           setOffer({ type: t.side.asset_type, cls: t.side.asset_class, quantity: String(t.side.quantity), value: fromAtomic(t.side.value) })
           setDetail(t.detail)
         }}
+        check={check}
+        onCheck={() => void runCheck()}
+        canCheck={Boolean(account) && sideOk(offer) && sideOk(want) && discountBps !== null && hoursOk && voucherKey.trim() !== ''}
       />
       <SideFields legend="Menawarkan" value={offer} onChange={setOffer} />
       <SideFields legend="Mencari" value={want} onChange={setWant} />

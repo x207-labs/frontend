@@ -230,6 +230,8 @@ export type ListingView = {
   signature: string
   status: ListingStatus
 }
+/** BE-052: answer of the dry run `POST listings/check`; nothing is stored. */
+export type ListingCheck = { valid: true; listingHash: string; account: string; offerAssetType: string; expiresAt: number; stored: false }
 export type ListingList = { items: ListingView[]; nextCursor: string | null }
 export type OfferStatus = 'pending' | 'countered' | 'accepted' | 'closed'
 export type OfferView = {

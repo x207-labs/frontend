@@ -99,7 +99,11 @@ export function toAssetInput(kind: AssetKind, v: Record<string, string>, now: nu
   if (missing.length > 0) return `Isi: ${missing.map((f) => f.label).join(', ')}.`
   const tri = (key: string): boolean | undefined => (need(key) === 'yes' ? true : need(key) === 'no' ? false : undefined)
   const nft = { nftContract: need('nftContract'), tokenId: need('tokenId') }
-  const decimals = Number(need('decimals'))
+  // FE-026 (X2): decimals and seats only as decimal integers; Number() would read "0x6" as 6 and "1e1" as 10
+  const usesDecimals = ['ft', 'rwa', 'lst'].includes(kind) || fungiblePool
+  if (usesDecimals && !/^\d{1,2}$/.test(need('decimals'))) return 'Desimal token harus bilangan bulat 0 sampai 38 (angka desimal biasa).'
+  if (kind === 'license' && !/^[1-9]\d{0,8}$/.test(need('seats'))) return 'Jumlah kursi harus bilangan bulat >= 1 (angka desimal biasa).'
+  const decimals = usesDecimals ? Number(need('decimals')) : 0
   const ftAmount = (): string => tokenToAtomic(need('amount'), decimals) ?? ''
   const ft = () => ({ ftContract: need('ftContract'), symbol: need('symbol'), decimals, amount: ftAmount() })
   const mt = () => ({ mtContract: need('mtContract'), tokenId: need('tokenId'), amount: need('amount') })
