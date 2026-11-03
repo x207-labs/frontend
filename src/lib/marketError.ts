@@ -26,10 +26,10 @@ export function describeMarketError(e: unknown): string {
         return 'The submitted content is too large for the server. Make it smaller (text, list, or file) and try again.'
       case 'open_limit_reached':
         return 'This account already has too many open orders, invoices, or purchases. Finish or cancel one first, then try again.'
-      case 'grant_failed':
-        return /already opened the same access/.test(e.message)
-          ? 'Another grant for the same login and resource is still running. Wait until that access ends or is revoked; one access cannot be opened twice.'
-          : `The provider failed to open access: ${e.message}`
+      case 'access_conflict':
+        return 'This access has ended, or another grant for the same login and resource still holds it. Wait until that access ends or is revoked; one access cannot be opened twice.'
+      case 'provider_grant_failed':
+        return `The provider failed to open access: ${e.message}`
       case 'code_not_checked':
         return 'This code must be checked with the issuer first (or the last verdict is over 10 minutes old): key not released.'
       case 'code_used':

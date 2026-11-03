@@ -205,9 +205,9 @@ describe('FE-029 daily rent of an access', () => {
     expect(JSON.parse(within(form).getByTestId('rent-scope').textContent!)).toMatchObject({ provider: 'ssh', grantee_ref: good })
   })
 
-  it('TC-FE-029-11 [B4-F2] a second live grant for the same login and resource is refused by the broker; the page says so in words', () => {
-    const e = new ApiError(502, 'grant_failed', 'grant 3 has already opened the same access (github, alice-dev); wait until it ends')
-    expect(describeMarketError(e)).toMatch(/Another grant for the same login and resource is still running/)
-    expect(describeMarketError(new ApiError(502, 'grant_failed', 'GitHub answered 500'))).toMatch(/The provider failed to open access: GitHub answered 500/)
+  it('TC-FE-029-11 [B4-F2] a second live grant for the same login and resource (access_conflict) and a provider that fails (provider_grant_failed) are said in words', () => {
+    // the codes of the broker, not its message text (BE-057: grant_failed is split into access_conflict and provider_grant_failed)
+    expect(describeMarketError(new ApiError(409, 'access_conflict', 'any text'))).toMatch(/another grant for the same login and resource still holds it/)
+    expect(describeMarketError(new ApiError(502, 'provider_grant_failed', 'GitHub answered 500'))).toMatch(/The provider failed to open access: GitHub answered 500/)
   })
 })
