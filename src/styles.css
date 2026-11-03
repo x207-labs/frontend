@@ -23,6 +23,9 @@ body { margin: 0; background: var(--paper); }
 
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
+.skip-link { position: absolute; left: 0.5rem; top: -4rem; z-index: 10; padding: 0.5rem 0.875rem; background: var(--ink); color: #fff; border-radius: 4px; }
+.skip-link:focus { top: 0.5rem; }
+main:focus { outline: none; }
 .shell { display: grid; grid-template-columns: 14rem minmax(0, 1fr); min-height: 100vh; }
 
 .rail { background: var(--ink); color: var(--rail-text); padding: 1.5rem 0; }

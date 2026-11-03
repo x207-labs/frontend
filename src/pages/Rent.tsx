@@ -97,7 +97,7 @@ function ProofState({ proof, warnings }: { proof: string | null; warnings: strin
     unknown: 'Belum ada keterangan bukti dari broker.',
   }[kind]
   return (
-    <p data-testid="rent-proof-state" data-proof={kind} className={kind === 'unproven' ? 'state state-error' : 'state'}>
+    <p role="status" data-testid="rent-proof-state" data-proof={kind} className={kind === 'unproven' ? 'state state-error' : 'state'}>
       {text}{warned && kind === 'verified' ? ' (broker masih memberi peringatan.)' : ''}
     </p>
   )

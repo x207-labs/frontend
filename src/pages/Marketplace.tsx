@@ -184,12 +184,12 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
       <label>
         <span>Berlaku (jam)</span>
         <input value={hours} onChange={(e) => setHours(e.target.value)} inputMode="numeric" />
-        {!hoursOk && <small className="state-error">Isi jam 1–9999.</small>}
+        {!hoursOk && <small className="state-error" role="alert">Isi jam 1–9999.</small>}
       </label>
       <label>
         <span>Diskon barter cepat (%)</span>
         <input value={discount} onChange={(e) => setDiscount(e.target.value)} inputMode="decimal" />
-        {discountBps === null && <small className="state-error">Diskon 0–100% dengan maksimal 2 desimal.</small>}
+        {discountBps === null && <small className="state-error" role="alert">Diskon 0–100% dengan maksimal 2 desimal.</small>}
       </label>
       <label className="check">
         <input type="checkbox" checked={acceptPayment} onChange={(e) => setAcceptPayment(e.target.checked)} />

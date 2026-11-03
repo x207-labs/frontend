@@ -198,7 +198,7 @@ function AcceptPanel({ listing, offer, voucherKey, onVoucherKey }: {
       <label>
         <span>Jatah pencari (% dari nilai listing)</span>
         <input value={share} onChange={(e) => setShare(e.target.value)} inputMode="decimal" disabled={!searcher.trim()} />
-        {!shareOk && <small className="state-error">Isi persen dengan maksimal 2 desimal.</small>}
+        {!shareOk && <small className="state-error" role="alert">Isi persen dengan maksimal 2 desimal.</small>}
       </label>
       <button type="button" onClick={() => void calculate()} disabled={!account || !shareOk || busy !== null}>
         {busy === 'preview' ? 'Menghitung…' : 'Hitung rincian'}

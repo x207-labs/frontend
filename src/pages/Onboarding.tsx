@@ -67,26 +67,26 @@ function JoinForm({ registered }: { registered: boolean }) {
               Kunci voucher (<code className="plain">pubkey_voucher</code>)
             </span>
             <input value={pubkey} onChange={(e) => setPubkey(e.target.value)} placeholder="ed25519:…" disabled={!account} />
-            {pubkey && !pubkeyOk && <small className="state-error">Harus berformat ed25519: diikuti base58.</small>}
+            {pubkey && !pubkeyOk && <small className="state-error" role="alert">Harus berformat ed25519: diikuti base58.</small>}
           </label>
           <label>
             <span>
               Hash syarat lingkaran (<code className="plain">terms_hash</code>)
             </span>
             <input value={termsHash} onChange={(e) => setTermsHash(e.target.value)} disabled={!account} />
-            {termsHash && !hashOk && <small className="state-error">Harus 64 karakter heksadesimal huruf kecil.</small>}
+            {termsHash && !hashOk && <small className="state-error" role="alert">Harus 64 karakter heksadesimal huruf kecil.</small>}
           </label>
           <label className="check">
             <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} disabled={!account} />
             <span>Saya menyetujui syarat lingkaran dengan hash di atas.</span>
           </label>
-          {!agreed && account && <small className="state-error">Persetujuan syarat diperlukan.</small>}
+          {!agreed && account && <small className="state-error" data-hint>Persetujuan syarat diperlukan.</small>}
         </>
       )}
       <label>
         <span>Jumlah stake (USDT)</span>
         <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" disabled={!account} />
-        {amount && atomic === null && <small className="state-error">Jumlah harus lebih dari 0.</small>}
+        {amount && atomic === null && <small className="state-error" role="alert">Jumlah harus lebih dari 0.</small>}
       </label>
       <label>
         <span>Sumber USDT</span>
