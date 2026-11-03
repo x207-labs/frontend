@@ -1,4 +1,4 @@
-import { API_URL, CIRCLE } from '../config'
+import { API_URL, BROKER_URL, CIRCLE } from '../config'
 import { toInvoiceView } from './invoiceView'
 import { toOrderView } from './orderView'
 import { toPurchaseView } from './purchaseView'
@@ -31,7 +31,7 @@ import type {
   AcceptRequest,
   AcceptResult,
   BundleProposal,
-  InvoiceList, InvoiceView, OnchainProofView, OrderList, OrderView, PurchaseView, ListingCheck, ListingList,
+  InvoiceList, InvoiceView, OnchainProofView, OrderList, OrderView, PurchaseView, RentView, ListingCheck, ListingList,
   ListingView,
   MarketStats,
   OfferView,
@@ -147,6 +147,19 @@ export const api = {
   createPurchase: (listingHash: string, voucher: object, signature: string) => post<{ purchase_id?: string | number; purchaseId?: string | number }>(`${circle}/listings/${listingHash}/purchases`, { voucher, signature }),
   purchaseNotice: (id: string, notice: object, signature: string) => post<unknown>(`${circle}/purchases/${encodeURIComponent(id)}`, { notice, signature }),
   takedown: (listingHash: string, claim: string, evidenceHash: string, signature: string) => post<unknown>(`${circle}/listings/${listingHash}/takedown`, { claim, evidence_hash: evidenceHash, signature }),
+  /** Broker sewa akses (BE-060), server lain dari read API: keadaan satu akses dan berhenti sewa dengan notice bertanda tangan. */
+  rent: async (grantId: number): Promise<RentView> => {
+    const res = await fetch(`${BROKER_URL}/grants/${grantId}/access`)
+    const body = await res.json().catch(() => null)
+    if (!res.ok) throw new ApiError(res.status, body?.error ?? 'http_error', body?.message ?? `Broker menjawab HTTP ${res.status}`, undefined)
+    return body as RentView
+  },
+  stopRent: async (grantId: number, notice: object, signature: string): Promise<RentView> => {
+    const res = await fetch(`${BROKER_URL}/grants/${grantId}/access/stop`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notice, signature }) })
+    const body = await res.json().catch(() => null)
+    if (!res.ok) throw new ApiError(res.status, body?.error ?? 'http_error', body?.message ?? `Broker menjawab HTTP ${res.status}`, undefined)
+    return body as RentView
+  },
   cancelListing: (hash: string, signature: string) => post<ListingView>(`${circle}/listings/${hash}/cancel`, { signature }),
   offers: (hash: string) => get<{ items: OfferView[] }>(`${circle}/listings/${hash}/offers`),
   postOffer: (hash: string, offer: object, signature: string, inReplyTo?: string) =>

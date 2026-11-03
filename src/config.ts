@@ -12,3 +12,5 @@ export const INTENTS_EXPLORER_URL: string =
 /** RPC NEAR untuk view kontrak (saldo Intents, intent, daftar pasangan). Bawaan: FastNEAR sesuai `VITE_NEAR_NETWORK`. */
 export const NEAR_RPC_URL: string =
   env.VITE_NEAR_RPC_URL ?? (NEAR_NETWORK === 'mainnet' ? 'https://rpc.mainnet.fastnear.com' : 'https://rpc.testnet.fastnear.com')
+/** Broker sewa akses (BE-060): alamat server broker pemberi, bukan read API. */
+export const BROKER_URL: string = env.VITE_X207_BROKER_URL ?? 'http://localhost:8788'

@@ -9,6 +9,7 @@ import { Orders } from './pages/Orders'
 import { ObligationGraph } from './pages/ObligationGraph'
 import { Onboarding } from './pages/Onboarding'
 import { Report207 } from './pages/Report207'
+import { Rent } from './pages/Rent'
 import { Risk } from './pages/Risk'
 import { Settlement } from './pages/Settlement'
 
@@ -25,6 +26,7 @@ export const pages: PageRoute[] = [
   { path: '/invoice', title: 'Invoice', perEpoch: false, Page: Invoices },
   { path: '/pesanan', title: 'Pesanan jasa', perEpoch: false, Page: Orders },
   { path: '/lisensi', title: 'Lisensi konten', perEpoch: false, Page: Licenses },
+  { path: '/sewa', title: 'Sewa akses', perEpoch: false, Page: Rent },
   { path: '/akses', title: 'Akses (F8)', perEpoch: false, Page: Grants },
   { path: '/tata-kelola', title: 'Tata kelola', perEpoch: false, Page: Governance },
 ]

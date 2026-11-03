@@ -401,3 +401,10 @@ export type PurchaseView = {
   release: PurchaseRelease | null; releaseSignature: string | null; disputeUntil: number | null
   buyer: string; seller: string; contentHash: string | null; licenseId: string | null; exclusive: boolean; needsBond: boolean; autoConfirmed: boolean; disputeReason: string | null
 }
+
+// Sewa akses P2 (FE-029): jawaban broker `GET /grants/{id}/access` (README broker, BE-060).
+export type RentStatus = 'active' | 'revoke_pending' | 'revoked'
+export type RentView = {
+  grantId: number; provider: string; granteeRef: string; status: RentStatus; paidUntil: string; providerExpiresAt: string | null; reason: string | null
+  revokePending: { attempts: number; nextRetryAt: string | null; lastError: string | null } | null; today: { day: string; cost: string | null; billed: string | null } | null
+}
