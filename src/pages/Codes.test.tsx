@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
@@ -54,23 +54,22 @@ function delivered(data: string, claimed = CODE, disputeUntil = 4_000_000_000) {
   licenseSources.current = { https: source }
   return { purchase_id: 'p1', listing_hash: 'a'.repeat(64), buyer: BUYER, seller: SELLER, status: 'key_released', content_hash: codeCommitment(claimed, SALT), source: { kind: 'https', ref: 'https://cdn.example.com/c.enc' }, cipher_hash: release.cipher_hash, release, release_signature: signature, dispute_until: disputeUntil }
 }
-const reply = (body: Record<string, unknown>) => (p: string, init?: RequestInit) =>
-  !init?.method && p.endsWith('/purchases/p1') ? { status: 200, body } : init?.method === 'POST' && p.endsWith('/purchases/p1') ? { status: 200, body: {} } : undefined
+const reply = (body: Record<string, unknown>, sellerMember: unknown = { account_id: SELLER, pubkey_voucher: seller.publicKey, status: 'active' }) => (p: string, init?: RequestInit) =>
+  rpcMethod(init) === 'member' ? rpcResult(sellerMember) : !init?.method && p.endsWith('/purchases/p1') ? { status: 200, body } : init?.method === 'POST' && p.endsWith('/purchases/p1') ? { status: 200, body: {} } : undefined
 
-async function openPurchase(user: ReturnType<typeof userEvent.setup>, body: Record<string, unknown>) {
-  const rendered = renderApp('/kode', reply(body), false, createMockWallet(BUYER, BUYER))
+async function openPurchase(user: ReturnType<typeof userEvent.setup>, body: Record<string, unknown>, sellerMember?: unknown) {
+  const rendered = renderApp('/kode', reply(body, sellerMember), false, createMockWallet(BUYER, BUYER))
   const section = await screen.findByRole('region', { name: 'Pembelian kode' })
   await user.type(within(section).getByLabelText('Nomor pembelian'), 'p1')
   await user.click(within(section).getByRole('button', { name: 'Buka pembelian' }))
   await within(section).findByTestId('purchase')
   await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
-  await user.type(within(section).getByLabelText(/Kunci publik penjual/), seller.publicKey)
   return { section, ...rendered }
 }
 
 describe('FE-032 one-time codes', () => {
   it('TC-FE-032-01 the code is prepared in the browser: hash, resource, detail of the listing without the code or the key, and an over-limit code without a bond is refused by the SDK', () => {
-    const base = { circle: CIRCLE, seller: SELLER, code: CODE, issuer: 'shop.example', verifiable: false, value: '5000000', arbiter: '', nonce: 'n1' }
+    const base = { circle: CIRCLE, seller: SELLER, code: CODE, issuer: 'shop.example', verifiable: false, value: '5000000', nonce: 'n1' }
     const p = prepareCode(base)
     expect(p.document.code_commitment).toMatch(/^[0-9a-f]{64}$/)
     expect(p.document.code_commitment).not.toBe(contentHash(text(CODE))) // not the plain hash of the code
@@ -80,12 +79,12 @@ describe('FE-032 one-time codes', () => {
     expect(p.detail).not.toContain(p.contentKey)
     expect(p.detail).not.toContain(p.salt)
     expect(() => prepareCode({ ...base, value: '20000001' })).toThrow(/code_over_limit_unbonded/)
-    expect(JSON.parse(prepareCode({ ...base, value: '50000000', arbiter: 'arbiter.near' }).detail)).toMatchObject({ arbiter: 'arbiter.near', bond: true })
+    expect(JSON.parse(prepareCode({ ...base, value: '50000000', verifiable: true }).detail)).not.toHaveProperty('arbiter') // B6-F2: no bond exception, the book refuses the field
     expect(() => prepareCode({ ...base, value: '50000000', verifiable: true })).not.toThrow()
     expect(() => prepareCode({ ...base, code: 'short' })).toThrow(/code_bad_code/)
   })
 
-  it('TC-FE-032-02 the seller page shows the limit and blocks an over-limit code without a jaminan; nothing is sent', async () => {
+  it('TC-FE-032-02 the seller page shows the limit and blocks an over-limit code that cannot be checked, and no arbiter field exists; nothing is sent', async () => {
     const user = userEvent.setup()
     const { requests } = renderApp('/kode', undefined, false, createMockWallet(SELLER, SELLER))
     const form = await screen.findByRole('form', { name: 'Siapkan kode' })
@@ -93,7 +92,10 @@ describe('FE-032 one-time codes', () => {
     await user.type(within(form).getByLabelText('Nilai (credit)'), '25')
     expect(within(form).getByRole('note')).toHaveTextContent('dibatasi 20 credit')
     expect(within(form).getByRole('button', { name: 'Hash dan enkripsi kode' })).toBeDisabled()
-    await user.type(within(form).getByLabelText(/^Arbiter/), 'arbiter.near')
+    expect(within(form).queryByLabelText(/^Arbiter/)).not.toBeInTheDocument()
+    expect(within(form).getByLabelText(/^Kode/)).toBeInTheDocument()
+    await user.clear(within(form).getByLabelText('Nilai (credit)'))
+    await user.type(within(form).getByLabelText('Nilai (credit)'), '15')
     expect(within(form).queryByRole('note')).not.toBeInTheDocument()
     await user.click(within(form).getByRole('button', { name: 'Hash dan enkripsi kode' }))
     const out = await screen.findByTestId('code-prepared')
@@ -125,13 +127,12 @@ describe('FE-032 one-time codes', () => {
     expect(within(summary).queryByTestId('over-limit')).not.toBeInTheDocument()
   })
 
-  it('TC-FE-032-04 a checkable code has no warning; an over-limit code that cannot be checked and has no bond cannot be bought', async () => {
+  it('TC-FE-032-04 a checkable code has no warning; an over-limit code that cannot be checked cannot be bought', async () => {
     const user = userEvent.setup()
     const sellerKeys = generateVoucherKeypair()
     for (const [name, detail, value, warn, over] of [
       ['checkable', { verifiable: true }, '50000000', false, false],
-      ['over the limit, no bond', {}, '50000000', true, true],
-      ['over the limit, with a bond', { arbiter: 'arbiter.near', bond: true }, '50000000', true, false],
+      ['over the limit', {}, '50000000', true, true],
     ] as const) {
       const { typed, view } = signedCodeListing(sellerKeys, detail, value)
       const { unmount } = renderApp('/kode', (p, init) => {
@@ -205,7 +206,7 @@ describe('FE-032 one-time codes', () => {
     expect(within(ok).getByTestId('code-value')).toHaveTextContent(CODE)
     await user.click(within(ok).getByRole('button', { name: 'Konfirmasi' }))
     await within(section).findByText(/Dikonfirmasi/)
-    const post = requests().find((r) => r.method === 'POST')!
+    const post = requests().find((r) => r.method === 'POST' && r.path.includes('/purchases/'))!
     expect(post.body.notice).toMatchObject({ purchase_id: 'p1', actor: BUYER, action: 'confirmed', proof: null })
     expect(JSON.stringify(post.body)).not.toContain(CODE)
     expect(JSON.stringify(post.body)).not.toContain(KEY)
@@ -220,7 +221,7 @@ describe('FE-032 one-time codes', () => {
     expect(await within(section).findByTestId('code-cheated')).toHaveTextContent('content_mismatch')
     await user.click(within(section).getByRole('button', { name: 'Sengketakan dengan bukti' }))
     await within(section).findByText(/Sengketa dikirim/)
-    const post = requests().find((r) => r.method === 'POST')!
+    const post = requests().find((r) => r.method === 'POST' && r.path.includes('/purchases/'))!
     expect(post.body.notice).toMatchObject({ action: 'disputed', reason: 'content_mismatch' })
     const sent = post.body.notice.proof as { release: never; signature: string; box_key: string }
     expect(Object.keys(sent).sort()).toEqual(['box_key', 'release', 'signature'])
@@ -233,15 +234,15 @@ describe('FE-032 one-time codes', () => {
     const user = userEvent.setup()
     const soon = Math.floor(Date.now() / 1000) + 600
     const first = await openPurchase(user, delivered(CODE, CODE, soon))
-    const dispute = within(first.section).getByRole('button', { name: /Sengketakan: kode sudah terpakai/ })
+    const dispute = within(first.section).getByRole('button', { name: /Laporkan ke reputasi/ })
     expect(dispute).toBeEnabled()
     await user.click(dispute)
-    await within(first.section).findByText(/Sengketa dikirim/)
-    expect(first.requests().find((r) => r.method === 'POST')!.body.notice).toMatchObject({ action: 'disputed', reason: 'other', proof: null })
+    await within(first.section).findByText(/Aduan dicatat[\s\S]*tidak menghentikan pembayaran/)
+    expect(first.requests().find((r) => r.method === 'POST' && r.path.includes('/purchases/'))!.body.notice).toMatchObject({ action: 'disputed', reason: 'other', proof: null })
     first.unmount()
     const late = await openPurchase(user, delivered(CODE, CODE, Math.floor(Date.now() / 1000) - 5))
     expect(within(late.section).getByTestId('dispute-window')).toHaveTextContent('Jendela sengketa sudah lewat')
-    expect(within(late.section).getByRole('button', { name: /Sengketakan: kode sudah terpakai/ })).toBeDisabled()
+    expect(within(late.section).getByRole('button', { name: /Laporkan ke reputasi/ })).toBeDisabled()
   })
 
   it('TC-FE-032-10 helpers: the seconds left in the window never go below zero and are null without a window', () => {
@@ -363,7 +364,44 @@ describe('FE-032 one-time codes', () => {
   })
 
   it('TC-FE-032-15 the listing detail carries the nonce that the book asks for (BE-069 rebuilds the code document from it)', () => {
-    const p = prepareCode({ circle: CIRCLE, seller: SELLER, code: CODE, issuer: 'shop.example', verifiable: true, value: '5000000', arbiter: '', nonce: 'n1' })
+    const p = prepareCode({ circle: CIRCLE, seller: SELLER, code: CODE, issuer: 'shop.example', verifiable: true, value: '5000000', nonce: 'n1' })
     expect(JSON.parse(p.detail)).toMatchObject({ nonce: 'n1', code_doc: p.documentHash, verifiable: true })
+  })
+
+  it('TC-FE-032-16 [B6-F6] the key of the seller is read from the contract: there is no field to type it, and a seller that is not an active member gets no download', async () => {
+    const user = userEvent.setup()
+    const until = Math.floor(Date.now() / 1000) + 1800
+    const ok = await openPurchase(user, delivered(CODE, CODE, until))
+    expect(within(ok.section).queryByLabelText(/Kunci publik penjual/)).not.toBeInTheDocument()
+    expect(within(ok.section).getByTestId('seller-key-note')).toHaveTextContent('dibaca dari kontrak')
+    await user.click(within(ok.section).getByRole('button', { name: 'Unduh dan periksa kode' }))
+    expect(await within(ok.section).findByTestId('code-ok')).toBeInTheDocument()
+    expect(within(ok.section).getByTestId('seller-fingerprint').textContent).toMatch(/[0-9a-f]{4}( [0-9a-f]{4}){3}/)
+    ok.unmount()
+    cleanup()
+    const bad = await openPurchase(user, delivered(CODE, CODE, until), null)
+    await user.click(within(bad.section).getByRole('button', { name: 'Unduh dan periksa kode' }))
+    expect(await within(bad.section).findByTestId('code-refused')).toHaveTextContent('bukan anggota aktif di kontrak')
+    expect(within(bad.section).queryByTestId('code-ok')).not.toBeInTheDocument()
+    // a key of another seller in the contract: the delivery is refused as a bad signature, not shown as a code
+    cleanup()
+    const other = await openPurchase(user, delivered(CODE, CODE, until), { account_id: SELLER, pubkey_voucher: generateVoucherKeypair().publicKey, status: 'active' })
+    await user.click(within(other.section).getByRole('button', { name: 'Unduh dan periksa kode' }))
+    expect(await within(other.section).findByTestId('code-refused')).toHaveTextContent('Tanda tangan rilis')
+  })
+
+  it('TC-FE-032-17 [B6-F1, F7] a complaint without proof is not a dispute: the button says it does not stop the payment, the page no longer tells the buyer to try the code first, and the labels say where the code goes', async () => {
+    const user = userEvent.setup()
+    const until = Math.floor(Date.now() / 1000) + 1800
+    const { section } = await openPurchase(user, delivered(CODE, CODE, until))
+    expect(within(section).getByRole('button', { name: 'Laporkan ke reputasi (tidak menghentikan pembayaran)' })).toBeInTheDocument()
+    expect(within(section).queryByRole('button', { name: /^Sengketakan:/ })).not.toBeInTheDocument()
+    await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa kode' }))
+    const ok = await within(section).findByTestId('code-ok')
+    expect(ok.textContent).not.toMatch(/tebus/i)
+    expect(ok.textContent).not.toMatch(/coba/i)
+    expect(document.body.textContent).not.toMatch(/jaminan/)
+    expect(document.body.textContent).toMatch(/dikirim sekali ke backend saat pengecekan penerbit/)
+    expect(document.body.textContent).not.toMatch(/tidak dikirim ke mana pun; hanya/)
   })
 })

@@ -8,10 +8,10 @@ import { fromHex, toHex } from './hex'
 import { receiveLicense, type DownloadResult, type PairState } from './licenseFlow'
 
 // FE-032: kode sekali tukar (pipeline P3, ADR-48). Format dan kripto ada di SDK (SD-076, memakai ulang pertukaran adil SD-070); di sini hanya menyiapkan dokumen kode, membaca
-// listing, dan menerima kode. Kode asli hanya ada di browser penjual sampai kunci dilepas, dan di browser pembeli setelah dibuka; tidak dikirim ke backend.
+// listing, dan menerima kode. Kode asli ada di browser penjual dan, setelah kunci dilepas, di browser pembeli. Hanya untuk kode yang bisa dicek, penjual mengirim kode dan salt satu kali ke backend saat pengecekan penerbit (backend tidak menyimpannya).
 export { CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT }
 
-export type CodeSellInput = { circle: string; seller: string; code: string; issuer: string; verifiable: boolean; value: string; arbiter: string; nonce: string }
+export type CodeSellInput = { circle: string; seller: string; code: string; issuer: string; verifiable: boolean; value: string; nonce: string }
 export type PreparedCode = {
   document: Required<CodeDocument>
   documentHash: string
@@ -28,20 +28,19 @@ export type PreparedCode = {
 
 /** Dokumen kode dari isian. Melempar `CodeError` (mis. `code_over_limit_unbonded`) bila SDK menolak. Kode dienkripsi di sini. */
 export function prepareCode(i: CodeSellInput): PreparedCode {
-  const arbiter = i.arbiter.trim() === '' ? null : i.arbiter.trim()
   const { ciphertext, key, code_commitment, salt } = encryptCode(i.code)
-  const document = checkCodeDocument({ circle: i.circle, seller: i.seller, code_commitment, issuer: i.issuer.trim(), value: i.value, verifiable: i.verifiable, arbiter, nonce: i.nonce })
+  const document = checkCodeDocument({ circle: i.circle, seller: i.seller, code_commitment, issuer: i.issuer.trim(), value: i.value, verifiable: i.verifiable, arbiter: null, nonce: i.nonce })
   const documentHash = codeDocumentHash(document)
   return {
     document, documentHash, resource: codeResource(documentHash), code: i.code,
     detail: JSON.stringify({
-      kind: 'code', code_doc: documentHash, code_commitment, issuer: document.issuer, value: document.value, verifiable: document.verifiable, nonce: document.nonce, ...(arbiter === null ? {} : { arbiter, bond: true }),
+      kind: 'code', code_doc: documentHash, code_commitment, issuer: document.issuer, value: document.value, verifiable: document.verifiable, nonce: document.nonce,
     }),
     salt: toHex(salt), ciphertext, cipherHash: contentHash(ciphertext), contentKey: toHex(key),
   }
 }
 
-export type CodeListing = { docHash: string; codeCommitment: string; issuer: string; value: string; verifiable: boolean; bonded: boolean; overLimit: boolean }
+export type CodeListing = { docHash: string; codeCommitment: string; issuer: string; value: string; verifiable: boolean; overLimit: boolean }
 
 /** Membaca detail listing kode; `null` bila bukan listing kode. Kode tidak pernah ada di listing, hanya hash-nya. */
 export function parseCodeListing(view: ListingView): CodeListing | null {
@@ -56,14 +55,13 @@ export function parseCodeListing(view: ListingView): CodeListing | null {
   if (d.kind !== 'code' || typeof d.code_doc !== 'string' || typeof d.code_commitment !== 'string' || typeof d.issuer !== 'string') return null
   const value = typeof d.value === 'string' ? d.value : view.offer.value
   const verifiable = typeof d.verifiable === 'boolean' ? d.verifiable : d.issuer !== 'none'
-  const bonded = typeof d.arbiter === 'string' || d.bond === true
   let overLimit = false
   try {
-    overLimit = codeNeedsBond({ value, verifiable, arbiter: bonded ? 'arbiter' : null })
+    overLimit = codeNeedsBond({ value, verifiable, arbiter: null })
   } catch {
     overLimit = true
   }
-  return { docHash: d.code_doc, codeCommitment: d.code_commitment, issuer: d.issuer, value, verifiable, bonded, overLimit }
+  return { docHash: d.code_doc, codeCommitment: d.code_commitment, issuer: d.issuer, value, verifiable, overLimit }
 }
 
 export type CodeReceive = { state: 'ok'; code: string } | Exclude<DownloadResult, { state: 'ok' }>

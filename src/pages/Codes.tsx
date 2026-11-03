@@ -21,7 +21,7 @@ import { useWallet } from '../wallet/WalletContext'
 
 // FE-032: kode sekali tukar (pipeline P3, ADR-48). Kode dijual lewat pertukaran adil P7 (SD-076, SD-070): kode terenkripsi, kunci dilepas ke pembeli setelah ia membayar (voucher
 // ditahan), dan kode yang salah dibuktikan dengan bukti curang. Kode tidak tampil di listing dan baru terbuka di browser pembeli setelah ia memintanya. Sengketa dibuka satu jam
-// setelah kunci dilepas; diam sampai itu berarti konfirmasi otomatis. Kode yang penerbitnya tidak punya API cek dibatasi 20 credit kecuali ada jaminan.
+// setelah kunci dilepas; diam sampai itu berarti konfirmasi otomatis. Kode yang penerbitnya tidak punya API cek dibatasi 20 credit.
 const STATUS_LABEL: Record<string, string> = {
   paid_held: 'Dibayar, voucher ditahan', cipher_posted: 'Ciphertext terpasang', key_released: 'Kunci dilepas', confirmed: 'Terkonfirmasi', disputed: 'Disengketakan', refuted: 'Sengketa ditolak', cancelled: 'Dibatalkan',
 }
@@ -34,17 +34,16 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
   const [issuer, setIssuer] = useState('none')
   const [verifiable, setVerifiable] = useState(false)
   const [value, setValue] = useState('')
-  const [arbiter, setArbiter] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<PreparedCode | null>(null)
   const atomic = toAtomic(value)
-  const needsBond = atomic !== null && !verifiable && BigInt(atomic) > BigInt(UNVERIFIABLE_CODE_LIMIT) && arbiter.trim() === ''
+  const needsBond = atomic !== null && !verifiable && BigInt(atomic) > BigInt(UNVERIFIABLE_CODE_LIMIT)
 
   function prepare() {
     if (!account || atomic === null) return
     setError(null)
     try {
-      const prepared = prepareCode({ circle: CONTRACT_ID, seller: account, code, issuer, verifiable, value: atomic, arbiter, nonce: crypto.randomUUID().replaceAll('-', '').slice(0, 24) })
+      const prepared = prepareCode({ circle: CONTRACT_ID, seller: account, code, issuer, verifiable, value: atomic, nonce: crypto.randomUUID().replaceAll('-', '').slice(0, 24) })
       setDone(prepared)
       onPrepared(prepared)
     } catch (e) {
@@ -56,13 +55,12 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
     <form className="form" aria-label="Siapkan kode" onSubmit={(e) => { e.preventDefault(); prepare() }}>
       <h3>Jual kode (penjual)</h3>
       {!account && <p className="state">Masuk dengan wallet untuk menyiapkan kode.</p>}
-      <label><span>Kode (tidak dikirim ke mana pun; hanya komitmen berhash-nya di listing)</span><input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" /></label>
+      <label><span>Kode (di listing hanya komitmen bersalt; kode yang bisa dicek dikirim sekali ke backend saat pengecekan penerbit, kode yang tidak bisa dicek tidak dikirim ke mana pun)</span><input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" /></label>
       <small>Kode paling sedikit 8 karakter. Listing hanya memuat komitmen dengan salt acak, jadi kode yang pendek pun tidak bisa ditebak dari listing.</small>
       <label><span>Penerbit (nama layanan, atau none)</span><input value={issuer} onChange={(e) => setIssuer(e.target.value)} /></label>
       <label className="check"><input type="checkbox" checked={verifiable} onChange={(e) => setVerifiable(e.target.checked)} /><span>Penerbit punya API cek (kode dicek sebelum kunci dilepas)</span></label>
       <label><span>Nilai (credit)</span><input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="5" /></label>
-      <label><span>Arbiter jaminan CT-094 (opsional)</span><input value={arbiter} onChange={(e) => setArbiter(e.target.value)} placeholder="arbiter.near" /></label>
-      {needsBond && <p className="state state-warn" role="note">Kode yang tidak bisa dicek dibatasi {formatCredit(UNVERIFIABLE_CODE_LIMIT)} credit. Di atas itu wajib jaminan: isi arbiter.</p>}
+      {needsBond && <p className="state state-warn" role="note">Kode yang tidak bisa dicek dibatasi {formatCredit(UNVERIFIABLE_CODE_LIMIT)} credit. Di atasnya kode tidak bisa dijual sebagai kode yang tidak bisa dicek: pakai penerbit yang punya API cek.</p>}
       <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
       <div><button type="submit" disabled={!account || code.trim() === '' || atomic === null || needsBond}>Hash dan enkripsi kode</button></div>
       {error && <p className="state state-error" role="alert">{error}</p>}
@@ -215,11 +213,11 @@ function Warnings({ listing }: { listing: CodeListing }) {
       {!listing.verifiable && (
         <p className="state state-warn" role="note" data-testid="unverifiable-warning">
           Kode ini tidak bisa dicek: penerbit <code>{listing.issuer}</code> tidak punya API cek, jadi tidak ada yang memastikan kode belum terpakai sebelum Anda membayar.
-          Perlindungan Anda hanya sengketa satu jam setelah kunci dilepas{listing.bonded ? ' dan jaminan penjual' : ''}. Nilai kode dibatasi {formatCredit(UNVERIFIABLE_CODE_LIMIT)} credit kecuali ada jaminan.
+          Perlindungan Anda hanya bukti isi yang tidak cocok (sengketa satu jam setelah kunci dilepas); kode yang sudah terpakai hanya bisa dilaporkan ke reputasi dan pembayaran tetap berjalan. Nilai kode dibatasi {formatCredit(UNVERIFIABLE_CODE_LIMIT)} credit.
         </p>
       )}
       {!listing.verifiable && listing.overLimit && (
-        <p className="state state-error" role="alert" data-testid="over-limit">Nilai {formatCredit(listing.value)} credit di atas batas {formatCredit(UNVERIFIABLE_CODE_LIMIT)} untuk kode yang tidak bisa dicek, dan listing tidak punya jaminan. Jangan dibeli.</p>
+        <p className="state state-error" role="alert" data-testid="over-limit">Nilai {formatCredit(listing.value)} credit di atas batas {formatCredit(UNVERIFIABLE_CODE_LIMIT)} untuk kode yang tidak bisa dicek. Jangan dibeli.</p>
       )}
     </>
   )
@@ -282,7 +280,7 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
           <dl className="status-panel">
             <dt>Kode</dt><dd data-testid="code-hidden">disembunyikan sampai dibeli; komitmen <code>{checked.listing.codeCommitment}</code></dd>
             <dt>Nilai</dt><dd>{formatCredit(checked.listing.value)} credit</dd>
-            <dt>Penerbit</dt><dd><code>{checked.listing.issuer}</code> · {checked.listing.verifiable ? 'bisa dicek' : 'tidak bisa dicek'}{checked.listing.bonded ? ' · dengan jaminan' : ''}</dd>
+            <dt>Penerbit</dt><dd><code>{checked.listing.issuer}</code> · {checked.listing.verifiable ? 'bisa dicek' : 'tidak bisa dicek'}</dd>
             <dt>Dibayar kepada</dt><dd><code>{checked.view.account}</code> · sidik jari kunci penjual <code>{checked.fingerprint}</code></dd>
             <dt>Harga</dt><dd>{formatCredit(checked.view.offer.value)} credit</dd>
           </dl>
@@ -303,9 +301,9 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
   const client = useQueryClient()
   const [id, setId] = useState('')
   const [open, setOpen] = useState<string | null>(null)
-  const [sellerKey, setSellerKey] = useState('')
   const [result, setResult] = useState<CodeReceive | null>(null)
   const [shown, setShown] = useState(false)
+  const [sellerFingerprint, setSellerFingerprint] = useState<string | null>(null)
   const [tick, setTick] = useState(now())
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -323,7 +321,14 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
     setResult(null)
     setShown(false)
     try {
-      setResult(await receiveCode(query.data, sellerKey.trim(), voucherKey, () => undefined))
+      // the key of the seller is read from the contract, never typed and never taken from the read API: a wrong key would make a right delivery look wrong
+      const member = await memberOnChain(query.data.seller)
+      if (member === null || member.status !== 'active') {
+        setResult({ state: 'refused', reason: `${query.data.seller} bukan anggota aktif di kontrak: kunci publik penjual tidak bisa dibaca, kode tidak diperiksa.` })
+        return
+      }
+      setSellerFingerprint(await keyFingerprint(member.pubkey_voucher))
+      setResult(await receiveCode(query.data, member.pubkey_voucher, voucherKey, () => undefined))
     } finally {
       setBusy(false)
     }
@@ -337,7 +342,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
       if (query.data.purchaseId !== open) throw new Error(`Jawaban server untuk pembelian ${query.data.purchaseId}, bukan ${open} yang Anda buka: tidak ditandatangani.`)
       const notice = purchaseNotice(CONTRACT_ID, query.data.purchaseId, account, action, now(), reason, proof)
       await api.purchaseNotice(query.data.purchaseId, notice, await signPurchaseNotice(notice, voucherKey))
-      setMessage(action === 'confirmed' ? 'Dikonfirmasi: voucher akan didaftarkan.' : 'Sengketa dikirim.')
+      setMessage(action === 'confirmed' ? 'Dikonfirmasi: voucher akan didaftarkan.' : proof === null ? 'Aduan dicatat di reputasi penjual. Ini tidak menghentikan pembayaran: pembelian tetap dikonfirmasi otomatis saat jendela satu jam habis.' : 'Sengketa dikirim dengan bukti.')
       await client.invalidateQueries({ queryKey: ['purchase', open] })
     } catch (e) {
       setError(describeMarketError(e))
@@ -368,13 +373,14 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
                 {view.source && <p>Sumber: <code>{view.source.kind}</code> <code>{view.source.ref}</code></p>}
                 {view.status === 'key_released' && (
                   <>
-                    <label><span>Kunci publik penjual (ed25519:…)</span><input value={sellerKey} onChange={(e) => setSellerKey(e.target.value)} /></label>
-                    <button type="button" disabled={busy || voucherKey.trim() === '' || sellerKey.trim() === ''} onClick={() => void receive()}>Unduh dan periksa kode</button>
+                    <p className="state" data-testid="seller-key-note">Kunci publik penjual dibaca dari kontrak saat Anda menekan tombol, bukan diketik.</p>
+                    <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void receive()}>Unduh dan periksa kode</button>
+                    {sellerFingerprint && <p data-testid="seller-fingerprint">Sidik jari kunci penjual dari kontrak: <code>{sellerFingerprint}</code></p>}
                   </>
                 )}
                 {result?.state === 'ok' && (
                   <div data-testid="code-ok">
-                    <p className="state" role="status">Kode cocok dengan code_commitment. Coba tebus di penerbit sebelum menutup jendela sengketa; bila ditolak karena sudah terpakai, sengketakan.</p>
+                    <p className="state" role="status">Kode cocok dengan code_commitment. Konfirmasi bila Anda puas; bila tidak, pembelian dikonfirmasi otomatis saat jendela satu jam habis.</p>
                     {shown ? <p>Kode: <code data-testid="code-value">{result.code}</code></p> : <button type="button" onClick={() => setShown(true)}>Tampilkan kode</button>}
                     <button type="button" disabled={busy} onClick={() => void notify('confirmed', null, null)}>Konfirmasi</button>
                   </div>
@@ -387,7 +393,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
                 )}
                 {result?.state === 'refused' && <p className="state state-error" role="alert" data-testid="code-refused">{result.reason}</p>}
                 {view.status === 'key_released' && (
-                  <button type="button" disabled={busy || !canDispute} onClick={() => void notify('disputed', 'other', null)}>Sengketakan: kode sudah terpakai atau ditolak penerbit</button>
+                  <button type="button" disabled={busy || !canDispute} onClick={() => void notify('disputed', 'other', null)}>Laporkan ke reputasi (tidak menghentikan pembayaran)</button>
                 )}
               </div>
             )
