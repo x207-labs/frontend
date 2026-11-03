@@ -95,7 +95,7 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
   )
 }
 
-function Serve({ voucherKey, prepared }: { voucherKey: string; prepared: PreparedLicense | null }) {
+function Serve({ voucherKey, onVoucherKey, prepared }: { voucherKey: string; onVoucherKey: (value: string) => void; prepared: PreparedLicense | null }) {
   const { account } = useWallet()
   const client = useQueryClient()
   const [id, setId] = useState('')
@@ -154,6 +154,8 @@ function Serve({ voucherKey, prepared }: { voucherKey: string; prepared: Prepare
     })
     await api.purchaseNotice(view.purchaseId, release, signature)
     setBuyerKey(null)
+    // Batch 3 F5: the release is the last signature of a sale; the key leaves the page and is typed again for the next one.
+    onVoucherKey('')
   })
 
   return (
@@ -366,7 +368,7 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
   )
 }
 
-function Takedown({ voucherKey }: { voucherKey: string }) {
+function Takedown({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey: (value: string) => void }) {
   const { account } = useWallet()
   const [hash, setHash] = useState('')
   const [claim, setClaim] = useState('')
@@ -380,7 +382,8 @@ function Takedown({ voucherKey }: { voucherKey: string }) {
       const evidenceHash = evidence.trim() === '' ? '' : await sha256Hex(evidence.trim())
       const signature = await signMessageWithVoucher(takedownMessage(CONTRACT_ID, hash.trim(), claim.trim(), evidenceHash), CONTRACT_ID, voucherKey)
       await api.takedown(hash.trim(), claim.trim(), evidenceHash, signature)
-      setMessage('Takedown diajukan: listing disembunyikan dan pembelian yang belum dikonfirmasi dibatalkan. Dana yang sudah dikonfirmasi tidak ditarik.')
+      setMessage('Takedown diajukan: listing disembunyikan dan pembelian yang belum dikonfirmasi dibatalkan. Dana yang sudah dikonfirmasi tidak ditarik. Kunci voucher dihapus dari halaman.')
+      onVoucherKey('')
     } catch (e) {
       setError(describeMarketError(e))
     }
@@ -406,9 +409,9 @@ export function Licenses() {
       <h2>Lisensi konten</h2>
       <p className="state">x207 tidak menyimpan berkas. Yang dijual adalah lisensi; ciphertext ada di sumber pilihan penjual, dan kunci dilepas ke pembeli setelah ia membayar (voucher ditahan). Harga lisensi mengikuti nilai di listing.</p>
       <Seller voucherKey={voucherKey} onVoucherKey={setVoucherKey} onPrepared={setPrepared} />
-      <Serve voucherKey={voucherKey} prepared={prepared} />
+      <Serve voucherKey={voucherKey} onVoucherKey={setVoucherKey} prepared={prepared} />
       <Buyer voucherKey={voucherKey} />
-      <Takedown voucherKey={voucherKey} />
+      <Takedown voucherKey={voucherKey} onVoucherKey={setVoucherKey} />
     </>
   )
 }
