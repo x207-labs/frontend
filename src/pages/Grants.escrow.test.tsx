@@ -38,4 +38,18 @@ describe('FE-022 escrow of tokens in the grant list', () => {
     expect(screen.queryByTestId('ft-escrow-warning')).not.toBeInTheDocument()
     expect(rowOf(8)).toHaveTextContent('compute:gpu-hours')
   })
+
+  it('TC-FE-022-03 a multi-token escrow shows the contract, the token id, the exact amount in token units and the state, and also brings the token warning', async () => {
+    const items = [
+      grant(9, { kind: 'mt', mtContract: 'mt.near', tokenId: 'nep141:usdc.tether-token.near', amount: '123456789012345678901', state: 'held' }, 'intents:multi-token'),
+      grant(10, { kind: 'mt', mtContract: 'mt.near', tokenId: 'pool:1', amount: '42', state: 'delivered' }, 'amm:lp-share'),
+    ]
+    renderApp('/akses', withGrants(items), false, createMockWallet(GPU, GPU))
+    await screen.findByRole('table', { name: 'Daftar grant' })
+    expect(rowOf(9)).toHaveTextContent(/Multi-token\s*mt\.near\s*nep141:usdc\.tether-token\.near: 123456789012345678901 satuan token \(dipegang kontrak\)/)
+    expect(rowOf(10)).toHaveTextContent(/Multi-token\s*mt\.near\s*pool:1: 42 satuan token \(sudah diserahkan\)/)
+    const warning = screen.getByTestId('ft-escrow-warning')
+    expect(warning).toHaveTextContent('Token dengan biaya transfer tidak didukung')
+    expect(warning).toHaveTextContent('multi-token')
+  })
 })

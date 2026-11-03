@@ -29,6 +29,13 @@ const ESCROW_STATE_LABEL: Record<string, string> = {
 export function EscrowCell({ escrow }: { escrow: GrantEscrow | null | undefined }) {
   if (!escrow) return <>-</>
   const state = ESCROW_STATE_LABEL[escrow.state] ?? escrow.state
+  if (escrow.kind === 'mt') {
+    return (
+      <>
+        Multi-token <code className="plain">{shortAccount(escrow.mtContract)}</code> <code className="plain">{escrow.tokenId}</code>: {escrow.amount} satuan token ({state})
+      </>
+    )
+  }
   return escrow.kind === 'ft' ? (
     <>
       Token <code className="plain">{shortAccount(escrow.ftContract)}</code>: {escrow.amount} satuan token ({state})
@@ -53,14 +60,14 @@ export function formatExpiry(ns: string): string {
 type Row = Grant & { role: 'pemberi' | 'penerima' }
 
 function GrantTable({ rows }: { rows: Row[] }) {
-  const hasToken = rows.some((g) => g.escrow?.kind === 'ft')
+  const hasToken = rows.some((g) => g.escrow?.kind === 'ft' || g.escrow?.kind === 'mt')
   return (
     <div className="table-wrap">
       {hasToken && (
         <p className="state" role="note" data-testid="ft-escrow-warning">
-          Escrow token (kelas A): kontrak memegang <strong>jumlah persis</strong> yang tertulis di grant. Token dengan biaya transfer tidak didukung: jumlah yang
+          Escrow token atau multi-token (kelas A): kontrak memegang <strong>jumlah persis</strong> yang tertulis di grant. Token dengan biaya transfer tidak didukung: jumlah yang
           tiba lebih kecil, jadi titipannya ditolak dan token kembali ke pemberi. Token terbatas (whitelist, pembekuan) bisa menolak penyerahan ke pembeli;
-          pembayaran pembeli lalu dibatalkan dan grant tetap ditawarkan. Pembeli harus terdaftar di kontrak token (<code className="plain">storage_deposit</code>).
+          pembayaran pembeli lalu dibatalkan dan grant tetap ditawarkan. Pembeli harus terdaftar di kontrak token (<code className="plain">storage_deposit</code>). Titipan multi-token yang ditolak dikembalikan oleh kontrak multi-token itu sendiri; hanya kontrak yang tertulis di grant yang boleh menitipkan.
         </p>
       )}
       <table aria-label="Daftar grant">
