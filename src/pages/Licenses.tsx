@@ -121,7 +121,12 @@ function Serve({ voucherKey, prepared }: { voucherKey: string; prepared: Prepare
       setBusy(false)
     }
   }
+  // Batch 3 F3: a notice is signed only for the purchase that the user opened, not for the id the API answers with
+  const sameId = (answered: string): void => {
+    if (answered !== open) throw new Error(`Jawaban server untuk pembelian ${answered}, bukan ${open} yang Anda buka: tidak ditandatangani.`)
+  }
   const postCipher = () => send('Ciphertext dicatat.', async () => {
+    sameId(query.data!.purchaseId)
     const notice = cipherPostedNotice(CONTRACT_ID, query.data!.purchaseId, account!, now(), { kind, ref: ref.trim() }, prepared!.cipherHash)
     await api.purchaseNotice(query.data!.purchaseId, notice, await signSellerNotice(notice, CONTRACT_ID, voucherKey))
   })
@@ -141,6 +146,7 @@ function Serve({ voucherKey, prepared }: { voucherKey: string; prepared: Prepare
   }
   const releaseKey = () => send('Kunci dilepas ke pembeli (tersegel).', async () => {
     const view = query.data!
+    sameId(view.purchaseId)
     if (buyerKey === null || buyerKey.buyer !== view.buyer) throw new Error('Periksa kunci pembeli dulu.')
     const { release, signature } = buildKeyRelease({
       circle: CONTRACT_ID, licenseDoc: prepared!.documentHash, purchaseId: view.purchaseId, buyer: view.buyer, buyerPublicKey: buyerKey.publicKey, contentHash: prepared!.document.content_hash,
@@ -222,6 +228,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
     setError(null)
     setMessage(null)
     try {
+      if (query.data.purchaseId !== open) throw new Error(`Jawaban server untuk pembelian ${query.data.purchaseId}, bukan ${open} yang Anda buka: tidak ditandatangani.`)
       const notice = purchaseNotice(CONTRACT_ID, query.data.purchaseId, account, action, now(), reason, proof)
       await api.purchaseNotice(query.data.purchaseId, notice, await signPurchaseNotice(notice, voucherKey))
       setMessage(action === 'confirmed' ? 'Dikonfirmasi: voucher akan didaftarkan.' : 'Sengketa dikirim dengan bukti.')

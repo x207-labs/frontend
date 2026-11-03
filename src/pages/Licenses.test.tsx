@@ -260,6 +260,29 @@ describe('FE-028 content license', () => {
     expect(within(serve).queryByTestId('buyer-key')).not.toBeInTheDocument()
   })
 
+  it('TC-FE-028-14 [batch 3 F3] a purchase view that carries another id than the one opened is not signed for', async () => {
+    const user = userEvent.setup()
+    const data = text('the licensed dataset')
+    const body = delivered(data, contentHash(data))
+    const { requests } = renderApp('/lisensi', (p, init) => {
+      if (!init?.method && p.endsWith('/purchases/p1')) return { status: 200, body: { ...body, purchase_id: 'p999', ciphertext: undefined } } // the API answers with another purchase
+      if (init?.method === 'POST' && p.includes('/purchases/')) return { status: 200, body: {} }
+      return undefined
+    }, false, createMockWallet(BUYER, BUYER))
+    const section = await screen.findByRole('region', { name: 'Pembelian lisensi' })
+    await user.type(within(section).getByLabelText('Nomor pembelian'), 'p1')
+    await user.click(within(section).getByRole('button', { name: 'Buka pembelian' }))
+    await within(section).findByTestId('purchase')
+    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
+    await user.type(within(section).getByLabelText(/Kunci publik penjual/), seller.publicKey)
+    await user.click(within(section).getByRole('button', { name: 'Unduh dan periksa hash' }))
+    // the release names purchase p1 while the view says p999: the buyer's SDK refuses the delivery, and the dispute button still checks the id before it signs
+    expect(await within(section).findByTestId('license-refused')).toHaveTextContent('pembelian lain')
+    await user.click(await within(section).findByRole('button', { name: 'Sengketakan (alasan lain)' }))
+    expect(await within(section).findByText(/bukan p1 yang Anda buka/)).toBeInTheDocument()
+    expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/'))).toHaveLength(0)
+  })
+
   it('TC-FE-028-08 takedown sends the claim, the hash of the evidence and a signature; the backend error is shown', async () => {
     const user = userEvent.setup()
     const { requests } = renderApp('/lisensi', (p, init) => (init?.method === 'POST' && p.endsWith('/takedown') ? { status: 200, body: {} } : undefined), false, createMockWallet(BUYER, BUYER))
