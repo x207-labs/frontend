@@ -286,4 +286,84 @@ describe('FE-032 one-time codes', () => {
     expect(JSON.stringify(released.body)).not.toContain(CODE)
     expect(JSON.stringify(released.body)).not.toContain(KEY)
   })
+
+  /** Seller page with a prepared, checkable code and an opened purchase at `cipher_posted`. */
+  async function serveWithCheck(user: ReturnType<typeof userEvent.setup>, checkReply: (init?: RequestInit) => { status: number; body: unknown }, verifiable = true) {
+    const buyerKeys = generateVoucherKeypair()
+    const view = { purchase_id: 'p8', listing_hash: 'b'.repeat(64), buyer: BUYER, seller: SELLER, status: 'cipher_posted', content_hash: 'c'.repeat(64), source: null, cipher_hash: null, release: null, release_signature: null }
+    const rendered = renderApp('/kode', (p, init) => {
+      if (!init?.method && p.endsWith('/purchases/p8')) return { status: 200, body: view }
+      if (init?.method === 'POST' && p.endsWith(`/listings/${'b'.repeat(64)}/code-check`)) return checkReply(init)
+      if (rpcMethod(init) === 'member') return rpcResult({ account_id: BUYER, pubkey_voucher: buyerKeys.publicKey, status: 'active' })
+      if (init?.method === 'POST' && p.endsWith('/purchases/p8')) return { status: 200, body: {} }
+      return undefined
+    }, false, createMockWallet(SELLER, SELLER))
+    const form = await screen.findByRole('form', { name: 'Siapkan kode' })
+    await user.type(within(form).getByLabelText(/^Kode/), CODE)
+    await user.type(within(form).getByLabelText('Nilai (credit)'), '5')
+    if (verifiable) await user.click(within(form).getByLabelText(/Penerbit punya API cek/))
+    await user.type(screen.getAllByLabelText(/Kunci voucher/)[0]!, KEY)
+    await user.click(within(form).getByRole('button', { name: 'Hash dan enkripsi kode' }))
+    await screen.findByTestId('code-prepared')
+    const serve = screen.getByRole('region', { name: 'Layani pembelian kode' })
+    await user.type(within(serve).getByLabelText('Nomor pembelian'), 'p8')
+    await user.click(within(serve).getByRole('button', { name: 'Buka pembelian' }))
+    await within(serve).findByTestId('serve')
+    return { serve, ...rendered }
+  }
+
+  it('TC-FE-032-12 the seller of a checkable code sees what the backend will see before the check, the check sends a signed notice with the code and the salt, and the key is blocked until the verdict is valid', async () => {
+    const user = userEvent.setup()
+    const { serve, requests } = await serveWithCheck(user, () => ({ status: 200, body: { listingHash: 'b'.repeat(64), verdict: 'valid', checkedAt: Date.now(), validUntilMs: Date.now() + 600_000 } }))
+    expect(within(serve).getByTestId('check-disclosure')).toHaveTextContent('backend melihat kode dan salt satu kali')
+    expect(within(serve).getByTestId('check-disclosure')).toHaveTextContent('tidak disimpan')
+    await user.click(await within(serve).findByRole('button', { name: 'Periksa kunci pembeli di kontrak' }))
+    const fingerprint = (await within(serve).findByTestId('buyer-fingerprint')).textContent!
+    const release = within(serve).getByRole('button', { name: `Lepas kunci ke ${BUYER} (sidik jari ${fingerprint})` })
+    expect(release).toBeDisabled() // no verdict yet
+    expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/code-check'))).toHaveLength(0) // nothing is sent before the click
+    await user.click(within(serve).getByRole('button', { name: 'Tunjukkan kode ke backend untuk dicek penerbit' }))
+    expect(await within(serve).findByTestId('issuer-verdict')).toHaveTextContent('kode sah')
+    expect(release).toBeEnabled()
+    const post = requests().find((r) => r.method === 'POST' && r.path.includes('/code-check'))!
+    expect(Object.keys(post.body.notice)).toEqual(['circle', 'listing_hash', 'actor', 'action', 'at'])
+    expect(post.body.notice).toMatchObject({ listing_hash: 'b'.repeat(64), actor: SELLER, action: 'check' })
+    expect(post.body.code).toBe(CODE)
+    expect(post.body.salt).toMatch(/^[0-9a-f]{64}$/)
+    expect(post.body.signature).toMatch(/^ed25519:/)
+    expect(JSON.stringify(post.body)).not.toContain(KEY)
+  })
+
+  it('TC-FE-032-13 a verdict used or unknown keeps the key; an issuer that is down is shown and can be asked again', async () => {
+    const user = userEvent.setup()
+    let reply: { status: number; body: unknown } = { status: 200, body: { listingHash: 'b'.repeat(64), verdict: 'used', checkedAt: 1, validUntilMs: null } }
+    const { serve } = await serveWithCheck(user, () => reply)
+    await user.click(await within(serve).findByRole('button', { name: 'Periksa kunci pembeli di kontrak' }))
+    await within(serve).findByTestId('buyer-fingerprint')
+    const release = within(serve).getByRole('button', { name: /^Lepas kunci ke/ })
+    await user.click(within(serve).getByRole('button', { name: 'Tunjukkan kode ke backend untuk dicek penerbit' }))
+    expect(await within(serve).findByTestId('issuer-verdict')).toHaveTextContent('sudah terpakai')
+    expect(release).toBeDisabled()
+    reply = { status: 503, body: { error: { code: 'code_issuer_unavailable', message: 'down', details: {} } } }
+    await user.click(within(serve).getByRole('button', { name: 'Tunjukkan kode ke backend untuk dicek penerbit' }))
+    expect(await within(serve).findByText(/Penerbit tidak menjawab/)).toBeInTheDocument()
+    expect(release).toBeDisabled()
+    reply = { status: 200, body: { listingHash: 'b'.repeat(64), verdict: 'unknown', checkedAt: 2, validUntilMs: null } }
+    await user.click(within(serve).getByRole('button', { name: 'Tunjukkan kode ke backend untuk dicek penerbit' }))
+    await waitFor(() => expect(within(serve).getByTestId('issuer-verdict')).toHaveTextContent('tidak mengenal'))
+    expect(release).toBeDisabled()
+  })
+
+  it('TC-FE-032-14 a code that cannot be checked has no check step: the page says the backend does not see the code and nobody checks that it is unused', async () => {
+    const user = userEvent.setup()
+    const { serve, requests } = await serveWithCheck(user, () => ({ status: 500, body: {} }), false)
+    expect(within(serve).queryByTestId('issuer-check')).not.toBeInTheDocument()
+    expect(within(serve).getByTestId('no-check-note')).toHaveTextContent('backend tidak melihat kodenya')
+    expect(requests().filter((r) => r.path.includes('/code-check'))).toHaveLength(0)
+  })
+
+  it('TC-FE-032-15 the listing detail carries the nonce that the book asks for (BE-069 rebuilds the code document from it)', () => {
+    const p = prepareCode({ circle: CIRCLE, seller: SELLER, code: CODE, issuer: 'shop.example', verifiable: true, value: '5000000', arbiter: '', nonce: 'n1' })
+    expect(JSON.parse(p.detail)).toMatchObject({ nonce: 'n1', code_doc: p.documentHash, verifiable: true })
+  })
 })

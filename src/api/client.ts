@@ -167,6 +167,9 @@ export const api = {
   purchase: async (id: string): Promise<PurchaseView> => toPurchaseView(await get<unknown>(`${circle}/purchases/${encodeURIComponent(id)}`)),
   createPurchase: (listingHash: string, voucher: object, signature: string) => post<{ purchase_id?: string | number; purchaseId?: string | number }>(`${circle}/listings/${listingHash}/purchases`, { voucher, signature }),
   purchaseNotice: (id: string, notice: object, signature: string) => post<unknown>(`${circle}/purchases/${encodeURIComponent(id)}`, { notice, signature }),
+  /** BE-069: penjual menunjukkan kode dan salt sekali; backend bertanya ke penerbit dan hanya menyimpan vonis dan waktunya. */
+  codeCheck: (listingHash: string, notice: object, signature: string, code: string, salt: string) =>
+    post<{ listingHash: string; verdict: 'valid' | 'used' | 'unknown'; checkedAt: number; validUntilMs: number | null }>(`${circle}/listings/${listingHash}/code-check`, { notice, signature, code, salt }),
   takedown: (listingHash: string, claim: string, evidenceHash: string, signature: string) => post<unknown>(`${circle}/listings/${listingHash}/takedown`, { claim, evidence_hash: evidenceHash, signature }),
   /** Broker sewa akses (BE-060), server lain dari read API: keadaan satu akses dan berhenti sewa dengan notice bertanda tangan. */
   rent: async (grantId: number): Promise<RentView> => {

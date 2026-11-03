@@ -9,7 +9,7 @@ import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { keyFingerprint } from '../lib/barter'
 import {
-  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, buildCodeKeyRelease, buildCodePurchase, disputeSecondsLeft, parseCodeListing, prepareCode, receiveCode,
+  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, buildCodeKeyRelease, buildCodePurchase, codeCheckNotice, disputeSecondsLeft, parseCodeListing, prepareCode, receiveCode,
   type CodeListing, type CodeReceive, type PreparedCode,
 } from '../lib/codeFlow'
 import { formatCredit } from '../lib/format'
@@ -93,6 +93,8 @@ function Serve({ voucherKey, onVoucherKey, prepared }: { voucherKey: string; onV
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [buyerKey, setBuyerKey] = useState<{ buyer: string; publicKey: string; fingerprint: string } | null>(null)
+  // BE-069: the verdict of the issuer for this listing and until when the book takes it (600 seconds)
+  const [verdict, setVerdict] = useState<{ listingHash: string; verdict: 'valid' | 'used' | 'unknown'; validUntilMs: number | null } | null>(null)
   const query = usePurchase(open)
 
   async function send(label: string, fn: () => Promise<void>) {
@@ -116,6 +118,13 @@ function Serve({ voucherKey, onVoucherKey, prepared }: { voucherKey: string; onV
     sameId(query.data!.purchaseId)
     const notice = cipherPostedNotice(CONTRACT_ID, query.data!.purchaseId, account!, now(), { kind, ref: ref.trim() }, prepared!.cipherHash)
     await api.purchaseNotice(query.data!.purchaseId, notice, await signSellerNotice(notice, CONTRACT_ID, voucherKey))
+  })
+  const checkWithIssuer = () => send('Penerbit sudah dicek.', async () => {
+    const view = query.data!
+    sameId(view.purchaseId)
+    const notice = codeCheckNotice(CONTRACT_ID, view.listingHash, account!, now())
+    const answer = await api.codeCheck(view.listingHash, notice, await signSellerNotice(notice, CONTRACT_ID, voucherKey), prepared!.code, prepared!.salt)
+    setVerdict({ listingHash: view.listingHash, verdict: answer.verdict, validUntilMs: answer.validUntilMs })
   })
   async function checkBuyer() {
     setError(null)
@@ -158,13 +167,33 @@ function Serve({ voucherKey, onVoucherKey, prepared }: { voucherKey: string; onV
                   <button type="button" disabled={busy || voucherKey.trim() === '' || ref.trim() === ''} onClick={() => void postCipher()}>Catat ciphertext</button>
                 </>
               )}
+              {view.status === 'cipher_posted' && prepared && prepared.document.verifiable && (
+                <div data-testid="issuer-check">
+                  <p className="state state-warn" role="note" data-testid="check-disclosure">
+                    Untuk kode yang bisa dicek, backend melihat kode dan salt satu kali saat pengecekan: keduanya dikirim ke backend, diteruskan ke penerbit <code>{prepared.document.issuer}</code>, dan tidak disimpan.
+                    Backend hanya menyimpan vonis dan waktunya. Backend yang tidak jujur bisa menebus kode itu lebih dulu; bila Anda tidak mempercayai backend ini, jangan jual kode yang bisa dicek di sini.
+                    Vonis berlaku 10 menit; kunci tidak dilepas tanpa vonis <em>valid</em> yang masih berlaku.
+                  </p>
+                  <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void checkWithIssuer()}>Tunjukkan kode ke backend untuk dicek penerbit</button>
+                  {verdict && verdict.listingHash === view.listingHash && (
+                    <p className={verdict.verdict === 'valid' ? 'state' : 'state state-error'} role={verdict.verdict === 'valid' ? 'status' : 'alert'} data-testid="issuer-verdict">
+                      {verdict.verdict === 'valid' && 'Penerbit menyatakan kode sah. Kunci boleh dilepas dalam 10 menit.'}
+                      {verdict.verdict === 'used' && 'Penerbit menyatakan kode sudah terpakai: pembelian dan listing dibatalkan, kunci tidak dilepas, voucher pembeli tidak berpindah.'}
+                      {verdict.verdict === 'unknown' && 'Penerbit tidak mengenal kode ini: kunci tidak dilepas.'}
+                    </p>
+                  )}
+                </div>
+              )}
+              {view.status === 'cipher_posted' && prepared && !prepared.document.verifiable && (
+                <p className="state state-warn" role="note" data-testid="no-check-note">Kode ini tidak bisa dicek: backend tidak melihat kodenya, dan tidak ada yang memastikan kode belum terpakai sebelum kunci dilepas. Pembeli hanya terlindungi sengketa satu jam dan batas nilai.</p>
+              )}
               {view.status === 'cipher_posted' && prepared && (
                 <>
                   <button type="button" disabled={busy} onClick={() => void checkBuyer()}>Periksa kunci pembeli di kontrak</button>
                   {buyerKey && (
                     <div data-testid="buyer-key">
                       <p>Kunci akan disegel ke kunci voucher <code>{buyerKey.buyer}</code> menurut kontrak, sidik jari <code data-testid="buyer-fingerprint">{buyerKey.fingerprint}</code>.</p>
-                      <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void releaseKey()}>Lepas kunci ke {buyerKey.buyer} (sidik jari {buyerKey.fingerprint})</button>
+                      <button type="button" disabled={busy || voucherKey.trim() === '' || (prepared.document.verifiable && !(verdict !== null && verdict.listingHash === view.listingHash && verdict.verdict === 'valid' && (verdict.validUntilMs === null || verdict.validUntilMs > Date.now())))} onClick={() => void releaseKey()}>Lepas kunci ke {buyerKey.buyer} (sidik jari {buyerKey.fingerprint})</button>
                     </div>
                   )}
                 </>

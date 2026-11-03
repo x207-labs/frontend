@@ -35,7 +35,7 @@ export function prepareCode(i: CodeSellInput): PreparedCode {
   return {
     document, documentHash, resource: codeResource(documentHash), code: i.code,
     detail: JSON.stringify({
-      kind: 'code', code_doc: documentHash, code_commitment, issuer: document.issuer, value: document.value, verifiable: document.verifiable, ...(arbiter === null ? {} : { arbiter, bond: true }),
+      kind: 'code', code_doc: documentHash, code_commitment, issuer: document.issuer, value: document.value, verifiable: document.verifiable, nonce: document.nonce, ...(arbiter === null ? {} : { arbiter, bond: true }),
     }),
     salt: toHex(salt), ciphertext, cipherHash: contentHash(ciphertext), contentKey: toHex(key),
   }
@@ -96,3 +96,6 @@ export function buildCodeKeyRelease(args: { prepared: PreparedCode; purchaseId: 
 
 /** Sisa jendela sengketa dalam detik (>= 0), dari `disputeUntil` (detik unix). */
 export const disputeSecondsLeft = (disputeUntil: number | null, nowSeconds: number): number | null => (disputeUntil === null ? null : Math.max(0, disputeUntil - nowSeconds))
+
+/** Notice `check` (BE-069): kunci `circle, listing_hash, actor, action, at` dalam urutan itu; tanda tangannya mengikat listing, jadi cek satu listing tidak berlaku untuk listing lain. */
+export const codeCheckNotice = (circle: string, listingHash: string, actor: string, at: number) => ({ circle, listing_hash: listingHash, actor, action: 'check', at })

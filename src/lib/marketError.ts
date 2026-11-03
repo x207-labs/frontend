@@ -30,6 +30,24 @@ export function describeMarketError(e: unknown): string {
         return /sudah membuka akses yang sama/.test(e.message)
           ? 'Grant lain untuk login dan sumber daya yang sama masih berjalan. Tunggu sampai akses itu berakhir atau dicabut; satu akses tidak boleh dibuka dua kali.'
           : `Penyedia gagal membuka akses: ${e.message}`
+      case 'code_not_checked':
+        return 'Kode ini harus dicek ke penerbit dulu (atau vonis terakhir sudah lewat 10 menit): kunci tidak dilepas.'
+      case 'code_used':
+        return 'Penerbit menyatakan kode ini sudah terpakai: pembelian dan listing dibatalkan, kunci tidak dilepas, dan voucher pembeli tidak berpindah.'
+      case 'code_unknown':
+        return 'Penerbit tidak mengenal kode ini: kunci tidak dilepas.'
+      case 'code_issuer_unknown':
+        return 'Penerbit kode ini tidak terdaftar di backend ini.'
+      case 'code_issuer_unavailable':
+        return 'Penerbit tidak menjawab. Belum ada keputusan: coba cek lagi sebentar lagi.'
+      case 'code_not_verifiable':
+        return 'Penerbit kode ini tidak punya API cek, jadi tidak ada yang dicek.'
+      case 'code_bad_commitment':
+        return 'Kode dan salt tidak cocok dengan code_commitment di listing.'
+      case 'code_bound_to_identity':
+        return 'Kode yang terikat pada identitas pemiliknya tidak bisa dijual.'
+      case 'exclusive_taken':
+        return 'Kode atau konten ini sudah terjual di lingkaran ini.'
       default:
         return `${e.code}: ${e.message}`
     }
