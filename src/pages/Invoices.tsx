@@ -80,7 +80,7 @@ function InstallmentRow({ item, canCatchUp, onCatchUp, busy }: { item: Installme
       <td>{item.index}</td>
       <td>{item.epoch}</td>
       <td>{formatCredit(item.amount)}</td>
-      <td>{item.status}</td>
+      <td>{item.status}{item.shifted && item.voucherEpoch !== null ? ` (digeser ke epoch ${item.voucherEpoch})` : ''}</td>
       <td>{item.reason ? REASON_LABEL[item.reason] : '-'}</td>
       <td>
         {canCatchUp && (
@@ -135,7 +135,7 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
     const target = item.epoch + 1
     const ob = await viewContract<Obligation>('obligation', { epoch: target, debtor: view.document.debtor, creditor: view.document.issuer })
     const state = { seq: ob?.last_seq ?? 0, cumulativeAmount: ob?.cumulative ?? '0' }
-    const built = await buildCatchUp(CONTRACT_ID, view, item.index, state, item.status === 'shifted', voucherKey)
+    const built = await buildCatchUp(CONTRACT_ID, view, item.index, state, item.shifted, voucherKey)
     if (typeof built === 'string') return fail(built)
     await api.catchUpInstallment(hash, item.index, built.voucher, built.signature)
     return `Voucher susulan cicilan ${item.index} ditandatangani untuk epoch ${target}.`
@@ -157,6 +157,7 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
                 <dt>Keterangan</dt><dd>{view.document.memo || '-'}</dd>
                 <dt>Hash</dt><dd><code>{view.invoiceHash}</code></dd>
               </dl>
+              {view.rejectReason && <p className="state" role="status">Alasan penolakan: {view.rejectReason}</p>}
               {view.needsBond && <p className="state state-error" role="status" data-testid="invoice-bond">Invoice ini sebesar atau di atas ambang jaminan: perlu jaminan dua sisi (CT-094) sebelum didaftarkan.</p>}
               <div className="table-wrap">
                 <table aria-label="Jadwal cicilan">
@@ -167,7 +168,7 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
                         key={item.index}
                         item={item}
                         busy={busy}
-                        canCatchUp={isDebtor && item.reason === 'headroom' && item.status !== 'shifted' && item.status !== 'registered'}
+                        canCatchUp={isDebtor && item.reason === 'headroom' && item.status === 'scheduled' && !item.shifted}
                         onCatchUp={() => void catchUp(item)}
                       />
                     ))}

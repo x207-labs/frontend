@@ -226,4 +226,30 @@ describe('FE-025 invoice and installments', () => {
     renderApp('/invoice')
     expect(await screen.findByText(/Masuk dengan wallet untuk melihat invoice/)).toBeInTheDocument()
   })
+
+  it('TC-FE-025-12 the answer of BE-051 (camelCase, with voucherEpoch, shifted, rejectReason): a shifted installment shows its new epoch and has no second catch-up, a missed one has none either', async () => {
+    const user = userEvent.setup()
+    const real = {
+      invoiceHash: invoiceHashes[1], document: invoiceDocs[1], issuer: invoiceDocs[1]!.issuer, debtor: invoiceDocs[1]!.debtor, status: 'missed', needsBond: false, rejectReason: null,
+      createdAt: '2026-11-03T10:00:00Z', unit: 'credit', decimals: 6,
+      installments: [
+        { index: 1, epoch: 44, amount: '30000000', status: 'registered', reason: null, voucherEpoch: 44, shifted: false },
+        { index: 2, epoch: 45, amount: '30000000', status: 'shifted', reason: 'headroom', voucherEpoch: 46, shifted: true },
+        { index: 3, epoch: 46, amount: '30000000', status: 'missed', reason: 'headroom', voucherEpoch: 46, shifted: false },
+      ],
+    }
+    renderApp('/invoice', (p, init) => {
+      if (p.startsWith('/x207/circles/agents-main/invoices/') && !init?.method) return { status: 200, body: real }
+      if (p.includes('/invoices?')) return { status: 200, body: { items: [real], nextCursor: null } }
+      return undefined
+    }, false, createMockWallet(SUPPLIER, SUPPLIER))
+    const table = await screen.findByRole('table', { name: 'Daftar invoice' })
+    await user.click(within(table).getByRole('button', { name: 'Buka INV-2026-002' }))
+    const schedule = await screen.findByRole('table', { name: 'Jadwal cicilan' })
+    expect(schedule).toHaveTextContent('digeser ke epoch 46')
+    expect(screen.queryByRole('button', { name: /Susulan cicilan/ })).not.toBeInTheDocument()
+    const rejected = { ...real, status: 'rejected', rejectReason: 'wrong amount', installments: real.installments.map((i) => ({ ...i, status: 'scheduled', reason: null, shifted: false })) }
+    expect(toInvoiceView(rejected)).toMatchObject({ rejectReason: 'wrong amount', createdAt: '2026-11-03T10:00:00Z' })
+    expect(toInvoiceView(real).installments[1]).toMatchObject({ voucherEpoch: 46, shifted: true })
+  })
 })

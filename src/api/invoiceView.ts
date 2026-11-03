@@ -19,11 +19,14 @@ export function toInvoiceView(input: unknown): InvoiceView {
     document: { id: String(document.id), issuer: String(document.issuer), debtor: String(document.debtor), amount: String(document.amount), memo: String(document.memo ?? '') },
     status,
     needsBond: Boolean(pick(raw, 'needs_bond', 'needsBond')),
+    rejectReason: (pick(raw, 'reject_reason', 'rejectReason') as string | null | undefined) ?? null,
+    createdAt: (pick(raw, 'created_at', 'createdAt') as string | null | undefined) ?? null,
     installments: installments.map((i) => {
       const s = i.status as InstallmentStatus
       if (!INSTALLMENT_STATUSES.includes(s)) throw new Error(`Status cicilan tidak dikenal: ${String(i.status)}`)
       const reason = i.reason
-      return { index: Number(i.index), epoch: Number(i.epoch), amount: String(i.amount), status: s, reason: reason === 'headroom' || reason === 'blocked_by_debtor' ? reason : null }
+      return { index: Number(i.index), epoch: Number(i.epoch), amount: String(i.amount), status: s, reason: reason === 'headroom' || reason === 'blocked_by_debtor' ? reason : null,
+        voucherEpoch: pick(i, 'voucher_epoch', 'voucherEpoch') === undefined || pick(i, 'voucher_epoch', 'voucherEpoch') === null ? null : Number(pick(i, 'voucher_epoch', 'voucherEpoch')), shifted: Boolean(i.shifted) }
     }),
   }
 }

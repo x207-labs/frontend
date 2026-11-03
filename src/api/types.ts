@@ -374,6 +374,7 @@ export type InvoiceStatus = 'requested' | 'approved' | 'registered' | 'rejected'
 export type InstallmentStatus = 'scheduled' | 'registered' | 'shifted' | 'missed'
 export type InstallmentReason = 'headroom' | 'blocked_by_debtor'
 export type InvoiceDocumentView = { id: string; issuer: string; debtor: string; amount: string; memo: string }
-export type InstallmentView = { index: number; epoch: number; amount: string; status: InstallmentStatus; reason: InstallmentReason | null }
-export type InvoiceView = { invoiceHash: string; document: InvoiceDocumentView; status: InvoiceStatus; needsBond: boolean; installments: InstallmentView[] }
+/** `epoch` adalah epoch jadwal asli dan tidak berubah; `voucherEpoch` tempat voucher yang ditunggu (satu epoch lebih lambat setelah digeser). */
+export type InstallmentView = { index: number; epoch: number; amount: string; status: InstallmentStatus; reason: InstallmentReason | null; voucherEpoch: number | null; shifted: boolean }
+export type InvoiceView = { invoiceHash: string; document: InvoiceDocumentView; status: InvoiceStatus; needsBond: boolean; rejectReason: string | null; createdAt: string | null; installments: InstallmentView[] }
 export type InvoiceList = { items: InvoiceView[]; nextCursor: string | null }

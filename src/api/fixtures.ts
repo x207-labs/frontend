@@ -342,13 +342,13 @@ export const invoiceHashes = [
   '45c165d8f55a5750f5f43ee2bda473ca13102479bc8d2e42a1628417b4f1ccc7',
 ]
 export const invoices = [
-  { invoice_hash: invoiceHashes[0], document: invoiceDocs[0], status: 'requested', needs_bond: false, installments: [{ index: 1, epoch: 44, amount: '100000000', status: 'scheduled', reason: null }] },
+  { invoice_hash: invoiceHashes[0], document: invoiceDocs[0], status: 'requested', needs_bond: false, installments: [{ index: 1, epoch: 44, amount: '100000000', status: 'scheduled', reason: null, voucherEpoch: 44, shifted: false }] },
   {
     invoice_hash: invoiceHashes[1], document: invoiceDocs[1], status: 'approved', needs_bond: true,
     installments: [
-      { index: 1, epoch: 44, amount: '30000000', status: 'registered', reason: null },
-      { index: 2, epoch: 45, amount: '30000000', status: 'scheduled', reason: 'headroom' },
-      { index: 3, epoch: 46, amount: '30000000', status: 'scheduled', reason: null },
+      { index: 1, epoch: 44, amount: '30000000', status: 'registered', reason: null, voucherEpoch: 44, shifted: false },
+      { index: 2, epoch: 45, amount: '30000000', status: 'scheduled', reason: 'headroom', voucherEpoch: 45, shifted: false },
+      { index: 3, epoch: 46, amount: '30000000', status: 'scheduled', reason: null, voucherEpoch: 46, shifted: false },
     ],
   },
 ]
