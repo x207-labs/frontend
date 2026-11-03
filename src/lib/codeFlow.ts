@@ -1,5 +1,5 @@
 import {
-  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, checkCodeDocument, splitCodePayload, codeDocumentHash, codeNeedsBond, codeResource, contentHash, createCodeRelease, encryptCode,
+  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, checkCodeDocument, splitCodePayload, codeDocumentHash, codeOverLimit, normalizeCode, VERIFIABLE_CODE_LIMIT, codeResource, contentHash, createCodeRelease, encryptCode,
   type CodeDocument,
 } from '@x207/core'
 import type { ListingView, PurchaseView } from '../api/types'
@@ -9,7 +9,7 @@ import { receiveLicense, type DownloadResult, type PairState } from './licenseFl
 
 // FE-032: kode sekali tukar (pipeline P3, ADR-48). Format dan kripto ada di SDK (SD-076, memakai ulang pertukaran adil SD-070); di sini hanya menyiapkan dokumen kode, membaca
 // listing, dan menerima kode. Kode asli ada di browser penjual dan, setelah kunci dilepas, di browser pembeli. Hanya untuk kode yang bisa dicek, penjual mengirim kode dan salt satu kali ke backend saat pengecekan penerbit (backend tidak menyimpannya).
-export { CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT }
+export { CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, VERIFIABLE_CODE_LIMIT, codeOverLimit }
 
 export type CodeSellInput = { circle: string; seller: string; code: string; issuer: string; verifiable: boolean; value: string; nonce: string }
 export type PreparedCode = {
@@ -40,7 +40,7 @@ export function prepareCode(i: CodeSellInput): PreparedCode {
   }
 }
 
-export type CodeListing = { docHash: string; codeCommitment: string; issuer: string; value: string; verifiable: boolean; overLimit: boolean }
+export type CodeListing = { docHash: string; codeCommitment: string; issuer: string; value: string; verifiable: boolean; nonce: string; overLimit: boolean }
 
 /** Membaca detail listing kode; `null` bila bukan listing kode. Kode tidak pernah ada di listing, hanya hash-nya. */
 export function parseCodeListing(view: ListingView): CodeListing | null {
@@ -57,17 +57,28 @@ export function parseCodeListing(view: ListingView): CodeListing | null {
   const verifiable = typeof d.verifiable === 'boolean' ? d.verifiable : d.issuer !== 'none'
   let overLimit = false
   try {
-    overLimit = codeNeedsBond({ value, verifiable, arbiter: null })
+    overLimit = codeOverLimit({ value, verifiable })
   } catch {
     overLimit = true
   }
-  return { docHash: d.code_doc, codeCommitment: d.code_commitment, issuer: d.issuer, value, verifiable, overLimit }
+  return { docHash: d.code_doc, codeCommitment: d.code_commitment, issuer: d.issuer, value, verifiable, nonce: typeof d.nonce === 'string' ? d.nonce : '', overLimit }
 }
+
+/** The code document of the listing that the buyer looked at, rebuilt from the signed listing (circle, seller and value come from the listing, the rest from its detail). */
+export const codeDocumentOfListing = (circle: string, view: ListingView, listing: CodeListing): CodeDocument => ({
+  circle, seller: view.account, code_commitment: listing.codeCommitment, issuer: listing.issuer, value: view.offer.value, verifiable: listing.verifiable, arbiter: null, nonce: listing.nonce,
+})
 
 export type CodeReceive = { state: 'ok'; code: string } | Exclude<DownloadResult, { state: 'ok' }>
 
 /** Pembeli: mengunduh dan memeriksa kiriman; hasil `ok` memuat kode (teks). Kode salah menghasilkan bukti curang seperti lisensi. */
-export async function receiveCode(view: PurchaseView, sellerPublicKey: string, buyerSecretKey: string, onProgress: (received: number) => void): Promise<CodeReceive> {
+export async function receiveCode(view: PurchaseView, sellerPublicKey: string, buyerSecretKey: string, onProgress: (received: number) => void, doc?: CodeDocument): Promise<CodeReceive> {
+  // the release must be for the document of the listing that the buyer looked at (B6-F4), not only for what the purchase view of the same backend says
+  if (doc !== undefined && view.release !== null) {
+    const normal = normalizeCode(doc)
+    const r = view.release
+    if (r.license_hash !== codeDocumentHash(normal) || r.content_hash !== normal.code_commitment || r.circle !== normal.circle) return { state: 'refused', reason: 'The key release is not for the document of the listing you looked at: the code is not downloaded.' }
+  }
   const result = await receiveLicense(view, sellerPublicKey, buyerSecretKey, onProgress)
   if (result.state !== 'ok') return result
   const parts = splitCodePayload(result.content)

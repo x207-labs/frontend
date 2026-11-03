@@ -54,11 +54,20 @@ function delivered(data: string, claimed = CODE, disputeUntil = 4_000_000_000) {
   licenseSources.current = { https: source }
   return { purchase_id: 'p1', listing_hash: 'a'.repeat(64), buyer: BUYER, seller: SELLER, status: 'key_released', content_hash: codeCommitment(claimed, SALT), source: { kind: 'https', ref: 'https://cdn.example.com/c.enc' }, cipher_hash: release.cipher_hash, release, release_signature: signature, dispute_until: disputeUntil }
 }
-const reply = (body: Record<string, unknown>, sellerMember: unknown = { account_id: SELLER, pubkey_voucher: seller.publicKey, status: 'active' }) => (p: string, init?: RequestInit) =>
-  rpcMethod(init) === 'member' ? rpcResult(sellerMember) : !init?.method && p.endsWith('/purchases/p1') ? { status: 200, body } : init?.method === 'POST' && p.endsWith('/purchases/p1') ? { status: 200, body: {} } : undefined
+/** The listing that the purchases of these tests were made from: its detail rebuilds the code document that the release is for (docOf), as the buyer page does (B6-F4). */
+const purchasedListing = (over: Record<string, unknown> = {}) => {
+  const d = docOf()
+  const detail = JSON.stringify({ kind: 'code', code_doc: codeDocumentHash(d), code_commitment: d.code_commitment, issuer: d.issuer, value: d.value, verifiable: d.verifiable, nonce: d.nonce, ...over })
+  return {
+    listingHash: 'a'.repeat(64), account: SELLER, offer: { assetType: 'code:gift', assetClass: 'D', quantity: 1, value: d.value }, want: { assetType: 'x', assetClass: 'D', quantity: 1, value: d.value },
+    terms: '', detail, expiresAt: '2030-01-01T00:00:00Z', discountBps: 0, acceptPayment: true, discoverable: true, nonce: 'n1', signature: 'ed25519:x', status: 'open',
+  }
+}
+const reply = (body: Record<string, unknown>, sellerMember: unknown = { account_id: SELLER, pubkey_voucher: seller.publicKey, status: 'active' }, listing: unknown = purchasedListing()) => (p: string, init?: RequestInit) =>
+  rpcMethod(init) === 'member' ? rpcResult(sellerMember) : !init?.method && p.endsWith(`/listings/${'a'.repeat(64)}`) ? { status: 200, body: listing } : !init?.method && p.endsWith('/purchases/p1') ? { status: 200, body } : init?.method === 'POST' && p.endsWith('/purchases/p1') ? { status: 200, body: {} } : undefined
 
-async function openPurchase(user: ReturnType<typeof userEvent.setup>, body: Record<string, unknown>, sellerMember?: unknown) {
-  const rendered = renderApp('/codes', reply(body, sellerMember), false, createMockWallet(BUYER, BUYER))
+async function openPurchase(user: ReturnType<typeof userEvent.setup>, body: Record<string, unknown>, sellerMember?: unknown, listing?: unknown) {
+  const rendered = renderApp('/codes', reply(body, sellerMember, listing), false, createMockWallet(BUYER, BUYER))
   const section = await screen.findByRole('region', { name: 'Code purchase' })
   await user.type(within(section).getByLabelText('Purchase number'), 'p1')
   await user.click(within(section).getByRole('button', { name: 'Open purchase' }))
@@ -132,6 +141,7 @@ describe('FE-032 one-time codes', () => {
     const sellerKeys = generateVoucherKeypair()
     for (const [name, detail, value, warn, over] of [
       ['checkable', { verifiable: true }, '50000000', false, false],
+      ['checkable, above 100 credit', { verifiable: true }, '150000000', false, true],
       ['over the limit', {}, '50000000', true, true],
     ] as const) {
       const { typed, view } = signedCodeListing(sellerKeys, detail, value)
@@ -403,5 +413,31 @@ describe('FE-032 one-time codes', () => {
     expect(document.body.textContent).not.toMatch(/bond/)
     expect(document.body.textContent).toMatch(/sent once to the backend during the issuer check/)
     expect(document.body.textContent).not.toMatch(/sent nowhere; only/)
+  })
+
+  it('TC-FE-032-18 [B6-F4] the release is checked against the document of the listing the buyer looked at: a listing with another nonce means the release is not for it and nothing is downloaded', async () => {
+    const user = userEvent.setup()
+    const until = Math.floor(Date.now() / 1000) + 1800
+    const { section } = await openPurchase(user, delivered(CODE, CODE, until), undefined, purchasedListing({ nonce: 'another-nonce' }))
+    await user.click(within(section).getByRole('button', { name: 'Download and check code' }))
+    expect(await within(section).findByTestId('code-refused')).toHaveTextContent('not for the document of the listing')
+    expect(within(section).queryByTestId('code-ok')).not.toBeInTheDocument()
+  })
+
+  it('TC-FE-032-19 [B6-F2] the seller form: 20 credit for an uncheckable code, 100 credit for a checkable one, and no bond is mentioned', async () => {
+    const user = userEvent.setup()
+    renderApp('/codes', undefined, false, createMockWallet(SELLER, SELLER))
+    const form = await screen.findByRole('form', { name: 'Prepare code' })
+    await user.type(within(form).getByLabelText(/^Code/), CODE)
+    await user.type(within(form).getByLabelText('Value (credit)'), '50')
+    expect(within(form).getByRole('note')).toHaveTextContent('limited to 20 credit')
+    await user.click(within(form).getByLabelText(/The issuer has a check API/))
+    expect(within(form).queryByRole('note')).not.toBeInTheDocument() // 50 is under 100 for a checkable code
+    await user.clear(within(form).getByLabelText('Value (credit)'))
+    await user.type(within(form).getByLabelText('Value (credit)'), '150')
+    expect(within(form).getByRole('note')).toHaveTextContent('limited to 100 credit')
+    expect(within(form).getByRole('button', { name: 'Hash and encrypt code' })).toBeDisabled()
+    expect(document.body.textContent).not.toMatch(/arbiter/i)
+    expect(document.body.textContent).not.toMatch(/with a bond|bond:/i)
   })
 })

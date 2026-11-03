@@ -9,7 +9,7 @@ import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { keyFingerprint } from '../lib/barter'
 import {
-  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, buildCodeKeyRelease, buildCodePurchase, codeCheckNotice, disputeSecondsLeft, parseCodeListing, prepareCode, receiveCode,
+  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, VERIFIABLE_CODE_LIMIT, buildCodeKeyRelease, buildCodePurchase, codeCheckNotice, codeDocumentOfListing, codeOverLimit, disputeSecondsLeft, parseCodeListing, prepareCode, receiveCode,
   type CodeListing, type CodeReceive, type PreparedCode,
 } from '../lib/codeFlow'
 import { formatCredit } from '../lib/format'
@@ -37,7 +37,8 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<PreparedCode | null>(null)
   const atomic = toAtomic(value)
-  const needsBond = atomic !== null && !verifiable && BigInt(atomic) > BigInt(UNVERIFIABLE_CODE_LIMIT)
+  const overCap = atomic !== null && codeOverLimit({ value: atomic, verifiable })
+  const cap = verifiable ? VERIFIABLE_CODE_LIMIT : UNVERIFIABLE_CODE_LIMIT
 
   function prepare() {
     if (!account || atomic === null) return
@@ -60,9 +61,9 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
       <label><span>Issuer (service name, or none)</span><input value={issuer} onChange={(e) => setIssuer(e.target.value)} /></label>
       <label className="check"><input type="checkbox" checked={verifiable} onChange={(e) => setVerifiable(e.target.checked)} /><span>The issuer has a check API (the code is checked before the key is released)</span></label>
       <label><span>Value (credit)</span><input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="5" /></label>
-      {needsBond && <p className="state state-warn" role="note">An uncheckable code is limited to {formatCredit(UNVERIFIABLE_CODE_LIMIT)} credit. Above that it cannot be sold as an uncheckable code: use an issuer that has a check API.</p>}
+      {overCap && <p className="state state-warn" role="note">A code that {verifiable ? 'can' : 'cannot'} be checked is limited to {formatCredit(cap)} credit. No bond raises the limit{verifiable ? '' : '; above it, use an issuer that has a check API (limit ' + formatCredit(VERIFIABLE_CODE_LIMIT) + ' credit)'}.</p>}
       <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
-      <div><button type="submit" disabled={!account || code.trim() === '' || atomic === null || needsBond}>Hash and encrypt code</button></div>
+      <div><button type="submit" disabled={!account || code.trim() === '' || atomic === null || overCap}>Hash and encrypt code</button></div>
       {error && <p className="state state-error" role="alert">{error}</p>}
       {done && (
         <div data-testid="code-prepared">
@@ -216,8 +217,8 @@ function Warnings({ listing }: { listing: CodeListing }) {
           Your only protection is proof of mismatched content (a one-hour dispute after the key is released); a code that was already used can only be reported to reputation and payment still goes through. The code value is limited to {formatCredit(UNVERIFIABLE_CODE_LIMIT)} credit.
         </p>
       )}
-      {!listing.verifiable && listing.overLimit && (
-        <p className="state state-error" role="alert" data-testid="over-limit">Value {formatCredit(listing.value)} credit is above the {formatCredit(UNVERIFIABLE_CODE_LIMIT)} limit for uncheckable codes. Do not buy.</p>
+      {listing.overLimit && (
+        <p className="state state-error" role="alert" data-testid="over-limit">Value {formatCredit(listing.value)} credit is above the {formatCredit(listing.verifiable ? VERIFIABLE_CODE_LIMIT : UNVERIFIABLE_CODE_LIMIT)} limit for a code that {listing.verifiable ? 'can' : 'cannot'} be checked. Do not buy.</p>
       )}
     </>
   )
@@ -285,7 +286,7 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
             <dt>Price</dt><dd>{formatCredit(checked.view.offer.value)} credit</dd>
           </dl>
           <Warnings listing={checked.listing} />
-          <button type="button" disabled={busy || voucherKey.trim() === '' || (!checked.listing.verifiable && checked.listing.overLimit)} onClick={() => void buy()}>
+          <button type="button" disabled={busy || voucherKey.trim() === '' || checked.listing.overLimit} onClick={() => void buy()}>
             Buy for {formatCredit(checked.view.offer.value)} credit from {checked.view.account} (voucher held by the backend)
           </button>
         </div>
@@ -328,7 +329,14 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
         return
       }
       setSellerFingerprint(await keyFingerprint(member.pubkey_voucher))
-      setResult(await receiveCode(query.data, member.pubkey_voucher, voucherKey, () => undefined))
+      // the code document of the listing that the buyer bought from, rebuilt from the signed listing: the release must be for it (B6-F4)
+      const listingView = await api.listing(query.data.listingHash)
+      const parsed = parseCodeListing(listingView)
+      if (parsed === null) {
+        setResult({ state: 'refused', reason: 'The listing of this purchase is not a code listing.' })
+        return
+      }
+      setResult(await receiveCode(query.data, member.pubkey_voucher, voucherKey, () => undefined, codeDocumentOfListing(CONTRACT_ID, listingView, parsed)))
     } finally {
       setBusy(false)
     }
