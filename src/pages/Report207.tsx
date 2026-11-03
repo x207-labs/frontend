@@ -1,5 +1,6 @@
 import { useReport } from '../api/queries'
 import type { ClearingReport, ReportMember } from '../api/types'
+import { PrunePanel } from '../components/PrunePanel'
 import { QueryState } from '../components/QueryState'
 import { useSelectedEpoch } from '../epoch'
 import { formatCredit, formatPercent, formatTime, shortAccount } from '../lib/format'
@@ -79,13 +80,16 @@ export function Report207() {
   const report = useReport(epoch)
   if (epoch === null) return null
   return (
-    <QueryState
-      query={report}
-      loadingLabel="Memuat laporan"
-      isEmpty={(d) => !d.committed || d.members.length === 0}
-      empty="Epoch belum di-commit, jadi laporan kliring belum ada."
-    >
-      {(data) => <Report report={data} />}
-    </QueryState>
+    <>
+      <QueryState
+        query={report}
+        loadingLabel="Memuat laporan"
+        isEmpty={(d) => !d.committed || d.members.length === 0}
+        empty="Epoch belum di-commit, jadi laporan kliring belum ada."
+      >
+        {(data) => <Report report={data} />}
+      </QueryState>
+      <PrunePanel epoch={epoch} />
+    </>
   )
 }

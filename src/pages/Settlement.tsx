@@ -4,6 +4,7 @@ import { api } from '../api/client'
 import { useEpochSettlements } from '../api/queries'
 import type { SettlementItem } from '../api/types'
 import { DepositBranch } from '../components/DepositBranch'
+import { IntentsBalancePanel } from '../components/IntentsBalancePanel'
 import { QueryState } from '../components/QueryState'
 import { WithdrawPanel } from '../components/WithdrawPanel'
 import { TxResult } from '../components/TxResult'
@@ -177,6 +178,8 @@ export function Settlement() {
     <>
       <h2>Tagihan Anda</h2>
       <MyDues />
+      <h2>Saldo Intents</h2>
+      <IntentsBalancePanel />
       <h2>Semua posisi epoch {epoch}</h2>
       <QueryState
         query={settlements}

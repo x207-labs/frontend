@@ -1,6 +1,7 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { api } from './client'
-import type { ObligationStage } from './types'
+import { viewContract } from './chain'
+import type { ChainIntent, ObligationStage } from './types'
 
 export const useEpochs = () => useQuery({ queryKey: ['epochs'], queryFn: api.epochs })
 export const useMember = (account: string | null) =>
@@ -60,3 +61,25 @@ export const useMemberLimits = (account: string | null) =>
 export const useDaoProposals = () => useQuery({ queryKey: ['dao-proposals'], queryFn: api.daoProposals })
 export const useGrants = (query: Record<string, string>, enabled = true) =>
   useQuery({ queryKey: ['grants', query], queryFn: () => api.grants(query), enabled })
+
+// Data on-chain yang belum ada di read API: dibaca dari view kontrak (src/api/chain.ts).
+/** Saldo USDT (satuan terkecil) yang dicatat `mt_on_transfer` dan belum ditarik dari Intents. */
+export const useIntentsBalance = () =>
+  useQuery({ queryKey: ['chain', 'intents_balance'], queryFn: () => viewContract<string>('intents_balance') })
+export const useOwnIntents = (account: string | null) =>
+  useQuery({ queryKey: ['own-intents', account], queryFn: () => api.intents(account!), enabled: account !== null, retry: false })
+/** `get_intent` per hash: ada atau null (sudah dihapus). Satu query per intent yang tercatat terpasang. */
+export const useChainIntents = (hashes: string[]) =>
+  useQueries({
+    queries: hashes.map((hash) => ({
+      queryKey: ['chain', 'intent', hash],
+      queryFn: () => viewContract<ChainIntent>('get_intent', { intent_hash: hash }),
+    })),
+  })
+/** Pasangan (edge) epoch yang masih ada; kosong setelah `prune_epoch` menghapusnya. Satu halaman cukup untuk tahu ada atau tidak. */
+export const useEpochPairsLeft = (epoch: number | null, enabled: boolean) =>
+  useQuery({
+    queryKey: ['chain', 'pairs-left', epoch],
+    queryFn: () => viewContract<unknown[]>('list_obligations', { epoch: epoch!, from_index: 0, limit: 1 }),
+    enabled: epoch !== null && enabled,
+  })

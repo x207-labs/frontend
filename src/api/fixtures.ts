@@ -204,6 +204,26 @@ const notFound = (code: string, message: string): FixtureReply => ({
   body: { error: { code, message } },
 })
 const ok = (body: unknown): FixtureReply => ({ status: 200, body })
+
+/** Jawaban RPC NEAR `call_function` untuk satu nilai JSON (bytes hasil view), untuk test dan mode tanpa jaringan. */
+export const rpcResult = (value: unknown): FixtureReply => ({
+  status: 200,
+  body: { jsonrpc: '2.0', id: 'x207', result: { result: Array.from(new TextEncoder().encode(JSON.stringify(value))), logs: [], block_height: 1 } },
+})
+
+/** View kontrak bawaan: tidak ada saldo Intents, intent tidak ditemukan, satu pasangan epoch masih tersimpan. */
+export function chainFixture(methodName: string): FixtureReply {
+  switch (methodName) {
+    case 'intents_balance':
+      return rpcResult('0')
+    case 'get_intent':
+      return rpcResult(null)
+    case 'list_obligations':
+      return rpcResult([{ debtor: near('scraper'), creditor: near('gpu') }])
+    default:
+      return { status: 200, body: { jsonrpc: '2.0', id: 'x207', error: { cause: { name: 'UNKNOWN_METHOD' } } } }
+  }
+}
 const emptyList = { ...amounts, items: [], nextCursor: null }
 
 export function fixtureReply(path: string): FixtureReply {
@@ -231,6 +251,7 @@ export function fixtureReply(path: string): FixtureReply {
       : notFound('member_not_found', 'Akun belum terdaftar di lingkaran')
   }
 
+  if (rest === '/intents') return ok({ items: [], nextCursor: null })
   if (rest === '/marketplace/stats') return ok(marketStats)
   if (rest === '/listings') {
     const status = url.searchParams.get('status') ?? 'open'
@@ -276,11 +297,22 @@ export function fixtureReply(path: string): FixtureReply {
   return notFound('not_found', `Tidak ada data contoh untuk ${path}`)
 }
 
+function safeJson(text: string): { params?: unknown } | null {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
 export function fixtureFetch(overrides: (path: string, init?: RequestInit) => FixtureReply | undefined = () => undefined) {
   return async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const url = new URL(String(input))
     const path = url.pathname + url.search
-    const reply = overrides(path, init) ?? fixtureReply(path)
+    // RPC NEAR (view kontrak): jalur '/' dengan body JSON-RPC; test menimpa lewat `overrides` dan membaca init.body
+    const rpcParams = init?.method === 'POST' && init.body !== undefined ? (safeJson(String(init.body))?.params as { request_type?: string; method_name?: string } | undefined) : undefined
+    const rpc = rpcParams?.request_type === 'call_function'
+    const reply = overrides(path, init) ?? (rpc ? chainFixture(rpcParams!.method_name ?? '') : fixtureReply(path))
     if (reply.delayMs) await new Promise((r) => setTimeout(r, reply.delayMs))
     return new Response(JSON.stringify(reply.body), {
       status: reply.status,

@@ -9,3 +9,6 @@ export const NEAR_NETWORK: 'testnet' | 'mainnet' =
 export const CONTRACT_ID: string = env.VITE_X207_CONTRACT_ID ?? 'x207-circle.testnet'
 export const INTENTS_EXPLORER_URL: string =
   env.VITE_X207_INTENTS_EXPLORER_URL ?? 'https://explorer.near-intents.org/transactions/'
+/** RPC NEAR untuk view kontrak (saldo Intents, intent, daftar pasangan). Bawaan: FastNEAR sesuai `VITE_NEAR_NETWORK`. */
+export const NEAR_RPC_URL: string =
+  env.VITE_NEAR_RPC_URL ?? (NEAR_NETWORK === 'mainnet' ? 'https://rpc.mainnet.fastnear.com' : 'https://rpc.testnet.fastnear.com')

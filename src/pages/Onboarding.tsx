@@ -9,6 +9,7 @@ import { ApiError } from '../api/client'
 import { toAtomic } from '../lib/amount'
 import { formatCredit } from '../lib/format'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
+import { JOIN_STORAGE_DEPOSIT, formatNear } from '@x207/core'
 import { ftWithdrawTx, joinTx, stakeTx } from '../wallet/transactions'
 import type { FunctionCallTx } from '../wallet/types'
 
@@ -97,6 +98,13 @@ function JoinForm({ registered }: { registered: boolean }) {
       </label>
       {source === 'other' && account && atomic && (
         <DepositBranch purpose="stake" account={account} amount={atomic} onReady={setWithdrawReady} />
+      )}
+      {needsJoin && (
+        <p className="state" role="note" data-testid="join-deposit">
+          <code className="plain">join</code> melampirkan deposit <strong>{formatNear(JOIN_STORAGE_DEPOSIT)} NEAR</strong> dari akun NEAR Anda untuk storage anggota di kontrak.
+          Deposit <strong>tidak kembali saat keluar</strong> dari lingkaran (ADR-29): entri anggota tetap tersimpan sebagai riwayat. Hanya kelebihan di atas
+          jumlah ini dikembalikan. Pastikan akun punya saldo NEAR sedikitnya {formatNear(JOIN_STORAGE_DEPOSIT + 80_000_000_000_000_000_000_000n)} NEAR untuk deposit dan gas.
+        </p>
       )}
       <div>
         <button type="submit" disabled={!canSend}>

@@ -10,6 +10,7 @@ import type {
   WithdrawSubmit,
   DaoProposals,
   GrantList,
+  IntentList,
   EpochItem,
   LimitHistoryItem,
   EpochMetrics,
@@ -124,6 +125,8 @@ export const api = {
     get<{ items: BundleProposal[] }>(`${circle}/bundle-proposals?account=${encodeURIComponent(account)}`),
   signProposal: (termsHash: string, account: string, signature: string) =>
     post<BundleProposal>(`${circle}/bundle-proposals/${termsHash}/signatures`, { account, signature }),
+  intents: (account: string) =>
+    get<IntentList>(`${circle}/intents?status=all&limit=100&account=${encodeURIComponent(account)}`),
   marketStats: () => get<MarketStats>(`${circle}/marketplace/stats`),
   job: (jobId: string) => get<Job>(`/x207/settlement/jobs/${encodeURIComponent(jobId)}`),
 }

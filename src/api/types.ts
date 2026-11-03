@@ -328,3 +328,19 @@ export type Grant = {
   changedBlock: number
 }
 export type GrantList = { circle: string; unit: 'credit'; decimals: number; items: Grant[]; nextCursor: string | null }
+
+/** `GET /x207/circles/{circle}/intents` (BE-035): intent barter off-chain dengan status `post_intent` on-chain dari event `intent_posted`. */
+export type IntentView = {
+  intentHash: string
+  intentHashBase58: string
+  account: string
+  offer: { service: string; calls: number; value: string }
+  need: { service: string; calls: number; value: string }
+  expiresAt: string
+  status: string
+  onchain: { method: 'post_intent'; args: { intent_hash: string }; posted: boolean; blockHeight?: number }
+}
+export type IntentList = { items: IntentView[]; nextCursor: string | null }
+
+/** Jawaban view `get_intent`: null bila belum atau sudah tidak ada di kontrak. */
+export type ChainIntent = { intent_hash: string; account_id: string; posted_at: string } | null

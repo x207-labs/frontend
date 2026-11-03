@@ -6,6 +6,7 @@ import { api } from '../api/client'
 import { useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { Negotiation } from '../components/Negotiation'
+import { OwnIntents } from '../components/OwnIntents'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
@@ -259,6 +260,7 @@ export function Marketplace() {
         )}
       </QueryState>
       {selected && <Negotiation listing={selected} voucherKey={voucherKey} onVoucherKey={setVoucherKey} onClose={() => setSelected(null)} />}
+      <OwnIntents />
       <h2 id="pasang">Pasang listing</h2>
       <CreateListing voucherKey={voucherKey} onVoucherKey={setVoucherKey} />
     </>

@@ -105,7 +105,7 @@ describe('settlement debtor', () => {
     await user.click(await screen.findByRole('button', { name: 'Bayar dengan aset lain' }))
     await user.click(await screen.findByRole('button', { name: 'Minta quote 1Click' }))
     expect(await screen.findByText(/Risiko melewati batas bayar/)).toBeInTheDocument()
-    expect(requests().find((r) => r.method === 'POST')?.body).toMatchObject({ purpose: 'settle', epoch: 42, account: SCRAPER })
+    expect(requests().find((r) => r.method === 'POST' && r.path.includes('/settlement/'))?.body).toMatchObject({ purpose: 'settle', epoch: 42, account: SCRAPER })
   })
 
   it('tanpa login: ajakan login', async () => {

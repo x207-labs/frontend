@@ -1,4 +1,4 @@
-import { JOIN_STORAGE_DEPOSIT as JOIN_DEPOSIT } from '@x207/core'
+import { JOIN_STORAGE_DEPOSIT as JOIN_DEPOSIT, PRUNE_MAX_ITEMS_PER_CALL } from '@x207/core'
 import { CIRCLE, CONTRACT_ID } from '../config'
 import type { FunctionCallTx } from './types'
 
@@ -75,4 +75,19 @@ export function requestExitTx(): FunctionCallTx {
 /** `withdraw_stake()`: deposit 1 yoctoNEAR, gas cukup untuk `ft_transfer` dan callback (ADR-29, ADR-32). */
 export function withdrawStakeTx(): FunctionCallTx {
   return { receiverId: CONTRACT_ID, methodName: 'withdraw_stake', args: {}, gas: (100n * TGAS).toString(), deposit: ONE_YOCTO }
+}
+
+/** `withdraw_intents_balance()` (interface 0.0.9): siapa pun boleh memanggil; kontrak minta minimal 130 Tgas prepaid, jadi 150 Tgas, tanpa deposit. */
+export function withdrawIntentsBalanceTx(): FunctionCallTx {
+  return { receiverId: CONTRACT_ID, methodName: 'withdraw_intents_balance', args: {}, gas: (150n * TGAS).toString(), deposit: '0' }
+}
+
+/** `remove_intent(intent_hash)`: hash intent base58, hanya pemilik (atau siapa pun bila pemiliknya sudah `exited`, ADR-41). Tanpa deposit. */
+export function removeIntentTx(intentHash: string): FunctionCallTx {
+  return { receiverId: CONTRACT_ID, methodName: 'remove_intent', args: { intent_hash: intentHash }, gas: (30n * TGAS).toString(), deposit: '0' }
+}
+
+/** `prune_epoch(epoch, max_items)`: permissionless; 196 entri memakai 70 Tgas (tes sandbox), jadi 100 Tgas untuk 200 entri. */
+export function pruneEpochTx(epoch: number): FunctionCallTx {
+  return { receiverId: CONTRACT_ID, methodName: 'prune_epoch', args: { epoch, max_items: PRUNE_MAX_ITEMS_PER_CALL }, gas: (100n * TGAS).toString(), deposit: '0' }
 }

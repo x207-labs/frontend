@@ -82,7 +82,7 @@ describe('pencairan kreditor ke chain lain', () => {
     await user.click(screen.getByRole('button', { name: 'Minta quote pencairan' }))
     await user.click(await screen.findByRole('button', { name: 'Tanda tangani pencairan' }))
     await waitFor(() => expect(screen.getByText(/Status: Selesai/)).toBeInTheDocument())
-    expect(requests().filter((r) => r.method === 'POST').map((r) => r.path.split('/').slice(-2).join('/'))).toEqual(['withdraw/quote', 'withdraw/intent', 'withdraw/submit'])
+    expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/settlement/')).map((r) => r.path.split('/').slice(-2).join('/'))).toEqual(['withdraw/quote', 'withdraw/intent', 'withdraw/submit'])
     expect(wallet.messages).toHaveLength(1)
     expect(wallet.messages[0]).toMatchObject({ message: '{"intent":"x"}', recipient: 'intents.near', signerId: GPU })
     expect([...wallet.messages[0]!.nonce]).toEqual([1, 2, 3, 4])
