@@ -208,8 +208,6 @@ function OrderDetail({ hash, voucherKey }: { hash: string; voucherKey: string })
         {(view) => {
           const kind = view.order.kind as keyof typeof ORDER_PATTERN
           const pattern = ORDER_PATTERN[kind]
-          const isSeller = account === view.order.seller
-          const isBuyer = account === view.order.buyer
           return (
             <>
               <h3>{KIND_LABEL[kind] ?? view.order.kind} · {view.status}</h3>
