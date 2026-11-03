@@ -437,4 +437,31 @@ describe('FE-027 service orders', () => {
     await user.type(within(form).getByLabelText('Akun DAO'), DAO)
     expect(await within(form).findByTestId('dao-note')).toHaveTextContent(/tidak ada di registri lingkaran/)
   })
+
+  it('TC-FE-001-01 [BE-066] the three new answers are said in words: 429 with the seconds to wait (from Retry-After), 413, and 409 open_limit_reached', async () => {
+    const user = userEvent.setup()
+    const answers = [apiError(429, 'rate_limited', 'x', { 'Retry-After': '12' }), apiError(413, 'payload_too_large', 'x'), apiError(409, 'open_limit_reached', 'x')]
+    let n = 0
+    renderApp('/pesanan', (p, init) => (init?.method === 'POST' && p.endsWith('/orders') ? answers[n++] : undefined), false, asBuyer())
+    await screen.findByRole('table', { name: 'Daftar pesanan' })
+    const form = screen.getByRole('form', { name: 'Buat pesanan' })
+    await user.selectOptions(within(form).getByLabelText('Jenis jasa'), 'research')
+    await user.type(within(form).getByLabelText(/^Penjual/), SELLER)
+    await user.type(within(form).getByLabelText(/^Spesifikasi kerja/), 'spec')
+    await user.type(within(form).getByLabelText('Jumlah 1 (credit)'), '2')
+    fireEvent.change(within(form).getByLabelText('Tenggat 1 (UTC)'), { target: { value: '2030-01-01T10:00' } })
+    await user.type(within(form).getByLabelText(/Kunci voucher/), KEY)
+    const submit = () => user.click(within(form).getByRole('button', { name: /Tanda tangani dan buat pesanan/ }))
+    await submit()
+    expect(await within(form).findByRole('alert')).toHaveTextContent('Tunggu 12 detik')
+    await submit()
+    await waitFor(() => expect(within(form).getByRole('alert')).toHaveTextContent('terlalu besar'))
+    await submit()
+    await waitFor(() => expect(within(form).getByRole('alert')).toHaveTextContent('terlalu banyak pesanan, invoice, atau pembelian yang masih terbuka'))
+  })
+
+  it('TC-FE-001-02 [BE-066] a read that is rate limited says how many seconds to wait', async () => {
+    renderApp('/pesanan', (p) => (p.includes('/orders?') ? apiError(429, 'rate_limited', 'x', { 'Retry-After': '7' }) : undefined), false, asBuyer())
+    expect(await screen.findByRole('alert')).toHaveTextContent('Tunggu 7 detik')
+  })
 })

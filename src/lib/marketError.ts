@@ -18,6 +18,14 @@ export function describeMarketError(e: unknown): string {
         return 'Penawaran ini sudah dibalas atau ditutup.'
       case 'negotiation_closed':
         return 'Batas ronde negosiasi tercapai.'
+      case 'rate_limited': {
+        const wait = typeof e.details?.retryAfter === 'number' ? e.details.retryAfter : null
+        return wait === null ? 'Terlalu banyak permintaan. Coba lagi sebentar lagi.' : `Terlalu banyak permintaan. Tunggu ${wait} detik, lalu coba lagi.`
+      }
+      case 'payload_too_large':
+        return 'Isi yang dikirim terlalu besar untuk server. Kecilkan isinya (teks, daftar, atau berkas) lalu coba lagi.'
+      case 'open_limit_reached':
+        return 'Akun ini sudah punya terlalu banyak pesanan, invoice, atau pembelian yang masih terbuka. Selesaikan atau batalkan salah satunya dulu, lalu coba lagi.'
       case 'grant_failed':
         return /sudah membuka akses yang sama/.test(e.message)
           ? 'Grant lain untuk login dan sumber daya yang sama masih berjalan. Tunggu sampai akses itu berakhir atau dicabut; satu akses tidak boleh dibuka dua kali.'

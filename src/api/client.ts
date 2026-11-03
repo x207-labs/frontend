@@ -50,6 +50,12 @@ export class ApiError extends Error {
   }
 }
 
+/** The wait that the server asks for (header `Retry-After`, seconds) goes into the details of the error, so the page can say it (BE-066: `429 rate_limited`). */
+function withRetryAfter(res: Response, details: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  const wait = Number(res.headers.get('Retry-After'))
+  return Number.isFinite(wait) && wait > 0 ? { ...details, retryAfter: Math.ceil(wait) } : details
+}
+
 // 207 Multi-Status termasuk rentang 2xx, jadi laporan kliring dibaca sebagai sukses.
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`)
@@ -60,7 +66,7 @@ async function get<T>(path: string): Promise<T> {
     res.status,
     error?.code ?? 'http_error',
     error?.message ?? `Read API menjawab HTTP ${res.status}`,
-    error?.details,
+    withRetryAfter(res, error?.details),
   )
 }
 
@@ -77,7 +83,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     res.status,
     error?.code ?? 'http_error',
     error?.message ?? `Read API menjawab HTTP ${res.status}`,
-    error?.details,
+    withRetryAfter(res, error?.details),
   )
 }
 

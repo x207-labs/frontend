@@ -1,6 +1,7 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { ApiError } from '../api/client'
+import { describeMarketError } from '../lib/marketError'
 
 export function Loading({ label = 'Memuat data' }: { label?: string }) {
   return (
@@ -13,8 +14,11 @@ export function Loading({ label = 'Memuat data' }: { label?: string }) {
 
 export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   const code = error instanceof ApiError ? error.code : 'network_error'
-  const message =
-    error instanceof Error && error.message !== 'Failed to fetch'
+  // BE-066: the answers about limits are said in words (with the seconds to wait for a 429), the others show the message of the server
+  const limit = error instanceof ApiError && ['rate_limited', 'payload_too_large', 'open_limit_reached'].includes(error.code)
+  const message = limit
+    ? describeMarketError(error)
+    : error instanceof Error && error.message !== 'Failed to fetch'
       ? error.message
       : 'Read API tidak bisa dihubungi.'
   return (

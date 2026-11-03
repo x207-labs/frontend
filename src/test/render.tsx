@@ -9,8 +9,8 @@ import { createMockWallet, type MockWallet } from './walletMock'
 
 export type Override = (path: string, init?: RequestInit) => FixtureReply | undefined
 
-export function apiError(status: number, code: string, message = code): FixtureReply {
-  return { status, body: { error: { code, message } } }
+export function apiError(status: number, code: string, message = code, headers?: Record<string, string>): FixtureReply {
+  return { status, body: { error: { code, message } }, ...(headers ? { headers } : {}) }
 }
 
 // Merender seluruh aplikasi dengan read API tiruan; kembalian mencatat path yang dipanggil.

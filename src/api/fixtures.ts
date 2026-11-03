@@ -197,7 +197,7 @@ export const marketStats = {
   offersPending: 0,
 }
 
-export type FixtureReply = { status: number; body: unknown; delayMs?: number }
+export type FixtureReply = { status: number; body: unknown; delayMs?: number; headers?: Record<string, string> }
 
 const notFound = (code: string, message: string): FixtureReply => ({
   status: 404,
@@ -340,7 +340,7 @@ export function fixtureFetch(overrides: (path: string, init?: RequestInit) => Fi
     if (reply.delayMs) await new Promise((r) => setTimeout(r, reply.delayMs))
     return new Response(JSON.stringify(reply.body), {
       status: reply.status,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...reply.headers },
     })
   }
 }
