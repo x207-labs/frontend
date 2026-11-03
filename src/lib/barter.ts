@@ -204,3 +204,12 @@ export function checkBundleToSign(input: { message: string; recipient: string; a
 
 export const termsHash = async (t: BundleTerms): Promise<string> => toHex(await sha256(serializeBundleTerms(t)))
 export const sha256Hex = async (text: string): Promise<string> => toHex(await sha256(text))
+
+// FE-025: voucher ditandatangani di browser (ADR-17 dan SD-065). Pesan = JSON kanonik voucher, nonce = sha256("x207:<payer>:<payee>:<epoch>:<seq>"), penerima = akun kontrak lingkaran.
+// Hasilnya sama dengan `signVoucher` dari `@x207/core` (ed25519 deterministik); tes membandingkannya.
+export type VoucherFields = { circle: string; payer: string; payee: string; epoch: number; seq: number; cumulativeAmount: string; unit: string; resource: string }
+export async function signVoucherInBrowser(v: VoucherFields, secretKey: string): Promise<string> {
+  const message = JSON.stringify({ circle: v.circle, payer: v.payer, payee: v.payee, epoch: v.epoch, seq: v.seq, cumulativeAmount: v.cumulativeAmount, unit: v.unit, resource: v.resource })
+  const nonce = await sha256(`x207:${v.payer}:${v.payee}:${v.epoch}:${v.seq}`)
+  return signDigest(await nep413SigningHash(message, nonce, v.circle), secretKey)
+}

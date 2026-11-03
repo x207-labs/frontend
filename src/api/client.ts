@@ -1,4 +1,5 @@
 import { API_URL, CIRCLE } from '../config'
+import { toInvoiceView } from './invoiceView'
 import type {
   ClearingReport,
   DepositQuote,
@@ -28,7 +29,7 @@ import type {
   AcceptRequest,
   AcceptResult,
   BundleProposal,
-  ListingCheck, ListingList,
+  InvoiceList, InvoiceView, ListingCheck, ListingList,
   ListingView,
   MarketStats,
   OfferView,
@@ -116,6 +117,16 @@ export const api = {
   listing: (hash: string) => get<ListingView>(`${circle}/listings/${hash}`),
   createListing: (listing: object, signature: string) => post<ListingView>(`${circle}/listings`, { listing, signature }),
   checkListing: (listing: object, signature: string) => post<ListingCheck>(`${circle}/listings/check`, { listing, signature }),
+  invoices: async (query: Record<string, string>): Promise<InvoiceList> => {
+    const qs = new URLSearchParams(query).toString()
+    const raw = await get<{ items?: unknown[]; nextCursor?: string | null }>(`${circle}/invoices${qs ? `?${qs}` : ''}`)
+    return { items: (raw.items ?? []).map(toInvoiceView), nextCursor: raw.nextCursor ?? null }
+  },
+  invoice: async (hash: string): Promise<InvoiceView> => toInvoiceView(await get<unknown>(`${circle}/invoices/${hash}`)),
+  createInvoice: (body: { document: object; installments: number; notice: object; signature: string }) => post<{ invoice_hash?: string; invoiceHash?: string }>(`${circle}/invoices`, body),
+  approveInvoice: (hash: string, vouchers: Array<{ voucher: object; signature: string }>) => post<unknown>(`${circle}/invoices/${hash}/approve`, { vouchers }),
+  rejectInvoice: (hash: string, notice: object, signature: string) => post<unknown>(`${circle}/invoices/${hash}/reject`, { notice, signature }),
+  catchUpInstallment: (hash: string, index: number, voucher: object, signature: string) => post<unknown>(`${circle}/invoices/${hash}/installments/${index}/catch-up`, { voucher, signature }),
   cancelListing: (hash: string, signature: string) => post<ListingView>(`${circle}/listings/${hash}/cancel`, { signature }),
   offers: (hash: string) => get<{ items: OfferView[] }>(`${circle}/listings/${hash}/offers`),
   postOffer: (hash: string, offer: object, signature: string, inReplyTo?: string) =>

@@ -80,3 +80,8 @@ export const useEpochPairsLeft = (epoch: number | null, enabled: boolean) =>
     queryFn: () => viewContract<unknown[]>('list_obligations', { epoch: epoch!, from_index: 0, limit: 1 }),
     enabled: epoch !== null && enabled,
   })
+
+export const useInvoices = (query: Record<string, string>, enabled = true) =>
+  useQuery({ queryKey: ['invoices', query], queryFn: () => api.invoices(query), enabled })
+export const useInvoice = (hash: string | null) =>
+  useQuery({ queryKey: ['invoice', hash], queryFn: () => api.invoice(hash!), enabled: hash !== null })

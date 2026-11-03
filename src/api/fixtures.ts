@@ -249,6 +249,17 @@ export function fixtureReply(path: string): FixtureReply {
       : notFound('member_not_found', 'Akun belum terdaftar di lingkaran')
   }
 
+  if (rest === '/invoices') {
+    const party = url.searchParams.get('party')
+    const status = url.searchParams.get('status')
+    const items = invoices.filter((i) => (!party || i.document.issuer === party || i.document.debtor === party) && (!status || i.status === status))
+    return ok({ items, nextCursor: null })
+  }
+  const invoiceOne = rest.match(/^\/invoices\/([0-9a-f]{64})$/)
+  if (invoiceOne) {
+    const found = invoices.find((i) => i.invoice_hash === invoiceOne[1])
+    return found ? ok(found) : notFound('invoice_not_found', 'Invoice tidak ada')
+  }
   if (rest === '/intents') return ok({ items: [], nextCursor: null })
   if (rest === '/intents/hashes') return ok({ circle, items: [], nextCursor: null })
   if (rest === '/intents/withdrawals') return ok({ circle, ...amounts, totalWithdrawn: '0', withdrawals: 0, items: [], nextCursor: null })
@@ -320,3 +331,24 @@ export function fixtureFetch(overrides: (path: string, init?: RequestInit) => Fi
     })
   }
 }
+
+// Invoice (FE-025): bentuk dari Spec API Backend 5e, snake_case seperti di spec. Hash dihitung dari dokumennya (sha256 JSON kanonik SD-065).
+export const invoiceDocs = [
+  { id: 'INV-2026-001', issuer: near('supplier'), debtor: near('maker'), amount: '100000000', memo: 'components, October batch' },
+  { id: 'INV-2026-002', issuer: near('retailer'), debtor: near('supplier'), amount: '90000000', memo: 'storefront ads, three installments' },
+]
+export const invoiceHashes = [
+  '79639b91e4fdc4abe16d4e378cf0b7b6022a299bf01d68b7382b1d72ccf50230',
+  '45c165d8f55a5750f5f43ee2bda473ca13102479bc8d2e42a1628417b4f1ccc7',
+]
+export const invoices = [
+  { invoice_hash: invoiceHashes[0], document: invoiceDocs[0], status: 'requested', needs_bond: false, installments: [{ index: 1, epoch: 44, amount: '100000000', status: 'scheduled', reason: null }] },
+  {
+    invoice_hash: invoiceHashes[1], document: invoiceDocs[1], status: 'approved', needs_bond: true,
+    installments: [
+      { index: 1, epoch: 44, amount: '30000000', status: 'registered', reason: null },
+      { index: 2, epoch: 45, amount: '30000000', status: 'scheduled', reason: 'headroom' },
+      { index: 3, epoch: 46, amount: '30000000', status: 'scheduled', reason: null },
+    ],
+  },
+]

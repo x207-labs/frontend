@@ -367,3 +367,13 @@ export type IntentWithdrawals = Amounts & {
   items: Array<{ amount: string; changedBlock: number; receiptId: string }>
   nextCursor: string | null
 }
+
+// Invoice dan cicilan (FE-025): Spec API Backend 5e, dibangun dari spec dengan mock; BE-051 belum ada. Jawaban backend dinormalkan oleh `toInvoiceView`
+// (snake_case seperti di spec atau camelCase seperti read API lain), jadi bentuk akhirnya tetap satu.
+export type InvoiceStatus = 'requested' | 'approved' | 'registered' | 'rejected' | 'expired' | 'missed'
+export type InstallmentStatus = 'scheduled' | 'registered' | 'shifted' | 'missed'
+export type InstallmentReason = 'headroom' | 'blocked_by_debtor'
+export type InvoiceDocumentView = { id: string; issuer: string; debtor: string; amount: string; memo: string }
+export type InstallmentView = { index: number; epoch: number; amount: string; status: InstallmentStatus; reason: InstallmentReason | null }
+export type InvoiceView = { invoiceHash: string; document: InvoiceDocumentView; status: InvoiceStatus; needsBond: boolean; installments: InstallmentView[] }
+export type InvoiceList = { items: InvoiceView[]; nextCursor: string | null }
