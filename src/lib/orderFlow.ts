@@ -8,8 +8,10 @@ import { toAtomic } from './amount'
 export const KIND_LABEL: Record<OrderKind, string> = {
   prompt: '39 · Prompt atau workflow', research: '40 · Riset', translation: '41 · Terjemahan', annotation: '42 · Anotasi data', scraping: '43 · Pengumpulan data web',
   audit: '52 · Audit kode', loadtest: '53 · Uji beban', freelance: '83 · Freelance', bug: '88 · Uji produk (per bug)', lead: '51 · Referral dan lead (per konversi)',
-  keeper: '46 · Jasa keeper (per tx)', solver: '48 · Jasa solver (per tx)',
+  keeper: '46 · Jasa keeper (per tx)', solver: '48 · Jasa solver (per tx)', delegate: '16 · Jasa delegate (per suara)',
 }
+/** Jenis yang bisa dibuat dari formulir ini. `delegate` butuh dokumen mandat dan klaim transaksi (SD-072, BE-055) yang belum ada di halaman, jadi hanya tampil bila sudah ada. */
+export const CREATABLE_KINDS = ORDER_KINDS.filter((k) => k !== 'delegate')
 export const KIND_NOTE: Partial<Record<OrderKind, string>> = {
   scraping: 'Pengumpulan data dari situs web bisa melanggar ketentuan layanan (ToS) situs itu. Penjual bertanggung jawab atas caranya; x207 tidak memeriksanya.',
   loadtest: 'Uji beban hanya untuk situs yang Anda kuasai. Backend meminta bukti: berkas /.well-known/x207-loadtest atau DNS TXT berisi hash pesanan, sebelum pesanan diterima.',

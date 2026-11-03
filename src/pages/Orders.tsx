@@ -9,7 +9,7 @@ import { CONTRACT_ID } from '../config'
 import { formatCredit, formatTime, shortAccount } from '../lib/format'
 import { describeMarketError } from '../lib/marketError'
 import {
-  EMPTY_ORDER, KIND_LABEL, assertOrderHash, KIND_NOTE, ORDER_KINDS, ORDER_PATTERN, PROOF_METHODS, buildCreateOrder, milestoneNotice, orderHashOf, signNotice, toOrderDocument,
+  CREATABLE_KINDS, EMPTY_ORDER, KIND_LABEL, assertOrderHash, KIND_NOTE, ORDER_PATTERN, PROOF_METHODS, buildCreateOrder, milestoneNotice, orderHashOf, signNotice, toOrderDocument,
   type MilestoneAction, type OrderForm, type OutcomeAction,
 } from '../lib/orderFlow'
 import { useWallet } from '../wallet/WalletContext'
@@ -60,7 +60,7 @@ function CreateOrder({ voucherKey, onVoucherKey, onCreated }: { voucherKey: stri
         <span>Jenis jasa</span>
         <select value={form.kind} onChange={(e) => setForm({ ...EMPTY_ORDER, seller: form.seller, kind: e.target.value as OrderForm['kind'] })}>
           <option value="">Pilih jenis</option>
-          {ORDER_KINDS.map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
+          {CREATABLE_KINDS.map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
         </select>
       </label>
       {form.kind !== '' && KIND_NOTE[form.kind] && <p className="state" role="note" data-testid="order-note">{KIND_NOTE[form.kind]}</p>}
