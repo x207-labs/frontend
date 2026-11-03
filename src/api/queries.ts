@@ -85,3 +85,7 @@ export const useInvoices = (query: Record<string, string>, enabled = true) =>
   useQuery({ queryKey: ['invoices', query], queryFn: () => api.invoices(query), enabled })
 export const useInvoice = (hash: string | null) =>
   useQuery({ queryKey: ['invoice', hash], queryFn: () => api.invoice(hash!), enabled: hash !== null })
+
+export const useOrders = (query: Record<string, string>, enabled = true) => useQuery({ queryKey: ['orders', query], queryFn: () => api.orders(query), enabled })
+export const useOrder = (hash: string | null) => useQuery({ queryKey: ['order', hash], queryFn: () => api.order(hash!), enabled: hash !== null })
+export const useOrderProofs = (hash: string | null, enabled: boolean) => useQuery({ queryKey: ['order-proofs', hash], queryFn: () => api.orderProofs(hash!), enabled: hash !== null && enabled })

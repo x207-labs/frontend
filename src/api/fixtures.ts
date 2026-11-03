@@ -260,6 +260,19 @@ export function fixtureReply(path: string): FixtureReply {
     const found = invoices.find((i) => i.invoice_hash === invoiceOne[1])
     return found ? ok(found) : notFound('invoice_not_found', 'Invoice tidak ada')
   }
+  if (rest === '/orders') {
+    const party = url.searchParams.get('party')
+    const status = url.searchParams.get('status')
+    const items = orders.filter((o) => (!party || o.order.buyer === party || o.order.seller === party) && (!status || o.status === status))
+    return ok({ items, nextCursor: null })
+  }
+  const orderOne = rest.match(/^\/orders\/([0-9a-f]{64})$/)
+  if (orderOne) {
+    const found = orders.find((o) => o.order_hash === orderOne[1])
+    return found ? ok(found) : notFound('order_not_found', 'Pesanan tidak ada')
+  }
+  const orderProofs = rest.match(/^\/orders\/([0-9a-f]{64})\/onchain-proofs$/)
+  if (orderProofs) return ok({ items: [{ tx_hash: 'AbC1', method: 'close_epoch', signer: near('keeper') }, { tx_hash: 'AbC2', method: 'close_epoch', signer: near('keeper') }] })
   if (rest === '/intents') return ok({ items: [], nextCursor: null })
   if (rest === '/intents/hashes') return ok({ circle, items: [], nextCursor: null })
   if (rest === '/intents/withdrawals') return ok({ circle, ...amounts, totalWithdrawn: '0', withdrawals: 0, items: [], nextCursor: null })
@@ -351,4 +364,31 @@ export const invoices = [
       { index: 3, epoch: 46, amount: '30000000', status: 'scheduled', reason: null, voucherEpoch: 46, shifted: false },
     ],
   },
+]
+
+// Pesanan jasa (FE-027): bentuk dari Spec API Backend 5f, snake_case seperti di spec. Hash dihitung dari dokumennya (sha256 JSON kanonik SD-069).
+const H = (c: string) => c.repeat(64)
+const orderBase = { circle: 'x207-circle.testnet', buyer: near('research'), nonce: 'o1' }
+export const orderDocs = {
+  research: { ...orderBase, kind: 'research', seller: near('audit'), spec_hash: H('a'), sample_hash: null, target: null, proof: null,
+    milestones: [{ amount: '40000000', due_at: 1793100000 }, { amount: '60000000', due_at: 1793186400 }] },
+  prompt: { ...orderBase, kind: 'prompt', seller: near('audit'), spec_hash: H('b'), sample_hash: H('c'), target: null, proof: null, nonce: 'o2', milestones: [{ amount: '20000000', due_at: 1793100000 }] },
+  keeper: { ...orderBase, kind: 'keeper', seller: near('keeper'), spec_hash: H('d'), sample_hash: null, target: null, proof: { method: 'close_epoch', amount_per_tx: '250000' }, nonce: 'o3', milestones: [{ amount: '1000000', due_at: 1793100000 }] },
+  loadtest: { ...orderBase, kind: 'loadtest', seller: near('audit'), spec_hash: H('e'), sample_hash: null, target: 'shop.example.com', proof: null, nonce: 'o4', milestones: [{ amount: '150000000', due_at: 1793100000 }] },
+}
+export const orderHashes = {
+  research: 'e64978825412efbc22176af4b1e6b7f1f3f3f936814706b1ecb596be61c6c387',
+  prompt: '204dd9cb3cf7bd5b0dabc428327d6baac417c971787a975bb5417df908312373',
+  keeper: 'f7fa1558eb171491c01d277adac2f19019056d14759adfa200581893ca83ff69',
+  loadtest: '225863819e31a47e24d72a1cc5de4ac91343ba15897418d541c29d35fc6bca27',
+}
+export const orders = [
+  { order_hash: orderHashes.research, order: orderDocs.research, status: 'active', needs_bond: false, target_verified: null,
+    milestones: [
+      { index: 1, amount: '40000000', due_at: 1793100000, status: 'delivered', deliverable_hash: H('f'), at: 1793090000 },
+      { index: 2, amount: '60000000', due_at: 1793186400, status: 'open', deliverable_hash: null, at: null },
+    ] },
+  { order_hash: orderHashes.prompt, order: orderDocs.prompt, status: 'active', needs_bond: false, target_verified: null, milestones: [{ index: 1, amount: '20000000', due_at: 1793100000, status: 'open', deliverable_hash: null, at: null }] },
+  { order_hash: orderHashes.keeper, order: orderDocs.keeper, status: 'active', needs_bond: false, target_verified: null, milestones: [{ index: 1, amount: '1000000', due_at: 1793100000, status: 'open', deliverable_hash: null, at: null }] },
+  { order_hash: orderHashes.loadtest, order: orderDocs.loadtest, status: 'pending', needs_bond: true, target_verified: false, milestones: [{ index: 1, amount: '150000000', due_at: 1793100000, status: 'open', deliverable_hash: null, at: null }] },
 ]

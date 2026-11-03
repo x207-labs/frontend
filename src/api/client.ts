@@ -1,5 +1,6 @@
 import { API_URL, CIRCLE } from '../config'
 import { toInvoiceView } from './invoiceView'
+import { toOrderView } from './orderView'
 import type {
   ClearingReport,
   DepositQuote,
@@ -29,7 +30,7 @@ import type {
   AcceptRequest,
   AcceptResult,
   BundleProposal,
-  InvoiceList, InvoiceView, ListingCheck, ListingList,
+  InvoiceList, InvoiceView, OnchainProofView, OrderList, OrderView, ListingCheck, ListingList,
   ListingView,
   MarketStats,
   OfferView,
@@ -127,6 +128,20 @@ export const api = {
   approveInvoice: (hash: string, vouchers: Array<{ voucher: object; signature: string }>) => post<unknown>(`${circle}/invoices/${hash}/approve`, { vouchers }),
   rejectInvoice: (hash: string, notice: object, signature: string) => post<unknown>(`${circle}/invoices/${hash}/reject`, { notice, signature }),
   catchUpInstallment: (hash: string, index: number, voucher: object, signature: string) => post<unknown>(`${circle}/invoices/${hash}/installments/${index}/catch-up`, { voucher, signature }),
+  orders: async (query: Record<string, string>): Promise<OrderList> => {
+    const qs = new URLSearchParams(query).toString()
+    const raw = await get<{ items?: unknown[]; nextCursor?: string | null }>(`${circle}/orders${qs ? `?${qs}` : ''}`)
+    return { items: (raw.items ?? []).map(toOrderView), nextCursor: raw.nextCursor ?? null }
+  },
+  order: async (hash: string): Promise<OrderView> => toOrderView(await get<unknown>(`${circle}/orders/${hash}`)),
+  createOrder: (body: { order: object; signatures: Array<{ account: string; signature: string }> }) => post<{ order_hash?: string; orderHash?: string }>(`${circle}/orders`, body),
+  orderMilestone: (hash: string, index: number, notice: object, signature: string) => post<unknown>(`${circle}/orders/${hash}/milestones/${index}`, { notice, signature }),
+  orderOutcome: (hash: string, notice: object, signature: string) => post<unknown>(`${circle}/orders/${hash}/outcomes`, { notice, signature }),
+  orderTargetCheck: (hash: string) => post<{ target_verified?: boolean; targetVerified?: boolean }>(`${circle}/orders/${hash}/target-check`, {}),
+  orderProofs: async (hash: string): Promise<OnchainProofView[]> => {
+    const raw = await get<{ items?: Array<Record<string, unknown>> }>(`${circle}/orders/${hash}/onchain-proofs`)
+    return (raw.items ?? []).map((p) => ({ txHash: String(p.txHash ?? p.tx_hash), method: String(p.method), signer: String(p.signer) }))
+  },
   cancelListing: (hash: string, signature: string) => post<ListingView>(`${circle}/listings/${hash}/cancel`, { signature }),
   offers: (hash: string) => get<{ items: OfferView[] }>(`${circle}/listings/${hash}/offers`),
   postOffer: (hash: string, offer: object, signature: string, inReplyTo?: string) =>

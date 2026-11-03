@@ -15,6 +15,7 @@ import { CONTRACT_ID } from '../config'
 import { ASSET_CLASSES, listingHash, signListing, type AssetClass, type Listing } from '../lib/barter'
 import { fromAtomic, toAtomic } from '../lib/amount'
 import { describeMarketError } from '../lib/marketError'
+import { isHumanListing, withHumanMark } from '../lib/orderFlow'
 import { formatCredit, formatNumber, formatTime, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
 
@@ -82,6 +83,7 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
   const [discount, setDiscount] = useState('0')
   const [acceptPayment, setAcceptPayment] = useState(true)
   const [discoverable, setDiscoverable] = useState(true)
+  const [human, setHuman] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [created, setCreated] = useState<string | null>(null)
@@ -94,7 +96,7 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
   // FE-026 (X4): the dry run (BE-052) of the listing, signed like the real one. The owner calls offer_grant and the deposit only after it passes: a listing the backend
   // refuses (type not registered, RWA token not on the circle list, the USDT of the circle) must not be found out after the asset is in escrow.
   // a pass belongs to the form it was made for: any change to the form makes it idle again
-  const draftKey = JSON.stringify([offer, want, terms, detail, hours, discount, acceptPayment, discoverable, voucherKey, account])
+  const draftKey = JSON.stringify([offer, want, terms, detail, human, hours, discount, acceptPayment, discoverable, voucherKey, account])
   const [checked, setChecked] = useState<{ draftKey: string; result: TemplateCheck }>({ draftKey: '', result: { state: 'idle' } })
   const check: TemplateCheck = checked.draftKey === draftKey ? checked.result : { state: 'idle' }
   const setCheck = (result: TemplateCheck) => setChecked({ draftKey, result })
@@ -105,7 +107,7 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
     offer: { asset_type: offer.type, asset_class: offer.cls, quantity: Number(offer.quantity), value: toAtomic(offer.value)! },
     want: { asset_type: want.type, asset_class: want.cls, quantity: Number(want.quantity), value: toAtomic(want.value)! },
     terms,
-    detail,
+    detail: withHumanMark(detail, human),
     expires_at: Math.floor(Date.now() / 1000) + Number(hours) * SECONDS_PER_HOUR,
     discount_bps: discountBps!,
     accept_payment: acceptPayment,
@@ -194,6 +196,10 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
         <span>Lawan boleh membayar dengan harga diskon</span>
       </label>
       <label className="check">
+        <input type="checkbox" checked={human} onChange={(e) => setHuman(e.target.checked)} />
+        <span>Dikerjakan oleh manusia (tanda “manusia” di listing; manusia ikut sebagai anggota biasa lewat wallet web)</span>
+      </label>
+      <label className="check">
         <input type="checkbox" checked={discoverable} onChange={(e) => setDiscoverable(e.target.checked)} />
         <span>Pencari otonom boleh mendatangi agent ini</span>
       </label>
@@ -213,7 +219,7 @@ function ListingRow({ listing, selected, onSelect }: { listing: ListingView; sel
   const side = (s: ListingView['offer']) => `${s.assetType} · kelas ${s.assetClass} · ${formatNumber(s.quantity, 0)} unit · ${formatCredit(s.value)} credit`
   return (
     <tr aria-selected={selected}>
-      <td><code>{shortAccount(listing.account)}</code></td>
+      <td><code>{shortAccount(listing.account)}</code>{isHumanListing(listing.detail) && <> <span className="badge" data-testid="human-badge">manusia</span></>}</td>
       <td>{side(listing.offer)}</td>
       <td>{side(listing.want)}</td>
       <td>{formatNumber(listing.discountBps / 100)}%{listing.acceptPayment ? ', bayar boleh' : ''}</td>

@@ -378,3 +378,17 @@ export type InvoiceDocumentView = { id: string; issuer: string; debtor: string; 
 export type InstallmentView = { index: number; epoch: number; amount: string; status: InstallmentStatus; reason: InstallmentReason | null; voucherEpoch: number | null; shifted: boolean }
 export type InvoiceView = { invoiceHash: string; document: InvoiceDocumentView; status: InvoiceStatus; needsBond: boolean; rejectReason: string | null; createdAt: string | null; installments: InstallmentView[] }
 export type InvoiceList = { items: InvoiceView[]; nextCursor: string | null }
+
+// Pesanan jasa (FE-027): Spec API Backend 5f, dibangun dari spec dengan mock; BE-054 belum ada. Dinormalkan oleh `toOrderView` (snake_case seperti di spec atau camelCase).
+export type MilestoneStatus = 'open' | 'delivered' | 'confirmed' | 'disputed' | 'paid' | 'cancelled'
+export type OrderMilestoneView = {
+  index: number; amount: string; dueAt: number; status: MilestoneStatus; deliverableHash: string | null; at: number | null
+  outcome: string | null; confirmBy: number | null; autoConfirmed: boolean; disputeReason: string | null
+}
+export type OrderDocView = {
+  circle: string; kind: string; buyer: string; seller: string; specHash: string
+  sampleHash: string | null; target: string | null; proof: { method: string; amountPerTx: string } | null; nonce: string
+}
+export type OrderView = { orderHash: string; order: OrderDocView; status: string; needsBond: boolean; targetVerified: boolean | null; signedBy: string[]; milestones: OrderMilestoneView[] }
+export type OrderList = { items: OrderView[]; nextCursor: string | null }
+export type OnchainProofView = { txHash: string; method: string; signer: string }
