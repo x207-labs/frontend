@@ -26,7 +26,7 @@ export type Member = {
 export type MemberResponse = Amounts & Member & { circle: string }
 
 /** `edgesUnavailable`: the contract pruned the pairs of this epoch, so the indexer's figures come from what it read before the prune. */
-export type EpochItem = { epoch: number; phase: EpochPhase; proposalDeadline: string | null; cutoffAt?: string | null; edgesUnavailable?: boolean }
+export type EpochItem = { epoch: number; phase: EpochPhase; proposalDeadline: string | null; cutoffAt?: string | null; paymentDeadline?: string | null; edgesUnavailable?: boolean }
 
 export type ObligationEdge = {
   debtor: string
