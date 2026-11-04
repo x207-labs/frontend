@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { JOIN_GUIDE_URL } from '../config'
 import { useMember, useMembers } from '../api/queries'
 import { DepositBranch } from '../components/DepositBranch'
 import { ExitPanel } from '../components/ExitPanel'
@@ -58,6 +59,9 @@ function JoinForm({ registered }: { registered: boolean }) {
         void run()
       }}
     >
+      <p className="state">
+        New to x207? <a href={JOIN_GUIDE_URL} target="_blank" rel="noreferrer">Join the circle step by step</a>, from the account to the first paid call.
+      </p>
       {!account && <p className="state">Sign in with a wallet to join the circle.</p>}
       {account && registered && <p className="state">Account {account} is already registered; just add stake.</p>}
       {needsJoin && (

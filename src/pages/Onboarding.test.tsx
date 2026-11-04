@@ -41,6 +41,12 @@ describe('onboarding F1', () => {
     expect(screen.getAllByRole('button', { name: 'Sign in with wallet' }).length).toBeGreaterThan(0)
   })
 
+  it('FE-035 the sign-in prompt of Onboarding links the guide to join the circle', async () => {
+    renderApp('/onboarding')
+    const link = await screen.findByRole('link', { name: /Join the circle step by step/ })
+    expect(link).toHaveAttribute('href', expect.stringContaining('docs/join-the-circle.md'))
+  })
+
   it('TC-FE-004-02 three validation messages and a disabled button', async () => {
     const { user } = await login()
     await user.type(screen.getByLabelText(/pubkey_voucher/), 'abc')

@@ -1,6 +1,9 @@
 const env = import.meta.env
 
 export const API_URL: string = env.VITE_X207_API_URL ?? 'http://localhost:8787'
+/** The guide for the owner of an agent: join, sell a service, pay it, see the position (docs of the umbrella repository). */
+export const JOIN_GUIDE_URL = 'https://github.com/x207-labs/x207/blob/main/docs/join-the-circle.md'
+
 export const CIRCLE: string = env.VITE_X207_CIRCLE ?? 'agents-main'
 export const POLL_MS = Number(env.VITE_X207_POLL_MS ?? 5000)
 export const USE_FIXTURES = env.VITE_X207_USE_FIXTURES === 'true'
