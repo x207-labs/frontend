@@ -47,7 +47,7 @@ describe('clearing stats', () => {
 
   it('TC-FE-008-05 loading then error', async () => {
     renderApp('/stats', (p) => (p.endsWith('/metrics') ? { ...apiError(503, 'indexer_unavailable'), delayMs: 30 } : undefined))
-    expect(await screen.findByText(/Loading metrics/)).toBeInTheDocument()
+    expect(await screen.findByText(/Loading (epoch|metrics)/)).toBeInTheDocument()
     expect(await screen.findByRole('alert')).toHaveTextContent('indexer_unavailable')
   })
 
@@ -65,5 +65,26 @@ describe('default epoch and headline', () => {
     expect(defaultEpoch([e(5, 'cutoff'), e(4, 'commit')])?.epoch).toBe(4)
     expect(defaultEpoch([e(5, 'cutoff'), e(4, 'open')])?.epoch).toBe(5)
     expect(defaultEpoch([])).toBeNull()
+  })
+})
+
+describe('default epoch with clearing results and honest labels for epochs without one', () => {
+  const e = (epoch: number, phase: string) => ({ epoch, phase, proposalDeadline: null }) as never
+  it('defaultEpoch skips a newer finalized epoch with no vouchers and lands on the newest one that cleared something', async () => {
+    const { defaultEpoch } = await import('../epoch')
+    const items = [e(7, 'cutoff'), e(6, 'commit'), e(5, 'finalized'), e(4, 'finalized'), e(2, 'finalized')]
+    const results = new Map([[5, { cleared: '0', voucherCount: 0 }], [4, { cleared: '0', voucherCount: 20 }], [2, { cleared: '210000000', voucherCount: 210 }]])
+    expect(defaultEpoch(items, results)?.epoch).toBe(2)
+    expect(defaultEpoch(items, new Map([[5, { cleared: '0', voucherCount: 0 }], [4, { cleared: '0', voucherCount: 20 }]]))?.epoch).toBe(4)
+    expect(defaultEpoch(items)?.epoch).toBe(5)
+  })
+
+  it('noResultText says finalized-empty, overdue and in-progress as they are, never as a zero result', async () => {
+    const { noResultText } = await import('./ClearingStats')
+    const m = (phase: string, voucherCount: number) => ({ epoch: 6, phase, voucherCount }) as never
+    expect(noResultText(m('finalized', 0), null)).toBe('Epoch 6 finalized with no vouchers, so nothing was cleared.')
+    expect(noResultText(m('commit', 0), '2026-11-04T07:37:51Z', Date.parse('2026-11-04T08:10:00Z'))).toContain('did not finish')
+    expect(noResultText(m('commit', 0), '2026-11-04T07:37:51Z', Date.parse('2026-11-04T08:10:00Z'))).toContain('2026-11-04 07:37 UTC')
+    expect(noResultText(m('cutoff', 3), null)).toBe('Epoch 6 is in progress (phase cutoff): 3 vouchers registered, clearing not run yet.')
   })
 })

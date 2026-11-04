@@ -5,12 +5,21 @@ import { Scatter } from '../components/Scatter'
 import { useEpochSelection } from '../epoch'
 import { formatCredit, formatNumber, formatPercent } from '../lib/format'
 
-function Headline({ m }: { m: EpochMetrics }) {
+/** What an epoch without a clearing result is, said as it is: finished with nothing in it, stuck past its deadline, or still running. */
+export function noResultText(m: EpochMetrics, deadline: string | null, now = Date.now()): string {
+  const vouchers = formatNumber(m.voucherCount, 0)
+  if (m.phase === 'finalized') return m.voucherCount === 0 ? `Epoch ${m.epoch} finalized with no vouchers, so nothing was cleared.` : `${vouchers} vouchers registered in epoch ${m.epoch}; clearing was not run.`
+  const late = deadline !== null && Date.parse(deadline) < now
+  if (late) return `Epoch ${m.epoch} did not finish: it is still in phase ${m.phase} and its deadline of ${deadline!.replace('T', ' ').replace(/:\d\d(\.\d+)?Z$/, ' UTC')} has passed, so there is no clearing result.`
+  return `Epoch ${m.epoch} is in progress (phase ${m.phase}): ${vouchers} vouchers registered, clearing not run yet.`
+}
+
+function Headline({ m, deadline }: { m: EpochMetrics; deadline: string | null }) {
   return (
     <div className="headline">
       <p className="headline-main">
         {m.residualTransfers === null
-          ? `${formatNumber(m.voucherCount, 0)} vouchers registered, clearing not run yet.`
+          ? noResultText(m, deadline)
           : `${formatNumber(m.voucherCount, 0)} vouchers become ${formatNumber(m.residualTransfers, 0)} transfers.`}
       </p>
       <dl className="facts">
@@ -48,9 +57,10 @@ function Headline({ m }: { m: EpochMetrics }) {
 }
 
 export function ClearingStats() {
-  const { query, selected } = useEpochSelection()
+  const { query, selected, resolving } = useEpochSelection()
   const results = useAllMetrics((query.data?.items ?? []).map((e) => e.epoch))
   if (!selected) {
+    if (resolving) return <Loading label="Loading epoch" />
     return query.data ? <p className="state">No epoch with clearing metrics yet.</p> : null
   }
   const loaded = results.flatMap((r) => (r.data ? [r.data] : []))
@@ -76,7 +86,7 @@ export function ClearingStats() {
 
   return (
     <>
-      <Headline m={current} />
+      <Headline m={current} deadline={selected.proposalDeadline} />
       <h2>Clearing result against graph density</h2>
       <div className="scatter-row">
         <Scatter title="Cleared ratio" xLabel="Graph density" yLabel="Cleared ratio" yMax={1} formatY={(v) => formatNumber(v)} points={ratioPoints} />

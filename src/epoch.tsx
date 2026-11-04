@@ -1,18 +1,27 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useEpochs } from './api/queries'
+import { useAllMetrics, useEpochs } from './api/queries'
 import type { EpochItem } from './api/types'
 
 type Selection = {
   query: ReturnType<typeof useEpochs>
+  /** True while the metrics of the finalized epochs are read to choose the default epoch. */
+  resolving: boolean
   selected: EpochItem | null
   select: (epoch: number) => void
 }
 
-// Without ?epoch= the newest finalized epoch is shown first: it is the newest one with a complete clearing result. Then any epoch past the cutoff, then the newest one.
-export function defaultEpoch(items: EpochItem[]): EpochItem | null {
+// What the default choice needs to know about an epoch: whether clearing produced a result.
+export type EpochResult = { cleared: string | null; voucherCount: number }
+
+// Without ?epoch= the page opens on the newest finalized epoch that has a clearing result (cleared value above zero). If none cleared anything, the newest finalized epoch that
+// had vouchers; then the newest finalized epoch; then any epoch past the cutoff; then the newest one. An epoch that is stuck or still open is never the default.
+export function defaultEpoch(items: EpochItem[], results: ReadonlyMap<number, EpochResult> = new Map()): EpochItem | null {
+  const finalized = items.filter((e) => e.phase === 'finalized')
   return (
-    items.find((e) => e.phase === 'finalized') ??
+    finalized.find((e) => BigInt(results.get(e.epoch)?.cleared ?? '0') > 0n) ??
+    finalized.find((e) => (results.get(e.epoch)?.voucherCount ?? 0) > 0) ??
+    finalized[0] ??
     items.find((e) => e.phase !== 'open' && e.phase !== 'cutoff') ??
     items[0] ??
     null
@@ -26,15 +35,23 @@ export function EpochProvider({ children }: { children: ReactNode }) {
   const query = useEpochs()
   const [params, setParams] = useSearchParams()
   const wanted = params.get('epoch')
+  const finalized = (query.data?.items ?? []).filter((e) => e.phase === 'finalized').map((e) => e.epoch)
+  const metrics = useAllMetrics(wanted === null ? finalized : [])
+  const settled = metrics.every((m) => m.data !== undefined || m.isError)
 
   const value = useMemo<Selection>(() => {
     const items = query.data?.items ?? []
+    const results = new Map<number, EpochResult>()
+    for (const m of metrics) if (m.data) results.set(m.data.epoch, { cleared: m.data.cleared, voucherCount: m.data.voucherCount })
+    const resolving = wanted === null && query.data !== undefined && !settled
     return {
       query,
-      selected: items.find((e) => String(e.epoch) === wanted) ?? defaultEpoch(items),
+      resolving,
+      selected: items.find((e) => String(e.epoch) === wanted) ?? (resolving ? null : defaultEpoch(items, results)),
       select: (epoch) => setParams({ epoch: String(epoch) }),
     }
-  }, [query, wanted, setParams])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, wanted, setParams, settled, metrics.map((m) => m.dataUpdatedAt).join()])
 
   return <EpochContext.Provider value={value}>{children}</EpochContext.Provider>
 }

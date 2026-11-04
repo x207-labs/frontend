@@ -2,7 +2,7 @@ import { useEpochSelection } from '../epoch'
 import { Loading, ErrorNotice } from './QueryState'
 
 export function EpochPicker() {
-  const { query, selected, select } = useEpochSelection()
+  const { query, selected, select, resolving } = useEpochSelection()
   if (query.data === undefined) {
     return query.isError ? (
       <ErrorNotice error={query.error} onRetry={() => query.refetch()} />
@@ -10,6 +10,7 @@ export function EpochPicker() {
       <Loading label="Loading epoch" />
     )
   }
+  if (resolving) return <Loading label="Loading epoch" />
   if (!selected) return <p className="state">No epoch in this circle yet.</p>
   return (
     <div className="picker">
