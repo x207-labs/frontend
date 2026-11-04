@@ -4,7 +4,7 @@ The dashboard of [x207](https://github.com/x207-labs/x207), in four groups: the 
 
 ## Its role in x207
 
-The dashboard is where a human sees what the credit circle is doing. It reads the [read API](https://github.com/x207-labs/backend) (polled every 5 seconds) and the public testnet RPC, and it signs through a wallet port: before the page signs a voucher it checks recipient, circle, canonical form and legs itself, so a lying server cannot change what the key signs.
+The dashboard is where a human sees what the circle is doing. It reads the [read API](https://github.com/x207-labs/backend) (polled every 5 seconds) and the public testnet RPC, and it signs through a wallet port: before the page signs a voucher it checks recipient, circle, canonical form and legs itself, so a lying server cannot change what the key signs.
 
 ```mermaid
 flowchart LR
