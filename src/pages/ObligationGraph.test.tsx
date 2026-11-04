@@ -85,3 +85,28 @@ describe('decomposeCycles', () => {
     expect(decomposeCycles([{ debtor: 'a', creditor: 'b', cleared: 0n }])).toEqual([])
   })
 })
+
+describe('FE-036 graph of an epoch whose edges were pruned', () => {
+  const flagged = (flag: boolean) => (path: string) =>
+    path.endsWith('/epochs') ? { status: 200, body: { items: [{ epoch: 42, phase: 'finalized', proposalDeadline: null, edgesUnavailable: flag }], nextCursor: null } } : undefined
+
+  it('TC-FE-036-03 the note shows, and a graph with no edges says why instead of the empty-epoch text', async () => {
+    renderApp('/charts?epoch=42', (p) => (p.includes('/obligations') ? { status: 200, body: staged('cutoff', []) } : flagged(true)(p)))
+    expect(await screen.findByRole('note')).toHaveTextContent('Edges pruned on-chain; figures from the indexer.')
+    expect(await screen.findAllByText(/pruned on-chain and the indexer has none for it, so there is no graph to draw/)).toHaveLength(2)
+    expect(screen.queryByText('No obligations registered in this epoch yet.')).toBeNull()
+  })
+
+  it('TC-FE-036-04 the edges the indexer kept are still drawn, with the note above them', async () => {
+    renderApp('/charts?epoch=42', flagged(true))
+    expect(await screen.findByText(/2 obligations worth/)).toBeInTheDocument()
+    expect(screen.getByRole('note')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /Current epoch, 2 edges/ })).toBeInTheDocument()
+  })
+
+  it('TC-FE-036-05 not flagged: no note and the usual empty text', async () => {
+    renderApp('/charts?epoch=42', (p) => (p.includes('/obligations') ? { status: 200, body: staged('cutoff', []) } : flagged(false)(p)))
+    expect(await screen.findByText('No obligations registered in this epoch yet.')).toBeInTheDocument()
+    expect(screen.queryByRole('note')).toBeNull()
+  })
+})

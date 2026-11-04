@@ -150,3 +150,22 @@ describe('plural and the default note (epoch 7 of the testnet circle: one vouche
     expect(defaultNote(m({ defaultRate: null }))).toBeNull()
   })
 })
+
+describe('FE-036 epochs whose edges were pruned on-chain', () => {
+  const pruned = (p: string) => (p.endsWith('/epochs') ? { status: 200, body: { items: [{ epoch: 42, phase: 'finalized', proposalDeadline: null, edgesUnavailable: true }, { epoch: 41, phase: 'finalized', proposalDeadline: null, edgesUnavailable: false }], nextCursor: null } } : undefined)
+
+  it('TC-FE-036-01 the headline and the table row say the edges were pruned; an epoch that was not pruned says nothing', async () => {
+    renderApp('/stats?epoch=42', pruned)
+    expect(await screen.findByRole('note')).toHaveTextContent('Edges pruned on-chain; figures from the indexer.')
+    const row42 = screen.getAllByRole('row').find((r) => within(r).queryByText(/^42/))!
+    expect(row42).toHaveTextContent('edges pruned on-chain')
+    const row41 = screen.getAllByRole('row').find((r) => within(r).queryByText('41'))!
+    expect(row41).not.toHaveTextContent('pruned')
+  })
+
+  it('TC-FE-036-02 an epoch with the flag false or absent has no note', async () => {
+    renderApp('/stats?epoch=41', pruned)
+    await screen.findByText('Per epoch')
+    expect(screen.queryByRole('note')).toBeNull()
+  })
+})

@@ -3,9 +3,9 @@ import { ApiError } from '../api/client'
 import { useObligations } from '../api/queries'
 import type { ObligationEdge, Obligations } from '../api/types'
 import { QueryState } from '../components/QueryState'
-import { useSelectedEpoch } from '../epoch'
+import { useEpochSelection, useSelectedEpoch } from '../epoch'
 import { decomposeCycles } from '../lib/cycles'
-import { formatCredit, shortAccount } from '../lib/format'
+import { EDGES_PRUNED_NOTE, formatCredit, shortAccount } from '../lib/format'
 
 const SIZE = 280
 const CENTER = SIZE / 2
@@ -135,16 +135,18 @@ function Cleared({ live, cleared }: { live: Obligations; cleared: Obligations })
 
 export function ObligationGraph() {
   const epoch = useSelectedEpoch()
+  const pruned = useEpochSelection().selected?.edgesUnavailable === true
   const live = useObligations(epoch, 'live')
   const cleared = useObligations(epoch, 'cleared')
   if (epoch === null) return null
   return (
     <>
+      {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}
       <QueryState
         query={live}
         loadingLabel="Loading obligations"
         isEmpty={(d) => d.edges.length === 0}
-        empty="No obligations registered in this epoch yet."
+        empty={pruned ? 'The edges of this epoch were pruned on-chain and the indexer has none for it, so there is no graph to draw.' : 'No obligations registered in this epoch yet.'}
       >
         {(data) => (
           <>
@@ -169,7 +171,7 @@ export function ObligationGraph() {
           query={cleared}
           loadingLabel="Loading clearing result"
           isEmpty={(d) => d.edges.length === 0}
-          empty="Clearing has not been applied to this epoch yet."
+          empty={pruned ? 'The cleared edges of this epoch were pruned on-chain and the indexer has none for it, so there is no graph to draw.' : 'Clearing has not been applied to this epoch yet.'}
         >
           {(data) => (live.data ? <Cleared live={live.data} cleared={data} /> : null)}
         </QueryState>

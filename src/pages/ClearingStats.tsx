@@ -3,7 +3,7 @@ import type { EpochMetrics } from '../api/types'
 import { ErrorNotice, Loading } from '../components/QueryState'
 import { Scatter } from '../components/Scatter'
 import { useEpochSelection } from '../epoch'
-import { formatCredit, formatNumber, formatPercent } from '../lib/format'
+import { EDGES_PRUNED_NOTE, formatCredit, formatNumber, formatPercent } from '../lib/format'
 
 const utc = (iso: string): string => iso.replace('T', ' ').replace(/:\d\d(\.\d+)?Z$/, ' UTC')
 
@@ -41,7 +41,7 @@ export function defaultNote(m: EpochMetrics): string | null {
   return `Default rate: ${formatPercent(m.defaultRate)} of the residual debt of ${formatCredit(m.netDebt)} credit was not paid in the payment window and was covered from the stake of the debtors.`
 }
 
-function Headline({ m, deadline, cutoffAt }: { m: EpochMetrics; deadline: string | null; cutoffAt: string | null }) {
+function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline: string | null; cutoffAt: string | null; pruned: boolean }) {
   return (
     <div className="headline">
       <p className="headline-main">
@@ -81,6 +81,7 @@ function Headline({ m, deadline, cutoffAt }: { m: EpochMetrics; deadline: string
           <dd>{m.clearingTimeSeconds === null ? 'not available' : `${formatNumber(m.clearingTimeSeconds, 0)} seconds`}</dd>
         </div>
       </dl>
+      {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}
       {defaultNote(m) && <p className="state">{defaultNote(m)}</p>}
     </div>
   )
@@ -94,6 +95,7 @@ export function ClearingStats() {
     return query.data ? <p className="state">No epoch with clearing metrics yet.</p> : null
   }
   const loaded = results.flatMap((r) => (r.data ? [r.data] : []))
+  const pruned = new Set((query.data?.items ?? []).filter((e) => e.edgesUnavailable === true).map((e) => e.epoch))
   const current = loaded.find((m) => m.epoch === selected.epoch)
   const failed = results.find((r) => r.isError && r.data === undefined)
 
@@ -116,7 +118,7 @@ export function ClearingStats() {
 
   return (
     <>
-      <Headline m={current} deadline={selected.proposalDeadline} cutoffAt={selected.cutoffAt ?? null} />
+      <Headline m={current} deadline={selected.proposalDeadline} cutoffAt={selected.cutoffAt ?? null} pruned={pruned.has(current.epoch)} />
       <h2>Clearing result against graph density</h2>
       <div className="scatter-row">
         <Scatter title="Cleared ratio" xLabel="Graph density" yLabel="Cleared ratio" yMax={1} formatY={(v) => formatNumber(v)} points={ratioPoints} />
@@ -143,7 +145,10 @@ export function ClearingStats() {
               </tr>
             ) : (
               <tr key={m.epoch} aria-current={m.epoch === selected.epoch ? 'true' : undefined}>
-                <td>{m.epoch}</td>
+                <td>
+                  {m.epoch}
+                  {pruned.has(m.epoch) && <small className="state" title={EDGES_PRUNED_NOTE}> edges pruned on-chain</small>}
+                </td>
                 <td className="num">{formatNumber(m.graph.density, 4)}</td>
                 <td className="num" title={noClearing(m) ? 'No clearing was applied in this epoch' : undefined}>{ratioText(m)}</td>
                 <td className="num">{formatNumber(m.voucherCount, 0)}</td>

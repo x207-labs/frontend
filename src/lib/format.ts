@@ -1,6 +1,9 @@
 const grouped = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
 
 // A string amount in the smallest unit (6 decimals) becomes whole credit, without going through a float.
+/** Said wherever an epoch whose edges the contract pruned shows figures: they are the indexer's, the chain no longer lists the pairs. */
+export const EDGES_PRUNED_NOTE = 'Edges pruned on-chain; figures from the indexer.'
+
 export function formatCredit(raw: string | null | undefined): string {
   if (raw === null || raw === undefined) return 'not available'
   const sign = raw.startsWith('-') ? '-' : raw.startsWith('+') ? '+' : ''
