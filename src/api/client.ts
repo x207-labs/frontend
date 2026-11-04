@@ -2,6 +2,7 @@ import { API_URL, BROKER_URL, CIRCLE } from '../config'
 import { toInvoiceView } from './invoiceView'
 import { toOrderView } from './orderView'
 import { toPurchaseView } from './purchaseView'
+import { toTransferView, type TransferView } from './transferView'
 import type {
   ClearingReport,
   DepositQuote,
@@ -166,6 +167,16 @@ export const api = {
   },
   purchase: async (id: string): Promise<PurchaseView> => toPurchaseView(await get<unknown>(`${circle}/purchases/${encodeURIComponent(id)}`)),
   createPurchase: (listingHash: string, voucher: object, signature: string) => post<{ purchase_id?: string | number; purchaseId?: string | number }>(`${circle}/listings/${listingHash}/purchases`, { voucher, signature }),
+  /** BE-074: a purchase through the official feature of a platform; the answer is the transfer with `status: "paid_held"` and the window. */
+  createTransfer: async (listingHash: string, voucher: object, signature: string, buyerRef?: string): Promise<TransferView> =>
+    toTransferView(await post<unknown>(`${circle}/listings/${listingHash}/transfers`, { voucher, signature, ...(buyerRef === undefined ? {} : { buyer_ref: buyerRef }) })),
+  transfer: async (id: string): Promise<TransferView> => toTransferView(await get<unknown>(`${circle}/transfers/${encodeURIComponent(id)}`)),
+  /** Asks the platform for the proof (domain: body `{}`; game item: `{ tradeoffer_id }` the first time). Needs no signature. */
+  transferProof: async (id: string, body: { tradeoffer_id?: string } = {}): Promise<TransferView> =>
+    toTransferView(await post<unknown>(`${circle}/transfers/${encodeURIComponent(id)}/proof`, body)),
+  /** The signed notice `confirmed` (the buyer of a ticket) or `cancelled` (the buyer or the seller while the voucher is held). */
+  transferNotice: async (id: string, notice: object, signature: string): Promise<TransferView> =>
+    toTransferView(await post<unknown>(`${circle}/transfers/${encodeURIComponent(id)}`, { notice, signature })),
   purchaseNotice: (id: string, notice: object, signature: string) => post<unknown>(`${circle}/purchases/${encodeURIComponent(id)}`, { notice, signature }),
   /** BE-069: penjual menunjukkan kode dan salt sekali; backend bertanya ke penerbit dan hanya menyimpan vonis dan waktunya. */
   codeCheck: (listingHash: string, notice: object, signature: string, code: string, salt: string) =>

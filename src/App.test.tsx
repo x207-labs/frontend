@@ -13,11 +13,11 @@ describe('dashboard shell', () => {
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
   })
 
-  it('TC-FE-002-01 fourteen pages (F1-F4, governance, marketplace F9, access F8, invoices P8, orders P6, licenses P7, codes P3 and access rent P2) open from one navigation', async () => {
+  it('TC-FE-002-01 fifteen pages (F1-F4, governance, marketplace F9, access F8, invoices P8, orders P6, licenses P7, codes P3, transfers P4 and access rent P2) open from one navigation', async () => {
     const user = userEvent.setup()
     renderApp('/')
     const nav = screen.getByRole('navigation', { name: 'Pages' })
-    expect(within(nav).getAllByRole('link')).toHaveLength(14)
+    expect(within(nav).getAllByRole('link')).toHaveLength(15)
     for (const { title } of pages) {
       await user.click(within(nav).getByRole('link', { name: title }))
       expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument()

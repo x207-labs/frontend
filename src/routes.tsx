@@ -13,6 +13,7 @@ import { Report207 } from './pages/Report207'
 import { Rent } from './pages/Rent'
 import { Risk } from './pages/Risk'
 import { Settlement } from './pages/Settlement'
+import { Transfers } from './pages/Transfers'
 
 export type PageRoute = { path: string; title: string; perEpoch: boolean; Page: ComponentType }
 
@@ -28,6 +29,7 @@ export const pages: PageRoute[] = [
   { path: '/orders', title: 'Service orders', perEpoch: false, Page: Orders },
   { path: '/licenses', title: 'Content licenses', perEpoch: false, Page: Licenses },
   { path: '/codes', title: 'One-time codes', perEpoch: false, Page: Codes },
+  { path: '/transfers', title: 'Platform transfers', perEpoch: false, Page: Transfers },
   { path: '/rent', title: 'Access rent', perEpoch: false, Page: Rent },
   { path: '/access', title: 'Access (F8)', perEpoch: false, Page: Grants },
   { path: '/governance', title: 'Governance', perEpoch: false, Page: Governance },

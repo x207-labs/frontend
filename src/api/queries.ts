@@ -92,3 +92,5 @@ export const useDaoRegistry = () => useQuery({ queryKey: ['dao-registry'], query
 export const useOrderProofs = (hash: string | null, enabled: boolean) => useQuery({ queryKey: ['order-proofs', hash], queryFn: () => api.orderProofs(hash!), enabled: hash !== null && enabled })
 
 export const usePurchase = (id: string | null) => useQuery({ queryKey: ['purchase', id], queryFn: () => api.purchase(id!), enabled: id !== null })
+
+export const useTransfer = (id: string | null) => useQuery({ queryKey: ['transfer', id], queryFn: () => api.transfer(id!), enabled: id !== null })
