@@ -14,7 +14,7 @@ function Header() {
   return (
     <header className="page-head">
       <div className="page-title">
-        <h1>{page?.title}</h1>
+        <h1>{page?.title ?? 'Page not found'}</h1>
         <div className="page-tools">
           <EpochPicker />
           <WalletButton />
@@ -38,7 +38,7 @@ export function Layout() {
   }, [pathname, title])
   return (
     <EpochProvider>
-      <a className="skip-link" href="#isi" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
+      <a className="skip-link" href="#content" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
       <div className="shell">
         <aside className="rail">
           <p className="brand">
@@ -61,7 +61,7 @@ export function Layout() {
             ))}
           </nav>
         </aside>
-        <main id="isi" ref={main} tabIndex={-1}>
+        <main id="content" ref={main} tabIndex={-1}>
           <Header />
           <Outlet />
         </main>

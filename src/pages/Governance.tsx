@@ -7,7 +7,7 @@ import { formatCredit, formatNumber } from '../lib/format'
 type Key = keyof Params
 
 const percent = (bps: number) => `${formatNumber(bps / 100)}%`
-const minutes = (seconds: number) => `${formatNumber(seconds / 60)} minutes`
+const minutes = (seconds: number) => `${formatNumber(seconds / 60)} ${seconds === 60 ? 'minute' : 'minutes'}`
 
 const rows: { key: Key; label: string; format: (value: never) => string }[] = [
   { key: 'epoch_length', label: 'Epoch length', format: minutes },
@@ -26,7 +26,9 @@ const rows: { key: Key; label: string; format: (value: never) => string }[] = [
 ]
 
 // History carries raw values per field; the format follows the parameter table.
-function formatField(field: string, value: unknown): string {
+export function formatField(field: string, value: unknown): string {
+  // The first row of a field in the history has no old value (`null`); it must not reach a formatter (`fees` would crash the page, a number would read as 0).
+  if (value === null || value === undefined) return '—'
   const row = rows.find((r) => r.key === field)
   return row ? row.format(value as never) : String(value)
 }

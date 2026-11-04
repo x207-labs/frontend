@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { LEGACY_ROUTES } from './legacyRoutes'
 import { RequireWallet } from './components/RequireWallet'
@@ -8,6 +8,16 @@ import { pages } from './routes'
 function Redirect({ to }: { to: string }) {
   const { search, hash } = useLocation()
   return <Navigate to={{ pathname: to, search, hash }} replace />
+}
+
+// A path that no page owns (a mistyped link) used to leave the page blank.
+export function NotFound() {
+  const { pathname } = useLocation()
+  return (
+    <p className="state">
+      There is no page at <code>{pathname}</code>. <Link to="/stats">Open the clearing stats</Link>.
+    </p>
+  )
 }
 
 export function App() {
@@ -21,6 +31,7 @@ export function App() {
         {Object.entries(LEGACY_ROUTES).map(([from, to]) => (
           <Route key={from} path={from} element={<Redirect to={to} />} />
         ))}
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )

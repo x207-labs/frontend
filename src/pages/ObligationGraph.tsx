@@ -65,6 +65,7 @@ function Graph({ title, edges, nodes, mode }: { title: string; edges: Obligation
 
 function EdgeTable({ edges, staged }: { edges: ObligationEdge[]; staged: boolean }) {
   return (
+    <div className="table-wrap">
     <table>
       <thead>
         <tr>
@@ -87,6 +88,7 @@ function EdgeTable({ edges, staged }: { edges: ObligationEdge[]; staged: boolean
         ))}
       </tbody>
     </table>
+    </div>
   )
 }
 

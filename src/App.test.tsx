@@ -24,6 +24,13 @@ describe('dashboard shell', () => {
     }
   })
 
+  it('FE-035 a path that no page owns shows a not-found page with a link, not a blank page', async () => {
+    renderApp('/nope')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Page not found' })).toBeInTheDocument()
+    expect(screen.getByText('/nope')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Open the clearing stats' })).toHaveAttribute('href', '/stats')
+  })
+
   it('TC-FE-002-02 the epoch picker is sorted descending and calls the selected {n}', async () => {
     const user = userEvent.setup()
     const { calls } = renderApp('/stats')

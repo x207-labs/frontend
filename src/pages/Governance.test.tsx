@@ -2,9 +2,20 @@ import { screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { params, paramsHistory } from '../api/fixtures'
 import { apiError, renderApp } from '../test/render'
+import { formatField } from './Governance'
 
 const HISTORY = '/params/history'
 const row = (name: string) => screen.getAllByText(name, { selector: 'td > code' })[0].closest('tr')!
+
+describe('formatField', () => {
+  it('FE-035 the first history row has no old value: a dash, for fees too (it crashed the page)', () => {
+    expect(formatField('fees', null)).toBe('—')
+    expect(formatField('proposal_window', 60)).toBe('1 minute')
+    expect(formatField('epoch_length', 600)).toBe('10 minutes')
+    expect(formatField('epoch_length', null)).toBe('—')
+    expect(formatField('fees', { clearing_fee_bps: 10, solver_fee_bps: 5 })).toBe('clearing 0.1%, solver 0.05%')
+  })
+})
 
 describe('governance', () => {
   it('TC-FE-014-01 nine parameters with minute and percent units', async () => {
