@@ -88,3 +88,11 @@ describe('default epoch with clearing results and honest labels for epochs witho
     expect(noResultText(m('cutoff', 3), null)).toBe('Epoch 6 is in progress (phase cutoff): 3 vouchers registered, clearing not run yet.')
   })
 })
+
+describe('an epoch with no vouchers is never shown as a zero result', () => {
+  it('a finalized epoch with 0 vouchers says it had none', async () => {
+    renderApp('/stats?epoch=42', (p) => (p.endsWith('/epochs/42/metrics') ? { status: 200, body: { ...metrics[42], phase: 'finalized', voucherCount: 0, residualTransfers: 0, cleared: '0' } } : undefined))
+    expect(await screen.findByText(/finalized with no vouchers, so nothing was cleared/)).toBeInTheDocument()
+    expect(screen.queryByText(/vouchers become 0 transfers/)).toBeNull()
+  })
+})

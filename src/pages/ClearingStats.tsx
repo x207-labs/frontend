@@ -18,7 +18,7 @@ function Headline({ m, deadline }: { m: EpochMetrics; deadline: string | null })
   return (
     <div className="headline">
       <p className="headline-main">
-        {m.residualTransfers === null
+        {m.residualTransfers === null || m.voucherCount === 0
           ? noResultText(m, deadline)
           : `${formatNumber(m.voucherCount, 0)} vouchers become ${formatNumber(m.residualTransfers, 0)} transfers.`}
       </p>
