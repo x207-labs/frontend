@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { CIRCLE } from '../config'
 import { EpochProvider, useEpochSelection } from '../epoch'
-import { pages } from '../routes'
+import { GROUPS, pages } from '../routes'
 import { EpochPicker } from './EpochPicker'
 import { PhaseStrip } from './PhaseStrip'
 import { WalletButton } from './WalletButton'
@@ -45,10 +45,19 @@ export function Layout() {
             x207 <span>{CIRCLE}</span>
           </p>
           <nav aria-label="Pages">
-            {pages.map(({ path, title }) => (
-              <NavLink key={path} to={{ pathname: path, search }}>
-                {title}
-              </NavLink>
+            {GROUPS.map((group) => (
+              <div key={group} role="group" aria-labelledby={`nav-${group.replace(/\s+/g, '-')}`}>
+                <p className="nav-group" id={`nav-${group.replace(/\s+/g, '-')}`}>
+                  {group}
+                </p>
+                {pages
+                  .filter((p) => p.group === group)
+                  .map(({ path, title }) => (
+                    <NavLink key={path} to={{ pathname: path, search }}>
+                      {title}
+                    </NavLink>
+                  ))}
+              </div>
             ))}
           </nav>
         </aside>

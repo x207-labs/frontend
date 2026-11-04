@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { LEGACY_ROUTES } from './legacyRoutes'
+import { RequireWallet } from './components/RequireWallet'
 import { pages } from './routes'
 
 // FE-034: the routes are English. The old Indonesian paths still open (a bookmark, a link in an old note) and go to the new one, with the query (the epoch) kept.
@@ -14,8 +15,8 @@ export function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Navigate to="/stats" replace />} />
-        {pages.map(({ path, Page }) => (
-          <Route key={path} path={path} element={<Page />} />
+        {pages.map(({ path, title, needsWallet, Page }) => (
+          <Route key={path} path={path} element={needsWallet ? <RequireWallet title={title}><Page /></RequireWallet> : <Page />} />
         ))}
         {Object.entries(LEGACY_ROUTES).map(([from, to]) => (
           <Route key={from} path={from} element={<Redirect to={to} />} />

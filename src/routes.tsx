@@ -15,22 +15,26 @@ import { Risk } from './pages/Risk'
 import { Settlement } from './pages/Settlement'
 import { Transfers } from './pages/Transfers'
 
-export type PageRoute = { path: string; title: string; perEpoch: boolean; Page: ComponentType }
+/** The groups of the sidebar, in order. Overview is public; My account needs a wallet; Marketplace pages show their own sign-in line where a form needs one. */
+export const GROUPS = ['Overview', 'My account', 'Marketplace', 'Governance'] as const
+export type PageGroup = (typeof GROUPS)[number]
+
+export type PageRoute = { path: string; title: string; perEpoch: boolean; group: PageGroup; needsWallet?: boolean; Page: ComponentType }
 
 export const pages: PageRoute[] = [
-  { path: '/onboarding', title: 'Onboarding', perEpoch: false, Page: Onboarding },
-  { path: '/charts', title: 'Obligation graph', perEpoch: true, Page: ObligationGraph },
-  { path: '/stats', title: 'Clearing stats', perEpoch: true, Page: ClearingStats },
-  { path: '/reports', title: '207 report', perEpoch: true, Page: Report207 },
-  { path: '/settlement', title: 'Settlement', perEpoch: true, Page: Settlement },
-  { path: '/risk', title: 'Risk', perEpoch: true, Page: Risk },
-  { path: '/marketplace', title: 'Marketplace', perEpoch: false, Page: Marketplace },
-  { path: '/invoices', title: 'Invoices', perEpoch: false, Page: Invoices },
-  { path: '/orders', title: 'Service orders', perEpoch: false, Page: Orders },
-  { path: '/licenses', title: 'Content licenses', perEpoch: false, Page: Licenses },
-  { path: '/codes', title: 'One-time codes', perEpoch: false, Page: Codes },
-  { path: '/transfers', title: 'Platform transfers', perEpoch: false, Page: Transfers },
-  { path: '/rent', title: 'Access rent', perEpoch: false, Page: Rent },
-  { path: '/access', title: 'Access (F8)', perEpoch: false, Page: Grants },
-  { path: '/governance', title: 'Governance', perEpoch: false, Page: Governance },
+  { path: '/stats', title: 'Clearing stats', perEpoch: true, group: 'Overview', Page: ClearingStats },
+  { path: '/reports', title: '207 report', perEpoch: true, group: 'Overview', Page: Report207 },
+  { path: '/charts', title: 'Obligation graph', perEpoch: true, group: 'Overview', Page: ObligationGraph },
+  { path: '/risk', title: 'Risk', perEpoch: true, group: 'Overview', Page: Risk },
+  { path: '/onboarding', title: 'Onboarding', perEpoch: false, group: 'My account', needsWallet: true, Page: Onboarding },
+  { path: '/settlement', title: 'Settlement', perEpoch: true, group: 'My account', needsWallet: true, Page: Settlement },
+  { path: '/marketplace', title: 'Marketplace', perEpoch: false, group: 'Marketplace', Page: Marketplace },
+  { path: '/invoices', title: 'Invoices', perEpoch: false, group: 'Marketplace', Page: Invoices },
+  { path: '/orders', title: 'Service orders', perEpoch: false, group: 'Marketplace', Page: Orders },
+  { path: '/licenses', title: 'Content licenses', perEpoch: false, group: 'Marketplace', Page: Licenses },
+  { path: '/codes', title: 'One-time codes', perEpoch: false, group: 'Marketplace', Page: Codes },
+  { path: '/transfers', title: 'Platform transfers', perEpoch: false, group: 'Marketplace', Page: Transfers },
+  { path: '/rent', title: 'Access rent', perEpoch: false, group: 'Marketplace', Page: Rent },
+  { path: '/access', title: 'Access (F8)', perEpoch: false, group: 'Marketplace', Page: Grants },
+  { path: '/governance', title: 'Governance', perEpoch: false, group: 'Governance', Page: Governance },
 ]

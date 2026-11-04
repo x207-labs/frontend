@@ -33,11 +33,12 @@ async function fillForm(user: ReturnType<typeof userEvent.setup>, { amount = '50
 }
 
 describe('onboarding F1', () => {
-  it('TC-FE-004-01 without login: a sign-in prompt and a disabled form', async () => {
+  it('TC-FE-004-01 without login: a sign-in prompt and no form (FE-035)', async () => {
     renderApp('/onboarding')
-    expect(await screen.findByText(/Sign in with a wallet/)).toBeInTheDocument()
-    expect(screen.getByLabelText(/pubkey_voucher/)).toBeDisabled()
-    expect(screen.getByRole('button', { name: /Sign join and stake/ })).toBeDisabled()
+    expect(await screen.findByText(/Onboarding works on your own account/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/pubkey_voucher/)).toBeNull()
+    expect(screen.queryByRole('button', { name: /Sign join and stake/ })).toBeNull()
+    expect(screen.getAllByRole('button', { name: 'Sign in with wallet' }).length).toBeGreaterThan(0)
   })
 
   it('TC-FE-004-02 three validation messages and a disabled button', async () => {

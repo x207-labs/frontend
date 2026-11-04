@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { listingHash, signListing, type Listing } from '@x207/core'
 import { toTransferView } from '../api/transferView'
 import { signSellerNotice } from '../lib/licenseFlow'
-import { buildTransferPurchase, ownTxt, parseTransferListing, prepareTransfer, sellTxt, transferNotice } from '../lib/transferFlow'
+import { buildTransferPurchase, parseTransferListing, prepareTransfer, sellTxt, transferNotice } from '../lib/transferFlow'
 
 const FIXTURES = fileURLToPath(new URL('../../../agents/test/backend-fixtures.ts', import.meta.url))
 const BACKEND_DIR = fileURLToPath(new URL('../../../backend/', import.meta.url))
@@ -93,13 +93,16 @@ describe.skipIf(!AVAILABLE)('FE-033 the page library against the real transfer l
     expect(bought.status).toBe(201)
     const view = toTransferView(bought.json)
     expect(view).toMatchObject({ status: 'paid_held', platform: 'domain', proofMethod: 'dns_txt', transferRef: 'page-shop.com', buyer: env.buyer, seller: env.seller, voucher: null })
-    expect(view.instructions).toEqual({ setTxtAfterTransfer: ownTxt(view.transferId), on: 'page-shop.com' })
+    // UM-096 (backend): the own TXT is `x207-own=<id>-<token>`, a token that only the buyer's voucher can produce; the page shows what the backend says, so the test takes it from the answer
+    const own = view.instructions!.setTxtAfterTransfer
+    expect(view.instructions).toEqual({ setTxtAfterTransfer: expect.stringMatching(new RegExp(`^x207-own=${view.transferId}-[0-9a-f]{32}$`)), on: 'page-shop.com' })
     expect(view.windowUntil - env.now()).toBe(604_800)
 
     // the proof: nothing yet (pending, with what is missing), then the TXT of the buyer and a live domain at the registry
     const early = await env.call('POST', `/transfers/${view.transferId}/proof`, {})
-    expect([early.status, early.json.error.code, early.json.error.details.want]).toEqual([409, 'transfer_proof_pending', ownTxt(view.transferId)])
-    dns.set('page-shop.com', [sellTxt(l.hash), ownTxt(view.transferId)])
+    expect([early.status, early.json.error.code, typeof early.json.error.details.want]).toEqual([409, 'transfer_proof_pending', 'string'])
+    expect(early.json.error.details.want).toMatch(/x207-own TXT record/) // the backend does not show the value again; the buyer has it from the answer of the purchase
+    dns.set('page-shop.com', [sellTxt(l.hash), own])
     rdap.set('page-shop.com', { ldhName: 'page-shop.com', status: ['active'] })
     const done = await env.call('POST', `/transfers/${view.transferId}/proof`, {})
     expect(done.status).toBe(200)

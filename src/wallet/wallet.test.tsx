@@ -22,7 +22,8 @@ describe('NEAR Connect', () => {
     const user = userEvent.setup()
     const wallet = createMockWallet()
     renderApp('/onboarding', undefined, noPoll, wallet)
-    await user.click(await screen.findByRole('button', { name: 'Sign in with wallet' }))
+    // the header and the prompt of the page (FE-035) both have the button; either one opens the wallet
+    await user.click((await screen.findAllByRole('button', { name: 'Sign in with wallet' }))[0]!)
     expect(wallet.connectCalls).toBe(1)
     expect(await screen.findByText('scraper.x207-circle.near')).toBeInTheDocument()
   })
@@ -32,12 +33,13 @@ describe('NEAR Connect', () => {
     expect(await screen.findByText('a.testnet')).toBeInTheDocument()
   })
 
-  it('TC-FE-003-05 sign out: the account is gone and the action button is disabled', async () => {
+  it('TC-FE-003-05 sign out: the account is gone and the form gives way to the sign-in prompt', async () => {
     const user = userEvent.setup()
     renderApp('/onboarding', undefined, noPoll, createMockWallet('a.testnet', 'a.testnet'))
     await user.click(await screen.findByRole('button', { name: 'Sign out' }))
     expect(screen.queryByText('a.testnet')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sign join and stake' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Sign join and stake' })).toBeNull()
+    expect(screen.getByText(/Onboarding works on your own account/)).toBeInTheDocument()
   })
 
   it('TC-FE-003-06 the join transaction carries network, receiver, gas, and deposit', async () => {

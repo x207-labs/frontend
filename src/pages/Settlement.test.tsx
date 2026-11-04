@@ -110,6 +110,6 @@ describe('settlement debtor', () => {
 
   it('not signed in: a prompt to sign in', async () => {
     renderApp('/settlement?epoch=42')
-    expect(await screen.findByText(/Sign in with a wallet to see your dues/)).toBeInTheDocument()
+    expect(await screen.findByText(/Settlement works on your own account/)).toBeInTheDocument()
   })
 })
