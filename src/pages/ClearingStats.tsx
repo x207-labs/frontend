@@ -7,6 +7,13 @@ import { formatCredit, formatNumber, formatPercent } from '../lib/format'
 
 const utc = (iso: string): string => iso.replace('T', ' ').replace(/:\d\d(\.\d+)?Z$/, ' UTC')
 
+/** An epoch that was committed with vouchers and no clearing applied: a ratio of 0 and no transfers there mean "nothing was cleared", not a result of the clearing. */
+export function noClearing(m: EpochMetrics): boolean {
+  return m.voucherCount > 0 && BigInt(m.cleared ?? '0') === 0n && (m.residualTransfers ?? 0) === 0 && (m.phase === 'commit' || m.phase === 'payment_window' || m.phase === 'finalized')
+}
+
+const ratioText = (m: EpochMetrics): string => (noClearing(m) ? '—' : formatNumber(m.clearedRatio))
+
 /** What an epoch without a clearing result is, said as it is: finished with nothing in it, stuck past its deadline, or still running. */
 export function noResultText(m: EpochMetrics, deadline: string | null, now = Date.now(), cutoffAt: string | null = null): string {
   const vouchers = formatNumber(m.voucherCount, 0)
@@ -21,14 +28,16 @@ function Headline({ m, deadline, cutoffAt }: { m: EpochMetrics; deadline: string
   return (
     <div className="headline">
       <p className="headline-main">
-        {m.residualTransfers === null || m.voucherCount === 0
+        {noClearing(m)
+          ? `${formatNumber(m.voucherCount, 0)} vouchers in epoch ${m.epoch}; no clearing was applied (the epoch was committed without a clearing result), so the obligations were left as they were.`
+          : m.residualTransfers === null || m.voucherCount === 0
           ? noResultText(m, deadline, Date.now(), cutoffAt)
           : `${formatNumber(m.voucherCount, 0)} vouchers become ${formatNumber(m.residualTransfers, 0)} transfers.`}
       </p>
       <dl className="facts">
         <div>
           <dt>Cleared ratio</dt>
-          <dd>{formatNumber(m.clearedRatio)}</dd>
+          <dd>{ratioText(m)}</dd>
         </div>
         <div>
           <dt>Transfer savings</dt>
@@ -76,7 +85,7 @@ export function ClearingStats() {
   }
 
   const ratioPoints = loaded.flatMap((m) =>
-    m.clearedRatio === null
+    m.clearedRatio === null || noClearing(m)
       ? []
       : [{ id: m.epoch, x: m.graph.density, y: m.clearedRatio, selected: m.epoch === selected.epoch, detail: `cleared ratio ${formatNumber(m.clearedRatio)}, density ${formatNumber(m.graph.density, 4)}` }],
   )
@@ -113,7 +122,7 @@ export function ClearingStats() {
               <tr key={m.epoch} aria-current={m.epoch === selected.epoch ? 'true' : undefined}>
                 <td>{m.epoch}</td>
                 <td className="num">{formatNumber(m.graph.density, 4)}</td>
-                <td className="num">{formatNumber(m.clearedRatio)}</td>
+                <td className="num" title={noClearing(m) ? 'No clearing was applied in this epoch' : undefined}>{ratioText(m)}</td>
                 <td className="num">{formatNumber(m.voucherCount, 0)}</td>
                 <td className="num">{formatNumber(m.residualTransfers, 0)}</td>
                 <td className="num">{formatNumber(m.transferSavings)}</td>

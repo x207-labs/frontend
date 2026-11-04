@@ -105,3 +105,21 @@ describe('an epoch past its cutoff that nobody closed', () => {
     expect(noResultText(m, null, Date.parse('2026-11-04T08:40:00Z'), '2026-11-04T08:43:59Z')).toContain('is in progress (phase cutoff)')
   })
 })
+
+describe('an epoch committed with vouchers and no clearing (epoch 1 of the testnet circle)', () => {
+  const m = (over: object) => ({ epoch: 1, phase: 'finalized', voucherCount: 210, cleared: '0', residualTransfers: 0, ...over }) as never
+  it('noClearing is true only for a committed epoch with vouchers, nothing cleared and no transfers', async () => {
+    const { noClearing } = await import('./ClearingStats')
+    expect(noClearing(m({}))).toBe(true)
+    expect(noClearing(m({ cleared: '210000000' }))).toBe(false) // it cleared
+    expect(noClearing(m({ residualTransfers: 4 }))).toBe(false) // the vouchers became transfers
+    expect(noClearing(m({ voucherCount: 0 }))).toBe(false) // an empty epoch has its own label
+    expect(noClearing(m({ phase: 'cutoff' }))).toBe(false) // still running
+  })
+
+  it('the page says that no clearing was applied and shows a dash, not a ratio of 0', async () => {
+    renderApp('/stats?epoch=42', (p) => (p.endsWith('/epochs/42/metrics') ? { status: 200, body: { ...metrics[42], phase: 'finalized', voucherCount: 210, cleared: '0', clearedRatio: 0, residualTransfers: 0 } } : undefined))
+    expect(await screen.findByText(/no clearing was applied/)).toBeInTheDocument()
+    expect(within(fact('Cleared ratio')).getByText('—')).toBeInTheDocument()
+  })
+})
