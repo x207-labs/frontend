@@ -6,6 +6,30 @@ The dashboard of [x207](https://github.com/x207-labs/x207): onboarding, obligati
 
 The dashboard is where a human sees what the credit circle is doing. It reads the [read API](https://github.com/x207-labs/backend) (polled every 5 seconds) and the public testnet RPC, and it signs through a wallet port: before the page signs a voucher it checks recipient, circle, canonical form and legs itself, so a lying server cannot change what the key signs.
 
+```mermaid
+flowchart LR
+  U[Person] --> UI[Dashboard in the browser]
+  UI -- "GET, every 5 s" --> API[Read API]
+  UI -- "views" --> RPC[Testnet RPC]
+  UI -- "checks recipient, circle, legs" --> WP{{WalletPort}}
+  WP -- "signs" --> W[Wallet]
+  W --> CT[(x207-circle)]
+```
+
+The exit flow that the sandbox test walks:
+
+```mermaid
+sequenceDiagram
+  participant P as Dashboard
+  participant C as x207-circle
+  participant K as Keeper
+  P->>C: request_exit
+  K->>C: close, commit, finalize the epoch
+  C-->>P: epoch finalized
+  P->>C: withdraw_stake
+  C-->>P: stake back as USDT, status exited
+```
+
 ## Try it
 
 **Live:** <https://x207-dashboard.vercel.app> is this app built for the circle `agents-main` on `x207-v013.testnet`. It is read-only static hosting on Vercel; data comes from the hosted read API (CORS allows this origin only) and the testnet RPC. Pages for features the hosted circle has not used (marketplace, licenses) show an empty state. A real wallet through NEAR Connect has not been tried on it.
