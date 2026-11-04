@@ -24,6 +24,17 @@ export function noResultText(m: EpochMetrics, deadline: string | null, now = Dat
   return `Epoch ${m.epoch} is in progress (phase ${m.phase}): ${vouchers} vouchers registered, clearing not run yet.`
 }
 
+/** `1 voucher becomes 2 settlement transfers`, `24 vouchers become 14 settlement transfers`. */
+export function transfersText(vouchers: number, transfers: number): string {
+  return `${formatNumber(vouchers, 0)} ${vouchers === 1 ? 'voucher becomes' : 'vouchers become'} ${formatNumber(transfers, 0)} settlement ${transfers === 1 ? 'transfer' : 'transfers'}, one for each member with a net position.`
+}
+
+/** What a default rate above 0 means: the part of the residual debt that was not paid in the payment window and was covered from the stakes. */
+export function defaultNote(m: EpochMetrics): string | null {
+  if (m.defaultRate === null || m.defaultRate <= 0 || m.netDebt === null) return null
+  return `Default rate: ${formatPercent(m.defaultRate)} of the residual debt of ${formatCredit(m.netDebt)} credit was not paid in the payment window and was covered from the stake of the debtors.`
+}
+
 function Headline({ m, deadline, cutoffAt }: { m: EpochMetrics; deadline: string | null; cutoffAt: string | null }) {
   return (
     <div className="headline">
@@ -32,7 +43,7 @@ function Headline({ m, deadline, cutoffAt }: { m: EpochMetrics; deadline: string
           ? `${formatNumber(m.voucherCount, 0)} vouchers in epoch ${m.epoch}; no clearing was applied (the epoch was committed without a clearing result), so the obligations were left as they were.`
           : m.residualTransfers === null || m.voucherCount === 0
           ? noResultText(m, deadline, Date.now(), cutoffAt)
-          : `${formatNumber(m.voucherCount, 0)} vouchers become ${formatNumber(m.residualTransfers, 0)} settlement transfers, one for each member with a net position.`}
+          : transfersText(m.voucherCount, m.residualTransfers)}
       </p>
       <dl className="facts">
         <div>
@@ -64,6 +75,7 @@ function Headline({ m, deadline, cutoffAt }: { m: EpochMetrics; deadline: string
           <dd>{m.clearingTimeSeconds === null ? 'not available' : `${formatNumber(m.clearingTimeSeconds, 0)} seconds`}</dd>
         </div>
       </dl>
+      {defaultNote(m) && <p className="state">{defaultNote(m)}</p>}
     </div>
   )
 }

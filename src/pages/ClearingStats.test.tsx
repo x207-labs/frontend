@@ -123,3 +123,21 @@ describe('an epoch committed with vouchers and no clearing (epoch 1 of the testn
     expect(within(fact('Cleared ratio')).getByText('—')).toBeInTheDocument()
   })
 })
+
+describe('plural and the default note (epoch 7 of the testnet circle: one voucher, one default)', () => {
+  it('transfersText has the right plural', async () => {
+    const { transfersText } = await import('./ClearingStats')
+    expect(transfersText(1, 2)).toBe('1 voucher becomes 2 settlement transfers, one for each member with a net position.')
+    expect(transfersText(24, 14)).toBe('24 vouchers become 14 settlement transfers, one for each member with a net position.')
+    expect(transfersText(3, 1)).toBe('3 vouchers become 1 settlement transfer, one for each member with a net position.')
+  })
+
+  it('defaultNote says what a default rate above 0 is and is absent when nobody defaulted', async () => {
+    const { defaultNote } = await import('./ClearingStats')
+    const m = (over: object) => ({ netDebt: '20000', defaultRate: 1, ...over }) as never
+    expect(defaultNote(m({}))).toMatch(/100% of the residual debt of 0\.02 credit was not paid in the payment window and was covered from the stake of the debtors/)
+    expect(defaultNote(m({ netDebt: '7750000', defaultRate: 0.071 }))).toMatch(/7\.1% of the residual debt of 7\.75 credit/)
+    expect(defaultNote(m({ defaultRate: 0 }))).toBeNull()
+    expect(defaultNote(m({ defaultRate: null }))).toBeNull()
+  })
+})
