@@ -142,6 +142,7 @@ export const params = {
     epoch_length: 3600, payment_window: 1800, proposal_window: 600,
     base_limit_ratio: 8000, limit_growth: 1000, limit_cap: '1000000000',
     limit_decay: 0, fees: { clearing_fee_bps: 0, solver_fee_bps: 0 }, admission: 'open',
+    bond_threshold: '100000000', bond_bps: 2000, max_search_share_bps: 500, prune_delay_epochs: 2,
   },
   nextEpoch: { payment_window: 2700 },
   nextEpochEffective: 43,

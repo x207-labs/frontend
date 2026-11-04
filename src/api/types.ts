@@ -119,6 +119,11 @@ export type Params = {
   limit_decay: number
   fees: { clearing_fee_bps: number; solver_fee_bps: number }
   admission: string
+  // Contract 0.0.5 to 0.0.13 parameters; a read API that predates them leaves them out.
+  bond_threshold?: string
+  bond_bps?: number
+  max_search_share_bps?: number
+  prune_delay_epochs?: number
 }
 export type ParamsResponse = {
   circle: string

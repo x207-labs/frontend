@@ -24,6 +24,18 @@ describe('dashboard shell', () => {
     }
   })
 
+  it('FE-037 "/" goes to the clearing stats and "Page not found" is never in the document, not even for one frame', async () => {
+    let seen = false
+    const watch = new MutationObserver(() => {
+      if (document.body.textContent?.includes('Page not found')) seen = true
+    })
+    watch.observe(document.body, { childList: true, subtree: true, characterData: true })
+    renderApp('/')
+    expect(await screen.findByRole('heading', { level: 1, name: pages.find((p) => p.path === '/stats')!.title })).toBeInTheDocument()
+    watch.disconnect()
+    expect(seen).toBe(false)
+  })
+
   it('FE-035 a path that no page owns shows a not-found page with a link, not a blank page', async () => {
     renderApp('/nope')
     expect(await screen.findByRole('heading', { level: 1, name: 'Page not found' })).toBeInTheDocument()

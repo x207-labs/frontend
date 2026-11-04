@@ -23,6 +23,10 @@ const rows: { key: Key; label: string; format: (value: never) => string }[] = [
     format: (v: Params['fees']) => `clearing ${percent(v.clearing_fee_bps)}, solver ${percent(v.solver_fee_bps)}`,
   },
   { key: 'admission', label: 'Member admission', format: (v: string) => v },
+  { key: 'bond_threshold', label: 'Bond threshold (deals at or above need a bond)', format: (v: string) => formatCredit(v) },
+  { key: 'bond_bps', label: 'Bond per side', format: percent },
+  { key: 'max_search_share_bps', label: 'Search share cap per bundle', format: percent },
+  { key: 'prune_delay_epochs', label: 'Prune delay', format: (v: number) => `${formatNumber(v)} ${v === 1 ? 'epoch' : 'epochs'}` },
 ]
 
 // History carries raw values per field; the format follows the parameter table.
@@ -172,7 +176,7 @@ export function Governance() {
                       <td>
                         <code className="plain">{key}</code>
                       </td>
-                      <td className="num">{format(data.active[key] as never)}</td>
+                      <td className="num">{formatField(key, data.active[key])}</td>
                       <td>
                         {next !== undefined &&
                           `${format(next as never)}, effective from epoch ${data.nextEpochEffective}`}

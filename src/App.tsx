@@ -23,8 +23,9 @@ export function NotFound() {
 export function App() {
   return (
     <Routes>
+      {/* FE-037: outside the layout, so the first paint of "/" is not the layout with "Page not found". Search and hash are kept. */}
+      <Route path="/" element={<Redirect to="/stats" />} />
       <Route element={<Layout />}>
-        <Route index element={<Navigate to="/stats" replace />} />
         {pages.map(({ path, title, needsWallet, Page }) => (
           <Route key={path} path={path} element={needsWallet ? <RequireWallet title={title}><Page /></RequireWallet> : <Page />} />
         ))}

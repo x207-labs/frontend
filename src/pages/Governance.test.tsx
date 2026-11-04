@@ -18,6 +18,24 @@ describe('formatField', () => {
 })
 
 describe('governance', () => {
+  it('FE-037 thirteen parameters; the four newer ones have units, and one the read API does not report shows a dash', async () => {
+    renderApp('/governance')
+    await screen.findByText('Limit decay')
+    expect(row('bond_threshold')).toHaveTextContent('100')
+    expect(row('bond_bps')).toHaveTextContent('20%')
+    expect(row('max_search_share_bps')).toHaveTextContent('5%')
+    expect(row('prune_delay_epochs')).toHaveTextContent('2 epochs')
+  })
+
+  it('FE-037 an older read API without the four newer fields does not break the page', async () => {
+    const { bond_threshold, bond_bps, max_search_share_bps, prune_delay_epochs, ...old } = params.active
+    void [bond_threshold, bond_bps, max_search_share_bps, prune_delay_epochs]
+    renderApp('/governance', (p) => (p.endsWith('/params') ? { status: 200, body: { ...params, active: old, nextEpoch: null, nextEpochEffective: null } } : undefined))
+    await screen.findByText('Limit decay')
+    expect(row('bond_bps')).toHaveTextContent('—')
+    expect(row('epoch_length')).toHaveTextContent('60 minutes')
+  })
+
   it('TC-FE-014-01 nine parameters with minute and percent units', async () => {
     renderApp('/governance')
     await screen.findByText('Limit decay')
