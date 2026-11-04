@@ -8,6 +8,7 @@ export function Loading({ label = 'Loading data' }: { label?: string }) {
     <p className="state" role="status">
       <span className="spinner" aria-hidden="true" />
       {label}…
+      <span className="skeleton" aria-hidden="true" />
     </p>
   )
 }

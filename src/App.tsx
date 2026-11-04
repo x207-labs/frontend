@@ -13,7 +13,7 @@ export function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<Navigate to={pages[0].path} replace />} />
+        <Route index element={<Navigate to="/stats" replace />} />
         {pages.map(({ path, Page }) => (
           <Route key={path} path={path} element={<Page />} />
         ))}

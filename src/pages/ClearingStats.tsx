@@ -9,8 +9,9 @@ function Headline({ m }: { m: EpochMetrics }) {
   return (
     <div className="headline">
       <p className="headline-main">
-        {formatNumber(m.voucherCount, 0)} vouchers become{' '}
-        {m.residualTransfers === null ? 'no clearing result yet' : `${formatNumber(m.residualTransfers, 0)} transfers`}.
+        {m.residualTransfers === null
+          ? `${formatNumber(m.voucherCount, 0)} vouchers registered, clearing not run yet.`
+          : `${formatNumber(m.voucherCount, 0)} vouchers become ${formatNumber(m.residualTransfers, 0)} transfers.`}
       </p>
       <dl className="facts">
         <div>

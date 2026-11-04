@@ -9,6 +9,16 @@ type Selection = {
   select: (epoch: number) => void
 }
 
+// Without ?epoch= the newest finalized epoch is shown first: it is the newest one with a complete clearing result. Then any epoch past the cutoff, then the newest one.
+export function defaultEpoch(items: EpochItem[]): EpochItem | null {
+  return (
+    items.find((e) => e.phase === 'finalized') ??
+    items.find((e) => e.phase !== 'open' && e.phase !== 'cutoff') ??
+    items[0] ??
+    null
+  )
+}
+
 const EpochContext = createContext<Selection | null>(null)
 
 // The selected epoch is kept in the ?epoch= query so it follows page changes and can be shared.
@@ -21,7 +31,7 @@ export function EpochProvider({ children }: { children: ReactNode }) {
     const items = query.data?.items ?? []
     return {
       query,
-      selected: items.find((e) => String(e.epoch) === wanted) ?? items[0] ?? null,
+      selected: items.find((e) => String(e.epoch) === wanted) ?? defaultEpoch(items),
       select: (epoch) => setParams({ epoch: String(epoch) }),
     }
   }, [query, wanted, setParams])
