@@ -61,6 +61,21 @@ describe('dashboard shell', () => {
     expect(screen.getByRole('combobox', { name: 'Epoch' })).toHaveValue('40')
   })
 
+  it('FE-040 the newest epoch past the deadline of its phase shows a notice with a link to the guide; an on-time one shows none', async () => {
+    renderApp('/stats')
+    await screen.findByRole('combobox', { name: 'Epoch' })
+    expect(screen.queryByText(/is late/)).not.toBeInTheDocument()
+  })
+
+  it('FE-040 late epoch notice on the stats page', async () => {
+    const stuck = [{ epoch: 43, phase: 'clearing', proposalDeadline: '2020-01-01T00:00:00Z' }, ...epochs]
+    renderApp('/stats', (p) => (p.endsWith('/epochs') ? { status: 200, body: { items: stuck } } : undefined))
+    const notice = await screen.findByText(/Epoch 43 is late/)
+    expect(notice).toHaveTextContent('moved by a keeper the team runs until 2026-11-18; if one is late, anyone can move it')
+    expect(notice).not.toHaveTextContent('manual')
+    expect(within(notice.closest('p')!).getByRole('link', { name: 'How to move it' })).toHaveAttribute('href', expect.stringContaining('join-the-circle.md#move-the-epoch-yourself'))
+  })
+
   it('TC-FE-002-03 loading in the epoch picker', () => {
     renderApp('/stats', (p) =>
       p.endsWith('/epochs') ? { status: 200, body: { items: epochs }, delayMs: 2000 } : undefined,

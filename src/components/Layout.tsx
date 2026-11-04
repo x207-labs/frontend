@@ -4,6 +4,7 @@ import { CIRCLE } from '../config'
 import { EpochProvider, useEpochSelection } from '../epoch'
 import { GROUPS, pages } from '../routes'
 import { EpochPicker } from './EpochPicker'
+import { LateEpochNotice } from './LateEpochNotice'
 import { PhaseStrip } from './PhaseStrip'
 import { WalletButton } from './WalletButton'
 
@@ -20,6 +21,7 @@ function Header() {
           <WalletButton />
         </div>
       </div>
+      {page?.perEpoch && <LateEpochNotice />}
       {page?.perEpoch && selected && <PhaseStrip phase={selected.phase} />}
     </header>
   )
