@@ -30,6 +30,12 @@ export function describeMarketError(e: unknown): string {
         return 'This access has ended, or another grant for the same login and resource still holds it. Wait until that access ends or is revoked; one access cannot be opened twice.'
       case 'provider_grant_failed':
         return `The provider failed to open access: ${e.message}`
+      case 'grant_not_owned':
+        return 'This provider key belongs to the owner of the broker, and the grant is from another account. Only the owner of the broker can offer grants of this asset type.'
+      case 'takedown_invalid':
+        return `The takedown was refused: ${e.message}`
+      case 'already_exists':
+        return `This already exists: ${e.message}`
       case 'code_not_checked':
         return 'This code must be checked with the issuer first (or the last verdict is over 10 minutes old): key not released.'
       case 'code_used':

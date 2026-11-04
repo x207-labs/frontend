@@ -7,7 +7,9 @@ import {
 } from '@x207/core'
 import { base58Encode } from '../lib/barter'
 import { licenseSources } from '../lib/licenseFlow'
-import { parseCodeListing, prepareCode, disputeSecondsLeft } from '../lib/codeFlow'
+import { parseCodeListing, prepareCode, disputeSecondsLeft, pairStateWithHeld, rememberHeld, recallHeld } from '../lib/codeFlow'
+import { describeMarketError } from '../lib/marketError'
+import { ApiError } from '../api/client'
 import { renderApp } from '../test/render'
 import { createMockWallet } from '../test/walletMock'
 
@@ -439,5 +441,63 @@ describe('FE-032 one-time codes', () => {
     expect(within(form).getByRole('button', { name: 'Hash and encrypt code' })).toBeDisabled()
     expect(document.body.textContent).not.toMatch(/arbiter/i)
     expect(document.body.textContent).not.toMatch(/with a bond|bond:/i)
+  })
+
+  it('TC-FE-032-20 [B7-C3] a second code from the same seller continues from the vouchers that purchases still hold: seq above the highest, cumulative = the highest + the price; a cancelled purchase holds nothing', async () => {
+    expect(pairStateWithHeld({ seq: 3, cumulativeAmount: '2000000' }, [])).toEqual({ seq: 3, cumulativeAmount: '2000000' })
+    expect(pairStateWithHeld({ seq: 3, cumulativeAmount: '2000000' }, [
+      { purchaseId: 'a', payee: SELLER, epoch: 42, seq: 4, cumulativeAmount: '7000000' }, { purchaseId: 'b', payee: SELLER, epoch: 42, seq: 5, cumulativeAmount: '12000000' },
+    ])).toEqual({ seq: 5, cumulativeAmount: '12000000' })
+    sessionStorage.clear()
+    const user = userEvent.setup()
+    const sellerKeys = generateVoucherKeypair()
+    const { typed, view } = signedCodeListing(sellerKeys, { verifiable: true })
+    rememberHeld({ purchaseId: 'old-1', payee: SELLER, epoch: 42, seq: 4, cumulativeAmount: '7000000' }) // alive
+    rememberHeld({ purchaseId: 'old-2', payee: SELLER, epoch: 42, seq: 5, cumulativeAmount: '99000000' }) // cancelled: it holds nothing and must not raise the next voucher
+    const { requests } = renderApp('/codes', (p, init) => {
+      if (!init?.method && p.endsWith(`/listings/${typed}`)) return { status: 200, body: view }
+      if (!init?.method && p.endsWith('/purchases/old-1')) return { status: 200, body: { purchase_id: 'old-1', status: 'key_released', listing_hash: typed } }
+      if (!init?.method && p.endsWith('/purchases/old-2')) return { status: 200, body: { purchase_id: 'old-2', status: 'cancelled', listing_hash: typed } }
+      if (init?.method === 'POST' && p.endsWith('/purchases')) return { status: 201, body: { purchase_id: 'p9' } }
+      if (!init?.method && p.endsWith('/epochs')) return { status: 200, body: { items: [{ epoch: 42, phase: 'open', proposalDeadline: null }], nextCursor: null } }
+      if (rpcMethod(init) === 'member') return rpcResult({ account_id: SELLER, pubkey_voucher: sellerKeys.publicKey, status: 'active' })
+      if (rpcMethod(init) === 'obligation') return rpcResult({ cumulative: '2000000', last_seq: 3 })
+      return undefined
+    }, false, createMockWallet(BUYER, BUYER))
+    const section = await screen.findByRole('region', { name: 'Code purchase' })
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.type(within(section).getByLabelText('Code listing hash'), typed)
+    await user.click(within(section).getByRole('button', { name: 'Check listing' }))
+    const summary = await within(section).findByTestId('code-summary')
+    await user.click(within(summary).getByRole('button', { name: /^Buy / }))
+    await waitFor(() => expect(requests().some((r) => r.method === 'POST' && r.path.endsWith('/purchases'))).toBe(true))
+    const post = requests().find((r) => r.method === 'POST' && r.path.endsWith('/purchases'))!
+    expect(post.body.voucher).toMatchObject({ seq: 5, cumulativeAmount: '12000000' }) // 7 credit held + the price of 5
+    expect(recallHeld(SELLER, 42).map((h) => h.purchaseId).sort()).toEqual(['old-1', 'old-2', 'p9'])
+    sessionStorage.clear()
+  })
+
+  it('TC-FE-032-21 [B7-C2] a dispute that the backend decides for the buyer because the source does not serve the signed ciphertext is shown in words; a held voucher stays held', async () => {
+    const user = userEvent.setup()
+    const until = Math.floor(Date.now() / 1000) + 1800
+    const body = delivered(CODE, CODE, until)
+    const rendered = renderApp('/codes', (p, init) => {
+      if (init?.method === 'POST' && p.endsWith('/purchases/p1')) return { status: 201, body: { purchase_id: 'p1', status: 'disputed', notDelivered: true } }
+      return reply(body)(p, init)
+    }, false, createMockWallet(BUYER, BUYER))
+    const section = await screen.findByRole('region', { name: 'Code purchase' })
+    await user.type(within(section).getByLabelText('Purchase number'), 'p1')
+    await user.click(within(section).getByRole('button', { name: 'Open purchase' }))
+    await within(section).findByTestId('purchase')
+    await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
+    await user.click(within(section).getByRole('button', { name: /Report to reputation/ }))
+    await within(section).findByText(/could not fetch the ciphertext that the seller signed/)
+    expect(rendered.requests().some((r) => r.method === 'POST' && r.path.endsWith('/purchases/p1'))).toBe(true)
+  })
+
+  it('TC-FE-032-22 [B7] the errors of the broker and of the book that came with batch 7 are said in words by their codes', () => {
+    expect(describeMarketError(new ApiError(403, 'grant_not_owned', 'any text'))).toMatch(/belongs to the owner of the broker/)
+    expect(describeMarketError(new ApiError(400, 'takedown_invalid', 'A seller does not file a takedown'))).toMatch(/takedown was refused: A seller does not file/)
+    expect(describeMarketError(new ApiError(409, 'already_exists', 'This purchase already has a complaint'))).toMatch(/already exists/)
   })
 })

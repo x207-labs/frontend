@@ -9,8 +9,8 @@ import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { keyFingerprint } from '../lib/barter'
 import {
-  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, VERIFIABLE_CODE_LIMIT, buildCodeKeyRelease, buildCodePurchase, codeCheckNotice, codeDocumentOfListing, codeOverLimit, disputeSecondsLeft, parseCodeListing, prepareCode, receiveCode,
-  type CodeListing, type CodeReceive, type PreparedCode,
+  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, VERIFIABLE_CODE_LIMIT, buildCodeKeyRelease, buildCodePurchase, codeCheckNotice, codeDocumentOfListing, codeOverLimit, disputeSecondsLeft, pairStateWithHeld, parseCodeListing, prepareCode, receiveCode, recallHeld, rememberHeld,
+  type CodeListing, type CodeReceive, type HeldVoucher, type PreparedCode,
 } from '../lib/codeFlow'
 import { formatCredit } from '../lib/format'
 import { toAtomic } from '../lib/amount'
@@ -259,13 +259,25 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
       const open = epochs.items.find((e) => e.phase === 'open')
       if (!open) throw new Error('No open epoch: the voucher cannot be created yet.')
       const ob = await viewContract<{ cumulative: string; last_seq: number } | null>('obligation', { epoch: open.epoch, debtor: account, creditor: view.account })
+      // vouchers of earlier purchases from this seller that the seller has not registered: the backend counts them, so the next voucher continues from the highest (B7-C3)
+      const live: HeldVoucher[] = []
+      for (const h of recallHeld(view.account, open.epoch)) {
+        try {
+          if ((await api.purchase(h.purchaseId)).status !== 'cancelled') live.push(h)
+        } catch {
+          live.push(h) // a purchase that cannot be read is kept: a too-high voucher is refused by the backend, a too-low one is refused too
+        }
+      }
       const built = await buildCodePurchase({
-        circle: CONTRACT_ID, buyer: account, seller: view.account, epoch: open.epoch, amount: view.offer.value, state: { seq: ob?.last_seq ?? 0, cumulativeAmount: ob?.cumulative ?? '0' },
+        circle: CONTRACT_ID, buyer: account, seller: view.account, epoch: open.epoch, amount: view.offer.value,
+        state: pairStateWithHeld({ seq: ob?.last_seq ?? 0, cumulativeAmount: ob?.cumulative ?? '0' }, live),
         codeDocHash: listing.docHash, secretKey: voucherKey,
       })
       const created = await api.createPurchase(hash.trim(), built.voucher, built.signature)
+      const purchaseId = String(created.purchase_id ?? created.purchaseId ?? '')
+      rememberHeld({ purchaseId, payee: view.account, epoch: open.epoch, seq: built.voucher.seq, cumulativeAmount: built.voucher.cumulativeAmount })
       setChecked(null)
-      onBought(String(created.purchase_id ?? created.purchaseId ?? ''))
+      onBought(purchaseId)
     } catch (e) {
       setError(describeMarketError(e))
     } finally {
@@ -349,7 +361,12 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
     try {
       if (query.data.purchaseId !== open) throw new Error(`The server answered for purchase ${query.data.purchaseId}, not ${open} which you opened: not signed.`)
       const notice = purchaseNotice(CONTRACT_ID, query.data.purchaseId, account, action, now(), reason, proof)
-      await api.purchaseNotice(query.data.purchaseId, notice, await signPurchaseNotice(notice, voucherKey))
+      const answer = (await api.purchaseNotice(query.data.purchaseId, notice, await signPurchaseNotice(notice, voucherKey))) as { notDelivered?: boolean } | undefined
+      if (answer?.notDelivered === true) {
+        setMessage('The backend could not fetch the ciphertext that the seller signed, so the sale is disputed and the voucher stays held: the seller is not paid.')
+        await client.invalidateQueries({ queryKey: ['purchase', open] })
+        return
+      }
       setMessage(action === 'confirmed' ? 'Confirmed: the voucher will be registered.' : proof === null ? 'Complaint recorded in the seller reputation. This does not stop payment: the purchase is still confirmed automatically when the one-hour window ends.' : 'Dispute sent with proof.')
       await client.invalidateQueries({ queryKey: ['purchase', open] })
     } catch (e) {
