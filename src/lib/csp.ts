@@ -15,6 +15,14 @@ const origin = (value: string | undefined): string | null => {
   }
 }
 
+// FE-038: NEAR Connect (@hot-labs/near-connect 0.12.0) fetches its wallet manifest when the connector is created (the two URLs are hard-coded in NearConnector.js) and the wallet
+// chooser shows the icons that the manifest lists. Without these origins the chooser opens with no wallet but the built-in one and the console shows CSP errors. Only the chooser is
+// covered: a wallet executor runs in a sandboxed srcdoc iframe that inherits this policy, so signing in still needs a CSP decision (see docs/security-review.md).
+export const NEAR_CONNECT_MANIFEST_ORIGINS = ['https://raw.githubusercontent.com', 'https://cdn.jsdelivr.net']
+export const NEAR_CONNECT_ICON_ORIGINS = [
+  'https://raw.githubusercontent.com', 'https://app.hot-labs.org', 'https://evm-on-near.dev', 'https://res.cloudinary.com', 'https://storage.herewallet.app', 'https://www.mynearwallet.com',
+]
+
 export function buildCsp(env: Env): string {
   const rpc = env.VITE_NEAR_RPC_URL ?? (env.VITE_NEAR_NETWORK === 'mainnet' ? 'https://rpc.mainnet.fastnear.com' : 'https://rpc.testnet.fastnear.com')
   const connect = new Set<string>(["'self'"])
@@ -30,11 +38,12 @@ export function buildCsp(env: Env): string {
     const o = origin(raw)
     if (o) connect.add(o)
   }
+  for (const o of NEAR_CONNECT_MANIFEST_ORIGINS) connect.add(o)
   return [
     "default-src 'self'",
     "script-src 'self' 'wasm-unsafe-eval'",
     `connect-src ${[...connect].join(' ')}`,
-    "img-src 'self' data:",
+    `img-src 'self' data: ${NEAR_CONNECT_ICON_ORIGINS.join(' ')}`,
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     "object-src 'none'",
