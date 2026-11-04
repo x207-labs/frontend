@@ -9,6 +9,7 @@ import { AssetTemplateForm, type TemplateCheck } from '../components/AssetTempla
 import { ResourceListingForm } from '../components/ResourceListingForm'
 import { Negotiation } from '../components/Negotiation'
 import { OwnIntents } from '../components/OwnIntents'
+import { EmptyHint } from '../components/EmptyHint'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
@@ -280,7 +281,7 @@ export function Marketplace() {
           <input value={offerType} onChange={(e) => setOfferType(e.target.value)} placeholder="gpu-hours" />
         </label>
       </div>
-      <QueryState query={listings} loadingLabel="Loading listings" isEmpty={(d) => d.items.length === 0} empty="No listing matches the filter yet.">
+      <QueryState query={listings} loadingLabel="Loading listings" isEmpty={(d) => d.items.length === 0} empty={<><span>No listing matches the filter yet.</span><EmptyHint what="a listing" /></>}>
         {(data) => (
           <div className="table-wrap">
             <table>

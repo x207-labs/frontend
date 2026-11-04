@@ -132,6 +132,15 @@ describe('plural and the default note (epoch 7 of the testnet circle: one vouche
     expect(transfersText(3, 1)).toBe('3 vouchers become 1 settlement transfer, one for each member with a net position.')
   })
 
+  it('FE-035 pendingText names the phase of an epoch that has no clearing result, and is null for one with figures', async () => {
+    const { pendingText } = await import('./ClearingStats')
+    const m = (over: object) => ({ epoch: 12, phase: 'commit', voucherCount: 0, clearedRatio: null, ...over }) as never
+    expect(pendingText(m({}))).toBe('In commit, no clearing result yet (no vouchers)')
+    expect(pendingText(m({ phase: 'cutoff', voucherCount: 3 }))).toBe('In cutoff, no clearing result yet')
+    expect(pendingText(m({ phase: 'finalized' }))).toBeNull()
+    expect(pendingText(m({ clearedRatio: 0.5 }))).toBeNull()
+  })
+
   it('defaultNote says what a default rate above 0 is and is absent when nobody defaulted', async () => {
     const { defaultNote } = await import('./ClearingStats')
     const m = (over: object) => ({ netDebt: '20000', defaultRate: 1, ...over }) as never

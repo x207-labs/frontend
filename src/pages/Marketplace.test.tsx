@@ -54,6 +54,9 @@ describe('marketplace F9: browse and create listings', () => {
     await waitFor(() => expect(screen.queryByText(/translate-calls · class D/)).not.toBeInTheDocument())
     await user.selectOptions(screen.getByLabelText('Status'), 'matched')
     expect(await screen.findByText('No listing matches the filter yet.')).toBeInTheDocument()
+    // FE-035: the empty list says why and where the real data is
+    expect(screen.getByRole('link', { name: 'clearing stats of epoch 8' })).toHaveAttribute('href', '/stats?epoch=8')
+    expect(screen.getByRole('link', { name: 'join the circle' })).toHaveAttribute('href', expect.stringContaining('join-the-circle.md'))
   })
 
   it('TC-FE-019-04 error 503 shows the code and a retry button', async () => {

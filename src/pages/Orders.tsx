@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ApiError, api } from '../api/client'
 import { useDaoRegistry, useOrder, useOrderProofs, useOrders } from '../api/queries'
 import type { OrderMilestoneView, OrderView } from '../api/types'
+import { EmptyHint } from '../components/EmptyHint'
 import { QueryState } from '../components/QueryState'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
@@ -332,7 +333,7 @@ export function Orders() {
       <h2>Service orders</h2>
       {!account && <p className="state">Sign in with your wallet to see your orders.</p>}
       {account && (
-        <QueryState query={orders} loadingLabel="Loading orders" isEmpty={(d) => d.items.length === 0} empty="No orders for this account yet.">
+        <QueryState query={orders} loadingLabel="Loading orders" isEmpty={(d) => d.items.length === 0} empty={<><span>No orders for this account yet.</span><EmptyHint what="an order" /></>}>
           {(data) => (
             <div className="table-wrap">
               <table aria-label="Order list">

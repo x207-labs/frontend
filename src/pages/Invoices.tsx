@@ -4,6 +4,7 @@ import { api } from '../api/client'
 import { viewContract } from '../api/chain'
 import { useInvoice, useInvoices } from '../api/queries'
 import type { InstallmentReason, InstallmentView, InvoiceStatus, InvoiceView } from '../api/types'
+import { EmptyHint } from '../components/EmptyHint'
 import { QueryState } from '../components/QueryState'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
@@ -227,7 +228,7 @@ export function Invoices() {
         </label>
       </div>
       {account && (
-        <QueryState query={invoices} loadingLabel="Loading invoices" isEmpty={(d) => d.items.length === 0} empty="No invoices for this account yet.">
+        <QueryState query={invoices} loadingLabel="Loading invoices" isEmpty={(d) => d.items.length === 0} empty={<><span>No invoices for this account yet.</span><EmptyHint what="an invoice" /></>}>
           {(data) => (
             <div className="table-wrap">
               <table aria-label="Invoice list">

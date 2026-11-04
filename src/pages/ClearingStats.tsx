@@ -24,6 +24,12 @@ export function noResultText(m: EpochMetrics, deadline: string | null, now = Dat
   return `Epoch ${m.epoch} is in progress (phase ${m.phase}): ${vouchers} vouchers registered, clearing not run yet.`
 }
 
+/** A row of the per-epoch table for an epoch that has not produced a clearing result: the phase it is in, instead of five cells of "not available". `null` for an epoch with figures. */
+export function pendingText(m: EpochMetrics): string | null {
+  if (!['open', 'cutoff', 'clearing', 'commit'].includes(m.phase) || m.clearedRatio !== null) return null
+  return `In ${m.phase}, no clearing result yet${m.voucherCount === 0 ? ' (no vouchers)' : ''}`
+}
+
 /** `1 voucher becomes 2 settlement transfers`, `24 vouchers become 14 settlement transfers`. */
 export function transfersText(vouchers: number, transfers: number): string {
   return `${formatNumber(vouchers, 0)} ${vouchers === 1 ? 'voucher becomes' : 'vouchers become'} ${formatNumber(transfers, 0)} settlement ${transfers === 1 ? 'transfer' : 'transfers'}, one for each member with a net position.`
@@ -130,7 +136,12 @@ export function ClearingStats() {
             </tr>
           </thead>
           <tbody>
-            {loaded.map((m) => (
+            {loaded.map((m) => pendingText(m) !== null ? (
+              <tr key={m.epoch} aria-current={m.epoch === selected.epoch ? 'true' : undefined}>
+                <td>{m.epoch}</td>
+                <td colSpan={5}>{pendingText(m)}</td>
+              </tr>
+            ) : (
               <tr key={m.epoch} aria-current={m.epoch === selected.epoch ? 'true' : undefined}>
                 <td>{m.epoch}</td>
                 <td className="num">{formatNumber(m.graph.density, 4)}</td>
