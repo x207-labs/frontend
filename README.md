@@ -2,6 +2,17 @@
 
 The x207 dashboard (module M8), features F1, F3, F4, F6, F7: onboarding, obligation graph, clearing statistics, 207 report, settlement, risk, and governance. React + Vite + TypeScript. Part of [`x207-labs/x207`](https://github.com/x207-labs/x207).
 
+## Live dashboard
+
+<https://x207-dashboard.vercel.app> is this app built for the testnet circle `agents-main` on `x207-v013.testnet`. It is read-only static hosting on Vercel; the data comes from the hosted read API (CORS allows this origin only) and from the public testnet RPC. The build uses only public `VITE_*` values, no secret:
+
+```bash
+VITE_X207_API_URL=<read API origin> VITE_X207_CIRCLE=agents-main VITE_X207_CONTRACT_ID=x207-v013.testnet VITE_NEAR_NETWORK=testnet npm run build
+# deploy the dist folder together with vercel.json (single page rewrite): vercel deploy --prod
+```
+
+The content security policy is built into `index.html` from `VITE_X207_API_URL`, so the API origin must be set at build time. Pages for features that the hosted circle has not used (marketplace, licenses) show an empty state.
+
 ## Running
 
 ```bash
