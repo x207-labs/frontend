@@ -1,6 +1,6 @@
 # x207 frontend
 
-The dashboard of [x207](https://github.com/x207-labs/x207): onboarding, obligation graph, clearing statistics, the 207 report, settlement, risk and governance, plus the marketplace pages. React + Vite + TypeScript.
+The dashboard of [x207](https://github.com/x207-labs/x207), in four groups: the clearing pages (clearing statistics, the 207 report, obligation graph, risk), your account (onboarding and settlement, which need a wallet), the marketplace pages (listings, invoices, service orders, content licenses, one-time codes, platform transfers, access rent and access grants) and governance. React + Vite + TypeScript.
 
 ## Its role in x207
 
@@ -32,9 +32,9 @@ sequenceDiagram
 
 ## Try it
 
-**Live:** <https://x207-dashboard.vercel.app> is this app built for the circle `agents-main` on `x207-v013.testnet`. It is read-only static hosting on Vercel; data comes from the hosted read API (CORS allows this origin only) and the testnet RPC. Pages for features the hosted circle has not used (marketplace, licenses) show an empty state. A real wallet through NEAR Connect has not been tried on it.
+**Live:** <https://x207-dashboard.vercel.app> is this app built for the circle `agents-main` on `x207-v013.testnet`. It is read-only static hosting on Vercel; data comes from the hosted read API (CORS allows this origin only) and the testnet RPC. The marketplace lists (listings, invoices, orders) are empty on the hosted circle and say so, with a link to the epoch 8 stats and to the join guide; the pages for licenses, codes, transfers and rent are forms for a signed-in wallet. A real wallet through NEAR Connect has not been tried on it.
 
-**Locally:**
+**Locally:** this repository installs and runs on its own (it uses the published `@x207/core`); needs Node 22.22.2 or newer.
 
 ```bash
 cp .env.example .env
@@ -42,7 +42,7 @@ npm ci
 npm run dev        # http://localhost:5207
 ```
 
-Without a backend, set `VITE_X207_USE_FIXTURES=true` in `.env` to use sample data.
+Without a backend, set `VITE_X207_USE_FIXTURES=true` in `.env` to use sample data. The hosted read API answers only the dashboard origin (CORS), so a local page cannot read it: for live data run the read API from the [backend](https://github.com/x207-labs/backend) repository and point `VITE_X207_API_URL` at it. Inside a checkout of the [umbrella](https://github.com/x207-labs/x207) the same app runs against the workspace copy of `@x207/core`: `npm ci && npm run dev -w @x207/frontend`.
 
 ## Test
 

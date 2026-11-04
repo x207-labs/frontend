@@ -18,7 +18,11 @@ const origin = (value: string | undefined): string | null => {
 export function buildCsp(env: Env): string {
   const rpc = env.VITE_NEAR_RPC_URL ?? (env.VITE_NEAR_NETWORK === 'mainnet' ? 'https://rpc.mainnet.fastnear.com' : 'https://rpc.testnet.fastnear.com')
   const connect = new Set<string>(["'self'"])
-  for (const url of [env.VITE_X207_API_URL ?? 'http://localhost:8787', env.VITE_X207_BROKER_URL ?? 'http://localhost:8788', rpc]) {
+  // The default broker is a local one (config.ts): it is only allowed when the API is local too (or not given); a hosted build with no broker does not open a connection to the visitor's own machine.
+  const api = origin(env.VITE_X207_API_URL ?? 'http://localhost:8787')
+  const localApi = api === null || ['localhost', '127.0.0.1', '[::1]'].includes(new URL(api).hostname)
+  const broker = env.VITE_X207_BROKER_URL ?? (localApi ? 'http://localhost:8788' : undefined)
+  for (const url of [env.VITE_X207_API_URL ?? 'http://localhost:8787', broker, rpc]) {
     const o = origin(url)
     if (o) connect.add(o)
   }
