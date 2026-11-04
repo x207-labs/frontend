@@ -7,7 +7,7 @@ import {
 } from '@x207/core'
 import { base58Encode } from '../lib/barter'
 import { licenseSources } from '../lib/licenseFlow'
-import { parseCodeListing, prepareCode, disputeSecondsLeft, pairStateWithHeld, rememberHeld, recallHeld } from '../lib/codeFlow'
+import { parseCodeListing, prepareCode, disputeSecondsLeft, pairStateWithHeld, rememberHeld, recallHeld, forgetHeld } from '../lib/codeFlow'
 import { describeMarketError } from '../lib/marketError'
 import { ApiError } from '../api/client'
 import { renderApp } from '../test/render'
@@ -448,7 +448,7 @@ describe('FE-032 one-time codes', () => {
     expect(pairStateWithHeld({ seq: 3, cumulativeAmount: '2000000' }, [
       { purchaseId: 'a', payee: SELLER, epoch: 42, seq: 4, cumulativeAmount: '7000000' }, { purchaseId: 'b', payee: SELLER, epoch: 42, seq: 5, cumulativeAmount: '12000000' },
     ])).toEqual({ seq: 5, cumulativeAmount: '12000000' })
-    sessionStorage.clear()
+    forgetHeld()
     const user = userEvent.setup()
     const sellerKeys = generateVoucherKeypair()
     const { typed, view } = signedCodeListing(sellerKeys, { verifiable: true })
@@ -474,7 +474,7 @@ describe('FE-032 one-time codes', () => {
     const post = requests().find((r) => r.method === 'POST' && r.path.endsWith('/purchases'))!
     expect(post.body.voucher).toMatchObject({ seq: 5, cumulativeAmount: '12000000' }) // 7 credit held + the price of 5
     expect(recallHeld(SELLER, 42).map((h) => h.purchaseId).sort()).toEqual(['old-1', 'old-2', 'p9'])
-    sessionStorage.clear()
+    forgetHeld()
   })
 
   it('TC-FE-032-21 [B7-C2] a dispute that the backend decides for the buyer because the source does not serve the signed ciphertext is shown in words; a held voucher stays held', async () => {

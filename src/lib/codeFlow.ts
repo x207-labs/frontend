@@ -111,25 +111,18 @@ export const codeCheckNotice = (circle: string, listingHash: string, actor: stri
 
 // B7-C3: the backend counts the vouchers that other purchases of the same buyer, seller and epoch still hold (not registered yet), so a second code from the same seller must continue
 // from the highest of them: seq above the highest held seq, cumulative = the highest held cumulative + the price. The contract knows only what the seller has registered, so the page
-// remembers the vouchers it signed in this browser session and asks the backend which of those purchases are still alive (a cancelled purchase holds nothing).
+// remembers the vouchers it signed while the page is open and asks the backend which of those purchases are still alive (a cancelled purchase holds nothing).
 export type HeldVoucher = { purchaseId: string; payee: string; epoch: number; seq: number; cumulativeAmount: string }
-const HELD_KEY = 'x207:held-code-vouchers'
-const readHeld = (): HeldVoucher[] => {
-  try {
-    const raw = sessionStorage.getItem(HELD_KEY)
-    return raw === null ? [] : (JSON.parse(raw) as HeldVoucher[])
-  } catch {
-    return []
-  }
+// In memory only: the page stores nothing in the browser besides the wallet marker (TC-FE-SEC-13). After a reload the memory is empty; then a second purchase that does not continue
+// the pair is refused by the backend with a message that says why, and the buyer waits for the first one to close.
+let held: HeldVoucher[] = []
+export function rememberHeld(h: HeldVoucher): void {
+  held = [...held.filter((x) => x.purchaseId !== h.purchaseId), h]
 }
-export function rememberHeld(held: HeldVoucher): void {
-  try {
-    sessionStorage.setItem(HELD_KEY, JSON.stringify([...readHeld().filter((h) => h.purchaseId !== held.purchaseId), held]))
-  } catch {
-    // no storage: the backend answers a second purchase that does not continue the pair, and says what to do
-  }
+export const forgetHeld = (): void => {
+  held = []
 }
-export const recallHeld = (payee: string, epoch: number): HeldVoucher[] => readHeld().filter((h) => h.payee === payee && h.epoch === epoch)
+export const recallHeld = (payee: string, epoch: number): HeldVoucher[] => held.filter((h) => h.payee === payee && h.epoch === epoch)
 
 /** The state of the pair for the next voucher: the higher of the registered state and the live held vouchers. */
 export function pairStateWithHeld(registered: PairState, live: readonly HeldVoucher[]): PairState {
