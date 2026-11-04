@@ -25,7 +25,7 @@ export type Member = {
 }
 export type MemberResponse = Amounts & Member & { circle: string }
 
-export type EpochItem = { epoch: number; phase: EpochPhase; proposalDeadline: string | null }
+export type EpochItem = { epoch: number; phase: EpochPhase; proposalDeadline: string | null; cutoffAt?: string | null }
 
 export type ObligationEdge = {
   debtor: string

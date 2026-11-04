@@ -5,21 +5,24 @@ import { Scatter } from '../components/Scatter'
 import { useEpochSelection } from '../epoch'
 import { formatCredit, formatNumber, formatPercent } from '../lib/format'
 
+const utc = (iso: string): string => iso.replace('T', ' ').replace(/:\d\d(\.\d+)?Z$/, ' UTC')
+
 /** What an epoch without a clearing result is, said as it is: finished with nothing in it, stuck past its deadline, or still running. */
-export function noResultText(m: EpochMetrics, deadline: string | null, now = Date.now()): string {
+export function noResultText(m: EpochMetrics, deadline: string | null, now = Date.now(), cutoffAt: string | null = null): string {
   const vouchers = formatNumber(m.voucherCount, 0)
   if (m.phase === 'finalized') return m.voucherCount === 0 ? `Epoch ${m.epoch} finalized with no vouchers, so nothing was cleared.` : `${vouchers} vouchers registered in epoch ${m.epoch}; clearing was not run.`
+  if (m.phase === 'cutoff' && cutoffAt !== null && Date.parse(cutoffAt) < now) return `Epoch ${m.epoch} passed its cutoff at ${utc(cutoffAt)} and has not been closed yet, so there is no clearing result.`
   const late = deadline !== null && Date.parse(deadline) < now
-  if (late) return `Epoch ${m.epoch} did not finish: it is still in phase ${m.phase} and its deadline of ${deadline!.replace('T', ' ').replace(/:\d\d(\.\d+)?Z$/, ' UTC')} has passed, so there is no clearing result.`
+  if (late) return `Epoch ${m.epoch} did not finish: it is still in phase ${m.phase} and its deadline of ${utc(deadline!)} has passed, so there is no clearing result.`
   return `Epoch ${m.epoch} is in progress (phase ${m.phase}): ${vouchers} vouchers registered, clearing not run yet.`
 }
 
-function Headline({ m, deadline }: { m: EpochMetrics; deadline: string | null }) {
+function Headline({ m, deadline, cutoffAt }: { m: EpochMetrics; deadline: string | null; cutoffAt: string | null }) {
   return (
     <div className="headline">
       <p className="headline-main">
         {m.residualTransfers === null || m.voucherCount === 0
-          ? noResultText(m, deadline)
+          ? noResultText(m, deadline, Date.now(), cutoffAt)
           : `${formatNumber(m.voucherCount, 0)} vouchers become ${formatNumber(m.residualTransfers, 0)} transfers.`}
       </p>
       <dl className="facts">
@@ -86,7 +89,7 @@ export function ClearingStats() {
 
   return (
     <>
-      <Headline m={current} deadline={selected.proposalDeadline} />
+      <Headline m={current} deadline={selected.proposalDeadline} cutoffAt={selected.cutoffAt ?? null} />
       <h2>Clearing result against graph density</h2>
       <div className="scatter-row">
         <Scatter title="Cleared ratio" xLabel="Graph density" yLabel="Cleared ratio" yMax={1} formatY={(v) => formatNumber(v)} points={ratioPoints} />

@@ -96,3 +96,12 @@ describe('an epoch with no vouchers is never shown as a zero result', () => {
     expect(screen.queryByText(/vouchers become 0 transfers/)).toBeNull()
   })
 })
+
+describe('an epoch past its cutoff that nobody closed', () => {
+  it('says it passed its cutoff and was not closed, and says in progress before the cutoff', async () => {
+    const { noResultText } = await import('./ClearingStats')
+    const m = { epoch: 9, phase: 'cutoff', voucherCount: 0 } as never
+    expect(noResultText(m, null, Date.parse('2026-11-04T08:54:00Z'), '2026-11-04T08:43:59Z')).toBe('Epoch 9 passed its cutoff at 2026-11-04 08:43 UTC and has not been closed yet, so there is no clearing result.')
+    expect(noResultText(m, null, Date.parse('2026-11-04T08:40:00Z'), '2026-11-04T08:43:59Z')).toContain('is in progress (phase cutoff)')
+  })
+})
