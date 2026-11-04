@@ -141,6 +141,24 @@ describe('plural and the default note (epoch 7 of the testnet circle: one vouche
     expect(pendingText(m({ clearedRatio: 0.5 }))).toBeNull()
   })
 
+  it('FE-039 efficiency: epoch 8 of the testnet circle is 10 of 24 transfers avoided and 7.75 of 41.35 credit in cash; a dash when there is no clearing result', async () => {
+    const { efficiency } = await import('./ClearingStats')
+    const e8 = { phase: 'finalized', voucherCount: 24, residualTransfers: 14, totalVoucherValue: '41350000', netDebt: '7750000', cleared: '21800000' }
+    expect(efficiency(e8 as never)).toEqual({ avoided: 10, avoidedShare: 10 / 24, cashNeeded: '7750000', cashShare: 0.1874 })
+    expect(efficiency({ ...e8, residualTransfers: null } as never)).toBeNull()
+    expect(efficiency({ ...e8, netDebt: null } as never)).toBeNull()
+    expect(efficiency({ ...e8, voucherCount: 0 } as never)).toBeNull()
+    expect(efficiency({ ...e8, cleared: '0', residualTransfers: 0 } as never)).toBeNull() // committed with vouchers and no clearing
+  })
+
+  it('FE-039 the stats page shows both figures with the numbers of the epoch', async () => {
+    renderApp('/stats?epoch=42')
+    await screen.findByText('Transfers avoided', { selector: 'dt' })
+    expect(fact('Transfers avoided')).toHaveTextContent('509 of 512 (99.41%)')
+    expect(fact('Cash needed')).toHaveTextContent('45 of 2,563.38 credit (1.76%)')
+    expect(screen.getByRole('link', { name: 'How they are computed' })).toHaveAttribute('href', expect.stringContaining('capital-efficiency.md'))
+  })
+
   it('defaultNote says what a default rate above 0 is and is absent when nobody defaulted', async () => {
     const { defaultNote } = await import('./ClearingStats')
     const m = (over: object) => ({ netDebt: '20000', defaultRate: 1, ...over }) as never

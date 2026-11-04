@@ -35,6 +35,16 @@ export function transfersText(vouchers: number, transfers: number): string {
   return `${formatNumber(vouchers, 0)} ${vouchers === 1 ? 'voucher becomes' : 'vouchers become'} ${formatNumber(transfers, 0)} settlement ${transfers === 1 ? 'transfer' : 'transfers'}, one for each member with a net position.`
 }
 
+/** FE-039 (docs/capital-efficiency.md): what the clearing saved, from the metrics of the epoch only. `null` when the epoch has no clearing result, so the page shows a dash like the other figures. */
+export function efficiency(m: EpochMetrics): { avoided: number; avoidedShare: number; cashNeeded: string; cashShare: number } | null {
+  if (noClearing(m) || m.voucherCount === 0 || m.residualTransfers === null || m.netDebt === null) return null
+  const total = BigInt(m.totalVoucherValue)
+  if (total === 0n) return null
+  const avoided = m.voucherCount - m.residualTransfers
+  if (avoided < 0) return null
+  return { avoided, avoidedShare: avoided / m.voucherCount, cashNeeded: m.netDebt, cashShare: Number((BigInt(m.netDebt) * 10000n + total / 2n) / total) / 10000 }
+}
+
 /** What a default rate above 0 means: the part of the residual debt that was not paid in the payment window and was covered from the stakes. */
 export function defaultNote(m: EpochMetrics): string | null {
   if (m.defaultRate === null || m.defaultRate <= 0 || m.netDebt === null) return null
@@ -42,6 +52,7 @@ export function defaultNote(m: EpochMetrics): string | null {
 }
 
 function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline: string | null; cutoffAt: string | null; pruned: boolean }) {
+  const eff = efficiency(m)
   return (
     <div className="headline">
       <p className="headline-main">
@@ -73,6 +84,14 @@ function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline
           <dd>{formatPercent(m.debtReduction)}</dd>
         </div>
         <div>
+          <dt>Transfers avoided</dt>
+          <dd>{eff ? `${formatNumber(eff.avoided, 0)} of ${formatNumber(m.voucherCount, 0)} (${formatPercent(eff.avoidedShare)})` : '—'}</dd>
+        </div>
+        <div>
+          <dt>Cash needed</dt>
+          <dd>{eff ? `${formatCredit(eff.cashNeeded)} of ${formatCredit(m.totalVoucherValue)} credit (${formatPercent(eff.cashShare)})` : '—'}</dd>
+        </div>
+        <div>
           <dt>Default rate</dt>
           <dd>{formatPercent(m.defaultRate)}</dd>
         </div>
@@ -81,6 +100,10 @@ function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline
           <dd>{m.clearingTimeSeconds === null ? 'not available' : `${formatNumber(m.clearingTimeSeconds, 0)} seconds`}</dd>
         </div>
       </dl>
+      <p className="state">
+        Transfers avoided counts vouchers that did not become their own transfer; cash needed is the net debt that members owe in cash after clearing. Neither counts fees or locked stake.{' '}
+        <a href="https://github.com/x207-labs/frontend/blob/main/docs/capital-efficiency.md" target="_blank" rel="noreferrer">How they are computed</a>
+      </p>
       {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}
       {defaultNote(m) && <p className="state">{defaultNote(m)}</p>}
     </div>
