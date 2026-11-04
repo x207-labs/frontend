@@ -1,10 +1,16 @@
+import { randomBytes } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 import { buildCsp, cspMeta } from './src/lib/csp.ts'
 
+// FE-038: one nonce per build. The wallet executors of NEAR Connect run in srcdoc iframes whose inline scripts inherit this policy; the library puts the nonce on them (`cspNonce`).
+// The nonce sits in the shipped index.html, so it is not a secret: it keeps `'unsafe-inline'` out of `script-src`, it does not stop an attacker who can already inject markup.
+const CSP_NONCE = randomBytes(16).toString('base64')
+
 export default defineConfig(({ mode }) => ({
+  define: { __X207_CSP_NONCE__: mode === 'production' ? JSON.stringify(CSP_NONCE) : 'undefined' },
   // FE-031: `@x207/core` imports `node:crypto`; the browser gets a small stand-in (see the file). The tests run on Node and keep the real module.
   resolve: mode === 'test' ? {} : { alias: { 'node:crypto': fileURLToPath(new URL('./src/lib/node-crypto-shim.ts', import.meta.url)) } },
   plugins: [
@@ -20,7 +26,7 @@ export default defineConfig(({ mode }) => ({
       apply: 'build',
       transformIndexHtml(html: string) {
         const env = loadEnv(mode, process.cwd(), 'VITE_')
-        return env.VITE_X207_CSP === 'off' ? html : html.replace('</head>', `    ${cspMeta(buildCsp(env))}\n  </head>`)
+        return env.VITE_X207_CSP === 'off' ? html : html.replace('</head>', `    ${cspMeta(buildCsp(env, CSP_NONCE))}\n  </head>`)
       },
     },
   ],

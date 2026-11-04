@@ -21,13 +21,16 @@ function wasConnected(): boolean {
   }
 }
 
+// Set at build (vite.config.ts) for the production build only; the CSP allows scripts that carry it, which the wallet executors need (srcdoc iframes inherit the policy).
+declare const __X207_CSP_NONCE__: string | undefined
+
 let connector: Promise<NearConnector> | undefined
 
 // NearConnector fetches the wallet manifest from the network when created, so it is only created
 // when the user logs in or has a session. Read pages still only call the read API.
 function getConnector(): Promise<NearConnector> {
   connector ??= import('@hot-labs/near-connect').then(
-    ({ NearConnector }) => new NearConnector({ network: NEAR_NETWORK }),
+    ({ NearConnector }) => new NearConnector({ network: NEAR_NETWORK, cspNonce: typeof __X207_CSP_NONCE__ === 'string' ? __X207_CSP_NONCE__ : undefined }),
   )
   return connector
 }

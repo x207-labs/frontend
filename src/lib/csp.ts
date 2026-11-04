@@ -23,7 +23,7 @@ export const NEAR_CONNECT_ICON_ORIGINS = [
   'https://raw.githubusercontent.com', 'https://app.hot-labs.org', 'https://evm-on-near.dev', 'https://res.cloudinary.com', 'https://storage.herewallet.app', 'https://www.mynearwallet.com',
 ]
 
-export function buildCsp(env: Env): string {
+export function buildCsp(env: Env, nonce?: string): string {
   const rpc = env.VITE_NEAR_RPC_URL ?? (env.VITE_NEAR_NETWORK === 'mainnet' ? 'https://rpc.mainnet.fastnear.com' : 'https://rpc.testnet.fastnear.com')
   const connect = new Set<string>(["'self'"])
   // The default broker is a local one (config.ts): it is only allowed when the API is local too (or not given); a hosted build with no broker does not open a connection to the visitor's own machine.
@@ -41,7 +41,7 @@ export function buildCsp(env: Env): string {
   for (const o of NEAR_CONNECT_MANIFEST_ORIGINS) connect.add(o)
   return [
     "default-src 'self'",
-    "script-src 'self' 'wasm-unsafe-eval'",
+    `script-src 'self' 'wasm-unsafe-eval'${nonce ? ` 'nonce-${nonce}'` : ''}`,
     `connect-src ${[...connect].join(' ')}`,
     `img-src 'self' data: ${NEAR_CONNECT_ICON_ORIGINS.join(' ')}`,
     "style-src 'self' 'unsafe-inline'",

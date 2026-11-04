@@ -24,6 +24,12 @@ describe('batch 3 F4 content security policy of the build', () => {
     expect(csp).not.toContain('frame-src')
   })
 
+  it('FE-038 the build nonce is the only addition to script-src: the wallet executor iframes need it, and unsafe-inline stays out', () => {
+    const csp = buildCsp({ VITE_X207_API_URL: 'https://api.x207.example' }, 'AbC+/123==')
+    expect(csp).toContain("script-src 'self' 'wasm-unsafe-eval' 'nonce-AbC+/123=='")
+    expect(csp).not.toMatch(/script-src[^;]*unsafe-inline/)
+  })
+
   it('FE-035 a hosted build without a broker does not allow connections to localhost', () => {
     const csp = buildCsp({ VITE_X207_API_URL: 'https://x207-backend-production.up.railway.app' })
     expect(csp).toContain("connect-src 'self' https://x207-backend-production.up.railway.app https://rpc.testnet.fastnear.com")
