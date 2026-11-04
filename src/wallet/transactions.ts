@@ -4,7 +4,7 @@ import type { FunctionCallTx } from './types'
 
 const TGAS = 10n ** 12n
 
-// JOIN_STORAGE_DEPOSIT: satu sumber di `@x207/core` (ADR-41 menaikkannya; kontrak mengembalikan kelebihannya).
+// JOIN_STORAGE_DEPOSIT: single source in `@x207/core` (ADR-41 raised it; the contract refunds the excess).
 export const JOIN_STORAGE_DEPOSIT = JOIN_DEPOSIT.toString()
 
 export function joinTx(pubkeyVoucher: string, termsHash: string): FunctionCallTx {
@@ -21,7 +21,7 @@ const USDT_ID = 'usdt.tether-token.near'
 const INTENTS_ID = 'intents.near'
 const ONE_YOCTO = '1'
 
-/** `ft_withdraw` USDT dari `intents.near` ke akun NEAR tanpa `msg` (ADR-19). */
+/** `ft_withdraw` USDT from `intents.near` to a NEAR account without `msg` (ADR-19). */
 export function ftWithdrawTx(receiverId: string, amount: string): FunctionCallTx {
   return {
     receiverId: INTENTS_ID,
@@ -32,7 +32,7 @@ export function ftWithdrawTx(receiverId: string, amount: string): FunctionCallTx
   }
 }
 
-/** `ft_transfer_call` USDT ke kontrak lingkaran dengan `msg` stake. */
+/** `ft_transfer_call` USDT to the circle contract with the stake `msg`. */
 export function stakeTx(amount: string): FunctionCallTx {
   return {
     receiverId: USDT_ID,
@@ -43,7 +43,7 @@ export function stakeTx(amount: string): FunctionCallTx {
   }
 }
 
-/** `ft_transfer_call` USDT ke kontrak lingkaran dengan `msg` settle epoch (SD-014, Spec Antarmuka Kontrak 4.1). */
+/** `ft_transfer_call` USDT to the circle contract with the settle epoch `msg` (SD-014, Contract Interface Spec 4.1). */
 export function settleTx(epoch: number, amount: string): FunctionCallTx {
   return {
     receiverId: USDT_ID,
@@ -67,27 +67,27 @@ export function claimTx(epoch: number, destination: 'near' | 'intents'): Functio
   }
 }
 
-/** `request_exit()`: tanpa argumen, deposit 1 yoctoNEAR (ADR-29). */
+/** `request_exit()`: no arguments, deposit 1 yoctoNEAR (ADR-29). */
 export function requestExitTx(): FunctionCallTx {
   return { receiverId: CONTRACT_ID, methodName: 'request_exit', args: {}, gas: (30n * TGAS).toString(), deposit: ONE_YOCTO }
 }
 
-/** `withdraw_stake()`: deposit 1 yoctoNEAR, gas cukup untuk `ft_transfer` dan callback (ADR-29, ADR-32). */
+/** `withdraw_stake()`: deposit 1 yoctoNEAR, enough gas for `ft_transfer` and the callback (ADR-29, ADR-32). */
 export function withdrawStakeTx(): FunctionCallTx {
   return { receiverId: CONTRACT_ID, methodName: 'withdraw_stake', args: {}, gas: (100n * TGAS).toString(), deposit: ONE_YOCTO }
 }
 
-/** `withdraw_intents_balance()` (interface 0.0.9): siapa pun boleh memanggil; kontrak minta minimal 130 Tgas prepaid, jadi 150 Tgas, tanpa deposit. */
+/** `withdraw_intents_balance()` (interface 0.0.9): anyone may call; the contract requires at least 130 Tgas prepaid, so 150 Tgas, no deposit. */
 export function withdrawIntentsBalanceTx(): FunctionCallTx {
   return { receiverId: CONTRACT_ID, methodName: 'withdraw_intents_balance', args: {}, gas: (150n * TGAS).toString(), deposit: '0' }
 }
 
-/** `remove_intent(intent_hash)`: hash intent base58, hanya pemilik (atau siapa pun bila pemiliknya sudah `exited`, ADR-41). Tanpa deposit. */
+/** `remove_intent(intent_hash)`: base58 intent hash, owner only (or anyone if the owner is already `exited`, ADR-41). No deposit. */
 export function removeIntentTx(intentHash: string): FunctionCallTx {
   return { receiverId: CONTRACT_ID, methodName: 'remove_intent', args: { intent_hash: intentHash }, gas: (30n * TGAS).toString(), deposit: '0' }
 }
 
-/** `prune_epoch(epoch, max_items)`: permissionless; 196 entri memakai 70 Tgas (tes sandbox), jadi 100 Tgas untuk 200 entri. */
+/** `prune_epoch(epoch, max_items)`: permissionless; 196 entries use 70 Tgas (sandbox test), so 100 Tgas for 200 entries. */
 export function pruneEpochTx(epoch: number): FunctionCallTx {
   return { receiverId: CONTRACT_ID, methodName: 'prune_epoch', args: { epoch, max_items: PRUNE_MAX_ITEMS_PER_CALL }, gas: (100n * TGAS).toString(), deposit: '0' }
 }

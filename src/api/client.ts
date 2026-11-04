@@ -57,7 +57,7 @@ function withRetryAfter(res: Response, details: Record<string, unknown> | undefi
   return Number.isFinite(wait) && wait > 0 ? { ...details, retryAfter: Math.ceil(wait) } : details
 }
 
-// 207 Multi-Status termasuk rentang 2xx, jadi laporan kliring dibaca sebagai sukses.
+// 207 Multi-Status is within the 2xx range, so the clearing report is read as success.
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`)
   if (res.ok) return res.json() as Promise<T>
@@ -142,7 +142,7 @@ export const api = {
     return { items: (raw.items ?? []).map(toOrderView), nextCursor: raw.nextCursor ?? null }
   },
   order: async (hash: string): Promise<OrderView> => toOrderView(await get<unknown>(`${circle}/orders/${hash}`)),
-  /** Registri DAO milik tata kelola lingkaran (BE-061): daftar akun DAO yang dikenal. `null` bila backend tidak menyediakannya. */
+  /** DAO registry owned by circle governance (BE-061): the list of known DAO accounts. `null` if the backend does not provide it. */
   daoRegistry: async (): Promise<string[] | null> => {
     try {
       const raw = await get<{ items?: Array<{ dao?: unknown }> }>(`${circle}/marketplace/dao-registry`)
@@ -151,7 +151,7 @@ export const api = {
       return null
     }
   },
-  /** Klaim satu transaksi suara delegate (BE-055): notice bertanda tangan penjual; backend memeriksa transaksinya lewat RPC. */
+  /** Claim one delegate vote transaction (BE-055): seller-signed notice; the backend checks the transaction over RPC. */
   claimVote: (hash: string, txHash: string, notice: object, signature: string) => post<unknown>(`${circle}/orders/${hash}/claims`, { tx_hash: txHash, notice, signature }),
   createOrder: (body: { order: object; signatures: Array<{ account: string; signature: string }>; mandate?: object }) => post<{ order_hash?: string; orderHash?: string }>(`${circle}/orders`, body),
   orderMilestone: (hash: string, index: number, notice: object, signature: string) => post<unknown>(`${circle}/orders/${hash}/milestones/${index}`, { notice, signature }),
@@ -178,18 +178,18 @@ export const api = {
   transferNotice: async (id: string, notice: object, signature: string): Promise<TransferView> =>
     toTransferView(await post<unknown>(`${circle}/transfers/${encodeURIComponent(id)}`, { notice, signature })),
   purchaseNotice: (id: string, notice: object, signature: string) => post<unknown>(`${circle}/purchases/${encodeURIComponent(id)}`, { notice, signature }),
-  /** BE-069: penjual menunjukkan kode dan salt sekali; backend bertanya ke penerbit dan hanya menyimpan vonis dan waktunya. */
+  /** BE-069: the seller reveals the code and salt once; the backend asks the issuer and stores only the verdict and its time. */
   codeCheck: (listingHash: string, notice: object, signature: string, code: string, salt: string) =>
     post<{ listingHash: string; verdict: 'valid' | 'used' | 'unknown'; checkedAt: number; validUntilMs: number | null }>(`${circle}/listings/${listingHash}/code-check`, { notice, signature, code, salt }),
   takedown: (listingHash: string, claim: string, evidenceHash: string, signature: string) => post<unknown>(`${circle}/listings/${listingHash}/takedown`, { claim, evidence_hash: evidenceHash, signature }),
-  /** Broker sewa akses (BE-060), server lain dari read API: keadaan satu akses dan berhenti sewa dengan notice bertanda tangan. */
+  /** Access rental broker (BE-060), a server separate from the read API: the state of one access and stopping the rental with a signed notice. */
   rent: async (grantId: number): Promise<RentView> => {
     const res = await fetch(`${BROKER_URL}/grants/${grantId}/access`)
     const body = await res.json().catch(() => null)
     if (!res.ok) throw new ApiError(res.status, body?.error ?? 'http_error', body?.message ?? `Broker menjawab HTTP ${res.status}`, undefined)
     return body as RentView
   },
-  /** Tantangan bukti `grantee_ref` (BE-057): `{required:false}` untuk penyedia yang tidak memintanya. */
+  /** `grantee_ref` proof challenge (BE-057): `{required:false}` for providers that do not ask for it. */
   rentChallenge: async (grantId: number): Promise<RentChallenge> => {
     const res = await fetch(`${BROKER_URL}/grants/${grantId}/access/challenge`)
     const body = await res.json().catch(() => null)

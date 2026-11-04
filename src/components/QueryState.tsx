@@ -41,7 +41,7 @@ type Props<T> = {
   children: (data: T) => ReactNode
 }
 
-// Empat status halaman data: loading, error API, kosong, dan data.
+// Four states of a data page: loading, API error, empty, and data.
 export function QueryState<T>({ query, loadingLabel, isEmpty, empty, children }: Props<T>) {
   if (query.data === undefined) {
     if (query.isError) return <ErrorNotice error={query.error} onRetry={() => query.refetch()} />

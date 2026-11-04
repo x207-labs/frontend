@@ -5,8 +5,8 @@ import { useSignTransaction } from '../wallet/WalletContext'
 import { requestExitTx, withdrawStakeTx } from '../wallet/transactions'
 import { TxResult } from './TxResult'
 
-// FE-018 (ADR-29, ADR-32): keluar dari lingkaran dan tarik stake. Syarat penarikan sama dengan kontrak: epoch tempat keluar diminta
-// sudah `finalized` dan `outstanding_debt` anggota 0. Kontrak tetap yang memutuskan; panel hanya mencegah transaksi yang pasti ditolak.
+// FE-018 (ADR-29, ADR-32): leave the circle and withdraw stake. The withdrawal conditions match the contract: the epoch in which exit was requested
+// is `finalized` and the member's `outstanding_debt` is 0. The contract still decides; the panel only prevents transactions that would certainly be rejected.
 export function ExitPanel({ member }: { member: MemberResponse }) {
   const epochs = useEpochs()
   const { state, sign } = useSignTransaction()

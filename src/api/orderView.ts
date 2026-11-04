@@ -1,7 +1,7 @@
 import type { MilestoneStatus, OrderMandateView, OrderView } from './types'
 
-// Jawaban pesanan dari backend (BE-054) dinormalkan ke satu bentuk: `order_hash`, `needs_bond`, `target_verified`, `deliverable_hash` seperti di spec 5f atau camelCase.
-// Status yang tidak dikenal ditolak dengan galat, bukan ditebak.
+// The order response from the backend (BE-054) is normalized to a single shape: `order_hash`, `needs_bond`, `target_verified`, `deliverable_hash` as in spec 5f, or camelCase.
+// Unknown statuses are rejected with an error, not guessed.
 type Raw = Record<string, unknown>
 const pick = (raw: Raw, snake: string, camel: string): unknown => raw[camel] ?? raw[snake]
 const MILESTONE_STATUSES: readonly MilestoneStatus[] = ['open', 'delivered', 'confirmed', 'disputed', 'paid', 'cancelled']

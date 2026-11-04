@@ -26,7 +26,7 @@ const JOB_LABEL: Record<string, string> = {
   expired: 'Expired. No further steps.',
 }
 
-// FE-011: pencairan saldo Intents kreditor ke chain lain. Urutan quote -> intent -> tanda tangan wallet -> submit -> polling.
+// FE-011: withdraw a creditor's Intents balance to another chain. Order: quote -> intent -> wallet signature -> submit -> polling.
 export function WithdrawPanel({ account }: { account: string }) {
   const { signMessage } = useWallet()
   const [chain, setChain] = useState<Chain>('base')

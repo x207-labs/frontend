@@ -7,9 +7,9 @@ import { shortAccount } from '../lib/format'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { removeIntentTx } from '../wallet/transactions'
 
-// Interface 0.0.8 (ADR-40): satu anggota menahan paling banyak 64 intent terbuka di kontrak, dan hanya `remove_intent` membebaskan slotnya.
-// Yang terpasang di kontrak dibaca dari read API (`/intents/hashes?status=posted`, event `intent_posted` dikurangi `intent_removed`); teks tawaran dan
-// kebutuhan dari buku intent off-chain, bila ada.
+// Interface 0.0.8 (ADR-40): a member holds at most 64 open intents in the contract, and only `remove_intent` frees the slot.
+// What is posted in the contract is read from the read API (`/intents/hashes?status=posted`, `intent_posted` events minus `intent_removed`); the offer and
+// need text comes from the off-chain intent book, if present.
 export function OwnIntents() {
   const { account } = useWallet()
   const posted = usePostedIntents(account)

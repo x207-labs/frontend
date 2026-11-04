@@ -14,7 +14,7 @@ if (USE_FIXTURES) {
   const { fixtureFetch } = await import('./api/fixtures')
   const fake = fixtureFetch()
   const real = window.fetch.bind(window)
-  // Hanya read API yang dipalsukan; manifest wallet dan lainnya tetap ke jaringan.
+  // Only the read API is faked; the wallet manifest and everything else still go to the network.
   window.fetch = (input, init) =>
     String(input).startsWith(API_URL) ? fake(input) : real(input, init)
 }

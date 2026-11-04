@@ -1,4 +1,4 @@
-// Data contoh dari Spec API Backend (FX-08). Dipakai test dan mode tanpa backend.
+// Sample data from the Backend API Spec (FX-08). Used by tests and the no-backend mode.
 const amounts = { unit: 'credit', decimals: 6 }
 const circle = 'agents-main'
 const near = (name: string) => `${name}.x207-circle.near`
@@ -155,7 +155,7 @@ export const paramsHistory = {
   nextCursor: null,
 }
 
-// Marketplace F9 (backend/src/marketplace). Hash dan tanda tangan berupa contoh, bukan hasil hitung.
+// Marketplace F9 (backend/src/marketplace). Hashes and signatures are samples, not computed results.
 export const listingHashA = '2f4f3bc3a4c63f350a33dc0e8bdbd90cdfe5a6b03767cad4fb214f006e6f6c5e'
 export const listings = [
   {
@@ -205,13 +205,13 @@ const notFound = (code: string, message: string): FixtureReply => ({
 })
 const ok = (body: unknown): FixtureReply => ({ status: 200, body })
 
-/** Jawaban RPC NEAR `call_function` untuk satu nilai JSON (bytes hasil view), untuk test dan mode tanpa jaringan. */
+/** NEAR RPC `call_function` response for a single JSON value (the view result bytes), for tests and the no-network mode. */
 export const rpcResult = (value: unknown): FixtureReply => ({
   status: 200,
   body: { jsonrpc: '2.0', id: 'x207', result: { result: Array.from(new TextEncoder().encode(JSON.stringify(value))), logs: [], block_height: 1 } },
 })
 
-/** View kontrak bawaan: tidak ada saldo Intents, satu pasangan epoch masih tersimpan. */
+/** Default contract view: no Intents balance, one epoch pair still stored. */
 export function chainFixture(methodName: string): FixtureReply {
   switch (methodName) {
     case 'intents_balance':
@@ -333,7 +333,7 @@ export function fixtureFetch(overrides: (path: string, init?: RequestInit) => Fi
   return async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const url = new URL(String(input))
     const path = url.pathname + url.search
-    // RPC NEAR (view kontrak): jalur '/' dengan body JSON-RPC; test menimpa lewat `overrides` dan membaca init.body
+    // NEAR RPC (contract view): path '/' with a JSON-RPC body; tests override via `overrides` and read init.body
     const rpcParams = init?.method === 'POST' && init.body !== undefined ? (safeJson(String(init.body))?.params as { request_type?: string; method_name?: string } | undefined) : undefined
     const rpc = rpcParams?.request_type === 'call_function'
     const reply = overrides(path, init) ?? (rpc ? chainFixture(rpcParams!.method_name ?? '') : fixtureReply(path))
@@ -345,7 +345,7 @@ export function fixtureFetch(overrides: (path: string, init?: RequestInit) => Fi
   }
 }
 
-// Invoice (FE-025): bentuk dari Spec API Backend 5e, snake_case seperti di spec. Hash dihitung dari dokumennya (sha256 JSON kanonik SD-065).
+// Invoice (FE-025): shape from Backend API Spec 5e, snake_case as in the spec. The hash is computed from its document (canonical JSON sha256 SD-065).
 export const invoiceDocs = [
   { id: 'INV-2026-001', issuer: near('supplier'), debtor: near('maker'), amount: '100000000', memo: 'components, October batch' },
   { id: 'INV-2026-002', issuer: near('retailer'), debtor: near('supplier'), amount: '90000000', memo: 'storefront ads, three installments' },
@@ -366,7 +366,7 @@ export const invoices = [
   },
 ]
 
-// Pesanan jasa (FE-027): bentuk dari Spec API Backend 5f, snake_case seperti di spec. Hash dihitung dari dokumennya (sha256 JSON kanonik SD-069).
+// Service order (FE-027): shape from Backend API Spec 5f, snake_case as in the spec. The hash is computed from its document (canonical JSON sha256 SD-069).
 const H = (c: string) => c.repeat(64)
 const orderBase = { circle: 'x207-circle.testnet', buyer: near('research'), nonce: 'o1' }
 export const orderDocs = {

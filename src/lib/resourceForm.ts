@@ -1,8 +1,8 @@
 import { DEFAULT_MAX_QUANTITY, METERED_KINDS, METERED_PRESETS, endpointProblem, estimateMeteredAmount, resourceListingDetail, type MeteredKind, type MeteredUnit } from '@x207/core'
 import { toAtomic } from './amount'
 
-// FE-024: formulir listing sumber daya terukur (pipeline P5, kelas D, dua belas jenis). Tidak ada aturan sendiri: jenis, satuan, batas, peringatan, pemeriksaan endpoint, dan bentuk
-// `detail` datang dari SDK (`METERED_PRESETS`, `resourceListingDetail`); formulir hanya mengubah teks menjadi harga satuan dan menghitung perkiraan biaya.
+// FE-024: metered resource listing form (pipeline P5, class D, twelve kinds). No rules of its own: kind, unit, limit, warning, endpoint check, and the shape of
+// `detail` come from the SDK (`METERED_PRESETS`, `resourceListingDetail`); the form only converts text into a unit price and computes the cost estimate.
 export const KIND_LABEL: Record<MeteredKind, string> = {
   cpu: '31 · Idle CPU',
   gpu: '32 · GPU per hour',
@@ -28,16 +28,16 @@ export type ResourceTemplate = {
   assetType: string
   assetClass: 'D'
   unit: MeteredUnit
-  /** Harga satu satuan, satuan credit terkecil. */
+  /** Price of one unit, in the smallest credit unit. */
   unitPriceAtomic: string
   maxQuantity: number
   detail: string
   warnings: string[]
-  /** Perkiraan biaya untuk `quantity` satuan, satuan credit terkecil; `null` bila jumlahnya belum sah. */
+  /** Cost estimate for `quantity` units, in the smallest credit unit; `null` if the quantity is not valid yet. */
   estimateAtomic: string | null
 }
 
-/** Nilai formulir menjadi template listing, atau teks galat. Satuan bawaan: satuan pertama preset jenisnya. */
+/** Form values become a listing template, or an error text. Default unit: the first unit of the kind's preset. */
 export function toResourceTemplate(v: ResourceValues): ResourceTemplate | string {
   if (v.kind === '') return 'Choose a resource type.'
   const preset = METERED_PRESETS[v.kind]

@@ -5,8 +5,8 @@ import { QueryState } from '../components/QueryState'
 import { useSelectedEpoch } from '../epoch'
 import { formatCredit, shortAccount } from '../lib/format'
 
-// Urutan kerugian (ADR-18): stake debtor, lalu dana cadangan, lalu haircut ke kreditor langsung. API memuat stake dan haircut;
-// bagian dana cadangan adalah sisanya: tagihan - dibayar - stake - haircut.
+// Loss order (ADR-18): debtor stake, then the reserve fund, then haircut to direct creditors. The API carries stake and haircut;
+// the reserve fund part is the remainder: invoiced - paid - stake - haircut.
 export function lossAllocation(item: Pick<SettlementItem, 'amount' | 'paidAmount' | 'stakeSlashed' | 'haircut'>) {
   const owed = BigInt(item.amount) - BigInt(item.paidAmount ?? '0')
   const stake = BigInt(item.stakeSlashed ?? '0')

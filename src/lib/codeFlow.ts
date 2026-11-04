@@ -7,8 +7,8 @@ import { signVoucherInBrowser } from './barter'
 import { fromHex, toHex } from './hex'
 import { receiveLicense, type DownloadResult, type PairState } from './licenseFlow'
 
-// FE-032: kode sekali tukar (pipeline P3, ADR-48). Format dan kripto ada di SDK (SD-076, memakai ulang pertukaran adil SD-070); di sini hanya menyiapkan dokumen kode, membaca
-// listing, dan menerima kode. Kode asli ada di browser penjual dan, setelah kunci dilepas, di browser pembeli. Hanya untuk kode yang bisa dicek, penjual mengirim kode dan salt satu kali ke backend saat pengecekan penerbit (backend tidak menyimpannya).
+// FE-032: single-use exchange codes (pipeline P3, ADR-48). Format and crypto live in the SDK (SD-076, reusing the SD-070 fair exchange); here we only prepare the code document, read
+// the listing, and receive the code. The real code lives in the seller's browser and, after the key is released, in the buyer's browser. Only for checkable codes, the seller sends the code and salt once to the backend during the issuer check (the backend does not store them).
 export { CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, VERIFIABLE_CODE_LIMIT, codeOverLimit }
 
 export type CodeSellInput = { circle: string; seller: string; code: string; issuer: string; verifiable: boolean; value: string; nonce: string }
@@ -16,17 +16,17 @@ export type PreparedCode = {
   document: Required<CodeDocument>
   documentHash: string
   resource: string
-  /** `Listing.detail` untuk listing kode: tanpa kode dan tanpa kunci. */
+  /** `Listing.detail` for a code listing: no code and no key. */
   detail: string
   code: string
-  /** Salt acak 32 byte (heks): ada di payload terenkripsi, tidak di listing. */
+  /** Random 32-byte salt (hex): lives in the encrypted payload, not in the listing. */
   salt: string
   ciphertext: Uint8Array
   cipherHash: string
   contentKey: string
 }
 
-/** Dokumen kode dari isian. Melempar `CodeError` (mis. `code_over_limit_unbonded`) bila SDK menolak. Kode dienkripsi di sini. */
+/** Code document from form input. Throws `CodeError` (e.g. `code_over_limit_unbonded`) if the SDK rejects. The code is encrypted here. */
 export function prepareCode(i: CodeSellInput): PreparedCode {
   const { ciphertext, key, code_commitment, salt } = encryptCode(i.code)
   const document = checkCodeDocument({ circle: i.circle, seller: i.seller, code_commitment, issuer: i.issuer.trim(), value: i.value, verifiable: i.verifiable, arbiter: null, nonce: i.nonce })
@@ -42,7 +42,7 @@ export function prepareCode(i: CodeSellInput): PreparedCode {
 
 export type CodeListing = { docHash: string; codeCommitment: string; issuer: string; value: string; verifiable: boolean; nonce: string; overLimit: boolean }
 
-/** Membaca detail listing kode; `null` bila bukan listing kode. Kode tidak pernah ada di listing, hanya hash-nya. */
+/** Reads the detail of a code listing; `null` if it is not a code listing. The code is never in the listing, only its hash. */
 export function parseCodeListing(view: ListingView): CodeListing | null {
   let raw: unknown
   try {
@@ -71,7 +71,7 @@ export const codeDocumentOfListing = (circle: string, view: ListingView, listing
 
 export type CodeReceive = { state: 'ok'; code: string } | Exclude<DownloadResult, { state: 'ok' }>
 
-/** Pembeli: mengunduh dan memeriksa kiriman; hasil `ok` memuat kode (teks). Kode salah menghasilkan bukti curang seperti lisensi. */
+/** Buyer: downloads and checks the delivery; an `ok` result carries the code (text). A wrong code yields a cheating proof like licenses. */
 export async function receiveCode(view: PurchaseView, sellerPublicKey: string, buyerSecretKey: string, onProgress: (received: number) => void, doc?: CodeDocument): Promise<CodeReceive> {
   // the release must be for the document of the listing that the buyer looked at (B6-F4), not only for what the purchase view of the same backend says
   if (doc !== undefined && view.release !== null) {
@@ -86,7 +86,7 @@ export async function receiveCode(view: PurchaseView, sellerPublicKey: string, b
   return { state: 'ok', code: parts.code }
 }
 
-/** Voucher pembelian kode: sama dengan lisensi, resource `x207:code:<hash dokumen>`. */
+/** Code purchase voucher: same as license, resource `x207:code:<document hash>`. */
 export async function buildCodePurchase(args: { circle: string; buyer: string; seller: string; epoch: number; amount: string; state: PairState; codeDocHash: string; secretKey: string }) {
   const voucher = {
     circle: args.circle, payer: args.buyer, payee: args.seller, epoch: args.epoch, seq: args.state.seq + 1,
@@ -95,7 +95,7 @@ export async function buildCodePurchase(args: { circle: string; buyer: string; s
   return { voucher, signature: await signVoucherInBrowser(voucher, args.secretKey) }
 }
 
-/** Rilis kunci kode untuk satu pembeli (notice `key_released` BE-056). */
+/** Code key release for one buyer (`key_released` notice, BE-056). */
 export function buildCodeKeyRelease(args: { prepared: PreparedCode; purchaseId: string; buyer: string; buyerPublicKey: string; at: number; sellerSecretKey: string }) {
   return createCodeRelease({
     doc: args.prepared.document, code: args.prepared.code, buyer: args.buyer, buyerPublicKey: args.buyerPublicKey, salt: fromHex(args.prepared.salt), purchase_id: args.purchaseId, ciphertext: args.prepared.ciphertext,
@@ -103,10 +103,10 @@ export function buildCodeKeyRelease(args: { prepared: PreparedCode; purchaseId: 
   })
 }
 
-/** Sisa jendela sengketa dalam detik (>= 0), dari `disputeUntil` (detik unix). */
+/** Remaining dispute window in seconds (>= 0), from `disputeUntil` (unix seconds). */
 export const disputeSecondsLeft = (disputeUntil: number | null, nowSeconds: number): number | null => (disputeUntil === null ? null : Math.max(0, disputeUntil - nowSeconds))
 
-/** Notice `check` (BE-069): kunci `circle, listing_hash, actor, action, at` dalam urutan itu; tanda tangannya mengikat listing, jadi cek satu listing tidak berlaku untuk listing lain. */
+/** `check` notice (BE-069): keys `circle, listing_hash, actor, action, at` in that order; its signature binds the listing, so a check of one listing is not valid for another. */
 export const codeCheckNotice = (circle: string, listingHash: string, actor: string, at: number) => ({ circle, listing_hash: listingHash, actor, action: 'check', at })
 
 // B7-C3: the backend counts the vouchers that other purchases of the same buyer, seller and epoch still hold (not registered yet), so a second code from the same seller must continue

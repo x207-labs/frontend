@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 
-// Kunci voucher (ADR-06) bukan access key wallet, jadi tanda tangan listing dan penawaran dibuat di browser.
-// Nilainya hanya hidup di state komponen induk: tidak disimpan, tidak dikirim, tidak ikut URL.
-// Batch 3 F5 (review BE-063): kunci dihapus dari halaman setelah tak ada aktivitas di halaman selama VOUCHER_KEY_IDLE_MS, dan pengguna bisa menghapusnya sendiri; aksi yang tidak diulang
-// (takedown, pelepasan kunci berkas) menghapusnya sendiri setelah berhasil.
+// The voucher key (ADR-06) is not a wallet access key, so listing and offer signatures are made in the browser.
+// Its value lives only in the parent component state: not stored, not sent, not in the URL.
+// Batch 3 F5 (review BE-063): the key is cleared from the page after VOUCHER_KEY_IDLE_MS without activity on the page, and the user can clear it themselves; non-repeatable actions
+// (takedown, file key release) clear it themselves after succeeding.
 export const VOUCHER_KEY_IDLE_MS = 10 * 60 * 1000
 
 export function VoucherKeyField({ value, onChange, disabled }: { value: string; onChange: (value: string) => void; disabled?: boolean }) {

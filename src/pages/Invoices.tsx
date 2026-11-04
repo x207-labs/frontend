@@ -12,9 +12,9 @@ import { describeMarketError } from '../lib/marketError'
 import { formatCredit, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
 
-// FE-025: invoice dan cicilan (pipeline P8, ADR-44), dibangun dari Spec API Backend 5e. Issuer mengajukan, debtor menyetujui dengan menandatangani semua voucher cicilan
-// sekaligus (seq 1 di epochnya) atau menolak; cicilan yang gagal digeser sekali dengan voucher susulan yang ditandatangani setelah gagal. Tanda tangan di depan adalah bukti,
-// bukan jaminan pembayaran (ADR-44): halaman memberi tahu itu di tempat yang dilihat debtor.
+// FE-025: invoices and installments (pipeline P8, ADR-44), built from Backend API Spec 5e. The issuer requests, the debtor approves by signing all installment vouchers
+// at once (seq 1 in their epoch) or declines; a failed installment is shifted once with a follow-up voucher signed after the failure. An upfront signature is evidence,
+// not a payment guarantee (ADR-44): the page says so where the debtor can see it.
 const STATUS_LABEL: Record<InvoiceStatus, string> = {
   requested: 'Requested', approved: 'Approved', registered: 'Registered', rejected: 'Rejected', expired: 'Expired', missed: 'Missed',
 }
@@ -132,7 +132,7 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
     return 'Invoice rejected.'
   })
   const catchUp = (item: InstallmentView) => act(async (view) => {
-    // keadaan pasangan di epoch tujuan dari kontrak, bukan tebakan: voucher susulan melanjutkannya
+    // pair state in the target epoch from the contract, not a guess: the follow-up voucher continues it
     const target = item.epoch + 1
     const ob = await viewContract<Obligation>('obligation', { epoch: target, debtor: view.document.debtor, creditor: view.document.issuer })
     const state = { seq: ob?.last_seq ?? 0, cumulativeAmount: ob?.cumulative ?? '0' }

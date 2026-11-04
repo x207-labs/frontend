@@ -3,8 +3,8 @@ import type { ListingView } from '../api/types'
 import { CONTRACT_ID } from '../config'
 import { keyFingerprint, listingHash, verifyListingSignature, type AssetClass, type Listing } from './barter'
 
-// Batch 3 F1 (review BE-063): sebelum menandatangani voucher untuk sebuah listing, pembeli memastikan listing itu memang yang ia ketik hashnya, ditandatangani penjualnya, dan penjualnya
-// anggota yang aktif. Kunci penjual dibaca dari KONTRAK (`member`), tidak dari read API: API yang jahat tidak bisa memberi kunci sendiri.
+// Batch 3 F1 (review BE-063): before signing a voucher for a listing, the buyer makes sure the listing is the one whose hash they typed, signed by its seller, and that the seller is
+// an active member. The seller key is read from the CONTRACT (`member`), not from the read API: a malicious API cannot supply its own key.
 export function listingFromView(view: ListingView): Listing {
   const side = (s: ListingView['offer']) => ({ asset_type: s.assetType, asset_class: s.assetClass as AssetClass, quantity: s.quantity, value: s.value })
   return {
@@ -14,7 +14,7 @@ export function listingFromView(view: ListingView): Listing {
 }
 
 export type MemberOnChain = { account_id: string; pubkey_voucher: string; status: string } | null
-/** Anggota dari kontrak (view `member`), atau `null` bila bukan anggota. */
+/** Member from the contract (`member` view), or `null` if not a member. */
 export const memberOnChain = (account: string): Promise<MemberOnChain> => viewContract<MemberOnChain>('member', { account_id: account })
 
 export type ListingCheckResult = { ok: true; listing: Listing; sellerFingerprint: string } | { ok: false; reason: string }

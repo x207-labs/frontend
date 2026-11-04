@@ -19,9 +19,9 @@ import { checkListingToBuy, memberOnChain } from '../lib/listingCheck'
 import { describeMarketError } from '../lib/marketError'
 import { useWallet } from '../wallet/WalletContext'
 
-// FE-032: kode sekali tukar (pipeline P3, ADR-48). Kode dijual lewat pertukaran adil P7 (SD-076, SD-070): kode terenkripsi, kunci dilepas ke pembeli setelah ia membayar (voucher
-// ditahan), dan kode yang salah dibuktikan dengan bukti curang. Kode tidak tampil di listing dan baru terbuka di browser pembeli setelah ia memintanya. Sengketa dibuka satu jam
-// setelah kunci dilepas; diam sampai itu berarti konfirmasi otomatis. Kode yang penerbitnya tidak punya API cek dibatasi 20 credit.
+// FE-032: single-use exchange codes (pipeline P3, ADR-48). Codes are sold via the P7 fair exchange (SD-076, SD-070): the code is encrypted, the key is released to the buyer after they pay (voucher
+// held), and a wrong code is proven with a cheating proof. The code does not appear in the listing and is only revealed in the buyer's browser after they request it. A dispute opens one hour
+// after the key is released; silence until then means automatic confirmation. Codes whose issuer has no check API are capped at 20 credit.
 const STATUS_LABEL: Record<string, string> = {
   paid_held: 'Paid, voucher held', cipher_posted: 'Ciphertext posted', key_released: 'Key released', confirmed: 'Confirmed', disputed: 'Disputed', refuted: 'Dispute rejected', cancelled: 'Cancelled',
 }

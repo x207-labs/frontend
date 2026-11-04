@@ -15,7 +15,7 @@ type Props = {
   points: ScatterPoint[]
 }
 
-// Satu seri titik per epoch terhadap kepadatan grafik. Sumbu x selalu 0..1.
+// One series of points per epoch against graph density. The x axis is always 0..1.
 export function Scatter({ title, xLabel, yLabel, yMax, formatY, points }: Props) {
   const [hover, setHover] = useState<ScatterPoint | null>(null)
   const sx = (v: number) => M.left + v * (W - M.left - M.right)

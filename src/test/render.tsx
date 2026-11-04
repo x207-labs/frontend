@@ -13,7 +13,7 @@ export function apiError(status: number, code: string, message = code, headers?:
   return { status, body: { error: { code, message } }, ...(headers ? { headers } : {}) }
 }
 
-// Merender seluruh aplikasi dengan read API tiruan; kembalian mencatat path yang dipanggil.
+// Renders the whole app with a fake read API; the return value records the paths that were called.
 export function renderApp(route: string, override?: Override, pollMs: number | false = false, wallet: MockWallet = createMockWallet()) {
   const fetchMock = vi.fn(fixtureFetch(override))
   vi.stubGlobal('fetch', fetchMock)

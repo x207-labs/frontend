@@ -1,6 +1,6 @@
 const DECIMALS = 6
 
-/** "12.5" -> "12500000" (6 desimal); null bila bukan angka > 0. */
+/** "12.5" -> "12500000" (6 decimals); null if not a number > 0. */
 export function toAtomic(input: string): string | null {
   const match = input.trim().match(/^(\d+)(?:[.,](\d{1,6}))?$/)
   if (!match) return null
@@ -8,7 +8,7 @@ export function toAtomic(input: string): string | null {
   return atomic > 0n ? atomic.toString() : null
 }
 
-/** "12500000" -> "12.5": kebalikan `toAtomic`, tanpa pemisah ribuan, supaya bisa dimasukkan lagi ke kolom nilai. */
+/** "12500000" -> "12.5": the inverse of `toAtomic`, no thousands separator, so it can be fed back into the value field. */
 export function fromAtomic(atomic: string): string {
   const digits = atomic.replace(/^0+(?=\d)/, '').padStart(DECIMALS + 1, '0')
   const whole = digits.slice(0, -DECIMALS)

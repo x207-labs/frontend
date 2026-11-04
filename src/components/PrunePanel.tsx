@@ -5,8 +5,8 @@ import { TxResult } from './TxResult'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { pruneEpochTx } from '../wallet/transactions'
 
-// Interface 0.0.8 (ADR-31 c): `prune_epoch` mengembalikan storage epoch `finalized` (pasangan, indeks edge, total peserta, bundle). Posisi D5, record
-// epoch, dan proposal kliring tetap, jadi `claim` dan laporan 207 tidak berubah. Siapa pun boleh memanggil; tombol ini untuk keeper atau siapa saja.
+// Interface 0.0.8 (ADR-31 c): `prune_epoch` frees the storage of a `finalized` epoch (pairs, edge index, participant total, bundles). The D5 position, the epoch
+// record, and the clearing proposal remain, so `claim` and the 207 report do not change. Anyone may call it; this button is for keepers or anyone.
 export function PrunePanel({ epoch }: { epoch: number }) {
   const epochs = useEpochs()
   const finalized = epochs.data?.items.find((e) => e.epoch === epoch)?.phase === 'finalized'

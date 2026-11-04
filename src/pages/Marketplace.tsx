@@ -1,5 +1,5 @@
-// FE-019: marketplace barter (F9). Telusuri listing, buat listing bertanda tangan voucher, lihat kelas aset, diskon, masa berlaku.
-// Panel negosiasi (FE-020) ada di components/Negotiation.tsx dan dibuka dari baris listing.
+// FE-019: barter marketplace (F9). Browse listings, create voucher-signed listings, see asset class, discount, expiry.
+// The negotiation panel (FE-020) is in components/Negotiation.tsx and opens from the listing row.
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api } from '../api/client'

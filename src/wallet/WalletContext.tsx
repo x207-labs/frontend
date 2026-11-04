@@ -3,7 +3,7 @@ import type { FunctionCallTx, SignMessageInput, SignedMessage, WalletPort } from
 
 type Wallet = {
   account: string | null
-  /** Sedang memulihkan sesi atau membuka selector wallet. */
+  /** Restoring the session or opening the wallet selector. */
   busy: boolean
   error: string | null
   login: () => Promise<void>
@@ -62,7 +62,7 @@ export function WalletProvider({ port, children }: { port: WalletPort; children:
       error,
       login,
       logout,
-      // Semua transaksi halaman lewat sini, jadi signer dan network selalu terisi (TC-FE-003-06).
+      // All page transactions go through here, so signer and network are always filled in (TC-FE-003-06).
       send: (tx) => {
         if (!account) return Promise.reject(new Error('Not signed in'))
         return port.signAndSend(account, tx)
@@ -91,11 +91,11 @@ export type SignState =
   | { kind: 'cancelled' }
   | { kind: 'failed'; message: string }
 
-// Helper tanda tangan bersama untuk halaman onboarding dan settlement.
+// Shared signing helper for the onboarding and settlement pages.
 export function useSignTransaction() {
   const { send } = useWallet()
   const [state, setState] = useState<SignState>({ kind: 'idle' })
-  // Mengembalikan true bila transaksi terkirim, supaya urutan beberapa transaksi berhenti di kegagalan pertama.
+  // Returns true if the transaction was sent, so a sequence of transactions stops at the first failure.
   const sign = useCallback(
     async (tx: FunctionCallTx): Promise<boolean> => {
       setState({ kind: 'signing' })

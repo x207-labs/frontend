@@ -1,6 +1,6 @@
 import { ApiError } from '../api/client'
 
-// Pesan kesalahan marketplace yang bisa dipahami pengguna; kode lain ditampilkan apa adanya.
+// Marketplace error messages a user can understand; other codes are shown as is.
 export function describeMarketError(e: unknown): string {
   if (e instanceof ApiError) {
     switch (e.code) {

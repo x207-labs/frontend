@@ -14,8 +14,8 @@ import {
 } from '../lib/orderFlow'
 import { useWallet } from '../wallet/WalletContext'
 
-// FE-027: pesanan jasa (pipeline P6, ADR-45), dibangun dari Spec API Backend 5f. Pembeli membuat pesanan dengan tonggak; penjual mengirim, pembeli mengonfirmasi atau
-// menyengketakan di jendela (ADR-42); lead dan bug dibayar per hasil; keeper dan solver dibayar per tx yang terlihat di rantai oleh agent pembeli (halaman hanya menampilkan buktinya).
+// FE-027: service orders (pipeline P6, ADR-45), built from Backend API Spec 5f. The buyer creates an order with milestones; the seller delivers, the buyer confirms or
+// disputes within the window (ADR-42); leads and bugs are paid per result; keeper and solver are paid per tx the buyer's agent sees on-chain (the page only shows the proof).
 const MILESTONE_LABEL: Record<string, string> = { open: 'Open', delivered: 'Delivered', confirmed: 'Confirmed', disputed: 'Disputed', paid: 'Paid', cancelled: 'Cancelled' }
 const REASONS = [['not_received', 'Not received'], ['not_as_described', 'Not as described'], ['other', 'Other']] as const
 const now = () => Math.floor(Date.now() / 1000)
@@ -203,7 +203,7 @@ function MilestoneRow({ view, opened, m, account, voucherKey, busy, run }: {
   )
 }
 
-/** Penjual (delegate) menyatakan satu transaksi suaranya; backend memeriksanya lewat RPC. Mandat dan hash dicek ulang sebelum notice ditandatangani. */
+/** The seller (delegate) declares one of their vote transactions; the backend checks it over RPC. The mandate and hash are re-checked before the notice is signed. */
 function ClaimVote({ view, hash, voucherKey, busy, run }: { view: OrderView; hash: string; voucherKey: string; busy: boolean; run: (label: string, fn: () => Promise<void>) => void }) {
   const [tx, setTx] = useState('')
   const claim = () => run('vote claimed', async () => {

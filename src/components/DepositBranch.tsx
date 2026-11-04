@@ -4,7 +4,7 @@ import { ApiError, api } from '../api/client'
 import type { DepositQuote, Job } from '../api/types'
 import { CIRCLE } from '../config'
 
-// Aset asal contoh untuk cabang 1Click; daftar penuh dari 1Click di luar lingkup halaman ini.
+// Sample source assets for the 1Click branch; the full list from 1Click is outside this page's scope.
 const ORIGIN_ASSETS = [
   { id: 'nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near', label: 'USDC on Base' },
 ]
@@ -41,13 +41,13 @@ function useJob(jobId: string | null) {
 type Props = {
   purpose: 'stake' | 'settle'
   account: string
-  /** Jumlah stake (satuan terkecil); diabaikan untuk `settle`. */
+  /** Stake amount (smallest unit); ignored for `settle`. */
   amount?: string
   epoch?: number
   onReady: (ready: boolean) => void
 }
 
-// Cabang aset lain (ADR-19): quote 1Click ke saldo Intents, lalu pantau job sampai `ready_withdraw`.
+// Other-asset branch (ADR-19): 1Click quote to the Intents balance, then watch the job until `ready_withdraw`.
 export function DepositBranch({ purpose, account, amount, epoch, onReady }: Props) {
   const [quote, setQuote] = useState<DepositQuote | null>(null)
   const [error, setError] = useState<string | null>(null)

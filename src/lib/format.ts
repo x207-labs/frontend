@@ -1,6 +1,6 @@
 const grouped = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
 
-// Jumlah string satuan terkecil (6 desimal) menjadi credit utuh, tanpa lewat float.
+// A string amount in the smallest unit (6 decimals) becomes whole credit, without going through a float.
 export function formatCredit(raw: string | null | undefined): string {
   if (raw === null || raw === undefined) return 'not available'
   const sign = raw.startsWith('-') ? '-' : raw.startsWith('+') ? '+' : ''

@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { ASSET_KINDS, AssetTemplateError, buildAssetTemplate, type AssetKind, type AssetTemplate } from '@x207/core'
 import { COMMON_FIELDS, KIND_FIELDS, toAssetInput, type Field } from '../lib/assetForm'
 
-// FE-023 (SD-061): formulir listing per jenis aset on-chain (katalog 1 sampai 10, kelas A). Formulir tidak punya aturan sendiri: `buildAssetTemplate` memeriksa, menyusun scope,
-// detail, dan peringatan risiko, dan menolak dengan kode galat yang stabil. Hasilnya mengisi sisi "Menawarkan" dari formulir listing; grant on-chain dan titipan aset
-// ditandatangani pemilik terpisah (offer_grant, lalu titipan), jadi di sini hanya pratinjau panggilannya.
+// FE-023 (SD-061): listing form per on-chain asset kind (catalog 1 to 10, class A). The form has no rules of its own: `buildAssetTemplate` validates, builds the scope,
+// detail, and risk warnings, and rejects with a stable error code. The result fills the "Offering" side of the listing form; the on-chain grant and the asset escrow are
+// signed separately by the owner (offer_grant, then escrow), so here only the call preview is shown.
 export type TemplateResult = { template: AssetTemplate } | { error: string; code?: string } | null
 
 export function useTemplateResult(kind: AssetKind | '', values: Record<string, string>, now: number): TemplateResult {

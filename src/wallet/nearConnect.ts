@@ -9,7 +9,7 @@ function remember(connected: boolean) {
     if (connected) localStorage.setItem(CONNECTED_FLAG, '1')
     else localStorage.removeItem(CONNECTED_FLAG)
   } catch {
-    // Tanpa penyimpanan, sesi hanya tidak bertahan setelah reload.
+    // Without storage, the session simply does not survive a reload.
   }
 }
 
@@ -23,8 +23,8 @@ function wasConnected(): boolean {
 
 let connector: Promise<NearConnector> | undefined
 
-// NearConnector mengambil manifest wallet dari jaringan saat dibuat, jadi baru dibuat
-// bila pengguna login atau punya sesi. Halaman baca tetap hanya memanggil read API.
+// NearConnector fetches the wallet manifest from the network when created, so it is only created
+// when the user logs in or has a session. Read pages still only call the read API.
 function getConnector(): Promise<NearConnector> {
   connector ??= import('@hot-labs/near-connect').then(
     ({ NearConnector }) => new NearConnector({ network: NEAR_NETWORK }),

@@ -1,6 +1,6 @@
-// FE-020: negosiasi dan barter cepat untuk satu listing. Penawaran dan penawaran balik per ronde ditandatangani dengan kunci
-// voucher di browser; sebelum menerima, pengguna melihat angka akhir (cashback, diskon, jatah pencari, leg bundle) dari pratinjau
-// server, dan pesan yang ditandatangani dicek cocok dengan `terms_hash` yang ditampilkan.
+// FE-020: negotiation and quick barter for one listing. Offers and per-round counter-offers are signed with the
+// voucher key in the browser; before accepting, the user sees the final numbers (cashback, discount, seeker share, bundle legs) from the server
+// preview, and the signed message is checked to match the displayed `terms_hash`.
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api } from '../api/client'
@@ -241,7 +241,7 @@ function ProposalSigner({ proposal, voucherKey }: { proposal: BundleProposal; vo
     try {
       const message = serializeBundleTerms(proposal.terms)
       if ((await sha256Hex(message)) !== proposal.termsHash) throw new Error('Bundle terms do not match the terms_hash. Cancelled.')
-      // FE-1: lingkaran dan epoch pada usulan dari server harus lingkaran ini, dan akun ini harus ikut
+      // FE-1: the circle and epoch in the server's proposal must be this circle, and this account must be part of it
       const check = checkBundleToSign({ message, recipient: CONTRACT_ID, account, contract: CONTRACT_ID, epoch: proposal.epoch })
       if (!check.ok) throw new Error(check.reason)
       await api.signProposal(proposal.termsHash, account, await signMessageWithVoucher(message, CONTRACT_ID, voucherKey))

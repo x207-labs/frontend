@@ -11,7 +11,7 @@ type Selection = {
 
 const EpochContext = createContext<Selection | null>(null)
 
-// Epoch terpilih disimpan di query ?epoch= agar ikut berpindah halaman dan bisa dibagikan.
+// The selected epoch is kept in the ?epoch= query so it follows page changes and can be shared.
 export function EpochProvider({ children }: { children: ReactNode }) {
   const query = useEpochs()
   const [params, setParams] = useSearchParams()

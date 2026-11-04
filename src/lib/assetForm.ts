@@ -1,8 +1,8 @@
 import { type AssetInput, type AssetKind } from '@x207/core'
 import { toAtomic } from './amount'
 
-// FE-023: bidang formulir listing per jenis aset on-chain (batch 1, katalog 1 sampai 10) dan perubahannya menjadi `AssetInput` untuk `buildAssetTemplate` (SD-061).
-// Tidak ada logika pemeriksaan di sini: semua aturan ada di SDK, formulir hanya menerjemahkan teks ke angka.
+// FE-023: listing form fields per on-chain asset kind (batch 1, catalog 1 to 10) and their conversion into `AssetInput` for `buildAssetTemplate` (SD-061).
+// No validation logic here: all rules live in the SDK, the form only translates text into numbers.
 export type FieldKind = 'text' | 'number' | 'credit' | 'token' | 'datetime' | 'select'
 export type Field = { key: string; label: string; kind: FieldKind; optional?: boolean; options?: ReadonlyArray<[string, string]>; hint?: string }
 
@@ -71,7 +71,7 @@ export const COMMON_FIELDS: Field[] = [
   { key: 'hours', label: 'Offer valid for (hours)', kind: 'number' },
 ]
 
-/** "2.5" dengan 6 desimal token menjadi "2500000"; null bila bukan angka > 0 atau desimalnya lebih banyak dari desimal token. */
+/** "2.5" with 6 token decimals becomes "2500000"; null if it is not a number > 0 or has more decimals than the token. */
 export function tokenToAtomic(input: string, decimals: number): string | null {
   const match = input.trim().match(/^(\d+)(?:\.(\d+))?$/)
   if (!match || !Number.isInteger(decimals) || decimals < 0 || decimals > 38 || (match[2] ?? '').length > decimals) return null
@@ -79,13 +79,13 @@ export function tokenToAtomic(input: string, decimals: number): string | null {
   return atomic > 0n ? atomic.toString() : null
 }
 
-/** Nilai `datetime-local` ("2026-12-01T10:00") dibaca sebagai UTC; 0 bila kosong atau tidak terbaca (SDK menolak 0). */
+/** A `datetime-local` value ("2026-12-01T10:00") is read as UTC; 0 if empty or unreadable (the SDK rejects 0). */
 const seconds = (text: string): number => {
   const ms = Date.parse(/Z$|[+-]\d\d:\d\d$/.test(text) ? text : `${text}:00Z`)
   return Number.isNaN(ms) ? 0 : Math.floor(ms / 1000)
 }
 
-/** Nilai formulir menjadi `AssetInput`, atau teks galat bila ada bidang yang bukan angka atau kosong. `now` dalam detik unix. */
+/** Form values become `AssetInput`, or an error text if a field is not a number or is empty. `now` in unix seconds. */
 export function toAssetInput(kind: AssetKind, v: Record<string, string>, now: number): AssetInput | string {
   const need = (key: string) => (v[key] ?? '').trim()
   const price = toAtomic(need('price'))

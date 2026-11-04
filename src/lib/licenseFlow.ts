@@ -6,14 +6,14 @@ import type { PurchaseView } from '../api/types'
 import { sha256Hex, signMessageWithVoucher, signVoucherInBrowser } from './barter'
 import { fromHex, toHex } from './hex'
 
-// FE-028: lisensi konten (pipeline P7, ADR-46), dari Spec API Backend 5g. Semua kripto ada di SDK (SD-070: hash isi, enkripsi, kunci tersegel, pemeriksaan kiriman, bukti curang,
-// sumber unduhan); di sini hanya menyiapkan dokumen lisensi, mengunduh dengan progres, memeriksa, dan menandatangani notice dengan kunci voucher.
+// FE-028: content licenses (pipeline P7, ADR-46), from Backend API Spec 5g. All crypto lives in the SDK (SD-070: content hash, encryption, sealed key, delivery check, cheating proof,
+// download source); here we only prepare the license document, download with progress, verify, and sign the notice with the voucher key.
 export const LICENSE_ASSET_TYPES = [
   'data:dataset', 'model:weights', 'ads:promo-slot', 'design:template', 'creative:licensed-asset', 'plugin:preset', 'course:own-class', 'content:own-work', 'data:own-anonymized',
 ] as const
 export const IPFS_GATEWAYS = ['https://ipfs.io', 'https://dweb.link']
 
-/** Sumber unduhan; tes mengganti ini dengan sumber tiruan. */
+/** Download source; tests replace this with a fake source. */
 export const licenseSources: { current: Partial<Record<'https' | 'ipfs', ContentSource>> } = {
   current: { https: httpsSource(), ipfs: ipfsSource({ gateways: IPFS_GATEWAYS }) },
 }
@@ -23,18 +23,18 @@ export type PreparedLicense = {
   document: LicenseDocument
   documentHash: string
   resource: string
-  /** `Listing.detail` untuk listing lisensi: hash, jenis, dan resource; tanpa berkas dan tanpa kunci. */
+  /** `Listing.detail` for a license listing: hash, kind, and resource; no file and no key. */
   detail: string
   assetType: string
   ciphertext: Uint8Array
-  /** Ukuran berkas asli (byte): ikut ditandatangani di rilis. */
+  /** Original file size (bytes): signed along with the release. */
   contentSize: number
   cipherHash: string
-  /** Kunci berkas (heks): hanya penjual yang memegangnya; dilepas ke pembeli dalam bentuk tersegel setelah pembeli membayar (ditahan). */
+  /** File key (hex): only the seller holds it; released to the buyer in sealed form after the buyer pays (held). */
   contentKey: string
 }
 
-/** Dokumen lisensi dari berkas dan isian; hash dihitung di browser. Berkas dienkripsi di sini, ciphertext-nya yang dipasang penjual di sumber mana saja. */
+/** License document from the file and form input; the hash is computed in the browser. The file is encrypted here, and the seller posts its ciphertext to any source. */
 export async function prepareLicense(i: SellInput): Promise<PreparedLicense> {
   const document: LicenseDocument = {
     circle: i.circle, seller: i.seller, content_hash: new ContentHasher().update(i.bytes).digest(), license_id: i.licenseId.trim(),
@@ -58,8 +58,8 @@ export type DownloadResult =
   | { state: 'refused'; reason: string }
 
 /**
- * Pembeli: mengunduh ciphertext dari sumber (dengan progres), memeriksa `cipher_hash`, lalu rilis penjual dan isinya terhadap `content_hash`. Salah sumber atau tanda tangan
- * bukan kecurangan dan tidak menghasilkan bukti; isi yang salah menghasilkan bukti curang yang bisa diperiksa siapa saja.
+ * Buyer: downloads the ciphertext from the source (with progress), checks `cipher_hash`, then the seller's release and the content against `content_hash`. A wrong source or signature
+ * is not cheating and yields no proof; wrong content yields a cheating proof anyone can check.
  */
 export async function receiveLicense(view: PurchaseView, sellerPublicKey: string, buyerSecretKey: string, onProgress: (received: number) => void): Promise<DownloadResult> {
   if (view.source === null || view.cipherHash === null || view.release === null || view.releaseSignature === null) return { state: 'refused', reason: 'The seller has not yet posted the ciphertext and released the key.' }
@@ -85,7 +85,7 @@ export async function receiveLicense(view: PurchaseView, sellerPublicKey: string
 
 export { makeCheatProof }
 
-/** Bukti curang untuk dikirim ke backend: tanpa ciphertext (backend mengunduhnya dari `source` dan mencocokkan `cipher_hash`), hanya rilis, tanda tangan, dan kunci kotak. */
+/** Cheating proof to send to the backend: no ciphertext (the backend downloads it from `source` and matches `cipher_hash`), only the release, signature, and box key. */
 export const proofForApi = (proof: CheatProof) => ({ release: proof.release, signature: proof.signature, box_key: proof.box_key })
 
 export type PurchaseAction = 'confirmed' | 'disputed' | 'cancelled'
@@ -94,7 +94,7 @@ export const purchaseNotice = (circle: string, purchaseId: string, actor: string
 export const signPurchaseNotice = (notice: ReturnType<typeof purchaseNotice>, secretKey: string): Promise<string> => signMessageWithVoucher(JSON.stringify(notice), notice.circle, secretKey)
 
 export type PairState = { seq: number; cumulativeAmount: string }
-/** Voucher pembelian yang ditahan backend: melanjutkan keadaan pasangan (pembeli, penjual) di epoch yang terbuka. */
+/** Purchase voucher held by the backend: continues the state of the (buyer, seller) pair in the open epoch. */
 export async function buildPurchase(args: { circle: string; buyer: string; seller: string; epoch: number; amount: string; state: PairState; licenseDocHash: string; secretKey: string }) {
   const voucher = {
     circle: args.circle, payer: args.buyer, payee: args.seller, epoch: args.epoch, seq: args.state.seq + 1,
@@ -107,12 +107,12 @@ export const takedownMessage = (circle: string, listingHash: string, claim: stri
 export { fromHex, toHex }
 
 export type CipherPostedSource = { kind: 'https' | 'ipfs'; ref: string }
-/** Notice penjual `cipher_posted`: kunci `circle, purchase_id, actor, action, at, source, cipher_hash` (BE-056). */
+/** Seller notice `cipher_posted`: keys `circle, purchase_id, actor, action, at, source, cipher_hash` (BE-056). */
 export const cipherPostedNotice = (circle: string, purchaseId: string, actor: string, at: number, source: CipherPostedSource, cipherHash: string) =>
   ({ circle, purchase_id: purchaseId, actor, action: 'cipher_posted', at, source, cipher_hash: cipherHash })
 export const signSellerNotice = (notice: object, circle: string, secretKey: string): Promise<string> => signMessageWithVoucher(JSON.stringify(notice), circle, secretKey)
 
-/** Rilis kunci untuk satu pembelian: kunci berkas disegel ke kunci publik pembeli dan ditandatangani penjual dengan `signRelease` SDK; ini sendiri adalah notice `key_released`. */
+/** Key release for one purchase: the file key is sealed to the buyer's public key and signed by the seller with the SDK `signRelease`; this itself is the `key_released` notice. */
 export function buildKeyRelease(args: { circle: string; licenseDoc: string; purchaseId: string; buyer: string; buyerPublicKey: string; contentHash: string; prepared: PreparedLicense; at: number; sellerSecretKey: string }) {
   return createRelease({
     circle: args.circle, license_hash: args.licenseDoc, buyer: args.buyer, buyerPublicKey: args.buyerPublicKey, content_hash: args.contentHash, content_size: args.prepared.contentSize, purchase_id: args.purchaseId, ciphertext: args.prepared.ciphertext,

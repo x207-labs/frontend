@@ -5,7 +5,7 @@ import { QueryState } from '../components/QueryState'
 import { formatCredit, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
 
-// FE-017 (F8): grant akses per anggota dari D9 `grants` (BE-038). Hanya baca. Kelas A sampai D seperti registri D10; rahasia tidak ada di D9.
+// FE-017 (F8): per-member access grants from D9 `grants` (BE-038). Read only. Classes A to D as in the D10 registry; secrets are not in D9.
 const STATUS_LABEL: Record<GrantStatus, string> = { offered: 'Offered', active: 'Active', revoked: 'Revoked', expired: 'Expired' }
 const REASON_LABEL: Record<string, string> = {
   grantor: 'revoked by grantor',
@@ -25,7 +25,7 @@ const ESCROW_STATE_LABEL: Record<string, string> = {
   stuck: 'stuck',
 }
 
-/** Escrow kelas A: NFT, atau jumlah persis token NEP-141 dalam satuan token itu (bukan credit). */
+/** Class A escrow: an NFT, or the exact amount of an NEP-141 token in that token's unit (not credit). */
 export function EscrowCell({ escrow }: { escrow: GrantEscrow | null | undefined }) {
   if (!escrow) return <>-</>
   const state = ESCROW_STATE_LABEL[escrow.state] ?? escrow.state
@@ -47,7 +47,7 @@ export function EscrowCell({ escrow }: { escrow: GrantEscrow | null | undefined 
   )
 }
 
-/** Nanodetik (string) menjadi tanggal UTC; `belum tersedia` bila tidak terbaca. */
+/** Nanoseconds (string) to a UTC date; `not available` if unreadable. */
 export function formatExpiry(ns: string): string {
   try {
     const ms = Number(BigInt(ns) / 1_000_000n)
@@ -131,7 +131,7 @@ export function Grants() {
           ...asGrantee.data.items.filter((g) => g.grantor !== account).map((g) => ({ ...g, role: 'grantee' as const })),
         ].sort((a, b) => a.grantId - b.grantId)
       : []
-  // satu query bersama untuk status loading dan galat
+  // one shared query for loading and error status
   const query = asGrantee.isError ? asGrantee : asGrantor.isError ? asGrantor : asGrantee.data && asGrantor.data ? { ...asGrantee, data: { items: rows } } : asGrantee
 
   return (

@@ -1,9 +1,9 @@
-// FE-018 terhadap near-sandbox: panel keluar dan tarik stake dirender dengan read API nyata (indexer D9 atas kontrak nyata) dan wallet yang menandatangani
-// transaksi ke kontrak di near-sandbox. Alur: request_exit dari UI, epoch keluar ditutup sampai finalized oleh keeper, withdraw_stake dari UI,
-// stake kembali sebagai USDT dan status anggota `exited`. Hanya jalan di umbrella (`X207_SANDBOX=1`, binary near-sandbox dan wasm kontrak); impor
-// ke repo saudara memakai `import()` supaya repo frontend sendirian tetap memuat file ini dan melewatinya.
-// Batas (K-60): wallet nyata (NEAR Connect) hanya bisa dites di testnet dengan akun manusia. Di sini yang diganti hanya `WalletPort`; halaman, query,
-// pembangun transaksi, dan penanganan hasilnya nyata.
+// FE-018 against near-sandbox: the exit panel and stake withdrawal are rendered with the real read API (the D9 indexer over a real contract) and a wallet that signs
+// transactions to the contract in near-sandbox. Flow: request_exit from the UI, the exit epoch is closed to finalized by the keeper, withdraw_stake from the UI,
+// the stake returns as USDT and the member status becomes `exited`. Runs only in the umbrella (`X207_SANDBOX=1`, the near-sandbox binary and the contract wasm); imports
+// of sibling repos use `import()` so the standalone frontend repo still loads this file and skips it.
+// Limit (K-60): a real wallet (NEAR Connect) can only be tested on testnet with a human account. Here only the `WalletPort` is replaced; the pages, queries,
+// transaction builder, and result handling are real.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -13,8 +13,8 @@ import type { FunctionCallTx, WalletPort } from '../wallet/types'
 
 declare const process: { env: Record<string, string | undefined>; stderr: { write(text: string): void }; cwd(): string }
 const enabled = process.env.X207_SANDBOX === '1'
-// Jalur ke repo saudara dalam variabel: tsc frontend tidak boleh ikut memeriksa backend dan sdk (aturan sintaks TS yang berbeda); tipenya `any`.
-// vitest jalan dari folder frontend; umbrella = satu tingkat di atasnya
+// Paths to sibling repos in a variable: frontend tsc must not also check backend and sdk (different TS syntax rules); the type is `any`.
+// vitest runs from the frontend folder; umbrella = one level above it
 const UMBRELLA = process.cwd().replace(/\/frontend$/, '')
 const SIBLINGS = {
   sandbox: `${UMBRELLA}/sdk/test-support/sandbox.ts`,
@@ -60,7 +60,7 @@ describe.skipIf(!enabled)('FE-018 exit and withdraw stake from the UI to near-sa
     const usdt = async () => BigInt((await fx.sandbox.view(fx.usdt.accountId, 'ft_balance_of', { account_id: account.accountId })) as string)
     const usdtBefore = await usdt()
 
-    // read API nyata: indexer atas kontrak di near-sandbox
+    // real read API: indexer over the contract in near-sandbox
     const db = backend.openDatabase(':memory:')
     const indexer = new backend.Indexer({
       db, source: new backend.RpcBlockSource(backend.rpcChainReader(new backend.FailoverRpcClient({ endpoints: [fx.sandbox.rpcUrl] })), contract, 1),
@@ -77,7 +77,7 @@ describe.skipIf(!enabled)('FE-018 exit and withdraw stake from the UI to near-sa
     const drainer = setInterval(() => void indexer.drain().catch(() => undefined), 500)
     cleanup.push(() => clearInterval(drainer))
 
-    // konfigurasi frontend dibaca saat modul dimuat
+    // frontend config is read when the module loads
     vi.stubEnv('VITE_X207_API_URL', apiUrl)
     vi.stubEnv('VITE_X207_CIRCLE', fx.circleId)
     vi.stubEnv('VITE_X207_CONTRACT_ID', contract)
@@ -117,14 +117,14 @@ describe.skipIf(!enabled)('FE-018 exit and withdraw stake from the UI to near-sa
     const user = userEvent.setup()
     const memberView = () => fx.sandbox.view(contract, 'member', { account_id: account.accountId }) as Promise<{ status: string; stake: string; exit_requested_epoch: number | null }>
 
-    // 1. request_exit dari tombol
+    // 1. request_exit from the button
     await user.click(await screen.findByRole('button', { name: 'Request exit', hidden: false }, { timeout: 60_000 }))
     await waitFor(() => expect(sent.map((s) => s.method)).toEqual(['request_exit']), { timeout: 30_000 })
     expect((await memberView()).exit_requested_epoch).toBe(1)
     expect(await screen.findByText(/Exit requested in epoch 1/, undefined, { timeout: 60_000 })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Withdraw stake/ })).toBeDisabled()
 
-    // 2. keeper menutup epoch 1 sampai finalized; waktu blok dimajukan
+    // 2. keeper closes epoch 1 to finalized; block time is advanced
     const pass = () =>
       keeperPass({
         view: (m: string, a: object) => fx.sandbox.view(contract, m, a),
@@ -143,13 +143,13 @@ describe.skipIf(!enabled)('FE-018 exit and withdraw stake from the UI to near-sa
     }
     expect((await epochView(1)).phase).toBe('finalized')
 
-    // 3. UI melihat epoch finalized lewat read API dan membuka tombol tarik stake
+    // 3. UI sees the epoch finalized through the read API and enables the withdraw stake button
     const withdraw = await screen.findByRole('button', { name: /Withdraw stake/ })
     await waitFor(() => expect(withdraw).toBeEnabled(), { timeout: 90_000 })
     await user.click(withdraw)
     await waitFor(() => expect(sent.map((s) => s.method)).toEqual(['request_exit', 'withdraw_stake']), { timeout: 30_000 })
 
-    // 4. kontrak: exited, stake 0, USDT kembali; UI: pesan sudah keluar dari read API
+    // 4. contract: exited, stake 0, USDT returned; UI: the already-exited message from the read API
     await waitFor(async () => expect((await memberView()).status).toBe('exited'), { timeout: 30_000 })
     expect((await memberView()).stake).toBe('0')
     await waitFor(async () => expect((await usdt()) - usdtBefore).toBe(50_000_000n), { timeout: 30_000 })

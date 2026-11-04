@@ -1,7 +1,7 @@
 import type { InstallmentStatus, InvoiceStatus, InvoiceView } from './types'
 
-// Jawaban invoice dari backend (BE-051) dinormalkan ke satu bentuk. Spec 5e menulis `invoice_hash` dan `needs_bond`; read API lain memakai camelCase. Keduanya diterima,
-// jadi frontend tidak patah bila A2 memilih salah satu. Nilai yang tidak dikenal ditolak dengan galat, bukan ditebak.
+// The invoice response from the backend (BE-051) is normalized to a single shape. Spec 5e writes `invoice_hash` and `needs_bond`; other read APIs use camelCase. Both are accepted,
+// so the frontend does not break whichever one A2 chooses. Unknown values are rejected with an error, not guessed.
 type Raw = Record<string, unknown>
 const pick = (raw: Raw, snake: string, camel: string): unknown => raw[camel] ?? raw[snake]
 const STATUSES: readonly InvoiceStatus[] = ['requested', 'approved', 'registered', 'rejected', 'expired', 'missed']

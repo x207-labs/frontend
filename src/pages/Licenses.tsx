@@ -17,9 +17,9 @@ import { describeMarketError } from '../lib/marketError'
 import { keyFingerprint, sha256Hex, signMessageWithVoucher } from '../lib/barter'
 import { useWallet } from '../wallet/WalletContext'
 
-// FE-028: lisensi konten (pipeline P7, ADR-46), dari Spec API Backend 5g. Penjual menyiapkan lisensi dari berkas lokal (hash, enkripsi di browser, detail listing); pembeli membeli
-// (voucher ditahan backend), mengunduh ciphertext dengan progres, memeriksa hash, dan mengonfirmasi atau menyengketakan dengan bukti curang; pemilik hak mengajukan takedown.
-// Berkas dan kunci tidak pernah dikirim ke backend. Batas yang diakui: lisensi eksklusif dicatat per content_hash, dan penjual yang mengubah satu byte tidak terdeteksi otomatis.
+// FE-028: content licenses (pipeline P7, ADR-46), from Backend API Spec 5g. The seller prepares a license from a local file (hash, encryption in the browser, listing detail); the buyer buys
+// (voucher held by the backend), downloads the ciphertext with progress, checks the hash, and confirms or disputes with a cheating proof; the rights holder files a takedown.
+// The file and key are never sent to the backend. Acknowledged limit: exclusive licenses are recorded per content_hash, and a seller who changes one byte is not detected automatically.
 const STATUS_LABEL: Record<string, string> = {
   paid_held: 'Paid, voucher held', cipher_posted: 'Ciphertext posted', key_released: 'Key released', confirmed: 'Confirmed', disputed: 'Disputed', refuted: 'Dispute rejected', cancelled: 'Cancelled',
 }

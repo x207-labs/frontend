@@ -3,14 +3,14 @@ import type { OrderMandateView, OrderView } from '../api/types'
 import { sha256Hex, signMessageWithVoucher } from './barter'
 import { toAtomic } from './amount'
 
-// FE-027: pesanan jasa (pipeline P6, ADR-45), dari Spec API Backend 5f. Aturan dokumen ada di SDK (SD-069: `normalizeOrder`); di sini hanya mengubah isian formulir menjadi
-// dokumen, menghitung hash dengan sha256 browser atas JSON kanonik SDK, dan menandatangani notice.
+// FE-027: service orders (pipeline P6, ADR-45), from Backend API Spec 5f. The document rules live in the SDK (SD-069: `normalizeOrder`); here we only turn form input into
+// a document, compute the hash with the browser's sha256 over the SDK canonical JSON, and sign the notice.
 export const KIND_LABEL: Record<OrderKind, string> = {
   prompt: '39 · Prompt or workflow', research: '40 · Research', translation: '41 · Translation', annotation: '42 · Data annotation', scraping: '43 · Web data collection',
   audit: '52 · Code audit', loadtest: '53 · Load test', freelance: '83 · Freelance', bug: '88 · Product testing (per bug)', lead: '51 · Referral and leads (per conversion)',
   keeper: '46 · Keeper service (per tx)', solver: '48 · Solver service (per tx)', delegate: '16 · Delegate service (per vote)',
 }
-/** Semua jenis bisa dibuat dari formulir ini; `delegate` memakai kolom mandat tambahan (FE-030). */
+/** Every kind can be created from this form; `delegate` uses extra mandate fields (FE-030). */
 export const CREATABLE_KINDS = ORDER_KINDS
 export const KIND_NOTE: Partial<Record<OrderKind, string>> = {
   scraping: 'Collecting data from a website may violate that site\'s terms of service (ToS). The seller is responsible for how it is done; x207 does not check it.',
@@ -23,7 +23,7 @@ export { ORDER_KINDS, ORDER_CATALOG_NO, ORDER_PATTERN, PROOF_METHODS }
 export type MilestoneInput = { amount: string; due: string }
 export type OrderForm = {
   kind: OrderKind | ''; seller: string; spec: string; sample: string; target: string; proofMethod: string; proofAmount: string; milestones: MilestoneInput[]
-  /** Hanya `delegate`: akun DAO, jenis proposal (dipisah koma), dan teks aturan. */
+  /** `delegate` only: DAO account, proposal kinds (comma-separated), and rule text. */
   dao: string; kinds: string; rules: string
 }
 export const EMPTY_ORDER: OrderForm = { kind: '', seller: '', spec: '', sample: '', target: '', proofMethod: '', proofAmount: '', milestones: [{ amount: '', due: '' }], dao: '', kinds: '', rules: '' }
@@ -33,8 +33,8 @@ const seconds = (text: string): number => {
   return Number.isNaN(ms) ? 0 : Math.floor(ms / 1000)
 }
 
-/** Dokumen dari isian formulir, atau teks galat. Hash contoh dan spesifikasi dihitung di browser dari teks yang diketik. */
-/** Mandat dari isian formulir (`delegate`), atau teks galat; hash teks aturan dihitung di browser. */
+/** Document from form input, or an error text. The example and spec hashes are computed in the browser from the typed text. */
+/** Mandate from form input (`delegate`), or an error text; the rule text hash is computed in the browser. */
 export async function toMandate(f: OrderForm, circle: string): Promise<DelegateMandate | string> {
   if (f.rules.trim() === '') return 'Enter the mandate rules text (only its hash is locked).'
   const kinds = f.kinds.split(/[\s,]+/).filter((k) => k !== '')
@@ -45,7 +45,7 @@ export async function toMandate(f: OrderForm, circle: string): Promise<DelegateM
     return e instanceof Error ? e.message : String(e)
   }
 }
-/** sha256 browser atas JSON kanonik mandat; sama dengan `mandateHash` SDK tanpa `node:crypto`. */
+/** Browser sha256 over the canonical mandate JSON; same as the SDK `mandateHash` without `node:crypto`. */
 export const mandateHashOf = (m: DelegateMandate): Promise<string> => sha256Hex(serializeMandate(m))
 
 export async function toOrderDocument(f: OrderForm, circle: string, buyer: string, nonce: string, mandateHash: string | null = null): Promise<OrderDocument | string> {
@@ -77,7 +77,7 @@ export async function toOrderDocument(f: OrderForm, circle: string, buyer: strin
 
 export const orderHashOf = (doc: OrderDocument): Promise<string> => sha256Hex(serializeOrder(doc))
 
-/** Dokumen pesanan dari jawaban API (bentuk yang dihash SDK): tonggak diambil dari daftar tonggak jawaban itu. */
+/** Order document from the API response (the shape the SDK hashes): milestones are taken from that response's milestone list. */
 export function orderDocFromView(view: OrderView): OrderDocument {
   const o = view.order
   return {
@@ -89,8 +89,8 @@ export function orderDocFromView(view: OrderView): OrderDocument {
 }
 
 /**
- * Batch 3 F3 (review BE-063): sebelum menandatangani notice untuk sebuah pesanan, hash dihitung ulang dari dokumen yang DITAMPILKAN dan harus sama dengan hash yang dibuka pengguna dan
- * yang disebut jawaban API. API yang jahat tidak bisa memperlihatkan pesanan yang dikenal sambil membawa hash pesanan lain.
+ * Batch 3 F3 (review BE-063): before signing a notice for an order, the hash is recomputed from the DISPLAYED document and must equal the hash the user opened and
+ * the one the API response names. A malicious API cannot show a known order while carrying the hash of a different order.
  */
 export async function assertOrderHash(view: OrderView, opened: string): Promise<void> {
   let computed: string
@@ -103,7 +103,7 @@ export async function assertOrderHash(view: OrderView, opened: string): Promise<
   if (view.order.kind === 'delegate') await assertMandate(view)
 }
 
-/** Mandat yang ditampilkan harus yang hash-nya ada di pesanan, dan ada untuk lingkaran ini: server tidak bisa memperlihatkan mandat lain dari yang dikunci. */
+/** The displayed mandate must be the one whose hash is in the order, and it must exist for this circle: the server cannot show a mandate other than the locked one. */
 export async function assertMandate(view: OrderView): Promise<void> {
   const m = view.mandate
   if (m === null) throw new Error('Delegate order without a mandate from the server: not signed.')
@@ -118,18 +118,18 @@ export async function assertMandate(view: OrderView): Promise<void> {
 }
 export const mandateOf = (m: OrderMandateView): DelegateMandate => ({ circle: m.circle, dao: m.dao, kinds: m.kinds, rules_hash: m.rulesHash })
 
-/** Isi `POST orders`: dokumen dan tanda tangan pihak ini atas JSON kanonik; tanda tangan pihak lawan bisa ditempel (akun dan tanda tangan). */
+/** Body of `POST orders`: the document and this party's signature over the canonical JSON; the counterparty's signature can be attached (account and signature). */
 export async function buildCreateOrder(doc: OrderDocument, account: string, secretKey: string, counterparty?: { account: string; signature: string }, mandate?: DelegateMandate) {
   const signatures = [{ account, signature: await signMessageWithVoucher(serializeOrder(doc), doc.circle, secretKey) }, ...(counterparty ? [counterparty] : [])]
   return { order: normalizeOrder(doc), signatures, ...(mandate ? { mandate } : {}) }
 }
 
-/** Notice klaim satu transaksi suara (SD-072): kunci `circle, order_hash, actor, action, at, tx_hash`, ditandatangani seperti notice lain. Hanya penjual (delegate) yang mengklaim. */
+/** Notice claiming one vote transaction (SD-072): keys `circle, order_hash, actor, action, at, tx_hash`, signed like other notices. Only the seller (delegate) claims. */
 export async function signClaim(circle: string, orderHash: string, actor: string, at: number, txHash: string, secretKey: string) {
   const notice = orderClaimNotice({ circle, orderHash, actor, at, txHash })
   return { notice, signature: await signMessageWithVoucher(JSON.stringify(notice), circle, secretKey) }
 }
-/** Alasan penolakan klaim (BE-055) dalam bahasa pengguna. */
+/** Reason a claim was rejected (BE-055) in user-facing language. */
 export const CLAIM_REASON: Record<string, string> = {
   tx_not_found: 'The RPC does not know this transaction.', tx_failed: 'The transaction failed on chain.', wrong_signer: 'This transaction was not signed by the seller.',
   wrong_receiver: 'This transaction is not to the DAO in the mandate.', not_a_vote: 'This transaction is not an approve or reject vote (VoteApprove or VoteReject).',
@@ -138,14 +138,14 @@ export const CLAIM_REASON: Record<string, string> = {
 
 export type MilestoneAction = 'delivered' | 'confirmed' | 'disputed' | 'cancelled'
 export type OutcomeAction = 'proposed' | 'accepted' | 'rejected'
-/** Notice tonggak: JSON kanonik seperti 5c dengan `order_hash` dan `milestone`; urutan kunci tetap. Kunci yang dipakai perlu dicocokkan dengan BE-054. */
+/** Milestone notice: canonical JSON like 5c with `order_hash` and `milestone`; fixed key order. The keys used must be checked against BE-054. */
 export const milestoneNotice = (circle: string, orderHash: string, milestone: number, actor: string, action: MilestoneAction | OutcomeAction, at: number, deliverableHash: string | null = null, reason: string | null = null) =>
   ({ circle, order_hash: orderHash, milestone, actor, action, at, deliverable_hash: deliverableHash, reason })
 export async function signNotice(notice: ReturnType<typeof milestoneNotice>, secretKey: string): Promise<string> {
   return signMessageWithVoucher(JSON.stringify(notice), notice.circle, secretKey)
 }
 
-/** Tanda "manusia" di listing: `human: true` di `detail` JSON listing (BE-050 tidak memeriksa kunci lain). */
+/** The "human" flag on a listing: `human: true` in the listing JSON `detail` (BE-050 does not check other keys). */
 export function withHumanMark(detail: string, human: boolean): string {
   let base: Record<string, unknown> = {}
   const text = detail.trim()

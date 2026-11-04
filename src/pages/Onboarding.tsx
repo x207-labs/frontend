@@ -42,7 +42,7 @@ function JoinForm({ registered }: { registered: boolean }) {
     if (source !== 'near') txs.push(['ft_withdraw', ftWithdrawTx(account, atomic)])
     if (needsJoin) txs.push(['join', joinTx(pubkey, termsHash)])
     txs.push(['stake', stakeTx(atomic)])
-    // Satu per satu: tiap transaksi menunggu tanda tangan pemilik (wallet menolak batch lintas receiver).
+    // One at a time: each transaction waits for the owner's signature (the wallet rejects a batch across receivers).
     for (const [name, tx] of txs) {
       setStep(name)
       if (!(await sign(tx))) break
@@ -117,7 +117,7 @@ function JoinForm({ registered }: { registered: boolean }) {
   )
 }
 
-// FE-005: status onboarding dari read API; diperbarui oleh polling QueryClient tanpa reload manual.
+// FE-005: onboarding status from the read API; updated by QueryClient polling without a manual reload.
 function StatusPanel({ account }: { account: string }) {
   const member = useMember(account)
   if (member.data === undefined) {

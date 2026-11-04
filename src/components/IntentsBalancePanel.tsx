@@ -6,8 +6,8 @@ import { formatCredit } from '../lib/format'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { withdrawIntentsBalanceTx } from '../wallet/transactions'
 
-// Interface 0.0.9 (BE-034, spec 18): USDT yang masuk lewat `mt_on_transfer` tetap berupa saldo multi-token kontrak di Intents. `claim` ke
-// akun NEAR membayar dengan `ft_transfer` dari saldo NEP-141 kontrak, jadi klaim bisa gagal sampai saldo ini ditarik. Siapa pun boleh menarik.
+// Interface 0.0.9 (BE-034, spec 18): USDT arriving via `mt_on_transfer` stays a multi-token balance of the contract in Intents. `claim` to a
+// NEAR account pays with `ft_transfer` from the contract's NEP-141 balance, so a claim can fail until this balance is withdrawn. Anyone may withdraw.
 export function IntentsBalancePanel() {
   const balance = useIntentsBalance()
   const history = useIntentWithdrawals()

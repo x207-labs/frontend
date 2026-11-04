@@ -25,7 +25,7 @@ const rows: { key: Key; label: string; format: (value: never) => string }[] = [
   { key: 'admission', label: 'Member admission', format: (v: string) => v },
 ]
 
-// Riwayat memuat nilai mentah per field; formatnya mengikuti tabel parameter.
+// History carries raw values per field; the format follows the parameter table.
 function formatField(field: string, value: unknown): string {
   const row = rows.find((r) => r.key === field)
   return row ? row.format(value as never) : String(value)
@@ -43,7 +43,7 @@ const STATUS_LABEL: Record<DaoProposal['status'], string> = {
   Failed: 'Failed to execute',
 }
 
-/** Sputnik `vote_counts` per peran dijumlahkan: [setuju, tolak, hapus]. */
+/** Sputnik `vote_counts` per role are summed: [approve, reject, remove]. */
 export function tally(votes: DaoProposal['votes']): { approve: number; reject: number; remove: number } {
   const total = { approve: 0, reject: 0, remove: 0 }
   for (const [a, r, x] of Object.values(votes)) {
@@ -61,7 +61,7 @@ const describeParams = (params: DaoProposal['params']) =>
         .map(([key, value]) => `${key} = ${formatField(key, value)}`)
         .join(', ')
 
-// FE-015: proposal `set_params` Sputnik DAO. Hanya baca; suara diberikan di DAO, bukan di halaman ini.
+// FE-015: Sputnik DAO `set_params` proposals. Read only; votes are cast in the DAO, not on this page.
 function DaoProposals() {
   const proposals = useDaoProposals()
   const params = useParams()

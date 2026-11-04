@@ -4,7 +4,7 @@ import {
   serializeBundleTerms, signListing, signOffer, signMessageWithVoucher, termsHash, voucherSeed, type Listing, type Offer,
 } from './barter'
 
-// Vector dari sdk/spec/test-vectors/barter/listing.json; kunci kA dan kB dari keys.json.
+// Vectors from sdk/spec/test-vectors/barter/listing.json; keys kA and kB from keys.json.
 const SEED_A = `ed25519:${base58Encode(Uint8Array.from(new Array<number>(32).fill(1)))}`
 const SEED_B = `ed25519:${base58Encode(Uint8Array.from(new Array<number>(32).fill(2)))}`
 const listing: Listing = {
@@ -63,7 +63,7 @@ describe('lib/barter matches the SDK test vectors', () => {
     expect(() => voucherSeed('ed25519:1111')).toThrow(/32 or 64 bytes/)
   })
 
-  it('base58 bolak-balik termasuk byte nol di depan', () => {
+  it('base58 round trip including leading zero bytes', () => {
     const bytes = Uint8Array.from([0, 0, 1, 2, 255])
     expect(base58Decode(base58Encode(bytes))).toEqual(bytes)
   })

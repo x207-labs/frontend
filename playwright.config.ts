@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test'
 
-// Memakai Chrome terpasang agar tidak perlu mengunduh browser Playwright.
+// Uses the installed Chrome so the Playwright browser does not need to be downloaded.
 export default defineConfig({
   testDir: './e2e',
   use: { baseURL: 'http://localhost:5207', channel: 'chrome' },

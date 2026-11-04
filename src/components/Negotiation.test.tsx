@@ -105,7 +105,7 @@ describe('negotiation and quick barter (FE-020)', () => {
       'summarizer → translator: 100 credit', 'translator → scraper: 3 credit', 'translator → summarizer: 107 credit',
     ])
     expect(calls.find((c) => c.path.endsWith('/preview'))!.body).toEqual({ account: OWNER, searcher: PENCARI, searcherShareBps: 300 })
-    // belum ada yang disetujui sebelum tombol tanda tangan
+    // nothing is approved before the sign button
     expect(calls.some((c) => c.path.endsWith('/accept'))).toBe(false)
   })
 

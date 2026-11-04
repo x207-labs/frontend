@@ -1,5 +1,5 @@
-// Tipe sementara yang ditulis tangan dari Spec API Backend, sampai @x207/core
-// menyediakannya (SD-004, SD-010; TC-FE-002-07). Nama field mengikuti spec.
+// Temporary hand-written types from the Backend API Spec, until @x207/core
+// provides them (SD-004, SD-010; TC-FE-002-07). Field names follow the spec.
 
 export type EpochPhase = 'open' | 'cutoff' | 'clearing' | 'commit' | 'payment_window' | 'finalized'
 export type MemberStatus = 'pending' | 'active' | 'suspended' | 'exited'
@@ -135,7 +135,7 @@ export type ParamsHistoryItem = {
 }
 export type ParamsHistory = { items: ParamsHistoryItem[]; nextCursor: string | null }
 
-// POST /x207/settlement/deposit/quote dan GET /x207/settlement/jobs/{jobId} (Spec API Backend 6.2, 6.5).
+// POST /x207/settlement/deposit/quote and GET /x207/settlement/jobs/{jobId} (Backend API Spec 6.2, 6.5).
 export type DepositQuoteRequest = {
   purpose: 'stake' | 'settle'
   circle: string
@@ -208,11 +208,11 @@ export type WithdrawQuote = {
   timeEstimateSeconds: number
   warnings: string[]
 }
-/** `intent` dari 1Click apa adanya; FE-011 membaca `payload` NEP-413 bila ada. */
+/** `intent` from 1Click as is; FE-011 reads the NEP-413 `payload` if present. */
 export type WithdrawIntent = { jobId: string; intent: { standard?: string; payload?: { message: string; nonce: string; recipient: string } } & Record<string, unknown> }
 export type WithdrawSubmit = { jobId: string; status: string; intentHash: string }
 
-// Marketplace barter (F9): Spec API Backend M11, route di backend/src/marketplace/.
+// Barter marketplace (F9): Backend API Spec M11, routes in backend/src/marketplace/.
 export type ListingStatus = 'open' | 'matched' | 'cancelled' | 'expired'
 export type ListingSideView = { assetType: string; assetClass: string; quantity: number; value: string }
 export type ListingView = {
@@ -306,7 +306,7 @@ export type DaoProposal = {
   method: string
   params: Partial<Params> | null
   submittedAt: string
-  /** Sputnik `vote_counts`: peran -> [setuju, tolak, hapus]. */
+  /** Sputnik `vote_counts`: role -> [approve, reject, remove]. */
   votes: Record<string, [number, number, number]>
 }
 export type DaoProposals = { circle: string; dao: string; items: DaoProposal[]; nextCursor: string | null }
@@ -315,8 +315,8 @@ export type DaoProposals = { circle: string; dao: string; items: DaoProposal[]; 
 export type GrantStatus = 'offered' | 'active' | 'revoked' | 'expired'
 export type RevokeReason = 'grantor' | 'grantee' | 'operator' | 'expired' | 'defaulted'
 /**
- * Escrow kelas A dari `GET /grants` (BE-038, BE-046, BE-048). `nft`: NFT dan token-nya. `mt` (CT-092): kontrak multi-token, id token, dan jumlah persis dalam satuan token itu. `ft` (CT-090): kontrak token dan jumlah persis dalam satuan TOKEN itu
- * (teks, bukan credit). `state`: held, completing, cancelling, delivered, cancelled, atau stuck.
+ * Class A escrow from `GET /grants` (BE-038, BE-046, BE-048). `nft`: the NFT and its token. `mt` (CT-092): multi-token contract, token id, and the exact amount in that token's unit. `ft` (CT-090): token contract and the exact amount in that TOKEN's unit
+ * (text, not credit). `state`: held, completing, cancelling, delivered, cancelled, or stuck.
  */
 export type GrantEscrow =
   | { kind: 'nft'; nftContract: string; tokenId: string; state: string }
@@ -324,7 +324,7 @@ export type GrantEscrow =
   | { kind: 'mt'; mtContract: string; tokenId: string; amount: string; state: string }
 
 export type Grant = {
-  /** `null` untuk grant tanpa escrow (kelas B sampai D); ada untuk grant kelas A. */
+  /** `null` for grants without escrow (class B to D); present for class A grants. */
   escrow?: GrantEscrow | null
   grantId: number
   assetType: string
@@ -333,7 +333,7 @@ export type Grant = {
   class: 'A' | 'B' | 'C' | 'D' | 'X'
   unit: string
   unitPrice: string
-  /** Nanodetik sejak epoch Unix, sebagai string. */
+  /** Nanoseconds since the Unix epoch, as a string. */
   expiresAt: string
   deliveryPubkey: string | null
   status: GrantStatus
@@ -342,7 +342,7 @@ export type Grant = {
 }
 export type GrantList = { circle: string; unit: 'credit'; decimals: number; items: Grant[]; nextCursor: string | null }
 
-/** `GET /x207/circles/{circle}/intents` (BE-035): intent barter off-chain dengan status `post_intent` on-chain dari event `intent_posted`. */
+/** `GET /x207/circles/{circle}/intents` (BE-035): off-chain barter intents with the on-chain `post_intent` status from the `intent_posted` event. */
 export type IntentView = {
   intentHash: string
   intentHashBase58: string
@@ -355,11 +355,11 @@ export type IntentView = {
 }
 export type IntentList = { items: IntentView[]; nextCursor: string | null }
 
-/** `GET /x207/circles/{circle}/intents/hashes` (BE-045): hash yang dipasang anggota di kontrak (`posted`) atau sudah dihapus (`removed`), dari event `intent_posted` dan `intent_removed`. */
+/** `GET /x207/circles/{circle}/intents/hashes` (BE-045): hashes members posted in the contract (`posted`) or have since removed (`removed`), from the `intent_posted` and `intent_removed` events. */
 export type IntentHashItem = { intentHash: string; accountId: string; status: 'posted' | 'removed'; postedAtNs: string; changedBlock: number }
 export type IntentHashList = { circle: string; items: IntentHashItem[]; nextCursor: string | null }
 
-/** `GET /x207/circles/{circle}/intents/withdrawals` (BE-045): penarikan saldo dari Intents (`withdraw_intents_balance`), terbaru dulu. */
+/** `GET /x207/circles/{circle}/intents/withdrawals` (BE-045): balance withdrawals from Intents (`withdraw_intents_balance`), newest first. */
 export type IntentWithdrawals = Amounts & {
   circle: string
   totalWithdrawn: string
@@ -368,18 +368,18 @@ export type IntentWithdrawals = Amounts & {
   nextCursor: string | null
 }
 
-// Invoice dan cicilan (FE-025): Spec API Backend 5e, dibangun dari spec dengan mock; BE-051 belum ada. Jawaban backend dinormalkan oleh `toInvoiceView`
-// (snake_case seperti di spec atau camelCase seperti read API lain), jadi bentuk akhirnya tetap satu.
+// Invoices and installments (FE-025): Backend API Spec 5e, built from the spec with mocks; BE-051 does not exist yet. Backend responses are normalized by `toInvoiceView`
+// (snake_case as in the spec or camelCase as in other read APIs), so the final shape stays single.
 export type InvoiceStatus = 'requested' | 'approved' | 'registered' | 'rejected' | 'expired' | 'missed'
 export type InstallmentStatus = 'scheduled' | 'registered' | 'shifted' | 'missed'
 export type InstallmentReason = 'headroom' | 'blocked_by_debtor'
 export type InvoiceDocumentView = { id: string; issuer: string; debtor: string; amount: string; memo: string }
-/** `epoch` adalah epoch jadwal asli dan tidak berubah; `voucherEpoch` tempat voucher yang ditunggu (satu epoch lebih lambat setelah digeser). */
+/** `epoch` is the original schedule epoch and never changes; `voucherEpoch` is where the awaited voucher lands (one epoch later after a shift). */
 export type InstallmentView = { index: number; epoch: number; amount: string; status: InstallmentStatus; reason: InstallmentReason | null; voucherEpoch: number | null; shifted: boolean }
 export type InvoiceView = { invoiceHash: string; document: InvoiceDocumentView; status: InvoiceStatus; needsBond: boolean; rejectReason: string | null; createdAt: string | null; installments: InstallmentView[] }
 export type InvoiceList = { items: InvoiceView[]; nextCursor: string | null }
 
-// Pesanan jasa (FE-027): Spec API Backend 5f, dibangun dari spec dengan mock; BE-054 belum ada. Dinormalkan oleh `toOrderView` (snake_case seperti di spec atau camelCase).
+// Service orders (FE-027): Backend API Spec 5f, built from the spec with mocks; BE-054 does not exist yet. Normalized by `toOrderView` (snake_case as in the spec or camelCase).
 export type MilestoneStatus = 'open' | 'delivered' | 'confirmed' | 'disputed' | 'paid' | 'cancelled'
 export type OrderMilestoneView = {
   index: number; amount: string; dueAt: number; status: MilestoneStatus; deliverableHash: string | null; at: number | null
@@ -388,17 +388,17 @@ export type OrderMilestoneView = {
 export type OrderDocView = {
   circle: string; kind: string; buyer: string; seller: string; specHash: string
   sampleHash: string | null; target: string | null; proof: { method: string; amountPerTx: string } | null; nonce: string
-  /** Hanya pesanan `delegate` (SD-072): sha256 dari mandat. */
+  /** `delegate` orders only (SD-072): sha256 of the mandate. */
   mandateHash: string | null
 }
-/** Mandat publik pesanan `delegate`: `DelegateMandate` SDK dalam camelCase. */
+/** Public mandate of a `delegate` order: the SDK `DelegateMandate` in camelCase. */
 export type OrderMandateView = { circle: string; dao: string; kinds: string[]; rulesHash: string }
 export type OrderView = { orderHash: string; order: OrderDocView; status: string; needsBond: boolean; targetVerified: boolean | null; signedBy: string[]; milestones: OrderMilestoneView[]; mandate: OrderMandateView | null }
 export type OrderList = { items: OrderView[]; nextCursor: string | null }
-/** Bukti on-chain; untuk pesanan `delegate` juga kontrak yang dipanggil, proposal, aksi, dan jenis proposalnya (klaim yang diperiksa backend lewat RPC). */
+/** On-chain proof; for `delegate` orders also the contract called, proposal, action, and proposal kind (claims the backend checks over RPC). */
 export type OnchainProofView = { txHash: string; method: string; signer: string; receiver?: string; proposalId?: number; action?: string; proposalKind?: string; at?: string }
 
-// Penyerahan lisensi (FE-028): Spec API Backend 5g, dibangun dari spec dengan mock; BE-056 belum ada. Dinormalkan oleh `toPurchaseView`.
+// License handover (FE-028): Backend API Spec 5g, built from the spec with mocks; BE-056 does not exist yet. Normalized by `toPurchaseView`.
 export type PurchaseStatus = 'paid_held' | 'cipher_posted' | 'key_released' | 'confirmed' | 'disputed' | 'refuted' | 'cancelled'
 export type PurchaseRelease = { circle: string; license_hash: string; buyer: string; content_hash: string; cipher_hash: string; sealed_key: string; at: number; content_size: number; cipher_size: number; key_commitment: string; purchase_id: string }
 export type PurchaseView = {
@@ -408,7 +408,7 @@ export type PurchaseView = {
 }
 
 export type RentChallenge = { required: boolean; grantId?: number; circle?: string; granteeRef?: string; nonce?: string; challenge?: string; expiresAt?: string }
-// Sewa akses P2 (FE-029): jawaban broker `GET /grants/{id}/access` (README broker, BE-060).
+// P2 access rental (FE-029): broker response `GET /grants/{id}/access` (broker README, BE-060).
 export type RentStatus = 'active' | 'revoke_pending' | 'revoked'
 export type RentView = {
   grantId: number; provider: string; granteeRef: string; /** `verified`, `unproven: …` or `not_applicable` (the provider has no way to prove the reference; BE-057, batch 4). */ proof?: string | null; /** `grantee_unproven` while the reference is not `verified`. */ warnings?: string[]; status: RentStatus; paidUntil: string; providerExpiresAt: string | null; reason: string | null

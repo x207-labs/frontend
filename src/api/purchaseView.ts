@@ -1,7 +1,7 @@
 import type { PurchaseStatus, PurchaseView } from './types'
 
-// Jawaban pembelian lisensi dari backend (BE-056) dinormalkan: `purchase_id`, `cipher_hash`, `dispute_until` seperti spec 5g atau camelCase. Rilis kunci (notice `key_released`
-// bertanda tangan penjual) dibaca dari `release` dan `release_signature`. Status yang tidak dikenal ditolak dengan galat.
+// The license purchase response from the backend (BE-056) is normalized: `purchase_id`, `cipher_hash`, `dispute_until` as in spec 5g, or camelCase. The key release (the seller-signed `key_released` notice)
+// is read from `release` and `release_signature`. Unknown statuses are rejected with an error.
 type Raw = Record<string, unknown>
 const pick = (raw: Raw, snake: string, camel: string): unknown => raw[camel] ?? raw[snake]
 const STATUSES: readonly PurchaseStatus[] = ['paid_held', 'cipher_posted', 'key_released', 'confirmed', 'disputed', 'refuted', 'cancelled']

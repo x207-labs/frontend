@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { fromAtomic } from '../lib/amount'
 import { EMPTY_RESOURCE, KIND_LABEL, METERED_KINDS, METERED_PRESETS, UNIT_LABEL, toResourceTemplate, type ResourceTemplate, type ResourceValues } from '../lib/resourceForm'
 
-// FE-024: formulir listing sumber daya terukur (kelas D). Hasilnya mengisi sisi "Menawarkan" (jenis aset, kelas D, satu satuan, harga satuan) dan `detail` listing
-// `{"kind","unit","unit_price","endpoint"}` yang dibaca backend (BE-050).
+// FE-024: metered resource listing form (class D). The result fills the "Offering" side (asset kind, class D, one unit, unit price) and the listing `detail`
+// `{"kind","unit","unit_price","endpoint"}` that the backend reads (BE-050).
 export function ResourceListingForm({ onApply }: { onApply: (template: ResourceTemplate) => void }) {
   const [values, setValues] = useState<ResourceValues>(EMPTY_RESOURCE)
   const result = useMemo(() => (values.kind === '' ? null : toResourceTemplate(values)), [values])

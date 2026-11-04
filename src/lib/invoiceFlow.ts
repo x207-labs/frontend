@@ -3,19 +3,19 @@ import type { InvoiceView } from '../api/types'
 import { sha256Hex, signMessageWithVoucher, signVoucherInBrowser } from './barter'
 import { toAtomic } from './amount'
 
-// FE-025: alur invoice di browser, dari Spec API Backend 5e. Aturan format ada di SDK (SD-065: dokumen, hash, rencana cicilan, voucher); di sini hanya penandatanganan dan
-// pemeriksaan sebelum debtor menandatangani. Hash dihitung dengan sha256 browser atas JSON kanonik SDK (`invoiceHash` SDK memakai node:crypto).
+// FE-025: invoice flow in the browser, from Backend API Spec 5e. Format rules live in the SDK (SD-065: document, hash, installment plan, voucher); here only signing and
+// checks before the debtor signs. The hash is computed with the browser's sha256 over the SDK canonical JSON (the SDK `invoiceHash` uses node:crypto).
 export const invoiceHashOf = (doc: InvoiceDocument): Promise<string> => sha256Hex(serializeInvoice(doc))
 
 export type InvoiceAction = 'requested' | 'rejected'
-/** Notice invoice: JSON kanonik seperti 5c dengan `invoice_hash` di tempat `listing_hash`; urutan kunci tetap. Kunci yang dipakai di sini perlu dicocokkan dengan BE-051. */
+/** Invoice notice: canonical JSON like 5c with `invoice_hash` in place of `listing_hash`; fixed key order. The keys used here must be checked against BE-051. */
 export const invoiceNotice = (circle: string, invoiceHash: string, actor: string, action: InvoiceAction, at: number, reason: string | null = null) =>
   ({ circle, invoice_hash: invoiceHash, actor, action, at, reason })
 const noticeText = (n: ReturnType<typeof invoiceNotice>): string => JSON.stringify(n)
 
 export type CreateInput = { circle: string; issuer: string; debtor: string; id: string; amount: string; memo: string; installments: string; secretKey: string; now: number }
 
-/** Isi `POST invoices`: dokumen, jumlah cicilan, notice `requested` dan tanda tangan issuer; atau teks galat dari aturan SDK. */
+/** Body of `POST invoices`: document, number of installments, `requested` notice and issuer signature; or an error text from the SDK rules. */
 export async function buildCreateInvoice(i: CreateInput): Promise<{ body: { document: InvoiceDocument; installments: number; notice: ReturnType<typeof invoiceNotice>; signature: string }; invoiceHash: string } | string> {
   const amount = toAtomic(i.amount)
   if (amount === null) return 'Amount must be a credit number > 0 (at most 6 decimals).'
@@ -32,10 +32,10 @@ export async function buildCreateInvoice(i: CreateInput): Promise<{ body: { docu
 }
 
 /**
- * Voucher cicilan yang ditandatangani debtor saat menyetujui: satu per cicilan, seq 1 di epochnya. Sebelum menandatangani, dokumen diperiksa terhadap hash dan jadwal dari server
- * dihitung ulang dengan rencana SDK (epoch berurutan, jumlah sama): debtor tidak menandatangani apa pun yang tidak cocok (CT-076).
+ * Installment vouchers the debtor signs on approval: one per installment, seq 1 in its epoch. Before signing, the document is checked against the hash and the schedule from the server
+ * is recomputed with the SDK plan (consecutive epochs, equal amounts): the debtor signs nothing that does not match (CT-076).
  */
-/** Batch 3 F3 (review BE-063): hash dihitung ulang dari dokumen yang ditampilkan dan harus sama dengan hash yang dibuka pengguna dan yang disebut jawaban API. */
+/** Batch 3 F3 (review BE-063): the hash is recomputed from the displayed document and must equal the hash the user opened and the one the API response names. */
 export async function assertInvoiceHash(view: InvoiceView, opened: string): Promise<void> {
   if (view.invoiceHash !== opened || (await invoiceHashOf(view.document)) !== opened) throw new Error('The invoice hash computed from the displayed document does not match the opened hash: not signed.')
 }
@@ -64,7 +64,7 @@ export async function buildRejection(circle: string, view: InvoiceView, actor: s
   return { notice, signature: await signMessageWithVoucher(noticeText(notice), circle, secretKey) }
 }
 
-/** Voucher susulan setelah cicilan gagal, di atas keadaan pasangan di epoch tujuan (dari kontrak). Sekali per cicilan; dipanggil hanya setelah gagal, tidak pernah di depan. */
+/** Follow-up voucher after a failed installment, on top of the pair state in the target epoch (from the contract). Once per installment; called only after a failure, never ahead of time. */
 export async function buildCatchUp(circle: string, view: InvoiceView, index: number, state: InvoicePairState, alreadyShifted: boolean, secretKey: string): Promise<{ voucher: object; signature: string } | string> {
   try {
     const first = view.installments[0]

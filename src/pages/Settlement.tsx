@@ -79,7 +79,7 @@ function DueRow({ item, account }: { item: SettlementItem; account: string }) {
 
 const EXPLORER = NEAR_NETWORK === 'mainnet' ? 'https://nearblocks.io/txns/' : 'https://testnet.nearblocks.io/txns/'
 
-// FE-010: saldo kreditor per epoch; klaim hanya setelah finalize_epoch (ADR-24).
+// FE-010: creditor balance per epoch; claim only after finalize_epoch (ADR-24).
 function ClaimRow({ item, account }: { item: SettlementItem; account: string }) {
   const { state, sign } = useSignTransaction()
   const client = useQueryClient()

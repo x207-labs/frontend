@@ -10,8 +10,8 @@ import { formatCredit } from '../lib/format'
 import { describeMarketError } from '../lib/marketError'
 import { useWallet } from '../wallet/WalletContext'
 
-// FE-029: sewa akses harian (pipeline P2, ADR-47), dari README broker (BE-060). Pemberi menyiapkan scope dan listing sewa; penyewa melihat keadaan akses, biaya hari ini, memeriksa
-// akses sebelum membayar hari berikutnya (aturan satu-satunya ada di SDK: `checkAccessBeforeNextDay`), dan berhenti sewa. Pembayaran harian dilakukan klien x402 atau agent, bukan halaman ini.
+// FE-029: daily access rental (pipeline P2, ADR-47), from the broker README (BE-060). The provider prepares the scope and rental listing; the renter sees the access state, today's cost, checks
+// the access before paying for the next day (the only rule is in the SDK: `checkAccessBeforeNextDay`), and stops the rental. Daily payment is made by the x402 client or agent, not this page.
 export const PROVIDERS: Record<string, { label: string; costly: boolean; note: string }> = {
   github: { label: 'GitHub (repo collaborator or org seat)', costly: true, note: 'GitHub terms restrict account sharing; collaborators and org seats are not password sharing. You are responsible for your own org policy.' },
   discord: { label: 'Discord (server role)', costly: false, note: 'A role is only for existing server members; Discord terms forbid selling accounts, not roles.' },

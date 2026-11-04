@@ -16,7 +16,7 @@ export const useParams = () => useQuery({ queryKey: ['params'], queryFn: api.par
 export const useParamsHistory = () =>
   useQuery({ queryKey: ['params', 'history'], queryFn: api.paramsHistory })
 
-// Hook per epoch diam sampai ada epoch terpilih (TC-FE-002-05).
+// Per-epoch hooks stay idle until an epoch is selected (TC-FE-002-05).
 export const useReport = (epoch: number | null) =>
   useQuery({
     queryKey: ['report', epoch],
@@ -62,18 +62,18 @@ export const useDaoProposals = () => useQuery({ queryKey: ['dao-proposals'], que
 export const useGrants = (query: Record<string, string>, enabled = true) =>
   useQuery({ queryKey: ['grants', query], queryFn: () => api.grants(query), enabled })
 
-// Data on-chain yang belum ada di read API: dibaca dari view kontrak (src/api/chain.ts).
-/** Saldo USDT (satuan terkecil) yang dicatat `mt_on_transfer` dan belum ditarik dari Intents. */
+// On-chain data not yet in the read API: read from contract views (src/api/chain.ts).
+/** USDT balance (smallest unit) recorded by `mt_on_transfer` and not yet withdrawn from Intents. */
 export const useIntentsBalance = () =>
   useQuery({ queryKey: ['chain', 'intents_balance'], queryFn: () => viewContract<string>('intents_balance') })
 export const useOwnIntents = (account: string | null) =>
   useQuery({ queryKey: ['own-intents', account], queryFn: () => api.intents(account!), enabled: account !== null, retry: false })
-/** Hash yang akun ini pasang di kontrak dan belum dihapus (event `intent_posted` dikurangi `intent_removed`, BE-045). */
+/** Hashes this account posted in the contract and has not removed (`intent_posted` events minus `intent_removed`, BE-045). */
 export const usePostedIntents = (account: string | null) =>
   useQuery({ queryKey: ['posted-intents', account], queryFn: () => api.intentHashes(account!, 'posted'), enabled: account !== null, retry: false })
-/** Penarikan terakhir dari Intents ke akun NEP-141 kontrak (BE-045). */
+/** Latest withdrawal from Intents to the contract's NEP-141 account (BE-045). */
 export const useIntentWithdrawals = () => useQuery({ queryKey: ['intent-withdrawals'], queryFn: api.intentWithdrawals })
-/** Pasangan (edge) epoch yang masih ada; kosong setelah `prune_epoch` menghapusnya. Satu halaman cukup untuk tahu ada atau tidak. */
+/** Epoch pairs (edges) that still exist; empty after `prune_epoch` removes them. One page is enough to tell whether any exist. */
 export const useEpochPairsLeft = (epoch: number | null, enabled: boolean) =>
   useQuery({
     queryKey: ['chain', 'pairs-left', epoch],

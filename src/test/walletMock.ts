@@ -2,7 +2,7 @@ import type { FunctionCallTx, SignMessageInput, WalletPort } from '../wallet/typ
 
 export type RecordedTx = FunctionCallTx & { signerId: string; network: string }
 
-// FX-FE-1: wallet palsu yang mencatat transaksi dan bisa menyetujui atau menolak.
+// FX-FE-1: fake wallet that records transactions and can approve or reject.
 export type MockWallet = WalletPort & {
   txs: RecordedTx[]
   messages: Array<SignMessageInput & { signerId: string }>

@@ -1,8 +1,8 @@
-// Batch 3 F4 (review BE-063): kebijakan keamanan konten untuk build produksi. Kunci voucher ada di DOM dan di state React, jadi satu skrip yang jalan di halaman bisa membacanya dan
-// menandatangani apa saja: skrip hanya dari origin sendiri, sambungan hanya ke read API, broker, RPC NEAR, dan origin wallet yang disebut di konfigurasi. `frame-ancestors` dan
-// `X-Content-Type-Options` tidak bisa lewat elemen meta: keduanya header server host (lihat docs/security-review.md).
-// Batas yang diakui: wallet (`@hot-labs/near-connect`) memuat manifest dan eksekutor dari jaringan; origin-nya diisi lewat VITE_X207_WALLET_ORIGINS dan login wallet harus dicoba di
-// testnet sebelum rilis. `VITE_X207_CSP=off` mematikan kebijakan ini untuk jalan keluar sementara.
+// Batch 3 F4 (review BE-063): content security policy for the production build. The voucher key lives in the DOM and in React state, so any script running on the page could read it and
+// sign anything: scripts only from our own origin, connections only to the read API, broker, NEAR RPC, and the wallet origins named in the config. `frame-ancestors` and
+// `X-Content-Type-Options` cannot go through a meta element: both are host server headers (see docs/security-review.md).
+// Acknowledged limit: the wallet (`@hot-labs/near-connect`) loads a manifest and executors from the network; its origins are filled via VITE_X207_WALLET_ORIGINS and wallet login must be tried on
+// testnet before release. `VITE_X207_CSP=off` disables this policy as a temporary escape hatch.
 type Env = Record<string, string | undefined>
 
 const origin = (value: string | undefined): string | null => {
@@ -39,5 +39,5 @@ export function buildCsp(env: Env): string {
   ].join('; ')
 }
 
-/** Elemen meta yang ditambahkan ke index.html pada build; kebijakan dari index.html tetap berlaku bersamanya (yang paling ketat menang). */
+/** Meta element added to index.html at build; the index.html policy still applies alongside it (the strictest wins). */
 export const cspMeta = (csp: string): string => `<meta http-equiv="Content-Security-Policy" content="${csp.replaceAll('"', '&quot;')}" />`

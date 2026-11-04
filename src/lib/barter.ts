@@ -1,6 +1,6 @@
-// Format listing, penawaran dan tanda tangan marketplace di browser (FE-019, FE-020).
-// Port dari `@x207/core` (`marketplace.ts`, `voucher.ts`): JSON kanonik, hash sha256, payload NEP-413 dan ed25519 lewat WebCrypto.
-// `@x207/core` memakai `node:crypto`, jadi tidak bisa dibundel ke browser. Kebenarannya dijaga test vector `sdk/spec/test-vectors/barter/`.
+// Marketplace listing, offer and signature formats in the browser (FE-019, FE-020).
+// Port of `@x207/core` (`marketplace.ts`, `voucher.ts`): canonical JSON, sha256 hash, NEP-413 payload and ed25519 via WebCrypto.
+// `@x207/core` uses `node:crypto`, so it cannot be bundled for the browser. Correctness is guarded by the test vectors in `sdk/spec/test-vectors/barter/`.
 const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 const NEP413_TAG = 2147484061
 const PKCS8_ED25519_PREFIX = Uint8Array.from([0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04, 0x22, 0x04, 0x20])
@@ -88,7 +88,7 @@ export async function sha256(data: Uint8Array | string): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', bytes as BufferSource))
 }
 
-/** sha256 dari payload NEP-413: `u32 tag` + borsh `{ message, nonce[32], recipient, callback_url: None }`. */
+/** sha256 of the NEP-413 payload: `u32 tag` + borsh `{ message, nonce[32], recipient, callback_url: None }`. */
 export async function nep413SigningHash(message: string, nonce: Uint8Array, recipient: string): Promise<Uint8Array> {
   if (nonce.length !== 32) throw new Error('NEP-413 nonce must be 32 bytes')
   return sha256(concat(u32le(NEP413_TAG), borshString(message), nonce, borshString(recipient), Uint8Array.of(0)))
@@ -96,7 +96,7 @@ export async function nep413SigningHash(message: string, nonce: Uint8Array, reci
 
 const side = (s: ListingSide) => ({ asset_type: s.asset_type, asset_class: s.asset_class, quantity: s.quantity, value: s.value })
 
-/** JSON kanonik listing: urutan key tetap, tanpa spasi (spec marketplace 1). */
+/** Canonical listing JSON: fixed key order, no whitespace (marketplace spec 1). */
 export const serializeListing = (l: Listing): string =>
   JSON.stringify({
     circle: l.circle, account: l.account, offer: side(l.offer), want: side(l.want), terms: l.terms, detail: l.detail,
@@ -112,7 +112,7 @@ export const serializeOffer = (o: Offer): string =>
 export const listingHash = async (l: Listing): Promise<string> => toHex(await sha256(serializeListing(l)))
 export const offerHash = async (o: Offer): Promise<string> => toHex(await sha256(serializeOffer(o)))
 
-/** Kunci voucher `ed25519:<base58>` berisi seed 32 byte atau seed + kunci publik 64 byte; hanya seed yang dipakai. */
+/** A voucher key `ed25519:<base58>` holds a 32-byte seed or seed + 64-byte public key; only the seed is used. */
 export function voucherSeed(secretKey: string): Uint8Array {
   const text = secretKey.trim()
   if (!text.startsWith('ed25519:')) throw new Error('Voucher key must have the format ed25519:…')
@@ -127,7 +127,7 @@ async function signDigest(digest: Uint8Array, secretKey: string): Promise<string
   return `ed25519:${base58Encode(signature)}`
 }
 
-/** Tanda tangan NEP-413 atas `message` dengan nonce = sha256(message) dan `recipient` = akun kontrak lingkaran. */
+/** NEP-413 signature over `message` with nonce = sha256(message) and `recipient` = the circle contract account. */
 export async function signMessageWithVoucher(message: string, recipient: string, secretKey: string): Promise<string> {
   return signDigest(await nep413SigningHash(message, await sha256(message), recipient), secretKey)
 }
@@ -142,7 +142,7 @@ export type BundleTerms = { circle: string; epoch: number; legs: Array<{ payer: 
 
 const byBytes = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
 
-/** JSON kanonik syarat bundle: leg diurutkan menurut (payer, payee), `search_leg` kunci terakhir bila ada; sama dengan `serializeBundleTerms` SDK. */
+/** Canonical bundle terms JSON: legs sorted by (payer, payee), `search_leg` last key if present; same as the SDK `serializeBundleTerms`. */
 export const serializeBundleTerms = (t: BundleTerms): string =>
   JSON.stringify({
     circle: t.circle,
@@ -163,10 +163,10 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 export type BundleCheck = { ok: true; terms: BundleTerms } | { ok: false; reason: string }
 
 /**
- * Pemeriksaan sebelum kunci voucher menandatangani pesan dari server (temuan FE-1). Server memberi `message`, `recipient` dan `terms_hash`, jadi
- * `sha256(message) = terms_hash` tidak membuktikan apa pun. Yang diperiksa di browser: penerima tanda tangan adalah kontrak lingkaran ini; pesan
- * adalah persis syarat bundle kanonik (bukan voucher, listing, atau pesan lain); lingkaran dan epoch di dalamnya cocok; akun penandatangan ikut
- * sebagai payer atau payee; dan leg keluar akun itu tidak melebihi jumlah angka pada rincian yang ditampilkan (bila rincian ada).
+ * Check before the voucher key signs a message from the server (finding FE-1). The server supplies `message`, `recipient` and `terms_hash`, so
+ * `sha256(message) = terms_hash` proves nothing. What the browser checks: the signature recipient is this circle contract; the message
+ * is exactly the canonical bundle terms (not a voucher, listing or other message); the circle and epoch inside match; the signing account is
+ * a payer or payee; and that account's outgoing legs do not exceed the amounts in the displayed breakdown (if a breakdown exists).
  */
 export function checkBundleToSign(input: { message: string; recipient: string; account: string; contract: string; epoch: number; breakdown?: Record<string, string> }): BundleCheck {
   const fail = (reason: string): BundleCheck => ({ ok: false, reason })
@@ -205,8 +205,8 @@ export function checkBundleToSign(input: { message: string; recipient: string; a
 export const termsHash = async (t: BundleTerms): Promise<string> => toHex(await sha256(serializeBundleTerms(t)))
 export const sha256Hex = async (text: string): Promise<string> => toHex(await sha256(text))
 
-// FE-025: voucher ditandatangani di browser (ADR-17 dan SD-065). Pesan = JSON kanonik voucher, nonce = sha256("x207:<payer>:<payee>:<epoch>:<seq>"), penerima = akun kontrak lingkaran.
-// Hasilnya sama dengan `signVoucher` dari `@x207/core` (ed25519 deterministik); tes membandingkannya.
+// FE-025: vouchers are signed in the browser (ADR-17 and SD-065). Message = canonical voucher JSON, nonce = sha256("x207:<payer>:<payee>:<epoch>:<seq>"), recipient = the circle contract account.
+// The result equals `signVoucher` from `@x207/core` (deterministic ed25519); the tests compare them.
 export type VoucherFields = { circle: string; payer: string; payee: string; epoch: number; seq: number; cumulativeAmount: string; unit: string; resource: string }
 export async function signVoucherInBrowser(v: VoucherFields, secretKey: string): Promise<string> {
   const message = JSON.stringify({ circle: v.circle, payer: v.payer, payee: v.payee, epoch: v.epoch, seq: v.seq, cumulativeAmount: v.cumulativeAmount, unit: v.unit, resource: v.resource })
@@ -214,7 +214,7 @@ export async function signVoucherInBrowser(v: VoucherFields, secretKey: string):
   return signDigest(await nep413SigningHash(message, nonce, v.circle), secretKey)
 }
 
-/** Memeriksa tanda tangan NEP-413 atas `message` dengan kunci publik `ed25519:<base58>` (WebCrypto); `false` untuk apa pun yang tidak sah. */
+/** Verifies a NEP-413 signature over `message` with public key `ed25519:<base58>` (WebCrypto); `false` for anything invalid. */
 export async function verifyMessageWithVoucher(message: string, recipient: string, signature: string, publicKey: string): Promise<boolean> {
   try {
     if (!signature.startsWith('ed25519:') || !publicKey.startsWith('ed25519:')) return false
@@ -229,7 +229,7 @@ export async function verifyMessageWithVoucher(message: string, recipient: strin
 }
 export const verifyListingSignature = (l: Listing, signature: string, publicKey: string): Promise<boolean> => verifyMessageWithVoucher(serializeListing(l), l.circle, signature, publicKey)
 
-/** Sidik jari kunci publik untuk dibandingkan dengan mata: 8 byte pertama sha256 dari kunci, heks berkelompok. */
+/** Public key fingerprint for eyeball comparison: first 8 bytes of sha256 of the key, grouped hex. */
 export async function keyFingerprint(publicKey: string): Promise<string> {
   const digest = await sha256(publicKey)
   return toHex(digest.slice(0, 8)).replace(/(.{4})/g, '$1 ').trim()

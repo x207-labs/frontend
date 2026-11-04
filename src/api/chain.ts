@@ -3,8 +3,8 @@ import { CONTRACT_ID, NEAR_RPC_URL } from '../config'
 export class ChainError extends Error {}
 
 /**
- * View kontrak lingkaran lewat RPC NEAR (`call_function`, finality final). Dipakai bila read API belum memuat datanya:
- * `intents_balance` (tidak ada di read API) dan `list_obligations`. Argumen JSON dikodekan base64; hasilnya bytes JSON.
+ * Circle contract views over NEAR RPC (`call_function`, final finality). Used when the read API does not carry the data yet:
+ * `intents_balance` (not in the read API) and `list_obligations`. JSON arguments are base64-encoded; the result is JSON bytes.
  */
 export async function viewContract<T>(methodName: string, args: Record<string, unknown> = {}): Promise<T> {
   const res = await fetch(NEAR_RPC_URL, {

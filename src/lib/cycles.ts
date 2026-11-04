@@ -2,8 +2,8 @@ export type ClearedEdge = { debtor: string; creditor: string; cleared: bigint }
 export type Cycle = { path: string[]; amount: bigint }
 
 /**
- * Menguraikan sirkulasi edge `cleared > 0` menjadi siklus sederhana. Tiap siklus memuat nilai terkecil
- * di sepanjang sisinya (nilai terhapus per sisi); sisa dikurangkan lalu pencarian berlanjut.
+ * Decomposes the circulation of edges with `cleared > 0` into simple cycles. Each cycle carries the smallest value
+ * along its edges (the value cleared per edge); the remainder is subtracted and the search continues.
  */
 export function decomposeCycles(edges: ClearedEdge[]): Cycle[] {
   const residual = new Map<string, bigint>()
@@ -35,7 +35,7 @@ export function decomposeCycles(edges: ClearedEdge[]): Cycle[] {
   }
   return cycles
 
-  /** DFS dari `start` kembali ke `start` lewat sisi bersisa; `null` bila tidak ada. */
+  /** DFS from `start` back to `start` through edges with remaining value; `null` if none. */
   function findCycle(origin: string): string[] | null {
     const seen = new Set<string>()
     const walk = (node: string, trail: string[]): string[] | null => {
