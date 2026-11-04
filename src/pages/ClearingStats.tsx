@@ -32,7 +32,7 @@ function Headline({ m, deadline, cutoffAt }: { m: EpochMetrics; deadline: string
           ? `${formatNumber(m.voucherCount, 0)} vouchers in epoch ${m.epoch}; no clearing was applied (the epoch was committed without a clearing result), so the obligations were left as they were.`
           : m.residualTransfers === null || m.voucherCount === 0
           ? noResultText(m, deadline, Date.now(), cutoffAt)
-          : `${formatNumber(m.voucherCount, 0)} vouchers become ${formatNumber(m.residualTransfers, 0)} transfers.`}
+          : `${formatNumber(m.voucherCount, 0)} vouchers become ${formatNumber(m.residualTransfers, 0)} settlement transfers, one for each member with a net position.`}
       </p>
       <dl className="facts">
         <div>

@@ -8,7 +8,7 @@ const fact = (term: string) => screen.getByText(term, { selector: 'dt' }).closes
 describe('clearing stats', () => {
   it('TC-FE-008-01 metrics of epoch 42', async () => {
     renderApp('/stats?epoch=42')
-    expect(await screen.findByText('512 vouchers become 3 transfers.')).toBeInTheDocument()
+    expect(await screen.findByText('512 vouchers become 3 settlement transfers, one for each member with a net position.')).toBeInTheDocument()
     expect(fact('Cleared ratio')).toHaveTextContent('0.71')
     expect(fact('Transfer savings')).toHaveTextContent('170.67')
     expect(fact('Graph density')).toHaveTextContent('0.4667')
@@ -27,7 +27,7 @@ describe('clearing stats', () => {
 
   it('TC-FE-008-03 defaultRate null is not 0, extra metrics show', async () => {
     renderApp('/stats?epoch=42')
-    await screen.findByText('512 vouchers become 3 transfers.')
+    await screen.findByText('512 vouchers become 3 settlement transfers, one for each member with a net position.')
     expect(fact('Default rate')).toHaveTextContent('not available')
     expect(fact('Net debt reduction')).toHaveTextContent('71%')
     expect(fact('Clearing time')).toHaveTextContent('604 seconds')
@@ -93,7 +93,7 @@ describe('an epoch with no vouchers is never shown as a zero result', () => {
   it('a finalized epoch with 0 vouchers says it had none', async () => {
     renderApp('/stats?epoch=42', (p) => (p.endsWith('/epochs/42/metrics') ? { status: 200, body: { ...metrics[42], phase: 'finalized', voucherCount: 0, residualTransfers: 0, cleared: '0' } } : undefined))
     expect(await screen.findByText(/finalized with no vouchers, so nothing was cleared/)).toBeInTheDocument()
-    expect(screen.queryByText(/vouchers become 0 transfers/)).toBeNull()
+    expect(screen.queryByText(/vouchers become 0 settlement transfers/)).toBeNull()
   })
 })
 
