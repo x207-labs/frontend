@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useEpochSettlements, useMemberLimits, useMembers } from '../api/queries'
 import type { SettlementItem } from '../api/types'
+import { EvmBadge } from '../components/EvmBadge'
 import { QueryState } from '../components/QueryState'
 import { useSelectedEpoch } from '../epoch'
 import { formatCredit, shortAccount } from '../lib/format'
@@ -149,7 +150,10 @@ export function Risk() {
               <tbody>
                 {data.items.map((m) => (
                   <tr key={m.account}>
-                    <td>{shortAccount(m.account)}</td>
+                    <td>
+                      <span title={m.account}>{shortAccount(m.account)}</span>
+                      <EvmBadge account={m.account} />
+                    </td>
                     <td>
                       <span className={m.status === 'suspended' ? 'member-suspended' : undefined}>{m.status}</span>
                     </td>

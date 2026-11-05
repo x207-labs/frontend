@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { CIRCLE } from '../config'
 import { EpochProvider, useEpochSelection } from '../epoch'
 import { GROUPS, pages } from '../routes'
+import { CirclePicker } from './CirclePicker'
 import { EpochPicker } from './EpochPicker'
 import { LateEpochNotice } from './LateEpochNotice'
 import { PhaseStrip } from './PhaseStrip'
@@ -17,6 +18,7 @@ function Header() {
       <div className="page-title">
         <h1>{page?.title ?? 'Page not found'}</h1>
         <div className="page-tools">
+          <CirclePicker />
           <EpochPicker />
           <WalletButton />
         </div>
