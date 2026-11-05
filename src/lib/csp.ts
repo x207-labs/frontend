@@ -24,7 +24,7 @@ export const NEAR_CONNECT_ICON_ORIGINS = [
 ]
 
 // FE-041: the circle picker (config.ts CIRCLE_OPTIONS) switches the read API at run time, so a build that points at one of these APIs may also connect to the others.
-export const CIRCLE_API_ORIGINS = ['https://x207.boxd.sh', 'https://v014.x207.boxd.sh', 'https://v015.x207.boxd.sh']
+export const CIRCLE_API_ORIGINS = ['https://x207.boxd.sh', 'https://v014.x207.boxd.sh', 'https://v015.x207.boxd.sh', 'https://v016.x207.boxd.sh']
 
 export function buildCsp(env: Env, nonce?: string): string {
   const rpc = env.VITE_NEAR_RPC_URL ?? (env.VITE_NEAR_NETWORK === 'mainnet' ? 'https://rpc.mainnet.fastnear.com' : 'https://rpc.testnet.fastnear.com')

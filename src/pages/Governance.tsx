@@ -1,4 +1,4 @@
-import { useDaoProposals, useParams, useParamsHistory } from '../api/queries'
+import { useDaoProposals, useParams, useParamsHistory, useRelayerFeeEvents } from '../api/queries'
 import type { DaoProposal, Params } from '../api/types'
 import { NEAR_NETWORK } from '../config'
 import { QueryState } from '../components/QueryState'
@@ -27,6 +27,7 @@ const rows: { key: Key; label: string; format: (value: never) => string }[] = [
   { key: 'bond_bps', label: 'Bond per side', format: percent },
   { key: 'max_search_share_bps', label: 'Search share cap per bundle', format: percent },
   { key: 'prune_delay_epochs', label: 'Prune delay', format: (v: number) => `${formatNumber(v)} ${v === 1 ? 'epoch' : 'epochs'}` },
+  { key: 'relayer_fee', label: 'Relayer fee per EVM claim or stake withdrawal (flat, credit)', format: (v: string) => formatCredit(v) },
 ]
 
 // History carries raw values per field; the format follows the parameter table.
@@ -150,6 +151,64 @@ function DaoProposals() {
   )
 }
 
+const EXPLORER_TX = NEAR_NETWORK === 'mainnet' ? 'https://nearblocks.io/txns/' : 'https://testnet.nearblocks.io/txns/'
+
+// FE-043: contract 0.0.16 pays a relayer fee on `claim_evm` and `withdraw_stake_evm`; a transfer of the fee that fails is not paid and the member keeps it. Older circles have no such events.
+function RelayerFees() {
+  const events = useRelayerFeeEvents()
+  return (
+    <>
+      <h2>Relayer fees</h2>
+      <QueryState
+        query={events}
+        loadingLabel="Loading relayer fees"
+        isEmpty={(d) => d.items.length === 0}
+        empty="No relayer fee events yet. Only contract 0.0.16 emits them, and a fee of 0 emits none."
+      >
+        {(data) => (
+          <>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Event</th>
+                    <th scope="col">Member</th>
+                    <th scope="col">Relayer</th>
+                    <th scope="col">Action</th>
+                    <th scope="col" className="num">Epoch</th>
+                    <th scope="col" className="num">Fee (credit)</th>
+                    <th scope="col" className="num">Block</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...data.items].reverse().map((e) => (
+                    <tr key={`${e.receiptId}-${e.logIndex}`}>
+                      <td>
+                        {e.event === 'relayer_fee_paid' ? 'Paid' : 'Failed, not paid'}
+                        {' '}
+                        <code className="plain">{e.event}</code>
+                      </td>
+                      <td>{e.data.account_id}</td>
+                      <td>{e.data.relayer}</td>
+                      <td>{e.data.action}</td>
+                      <td className="num">{e.data.epoch}</td>
+                      <td className="num">{formatCredit(e.data.amount)}</td>
+                      <td className="num">
+                        {e.txHash ? <a href={`${EXPLORER_TX}${e.txHash}`} target="_blank" rel="noreferrer">{e.blockHeight}</a> : e.blockHeight}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {data.more && <p className="state">Showing the first {data.items.length} events; there are more.</p>}
+          </>
+        )}
+      </QueryState>
+    </>
+  )
+}
+
 export function Governance() {
   const params = useParams()
   const history = useParamsHistory()
@@ -226,6 +285,7 @@ export function Governance() {
           </div>
         )}
       </QueryState>
+      <RelayerFees />
     </>
   )
 }

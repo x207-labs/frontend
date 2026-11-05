@@ -47,6 +47,7 @@ describe('batch 3 F4 content security policy of the build', () => {
   it('FE-041 a build that points at the boxd API also allows the other circle API, one that does not stays closed', () => {
     expect(buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh' })).toContain('https://v014.x207.boxd.sh')
     expect(buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh' })).toContain('https://v015.x207.boxd.sh')
+    expect(buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh' })).toContain('https://v016.x207.boxd.sh') // FE-043
     expect(buildCsp({ VITE_X207_API_URL: 'https://api.x207.example' })).not.toContain('boxd.sh')
   })
 })

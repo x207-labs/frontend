@@ -15,6 +15,7 @@ export const useMembers = () => useQuery({ queryKey: ['members'], queryFn: api.m
 export const useParams = () => useQuery({ queryKey: ['params'], queryFn: api.params })
 export const useParamsHistory = () =>
   useQuery({ queryKey: ['params', 'history'], queryFn: api.paramsHistory })
+export const useRelayerFeeEvents = () => useQuery({ queryKey: ['events', 'relayer-fee'], queryFn: api.relayerFeeEvents })
 
 // Per-epoch hooks stay idle until an epoch is selected (TC-FE-002-05).
 export const useReport = (epoch: number | null) =>

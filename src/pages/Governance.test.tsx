@@ -48,6 +48,34 @@ describe('governance', () => {
     expect(row('limit_cap')).toHaveTextContent('1,000')
   })
 
+  it('TC-FE-043-01 the relayer fee of contract 0.0.16 is a parameter in credit; a read API that does not report it shows a dash', async () => {
+    renderApp('/governance')
+    await screen.findByText('Limit decay')
+    expect(row('relayer_fee')).toHaveTextContent('0.1')
+    const { relayer_fee, ...old } = params.active
+    void relayer_fee
+    renderApp('/governance', (p) => (p.endsWith('/params') ? { status: 200, body: { ...params, active: old, nextEpoch: null, nextEpochEffective: null } } : undefined))
+    await waitFor(() => expect(screen.getAllByText('relayer_fee', { selector: 'td > code' }).at(-1)!.closest('tr')).toHaveTextContent('—'))
+  })
+
+  it('TC-FE-043-02 relayer_fee_paid and relayer_fee_failed are listed newest first, a failed fee says it was not paid', async () => {
+    renderApp('/governance')
+    await screen.findByText('Relayer fees')
+    const failed = await screen.findByText('relayer_fee_failed', { selector: 'code' })
+    const paid = screen.getByText('relayer_fee_paid', { selector: 'code' })
+    expect(failed.closest('tr')).toHaveTextContent('Failed, not paid')
+    expect(failed.closest('tr')).toHaveTextContent('0.1')
+    expect(paid.closest('tr')).toHaveTextContent('Paid')
+    expect(paid.closest('tr')).toHaveTextContent('claim')
+    expect(failed.compareDocumentPosition(paid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(paid.closest('tr')!.querySelector('a')).toHaveAttribute('href', expect.stringContaining('/txns/FeeTx'))
+  })
+
+  it('TC-FE-043-03 a circle without relayer fee events says so', async () => {
+    renderApp('/governance', (p) => (p.includes('/events') ? { status: 200, body: { circle: 'agents-main', items: [], nextCursor: null, more: false } } : undefined))
+    expect(await screen.findByText(/No relayer fee events yet/)).toBeInTheDocument()
+  })
+
   it('TC-FE-014-02 a pending change is marked with its effective epoch', async () => {
     renderApp('/governance')
     const pending = await screen.findByText('45 minutes, effective from epoch 43')

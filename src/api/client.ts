@@ -27,6 +27,7 @@ import type {
   Paged,
   ParamsHistory,
   ParamsResponse,
+  RelayerFeeEvents,
   SettlementItem,
   AcceptPreview,
   AcceptRequest,
@@ -114,6 +115,8 @@ export const api = {
   metrics: (epoch: number) => get<EpochMetrics>(`${circle}/epochs/${epoch}/metrics`),
   params: () => get<ParamsResponse>(`${circle}/params`),
   paramsHistory: () => get<ParamsHistory>(`${circle}/params/history`),
+  /** FE-043: `GET /events?event=…` (BK-003): the first page (at most 200) in the order of the chain, oldest first; `more` says that there are more. */
+  relayerFeeEvents: () => get<RelayerFeeEvents>(`${circle}/events?event=relayer_fee_paid,relayer_fee_failed&limit=200`),
   depositQuote: (body: DepositQuoteRequest) => post<DepositQuote>('/x207/settlement/deposit/quote', body),
   withdrawQuote: (body: WithdrawQuoteRequest) => post<WithdrawQuote>('/x207/settlement/withdraw/quote', body),
   withdrawIntent: (jobId: string) => post<WithdrawIntent>('/x207/settlement/withdraw/intent', { jobId }),

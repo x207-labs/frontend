@@ -124,7 +124,21 @@ export type Params = {
   bond_bps?: number
   max_search_share_bps?: number
   prune_delay_epochs?: number
+  /** Contract 0.0.16 (CT-117): flat relayer fee in token units (U128 string), default "0"; an older read API leaves it out. */
+  relayer_fee?: string
 }
+/** FE-043: `relayer_fee_paid` and `relayer_fee_failed` of contract 0.0.16, field names as in abi.json (`amount` is a U128 string). */
+export type RelayerFeeData = { account_id: string; relayer: string; action: string; epoch: number; amount: string }
+export type RelayerFeeEvent = {
+  receiptId: string
+  logIndex: number
+  blockHeight: number
+  blockTimestampNs: string
+  txHash: string | null
+  event: 'relayer_fee_paid' | 'relayer_fee_failed'
+  data: RelayerFeeData
+}
+export type RelayerFeeEvents = { circle: string; items: RelayerFeeEvent[]; nextCursor: string | null; more: boolean }
 export type ParamsResponse = {
   circle: string
   currentEpoch: number
