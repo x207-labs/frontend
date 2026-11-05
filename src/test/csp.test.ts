@@ -15,7 +15,7 @@ describe('batch 3 F4 content security policy of the build', () => {
   })
 
   it('FE-038 NEAR Connect: the two manifest URLs it fetches and the icons it lists are allowed, nothing is opened for scripts or frames', () => {
-    const csp = buildCsp({ VITE_X207_API_URL: 'https://x207-backend-production.up.railway.app' })
+    const csp = buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh' })
     const dir = (name: string) => csp.split('; ').find((d) => d.startsWith(`${name} `)) ?? ''
     expect(dir('connect-src')).toContain('https://raw.githubusercontent.com')
     expect(dir('connect-src')).toContain('https://cdn.jsdelivr.net')
@@ -31,8 +31,8 @@ describe('batch 3 F4 content security policy of the build', () => {
   })
 
   it('FE-035 a hosted build without a broker does not allow connections to localhost', () => {
-    const csp = buildCsp({ VITE_X207_API_URL: 'https://x207-backend-production.up.railway.app' })
-    expect(csp).toContain("connect-src 'self' https://x207-backend-production.up.railway.app https://rpc.testnet.fastnear.com")
+    const csp = buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh' })
+    expect(csp).toContain("connect-src 'self' https://x207.boxd.sh https://rpc.testnet.fastnear.com")
     expect(csp).not.toContain('localhost')
   })
 
