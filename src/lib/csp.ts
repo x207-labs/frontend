@@ -23,6 +23,9 @@ export const NEAR_CONNECT_ICON_ORIGINS = [
   'https://raw.githubusercontent.com', 'https://app.hot-labs.org', 'https://evm-on-near.dev', 'https://res.cloudinary.com', 'https://storage.herewallet.app', 'https://www.mynearwallet.com',
 ]
 
+// FE-041: the circle picker (config.ts CIRCLE_OPTIONS) switches the read API at run time, so a build that points at one of these APIs may also connect to the others.
+export const CIRCLE_API_ORIGINS = ['https://x207.boxd.sh', 'https://v014.x207.boxd.sh']
+
 export function buildCsp(env: Env, nonce?: string): string {
   const rpc = env.VITE_NEAR_RPC_URL ?? (env.VITE_NEAR_NETWORK === 'mainnet' ? 'https://rpc.mainnet.fastnear.com' : 'https://rpc.testnet.fastnear.com')
   const connect = new Set<string>(["'self'"])
@@ -34,6 +37,7 @@ export function buildCsp(env: Env, nonce?: string): string {
     const o = origin(url)
     if (o) connect.add(o)
   }
+  if (api !== null && CIRCLE_API_ORIGINS.includes(api)) for (const o of CIRCLE_API_ORIGINS) connect.add(o)
   for (const raw of (env.VITE_X207_WALLET_ORIGINS ?? '').split(/[\s,]+/).filter(Boolean)) {
     const o = origin(raw)
     if (o) connect.add(o)
