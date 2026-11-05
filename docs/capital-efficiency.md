@@ -9,8 +9,8 @@ The page `/stats` shows two figures for the selected epoch that say how much on-
 | Transfers avoided | `voucherCount - residualTransfers`, and that number as a share of `voucherCount` | `voucherCount`, `residualTransfers` | 24 - 14 = 10, which is 41.7% of 24 |
 | Cash needed | `netDebt` as a share of `totalVoucherValue` | `netDebt`, `totalVoucherValue` | 7.75 of 41.35 credit, which is 18.7% |
 
-- A voucher is one payment promise. `residualTransfers` is the number of settlement transfers after clearing: one for each member with a net position (the headline sentence of the page says the same).
-- `netDebt` is the residual debt that members owe in cash after clearing (the sum of the debts of the net debtors). It is the money that has to move, as opposed to `totalVoucherValue`, which is the value promised.
+- A voucher is one payment promise. `residualTransfers` is the number of settlement transfers after netting: one for each member with a net position (the headline sentence of the page says the same).
+- `netDebt` is the residual debt that members owe in cash after netting (the sum of the debts of the net debtors). It is the money that has to move, as opposed to `totalVoucherValue`, which is the value promised.
 
 ## What the figures do not say
 

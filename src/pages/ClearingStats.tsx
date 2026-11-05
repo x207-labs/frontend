@@ -101,7 +101,7 @@ function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline
         </div>
       </dl>
       <p className="state">
-        Transfers avoided counts vouchers that did not become their own transfer; cash needed is the net debt that members owe in cash after clearing. Neither counts fees or locked stake.{' '}
+        Transfers avoided counts vouchers that did not become their own transfer; cash needed is the net debt that members owe in cash after netting (it does not depend on the solver). Neither counts fees or locked stake.{' '}
         <a href="https://github.com/x207-labs/frontend/blob/main/docs/capital-efficiency.md" target="_blank" rel="noreferrer">How they are computed</a>
       </p>
       {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}
