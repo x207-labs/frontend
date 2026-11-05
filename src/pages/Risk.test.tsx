@@ -17,6 +17,14 @@ describe('risk', () => {
     expect(row).toHaveTextContent('35')
   })
 
+  it('FE-042 a pending member is not listed in the risk table or the limit history picker', async () => {
+    const pending = { ...members[0], account: '0x70997970c51812dc3a010c7d01b50e0d17dc79c8', status: 'pending' }
+    renderApp('/risk', (p) => (p.endsWith('/members') ? { status: 200, body: { items: [...members, pending] } } : undefined))
+    await screen.findByText('scraper')
+    expect(screen.queryByText(/0x70997970/)).toBeNull()
+    expect(screen.queryByRole('option', { name: pending.account })).toBeNull()
+  })
+
   it('TC-FE-012-02 defaults list with stake slashed calls status=defaulted', async () => {
     const { calls } = renderApp('/risk?epoch=42', (p) => (p.includes('status=defaulted') ? { status: 200, body: defaulted } : undefined))
     await screen.findByRole('heading', { name: 'Defaults in epoch 42' })

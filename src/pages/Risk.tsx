@@ -16,19 +16,23 @@ export function lossAllocation(item: Pick<SettlementItem, 'amount' | 'paidAmount
   return { owed, stake, haircut, reserve: reserve > 0n ? reserve : 0n }
 }
 
+/** FE-042: a member that has not been admitted (`pending`) has no stake, limit or history, and the contract cannot remove it; the risk views list admitted members only. */
+const admitted = <T extends { status: string }>(items: T[]): T[] => items.filter((m) => m.status !== 'pending')
+
 function LimitHistory() {
   const members = useMembers()
   const [chosen, setChosen] = useState('')
-  const account = chosen || members.data?.items[0]?.account || null
+  const list = admitted(members.data?.items ?? [])
+  const account = chosen || list[0]?.account || null
   const history = useMemberLimits(account)
-  if (!members.data || members.data.items.length === 0) return null
+  if (list.length === 0) return null
   return (
     <>
       <h2>Limit history</h2>
       <label>
         <span>Member</span>
         <select value={account ?? ''} onChange={(e) => setChosen(e.target.value)}>
-          {members.data.items.map((m) => (
+          {list.map((m) => (
             <option key={m.account} value={m.account}>
               {m.account}
             </option>
@@ -131,8 +135,8 @@ export function Risk() {
       <QueryState
         query={members}
         loadingLabel="Loading members"
-        isEmpty={(d) => d.items.length === 0}
-        empty="No members in this circle yet."
+        isEmpty={(d) => admitted(d.items).length === 0}
+        empty="No admitted members in this circle yet."
       >
         {(data) => (
           <div className="table-wrap">
@@ -148,7 +152,7 @@ export function Risk() {
                 </tr>
               </thead>
               <tbody>
-                {data.items.map((m) => (
+                {admitted(data.items).map((m) => (
                   <tr key={m.account}>
                     <td>
                       <span title={m.account}>{shortAccount(m.account)}</span>
