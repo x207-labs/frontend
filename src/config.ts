@@ -4,7 +4,7 @@ const env = import.meta.env
 export const CIRCLE_OPTIONS = [
   { key: 'v013', label: 'x207-v013 (main circle)', contract: 'x207-v013.testnet', apiUrl: 'https://x207.boxd.sh' },
   { key: 'v014', label: 'x207-v014 (EVM agents)', contract: 'x207-v014.testnet', apiUrl: 'https://v014.x207.boxd.sh' },
-  // TODO(FE-041): add v015 (`x207-v015.testnet`) when its read API runs on boxd (no proxy `v015` yet).
+  { key: 'v015', label: 'x207-v015 (auto-settle)', contract: 'x207-v015.testnet', apiUrl: 'https://v015.x207.boxd.sh' },
 ] as const
 export type CircleKey = (typeof CIRCLE_OPTIONS)[number]['key']
 
