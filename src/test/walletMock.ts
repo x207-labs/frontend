@@ -7,6 +7,8 @@ export type MockWallet = WalletPort & {
   txs: RecordedTx[]
   messages: Array<SignMessageInput & { signerId: string }>
   rejectNext: boolean
+  /** FE-061: the next signAndSend throws this text (a contract failure that the wallet reports), once. */
+  failNextWith: string | null
   connectCalls: number
 }
 
@@ -16,6 +18,7 @@ export function createMockWallet(account = 'scraper.x207-circle.near', restored:
     txs: [],
     messages: [],
     rejectNext: false,
+    failNextWith: null,
     connectCalls: 0,
     restore: async () => restored,
     connect: async () => {
@@ -27,6 +30,11 @@ export function createMockWallet(account = 'scraper.x207-circle.near', restored:
       if (wallet.rejectNext) {
         wallet.rejectNext = false
         throw new Error('User rejected the request')
+      }
+      if (wallet.failNextWith !== null) {
+        const text = wallet.failNextWith
+        wallet.failNextWith = null
+        throw new Error(text)
       }
       wallet.txs.push({ ...tx, signerId, network: wallet.network })
       return { hash: `hash${wallet.txs.length}` }

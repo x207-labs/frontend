@@ -1,4 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { explainError } from '../tx/errors'
+import { TxToastHost } from '../tx/TxToastHost'
+import { txToasts } from '../tx/toastStore'
 import type { FunctionCallTx, SignMessageInput, SignedMessage, WalletPort } from './types'
 
 type Wallet = {
@@ -75,7 +78,12 @@ export function WalletProvider({ port, children }: { port: WalletPort; children:
     [account, busy, error, login, logout, port],
   )
 
-  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
+  return (
+    <WalletContext.Provider value={value}>
+      {children}
+      <TxToastHost />
+    </WalletContext.Provider>
+  )
 }
 
 export function useWallet(): Wallet {
@@ -97,14 +105,23 @@ export function useSignTransaction() {
   const [state, setState] = useState<SignState>({ kind: 'idle' })
   // Returns true if the transaction was sent, so a sequence of transactions stops at the first failure.
   const sign = useCallback(
-    async (tx: FunctionCallTx): Promise<boolean> => {
+    async (tx: FunctionCallTx, label: string = tx.methodName): Promise<boolean> => {
       setState({ kind: 'signing' })
+      const toast = txToasts.start(label)
       try {
         const { hash } = await send(tx)
         setState({ kind: 'done', hash })
+        txToasts.settle(toast, { kind: 'confirmed', label, hash })
         return true
       } catch (e) {
-        setState(isUserRejection(e) ? { kind: 'cancelled' } : { kind: 'failed', message: describe(e) })
+        if (isUserRejection(e)) {
+          setState({ kind: 'cancelled' })
+          txToasts.settle(toast, { kind: 'cancelled', label })
+        } else {
+          const { code, message } = explainError(e)
+          setState({ kind: 'failed', message })
+          txToasts.settle(toast, { kind: 'failed', label, message, ...(code ? { code } : {}) })
+        }
         return false
       }
     },

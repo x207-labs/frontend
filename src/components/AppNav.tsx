@@ -47,11 +47,11 @@ const TABS: Tab[] = [
 
 export function TabBar() {
   const { pathname, search } = useLocation()
-  const [more, setMore] = useState(false)
+  // The sheet is open for the page it was opened on, so a page change closes it.
+  const [openOn, setOpenOn] = useState<string | null>(null)
+  const more = openOn === pathname
   const opener = useRef<HTMLButtonElement>(null)
   const current = pages.find((p) => p.path === pathname)?.group
-  // A page change closes the sheet.
-  useEffect(() => setMore(false), [pathname])
   return (
     <>
       <nav className="tabbar" aria-label="Main">
@@ -64,12 +64,12 @@ export function TabBar() {
             </Link>
           )
         })}
-        <button type="button" className="tab" ref={opener} aria-haspopup="dialog" aria-expanded={more} onClick={() => setMore(true)}>
+        <button type="button" className="tab" ref={opener} aria-haspopup="dialog" aria-expanded={more} onClick={() => setOpenOn(pathname)}>
           <NavIcon name="more" />
           <span>More</span>
         </button>
       </nav>
-      {more && <MoreSheet onClose={() => { setMore(false); opener.current?.focus() }} />}
+      {more && <MoreSheet onClose={() => { setOpenOn(null); opener.current?.focus() }} />}
     </>
   )
 }

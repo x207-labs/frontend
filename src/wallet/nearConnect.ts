@@ -1,5 +1,6 @@
 import type { NearConnector } from '@hot-labs/near-connect'
 import { NEAR_NETWORK } from '../config'
+import { outcomeFailure } from '../tx/outcome'
 import type { WalletPort } from './types'
 
 const CONNECTED_FLAG = 'x207.wallet.connected'
@@ -80,6 +81,9 @@ export const nearConnectPort: WalletPort = {
         },
       ],
     })
+    // FE-061: a call the contract refused still comes back as an outcome; it must not look like a confirmed transaction.
+    const failure = outcomeFailure(outcome)
+    if (failure) throw new Error(failure)
     return { hash: outcome.transaction.hash }
   },
 
