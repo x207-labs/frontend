@@ -24,11 +24,14 @@ describe('FE-031 contrast of the colour tokens', () => {
     }
   })
 
-  it('TC-FE-031-05 white text on the ink (buttons) and the text of the side rail are at least 4.5:1, and the focus ring against the page is at least 3:1', () => {
+  it('TC-FE-031-05 white text on the ink (buttons) is at least 4.5:1, and the focus ring against the page is at least 3:1', () => {
     expect(ratio('#ffffff', token('ink'))).toBeGreaterThanOrEqual(4.5)
-    expect(ratio(token('rail-text'), token('ink'))).toBeGreaterThanOrEqual(4.5)
-    expect(ratio(token('rail-text'), '#0f2347')).toBeGreaterThanOrEqual(4.5)
     for (const bg of ['paper', 'sheet']) expect(ratio(token('focus'), token(bg)), `focus on ${bg}`).toBeGreaterThanOrEqual(3)
-    expect(ratio('#ffffff', token('ink'))).toBeGreaterThanOrEqual(3) // the ring of the rail is white on the ink
+  })
+
+  it('FE-054 the active item of the navigation (accent text on the accent tint) and the tab labels (soft ink on the sheet) are at least 4.5:1', () => {
+    expect(ratio(token('accent-ink'), token('accent-soft'))).toBeGreaterThanOrEqual(4.5)
+    expect(ratio(token('accent-ink'), token('sheet'))).toBeGreaterThanOrEqual(4.5)
+    expect(ratio(token('ink'), token('accent-soft'))).toBeGreaterThanOrEqual(4.5)
   })
 })

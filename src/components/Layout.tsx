@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { CIRCLE } from '../config'
 import { EpochProvider, useEpochSelection } from '../epoch'
-import { GROUPS, pages } from '../routes'
+import { pages } from '../routes'
+import { Sidebar, TabBar } from './AppNav'
 import { CirclePicker } from './CirclePicker'
+import { DetailSlot, DetailSlotProvider } from './detail'
 import { EpochPicker } from './EpochPicker'
 import { LateEpochNotice } from './LateEpochNotice'
 import { PhaseStrip } from './PhaseStrip'
@@ -20,7 +22,6 @@ function Header() {
         <div className="page-tools">
           <CirclePicker />
           <EpochPicker />
-          <WalletButton />
         </div>
       </div>
       {page?.perEpoch && <LateEpochNotice />}
@@ -30,7 +31,7 @@ function Header() {
 }
 
 export function Layout() {
-  const { search, pathname } = useLocation()
+  const { pathname } = useLocation()
   const main = useRef<HTMLElement>(null)
   const first = useRef(true)
   const title = pages.find((p) => p.path === pathname)?.title
@@ -43,33 +44,25 @@ export function Layout() {
   return (
     <EpochProvider>
       <a className="skip-link" href="#content" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
-      <div className="shell">
-        <aside className="rail">
-          <p className="brand">
-            x207 <span>{CIRCLE}</span>
-          </p>
-          <nav aria-label="Pages">
-            {GROUPS.map((group) => (
-              <div key={group} role="group" aria-labelledby={`nav-${group.replace(/\s+/g, '-')}`}>
-                <p className="nav-group" id={`nav-${group.replace(/\s+/g, '-')}`}>
-                  {group}
-                </p>
-                {pages
-                  .filter((p) => p.group === group)
-                  .map(({ path, title }) => (
-                    <NavLink key={path} to={{ pathname: path, search }}>
-                      {title}
-                    </NavLink>
-                  ))}
-              </div>
-            ))}
-          </nav>
-        </aside>
-        <main id="content" ref={main} tabIndex={-1}>
-          <Header />
-          <Outlet />
-        </main>
-      </div>
+      <DetailSlotProvider>
+        <div className="shell">
+          <Sidebar />
+          <div className="stage">
+            <div className="topbar">
+              <p className="brand-compact">
+                x207 <span>{CIRCLE}</span>
+              </p>
+              <WalletButton />
+            </div>
+            <main id="content" ref={main} tabIndex={-1}>
+              <Header />
+              <Outlet />
+            </main>
+            <DetailSlot />
+          </div>
+          <TabBar />
+        </div>
+      </DetailSlotProvider>
     </EpochProvider>
   )
 }

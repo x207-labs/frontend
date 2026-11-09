@@ -1,11 +1,15 @@
 :root {
   color-scheme: light;
-  --paper: #e8f0ec;
-  --sheet: #f6faf7;
-  --line: #c3d2cc;
+  --paper: #eef2f8;
+  --sheet: #fbfcfe;
+  --line: #d3dbe8;
   --ink: #17305c;
   --ink-soft: #4d6079;
-  --rail-text: #dfe8f2;
+  /* FE-054: the blue of the landing for fills and rings; text on it uses --accent-ink (white on #3d8bff is only 3.4:1). */
+  --accent: #3d8bff;
+  --accent-soft: #e2edff;
+  --accent-ink: #154a8f;
+  --tabbar-h: 3.5rem;
   --s200: #1c6b50;
   --s402: #a34a12;
   --s202: #1f5ca6;
@@ -26,18 +30,68 @@ body { margin: 0; background: var(--paper); }
 .skip-link { position: absolute; left: 0.5rem; top: -4rem; z-index: 10; padding: 0.5rem 0.875rem; background: var(--ink); color: #fff; border-radius: 4px; }
 .skip-link:focus { top: 0.5rem; }
 main:focus { outline: none; }
-.shell { display: grid; grid-template-columns: 14rem minmax(0, 1fr); min-height: 100vh; }
+/* FE-054: the app frame. Three forms of one navigation, by window width (DS-MOB 840 and 1200 px): under 840 a tab bar, 840 to 1199 an icon rail, 1200 and up the sidebar with labels. */
+.shell { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 100vh; min-height: 100dvh; }
+.stage { display: flex; flex-direction: column; min-width: 0; }
 
-.rail { background: var(--ink); color: var(--rail-text); padding: 1.5rem 0; }
-.brand { margin: 0 1.25rem 1.5rem; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
-.brand span { display: block; font-size: 0.875rem; font-weight: 400; letter-spacing: 0; color: var(--rail-text); }
+.rail { display: none; background: var(--sheet); border-right: 1px solid var(--line); padding: 1.25rem 0.75rem; position: sticky; top: 0; height: 100vh; height: 100dvh; overflow-y: auto; }
+.brand { margin: 0 0.5rem 1.25rem; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+.brand span, .brand-compact span { display: block; font-size: 0.8125rem; font-weight: 500; letter-spacing: 0; color: var(--ink-soft); }
 .rail nav { display: flex; flex-direction: column; }
-.rail a { padding: 0.5rem 1.25rem; color: inherit; text-decoration: none; border-left: 3px solid transparent; }
-.rail a:hover { background: rgb(255 255 255 / 0.08); }
-.rail a.active { border-left-color: #fff; background: rgb(255 255 255 / 0.12); color: #fff; font-weight: 600; }
-.rail a:focus-visible { outline-color: #fff; outline-offset: -2px; }
+.nav-icon { flex: none; }
+.rail a, .sheet a { display: flex; align-items: center; gap: 0.75rem; min-height: 2.5rem; padding: 0.375rem 0.625rem; margin: 1px 0; border-radius: 10px; color: var(--ink); text-decoration: none; }
+.rail a.active, .sheet a.active { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.nav-group { margin: 1.25rem 0.625rem 0.25rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.rail div[role='group']:first-child .nav-group { margin-top: 0; }
 
-main { padding: 2rem clamp(1rem, 4vw, 3rem) 4rem; max-width: 72rem; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; max-width: 72rem; margin-inline: auto; padding: 0.75rem clamp(1rem, 4vw, 3rem) 0; }
+.brand-compact { margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.topbar .wallet { margin-left: auto; }
+
+main { width: 100%; max-width: 72rem; margin-inline: auto; padding: 1rem clamp(1rem, 4vw, 3rem) calc(var(--tabbar-h) + 2rem + env(safe-area-inset-bottom)); }
+.detail { padding: 0 clamp(1rem, 4vw, 3rem) 2rem; }
+.detail:empty { display: none; }
+
+.tabbar { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); background: var(--sheet); border-top: 1px solid var(--line); padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.tab, .tabbar button.tab:hover:not(:disabled) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--tabbar-h); padding: 0.375rem 0; font-size: 0.6875rem; font-weight: 600; line-height: 1.2; color: var(--ink-soft); background: transparent; border: 0; border-radius: 0; text-decoration: none; }
+.tab[aria-current='page'] { color: var(--accent-ink); }
+.tab[aria-current='page'] .nav-icon { stroke-width: 2; }
+
+.sheet-backdrop { position: fixed; z-index: 30; inset: 0; display: flex; align-items: flex-end; background: rgb(23 48 92 / 0.35); }
+.sheet { width: 100%; max-height: 85vh; max-height: 85dvh; overflow-y: auto; background: var(--sheet); border-radius: 16px 16px 0 0; padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom)); }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; }
+.sheet-head h2 { margin: 0; }
+
+/* From 840 px the rail keeps the labels in the page for screen readers and only takes them out of view. */
+@media (min-width: 840px) {
+  .shell { grid-template-columns: 4.5rem minmax(0, 1fr); }
+  .rail { display: block; }
+  .tabbar { display: none; }
+  .brand-compact { display: none; }
+  .topbar { justify-content: flex-end; }
+  main { padding-bottom: 4rem; }
+  .brand { margin-inline: 0; text-align: center; font-size: 1rem; }
+  .brand span, .nav-label, .nav-group { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .rail a { justify-content: center; width: 2.75rem; min-height: 2.75rem; padding: 0; margin: 2px auto; }
+  .rail div[role='group'] + div[role='group'] { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--line); }
+}
+
+@media (min-width: 1200px) {
+  .shell { grid-template-columns: 15rem minmax(0, 1fr); }
+  .stage { display: grid; grid-template-columns: minmax(0, 72rem) minmax(0, 22rem); grid-template-rows: auto 1fr; column-gap: 1.5rem; justify-content: center; align-content: start; }
+  .stage:not(:has(.detail:not(:empty))) { grid-template-columns: minmax(0, 72rem); }
+  .topbar { grid-column: 1 / -1; max-width: none; padding-inline: 3rem; }
+  main { grid-column: 1; padding-inline: 3rem 0; }
+  .detail { grid-column: 2; grid-row: 2; align-self: start; position: sticky; top: 1rem; padding: 1rem 3rem 0 0; }
+  .brand { margin-inline: 0.5rem; text-align: left; font-size: 1.5rem; }
+  .brand span { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+  .nav-label { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+  .nav-group { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; }
+  .rail { padding-block: 1rem; }
+  .rail a { justify-content: flex-start; width: auto; min-height: 2.125rem; padding: 0.25rem 0.625rem; margin: 1px 0; }
+  .nav-group { margin-top: 1rem; }
+  .rail div[role='group'] + div[role='group'] { margin-top: 0; padding-top: 0; border-top: 0; }
+}
 
 .page-head { margin-bottom: 1.5rem; }
 .page-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 2rem; }
@@ -69,15 +123,7 @@ th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--line); text-ali
 th { font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
 .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-@media (max-width: 48rem) {
-  .shell { grid-template-columns: minmax(0, 1fr); }
-  .rail { padding: 0.75rem 0 0; }
-  .brand { margin: 0 1rem 0.5rem; font-size: 1.25rem; }
-  .brand span { display: inline; margin-left: 0.5rem; }
-  .rail nav { flex-direction: row; overflow-x: auto; }
-  .rail a { white-space: nowrap; padding: 0.5rem 0.75rem; border-left: 0; border-bottom: 3px solid transparent; }
-  .rail a.active { border-bottom-color: #fff; }
-  main { padding: 1.25rem 1rem 3rem; }
+@media (max-width: 839px) {
   h1 { font-size: 1.75rem; }
 }
 
@@ -146,15 +192,7 @@ tr[aria-selected='true'] { outline: 2px solid var(--focus); outline-offset: -2px
 @keyframes skeleton-move { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
-/* FE-035: a label above each group of the sidebar. */
-.rail .nav-group { margin: 1rem 0 0.25rem; padding: 0 1.25rem; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
-.rail div[role='group'] { display: flex; flex-direction: column; }
-/* On a phone the four groups used to sit side by side in a row that scrolled sideways, so Governance and the ends of the long names were cut off: stack the groups and let their links wrap. */
-@media (max-width: 48rem) {
-  .rail nav { flex-direction: column; overflow-x: visible; }
-  .rail div[role='group'] { flex-direction: row; flex-wrap: wrap; align-items: center; }
-  .rail .nav-group { flex-basis: 100%; margin: 0.5rem 0 0; padding: 0 1rem; }
-  .rail a { padding: 0.4rem 0.75rem; }
-}
+/* FE-035: a label above each group of the navigation (FE-054 moved the rules to the app frame block above). */
+.rail div[role='group'], .sheet div[role='group'] { display: flex; flex-direction: column; }
 
 .evm-badge { display: inline-block; margin-left: 0.4em; padding: 0 0.45em; border: 1px solid currentColor; border-radius: 3px; font-size: 0.75em; font-weight: 700; text-decoration: none; vertical-align: middle; }
