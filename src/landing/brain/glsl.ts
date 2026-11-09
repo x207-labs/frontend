@@ -1,5 +1,5 @@
 // FE-044: shader code of the hero brain. The cortex is a sphere bent on the GPU: an ellipsoid with a flat base, temporal lobes, a deep cleft between the
-// hemispheres and a lateral groove, covered with folds (gyri) cut by noise. Nothing is downloaded: no model file, no texture.
+// hemispheres and a lateral groove, covered with folds (gyri) cut by noise. Nothing is downloaded: no model file, no texture. FE-048 draws it as a hologram.
 
 // 3D simplex noise: Ian McEwan, Ashima Arts, and Stefan Gustavson (webgl-noise, MIT license).
 export const SIMPLEX = /* glsl */ `
@@ -139,7 +139,146 @@ void main() {
   float head = fract(uTime * uSpeed + uOffset) * 1.3 - 0.15;
   float d = head - s;
   float pulse = (1.0 - smoothstep(0.0, 0.22, d)) * step(0.0, d);
-  float a = (0.3 + pulse * 0.7) * mix(0.55, 1.0, vFacing) * smoothstep(0.0, 0.1, s) * (1.0 - smoothstep(0.96, 1.0, s));
-  gl_FragColor = vec4(uColor * (1.0 + pulse * 0.5), a * uOpacity);
+  // FE-048: the growing tip glows, so a pipeline is seen being drawn as the page scrolls.
+  float tip = (1.0 - smoothstep(0.0, 0.05, uGrow - s)) * step(uGrow, 0.995);
+  float a = (0.22 + pulse * 0.78 + tip) * mix(0.5, 1.0, vFacing) * smoothstep(0.0, 0.1, s) * (1.0 - smoothstep(0.96, 1.0, s));
+  gl_FragColor = vec4(uColor * (1.0 + pulse * 0.8 + tip * 1.5), a * uOpacity);
+  #include <colorspace_fragment>
+}
+`
+
+// FE-048: the hologram. The same bent sphere as the cortex, drawn as light: a fresnel rim, the sulci as glowing contour lines, scanlines in world height, a
+// sweep that runs up the brain, a reveal front that builds it from the base on load, and now and then a one-frame glitch. Additive, so it never hides what is behind.
+export const HOLO_VERTEX = /* glsl */ `
+uniform float uTime;
+varying float vFold;
+varying float vCleft;
+varying vec3 vNormalV;
+varying vec3 vViewDir;
+varying vec3 vObj;
+varying float vWorldY;
+${SIMPLEX}
+SHAPE
+void main() {
+  ${VERTEX_NORMAL}
+  vec3 transformed = bP0;
+  float burst = step(0.965, fract(sin(floor(uTime * 9.0) * 12.9898) * 43758.5453));
+  transformed.x += burst * 0.035 * sin(transformed.y * 46.0 + uTime * 40.0);
+  vObj = transformed;
+  vec4 world = modelMatrix * vec4(transformed, 1.0);
+  vWorldY = world.y;
+  vec4 mv = viewMatrix * world;
+  vNormalV = normalize(normalMatrix * objectNormal);
+  vViewDir = normalize(-mv.xyz);
+  gl_Position = projectionMatrix * mv;
+}
+`
+
+export const HOLO_FRAGMENT = /* glsl */ `
+uniform float uTime;
+uniform float uBuild;
+uniform float uPulse;
+uniform float uOpacity;
+uniform vec3 uColor;
+uniform vec3 uColorDeep;
+varying float vFold;
+varying float vCleft;
+varying vec3 vNormalV;
+varying vec3 vViewDir;
+varying vec3 vObj;
+varying float vWorldY;
+void main() {
+  float h = vObj.y;
+  float front = mix(-0.75, 0.95, uBuild);
+  if (h > front) discard;
+  float edge = 1.0 - smoothstep(0.0, 0.07, front - h);
+  float facing = abs(dot(normalize(vNormalV), normalize(vViewDir)));
+  float fres = pow(1.0 - facing, 2.4);
+  float contour = 1.0 - smoothstep(0.02, 0.16, vFold);
+  float lines = smoothstep(0.55, 1.0, 0.5 + 0.5 * sin(vWorldY * 150.0 - uTime * 2.2));
+  float sweepAt = fract(uTime * 0.16) * 2.4 - 1.2;
+  float sweep = exp(-pow((vWorldY - sweepAt) / 0.05, 2.0));
+  float flicker = 0.93 + 0.07 * sin(uTime * 31.0) * sin(uTime * 7.3);
+  float back = gl_FrontFacing ? 1.0 : 0.35;
+  float a = (0.035 + fres * 0.9 + contour * 0.32 + lines * 0.07 + sweep * 0.45 + edge * 1.2 + uPulse * (0.25 + fres)) * flicker * back;
+  a *= 1.0 - 0.75 * vCleft;
+  vec3 col = mix(uColorDeep, uColor, clamp(fres * 1.2 + contour * 0.5 + edge, 0.0, 1.0)) * (1.0 + sweep * 0.8 + edge * 1.4 + uPulse * 0.6);
+  gl_FragColor = vec4(col, clamp(a, 0.0, 1.0) * uOpacity);
+  #include <colorspace_fragment>
+}
+`
+
+// A cloud of points just above the cortex: the data the brain holds. On the dive at the end of the story they scatter outward.
+export const DUST_VERTEX = /* glsl */ `
+uniform float uTime;
+uniform float uScatter;
+uniform float uSize;
+varying float vAlpha;
+${SIMPLEX}
+SHAPE
+void main() {
+  vec3 n = normalize(position);
+  float f; float c;
+  vec3 p = bShape(n, f, c) * (1.04 + 0.03 * sin(uTime * 0.9 + n.x * 9.0 + n.y * 7.0));
+  float j = bNoise(n * 3.1 + uTime * 0.05);
+  p += n * uScatter * (1.2 + j * 1.6);
+  vec4 mv = modelViewMatrix * vec4(p, 1.0);
+  gl_PointSize = uSize * (0.6 + 0.4 * f) / -mv.z;
+  vAlpha = (0.35 + 0.65 * smoothstep(-0.3, 0.6, j)) * (1.0 - 0.8 * c);
+  gl_Position = projectionMatrix * mv;
+}
+`
+
+export const DUST_FRAGMENT = /* glsl */ `
+uniform vec3 uColor;
+uniform float uOpacity;
+varying float vAlpha;
+void main() {
+  float d = length(gl_PointCoord - 0.5);
+  float a = smoothstep(0.5, 0.0, d);
+  gl_FragColor = vec4(uColor, a * a * vAlpha * uOpacity);
+  #include <colorspace_fragment>
+}
+`
+
+// The projector under the brain: a beam that widens upward and fades (uv.y is 0 at the emitter), with faint vertical streaks.
+export const BEAM_VERTEX = /* glsl */ `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`
+
+export const BEAM_FRAGMENT = /* glsl */ `
+uniform float uTime;
+uniform float uOpacity;
+uniform vec3 uColor;
+varying vec2 vUv;
+void main() {
+  float streak = 0.6 + 0.4 * sin(vUv.x * 120.0 + uTime * 0.7) * sin(vUv.x * 37.0 - uTime * 0.4);
+  float a = pow(1.0 - vUv.y, 1.6) * 0.16 * streak;
+  gl_FragColor = vec4(uColor, a * uOpacity);
+  #include <colorspace_fragment>
+}
+`
+
+// A flat ring on the floor of the projector: a dashed band that turns.
+export const RING_FRAGMENT = /* glsl */ `
+uniform float uTime;
+uniform float uOpacity;
+uniform float uDash;
+uniform float uSpin;
+uniform vec3 uColor;
+varying vec2 vUv;
+void main() {
+  vec2 p = vUv - 0.5;
+  float r = length(p) * 2.0;
+  float ang = atan(p.y, p.x) / 6.2831853 + 0.5;
+  float band = smoothstep(0.93, 0.965, r) * (1.0 - smoothstep(0.975, 1.0, r));
+  float dash = uDash > 0.0 ? step(0.5, fract(ang * uDash + uTime * uSpin)) : 1.0;
+  float disc = (1.0 - smoothstep(0.0, 0.95, r)) * 0.14;
+  gl_FragColor = vec4(uColor, (band * dash + disc) * uOpacity);
+  #include <colorspace_fragment>
 }
 `

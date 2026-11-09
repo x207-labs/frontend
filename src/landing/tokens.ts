@@ -6,3 +6,7 @@ export const EASE_OUT = [0.22, 1, 0.36, 1] as const
 // The phases of the ring, on its one progress value (0..1).
 //   members appear  ·  vouchers drawn  ·  gross fades, net labels  ·  net arrows
 export const STAGES = { members: [0, 0.14], vouchers: [0.2, 0.44], net: [0.5, 0.64], settle: [0.74, 0.92] } as const
+
+// FE-048: the chapters of the scroll theatre, on its one story value (0..1). The captions, the counters, the brain and the fallback ring all read these.
+//   hero  ·  asset kinds drawn in  ·  vouchers flow in  ·  loops cancel  ·  only the net flows out  ·  the camera dives in
+export const STORY = { hero: [0, 0.1], kinds: [0.12, 0.3], vouchers: [0.3, 0.48], loops: [0.48, 0.66], net: [0.66, 0.86], dive: [0.88, 1] } as const

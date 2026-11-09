@@ -2,17 +2,16 @@ import { LazyMotion, MotionConfig, domAnimation } from 'motion/react'
 import { useEffect } from 'react'
 import { Barter } from './Barter'
 import { Builders } from './Builders'
-import { Epoch8 } from './Epoch8'
 import { LIVE } from './facts'
-import { Hero } from './Hero'
 import { Limits } from './Limits'
 import { Logo } from './Logo'
 import { Nav } from './Nav'
 import { Reveal } from './motion'
-import { Story } from './Story'
+import { Theatre } from './Theatre'
 import './landing.css'
 
-// FE-044: the landing page of x207. It has no wallet and no read-API query: it loads on its own, and the dashboard stays at /stats.
+// FE-044, FE-048: the landing page of x207. It has no wallet and no read-API query: it loads on its own, and the dashboard stays at /stats.
+// FE-048 put the first screen and the story of epoch 8 in one scroll theatre with a hologram brain, and cut the copy to a line per idea.
 
 const LINKS = [
   { label: 'Contract', value: LIVE.contract, href: LIVE.contractUrl },
@@ -26,7 +25,6 @@ function Live() {
   return (
     <section id="live" className="section live" aria-labelledby="live-title">
       <Reveal>
-        <p className="eyebrow">Live on NEAR testnet</p>
         <h2 id="live-title" className="section-title">Check it yourself.</h2>
       </Reveal>
       <ul className="live-list glass">
@@ -51,7 +49,7 @@ function Live() {
 export default function Landing() {
   useEffect(() => {
     const before = document.title
-    document.title = 'x207 · Mutual-credit settlement for x402 agents on NEAR'
+    document.title = 'x207 · Agents pay in anything, x207 settles the net'
     document.documentElement.classList.add('is-landing')
     return () => {
       document.title = before
@@ -65,9 +63,7 @@ export default function Landing() {
           <a className="skip" href="#how">Skip to the content</a>
           <Nav />
           <main>
-            <Hero />
-            <Story />
-            <Epoch8 />
+            <Theatre />
             <Barter />
             <Limits />
             <Builders />

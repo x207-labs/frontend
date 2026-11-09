@@ -3,7 +3,8 @@ import { useRef, useState } from 'react'
 import { BARTER, BARTER_TOTAL, LIVE } from './facts'
 import { Reveal } from './motion'
 
-// FE-044: the barter catalog as 94 dots, one per entry, coloured by how far it has been proven. Pointing at a row of the legend lights its dots.
+// FE-044, FE-048: the barter catalog as 94 dots, one per entry, coloured by how far it has been proven. Pointing at a row of the legend lights its dots; the
+// note of a row is its tooltip.
 const DOTS = BARTER.flatMap((row) => Array.from({ length: row.count }, () => row.key))
 const REFUSED = BARTER.find((row) => row.key === 'refused')?.count ?? 0
 
@@ -15,12 +16,9 @@ export function Barter() {
   return (
     <section id="barter" className="section barter" aria-labelledby="barter-title">
       <Reveal>
-        <p className="eyebrow">Barter</p>
-        <h2 id="barter-title" className="section-title">Pay in what you have, not only in USDT.</h2>
-        <p className="section-lead">
-          A member can settle with an asset instead of cash. The catalog has {BARTER_TOTAL} entries: {BARTER_TOTAL - REFUSED} kinds that can be offered and {REFUSED} that are refused on purpose. Each
-          dot is one entry, coloured by the strongest evidence it has.
-        </p>
+        <h2 id="barter-title" className="section-title">
+          {BARTER_TOTAL - REFUSED} ways to pay. <span className="is-quiet">{REFUSED} refused on purpose.</span>
+        </h2>
       </Reveal>
 
       <div className="barter-body">
@@ -34,6 +32,7 @@ export function Barter() {
             <li key={row.key}>
               <button
                 type="button"
+                title={row.note}
                 className={active === row.key ? 'legend-row is-lit' : 'legend-row'}
                 aria-pressed={active === row.key}
                 onMouseEnter={() => setActive(row.key)}
@@ -44,24 +43,18 @@ export function Barter() {
               >
                 <span className={`swatch is-${row.key}`} aria-hidden="true" />
                 <span className="legend-count">{row.count}</span>
-                <span className="legend-text">
-                  {row.label}
-                  <small>{row.note}</small>
-                </span>
+                <span className="legend-text">{row.label}</span>
               </button>
             </li>
           ))}
         </ul>
       </div>
 
-      <Reveal className="spotlight glass">
-        <p className="eyebrow">Ran on contract 0.0.18</p>
-        <h3>Sell an account through the locker.</h3>
+      <Reveal className="spotlight">
         <p>
-          A NEAR account can be the asset. Kind #11 sold a named account: the account was locked, and <code>complete_account_escrow</code> delivered its key to the buyer. Kind #14 locked a member
-          account with its stake and obligations. Both ran on <code>{LIVE.contract}</code>.
+          <b>A whole NEAR account can pay.</b> Kinds #11 and #14 were sold through the locker on <code>{LIVE.contract}</code>.{' '}
+          <a href={LIVE.barterEvidence} target="_blank" rel="noreferrer">Evidence for every kind</a>
         </p>
-        <a href={LIVE.barterEvidence} target="_blank" rel="noreferrer">Read the evidence for every kind</a>
       </Reveal>
     </section>
   )

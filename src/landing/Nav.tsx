@@ -5,8 +5,7 @@ import { Logo } from './Logo'
 import { SPRING } from './tokens'
 
 const LINKS = [
-  { href: '#how', text: 'How it works' },
-  { href: '#epoch-8', text: 'Epoch 8' },
+  { href: '#epoch', text: 'How it works' },
   { href: '#barter', text: 'Barter' },
   { href: '#limits', text: 'Limits' },
   { href: '#build', text: 'Build' },

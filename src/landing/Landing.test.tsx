@@ -48,15 +48,21 @@ describe('FE-044 landing page facts', () => {
 describe('FE-044 landing page', () => {
   it('renders every section, links to the dashboard, and has one dot per catalog entry', () => {
     const { container } = render(<Landing />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('x402 lets agents pay. x207 lets many agents settle at once.')
-    for (const name of [/Many lines become a few arrows/, /Epoch 8:/, /Pay in what you have/, /What x207 is not/, /Start from one line/, /Check it yourself/]) {
+    // FE-048: the headline cycles the asset kinds on screen; its accessible name stays one sentence.
+    expect(screen.getByRole('heading', { level: 1, name: 'Agents pay in anything. x207 settles the net.' })).toBeInTheDocument()
+    const chapters = [/Anything with value can pay/, /Sign now, settle later/, /Loops cancel out/, /Only the net moves/]
+    for (const name of [...chapters, /ways to pay\. \d+ refused on purpose/, /What x207 is not/, /Start from one line/, /Check it yourself/]) {
       expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
     }
     // FE-045: every dashboard link opens the live circle v018
     expect(screen.getByRole('link', { name: 'Open dashboard' })).toHaveAttribute('href', '/stats?circle=v018')
     for (const link of screen.getAllByRole('link', { name: /^(Open the dashboard|Dashboard)$/ })) expect(link).toHaveAttribute('href', '/stats?circle=v018')
     expect(container.querySelectorAll('.dot')).toHaveLength(BARTER_TOTAL)
-    expect(container.querySelectorAll('.ring-voucher').length).toBe(EDGES.length * 2)
+    // Without WebGL (jsdom) the theatre shows the flat ring of epoch 8 in the brain's place: one arc per voucher.
+    expect(container.querySelectorAll('.ring-voucher').length).toBe(EDGES.length)
+    // FE-048: every chapter figure is a number from facts.ts, read out in full to screen readers.
+    expect(screen.getByRole('heading', { level: 2, name: /Anything with value can pay/ }).closest('article')).toHaveTextContent(String(BARTER_TOTAL - BARTER.find((r) => r.key === 'refused')!.count))
+    expect(screen.getByRole('heading', { level: 2, name: /Only the net moves/ }).closest('article')).toHaveTextContent(`${EPOCH8.gross} → ${EPOCH8.moved.toFixed(2)}`)
     const limits = screen.getByRole('heading', { level: 2, name: /What x207 is not/ }).closest('section')!
     expect(within(limits).getByText(/No transaction has run on mainnet/)).toBeInTheDocument()
     expect(document.title).toContain('x207')

@@ -8,13 +8,11 @@ import { SPRING_PRESS } from './tokens'
 const SNIPPETS = [
   {
     title: 'Pay from an agent',
-    note: 'One line on the x402Client the agent already has.',
     lang: 'ts',
     code: 'const client = new x402Client().register("x207:agents-main", new X207SchemeClient({ payer: "agent.near", secretKey }));',
   },
   {
     title: 'Read a circle from Claude',
-    note: 'The read-only MCP server: circles, epochs and positions.',
     lang: 'sh',
     code: `claude mcp add --transport http x207 ${LIVE.mcp}`,
   },
@@ -50,17 +48,13 @@ export function Builders() {
   return (
     <section id="build" className="section build" aria-labelledby="build-title">
       <Reveal>
-        <p className="eyebrow">Build</p>
         <h2 id="build-title" className="section-title">Start from one line.</h2>
       </Reveal>
       <div className="snippets">
         {SNIPPETS.map((s, i) => (
           <Reveal key={s.title} delay={i * 0.08} className="snippet glass">
             <div className="snippet-head">
-              <div>
-                <h3>{s.title}</h3>
-                <p>{s.note}</p>
-              </div>
+              <h3>{s.title}</h3>
               <Copy text={s.code} label={s.title} />
             </div>
             <pre tabIndex={0} aria-label={s.title}><code className={`lang-${s.lang}`}>{s.code}</code></pre>
