@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAllMetrics } from '../api/queries'
 import type { EpochMetrics } from '../api/types'
 import { ErrorNotice, Loading } from '../components/QueryState'
@@ -7,6 +8,8 @@ import { EDGES_PRUNED_NOTE, formatCredit, formatNumber, formatPercent } from '..
 
 /** How many of the newest epochs the density charts show (FE-046: a circle with hundreds of epochs must not read them all). */
 const CHART_EPOCHS = 20
+/** FE-047: how many metrics the charts ask for at once (the read API is rate limited per caller). */
+const CHART_WAVE = 5
 
 const utc = (iso: string): string => iso.replace('T', ' ').replace(/:\d\d(\.\d+)?Z$/, ' UTC')
 
@@ -116,14 +119,20 @@ function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline
 export function ClearingStats() {
   const { query, selected, resolving } = useEpochSelection()
   // FE-046: the charts use the newest CHART_EPOCHS epochs and the selected one; finalized ones are read once, the rest follow the poll.
+  // FE-047: nothing is read before an epoch is selected, then CHART_WAVE at a time (the selected epoch first), each wave after the previous one answered.
   const items = query.data?.items ?? []
   const charted = items.filter((e, i) => i < CHART_EPOCHS || e.epoch === selected?.epoch)
-  const results = useAllMetrics(charted.map((e) => ({ epoch: e.epoch, final: e.phase === 'finalized' })))
+  const order = selected ? [...charted.filter((e) => e.epoch === selected.epoch), ...charted.filter((e) => e.epoch !== selected.epoch)] : []
+  const [shown, setShown] = useState(CHART_WAVE)
+  const results = useAllMetrics(order.slice(0, shown).map((e) => ({ epoch: e.epoch, final: e.phase === 'finalized' })))
+  // the next wave starts in the same render pass once the current one has answered (state adjusted while rendering, no effect)
+  if (order.length > shown && results.every((r) => r.data !== undefined || r.isError)) setShown(shown + CHART_WAVE)
   if (!selected) {
     if (resolving) return <Loading label="Loading epoch" />
     return query.data ? <p className="state">No epoch with clearing metrics yet.</p> : null
   }
-  const loaded = results.flatMap((r) => (r.data ? [r.data] : []))
+  const rank = new Map(charted.map((e, i) => [e.epoch, i]))
+  const loaded = results.flatMap((r) => (r.data ? [r.data] : [])).sort((a, b) => (rank.get(a.epoch) ?? 0) - (rank.get(b.epoch) ?? 0))
   const pruned = new Set((query.data?.items ?? []).filter((e) => e.edgesUnavailable === true).map((e) => e.epoch))
   const current = loaded.find((m) => m.epoch === selected.epoch)
   const failed = results.find((r) => r.isError && r.data === undefined)

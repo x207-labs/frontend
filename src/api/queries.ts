@@ -50,6 +50,9 @@ export const useAllMetrics = (epochs: { epoch: number; final: boolean }[]) =>
     queries: epochs.map(({ epoch, final }) => ({
       queryKey: ['metrics', epoch, final],
       queryFn: () => api.metrics(epoch),
+      // FE-047: a failed read is not repeated just because another component starts to show the same epoch (the default-epoch scan, then the charts); the retry
+      // button and the poll still read it again.
+      retryOnMount: false,
       ...(final ? FINAL : {}),
     })),
   })

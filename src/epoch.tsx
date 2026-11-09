@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAllMetrics, useEpochs } from './api/queries'
 import type { EpochItem } from './api/types'
@@ -30,6 +30,8 @@ export function defaultEpoch(items: EpochItem[], results: ReadonlyMap<number, Ep
 
 /** How many of the newest finalized epochs the default choice looks at (FE-046: a circle with hundreds of epochs must not read them all). */
 const DEFAULT_SCAN = 10
+/** FE-047: how many of them are read after each wave (1, then 2 more, 3 more, 4 more) while none of the epochs read so far cleared anything. */
+const SCAN_WAVES = [1, 3, 6, DEFAULT_SCAN]
 
 const EpochContext = createContext<Selection | null>(null)
 
@@ -39,15 +41,22 @@ export function EpochProvider({ children }: { children: ReactNode }) {
   const [params, setParams] = useSearchParams()
   const wanted = params.get('epoch')
   // FE-046: only the newest finalized epochs are read to choose the default, once each (finalized metrics never change).
+  // FE-047: newest first and in small waves, stopping at the first epoch that cleared something; most circles need one read instead of ten.
+  const [wave, setWave] = useState(0)
   const finalized = (query.data?.items ?? []).filter((e) => e.phase === 'finalized').slice(0, DEFAULT_SCAN).map((e) => ({ epoch: e.epoch, final: true }))
-  const metrics = useAllMetrics(wanted === null ? finalized : [])
+  const metrics = useAllMetrics(wanted === null ? finalized.slice(0, SCAN_WAVES[wave]) : [])
   const settled = metrics.every((m) => m.data !== undefined || m.isError)
+  const cleared = metrics.some((m) => m.data !== undefined && BigInt(m.data.cleared ?? '0') > 0n)
+  const more = wanted === null && settled && !cleared && wave < SCAN_WAVES.length - 1 && finalized.length > SCAN_WAVES[wave]
+  useEffect(() => {
+    if (more) setWave((w) => w + 1)
+  }, [more])
 
   const value = useMemo<Selection>(() => {
     const items = query.data?.items ?? []
     const results = new Map<number, EpochResult>()
     for (const m of metrics) if (m.data) results.set(m.data.epoch, { cleared: m.data.cleared, voucherCount: m.data.voucherCount })
-    const resolving = wanted === null && query.data !== undefined && !settled
+    const resolving = wanted === null && query.data !== undefined && (!settled || more)
     return {
       query,
       resolving,
@@ -55,7 +64,7 @@ export function EpochProvider({ children }: { children: ReactNode }) {
       select: (epoch) => setParams({ epoch: String(epoch) }),
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, wanted, setParams, settled, metrics.map((m) => m.dataUpdatedAt).join()])
+  }, [query, wanted, setParams, settled, more, metrics.map((m) => m.dataUpdatedAt).join()])
 
   return <EpochContext.Provider value={value}>{children}</EpochContext.Provider>
 }

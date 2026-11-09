@@ -31,8 +31,9 @@ function TtlLine() {
   )
 }
 
-function DetailCells({ item, withDetail, finalizedHead }: { item: AccountEscrowItem; withDetail: boolean; finalizedHead: number | null }) {
-  const detail = useAccountEscrow(item.grantId, item.state, finalizedHead, withDetail)
+function DetailCells({ item, withDetail, finalizedHead, epochsRead }: { item: AccountEscrowItem; withDetail: boolean; finalizedHead: number | null; epochsRead: boolean }) {
+  // FE-047: the key of a held sale holds the finalized head, so it waits for the epoch list; otherwise it is read once without it and again when the list arrives.
+  const detail = useAccountEscrow(item.grantId, item.state, finalizedHead, withDetail && (item.state !== 'held' || epochsRead))
   if (!withDetail) return <><td>-</td><td>-</td><td>-</td></>
   if (detail.isPending) return <><td colSpan={3}>loading…</td></>
   if (detail.isError || !detail.data) return <><td colSpan={3}>not available</td></>
@@ -61,7 +62,9 @@ export function AccountSales() {
     if (missing) void refetchGrants()
   }, [missing, refetchGrants])
   // A held sale can change once an epoch is finalized (EpochProvider polls the list already).
-  const finalizedHead = useEpochs().data?.items.find((e) => e.phase === 'finalized')?.epoch ?? null
+  const epochs = useEpochs()
+  const finalizedHead = epochs.data?.items.find((e) => e.phase === 'finalized')?.epoch ?? null
+  const epochsRead = !epochs.isPending
 
   let body
   if (escrows.isPending) body = <Loading label="Loading account sales" />
@@ -95,7 +98,7 @@ export function AccountSales() {
                 <td>{STATE_LABEL[e.state] ?? e.state}</td>
                 <td>{e.newOwner ? shortAccount(e.newOwner) : '-'}</td>
                 <td>{expiry.has(e.grantId) ? formatExpiry(expiry.get(e.grantId)!) : 'not available'}</td>
-                <DetailCells item={e} withDetail={i < DETAIL_ROWS} finalizedHead={finalizedHead} />
+                <DetailCells item={e} withDetail={i < DETAIL_ROWS} finalizedHead={finalizedHead} epochsRead={epochsRead} />
               </tr>
             ))}
           </tbody>
