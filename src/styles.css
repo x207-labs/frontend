@@ -106,7 +106,6 @@ select, input { font: inherit; color: inherit; background: var(--sheet); border:
 .phases li.now { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 0.3em; text-decoration-thickness: 2px; }
 
 button { font: inherit; font-weight: 600; color: #fff; background: var(--ink); border: 1px solid var(--ink); border-radius: 4px; padding: 0.375rem 0.875rem; min-height: 2.25rem; cursor: pointer; }
-button:hover:not(:disabled) { background: #0f2347; }
 button:disabled { color: var(--ink-soft); background: transparent; border-color: var(--line); cursor: not-allowed; }
 
 .state { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin: 0; color: var(--ink-soft); }
@@ -155,22 +154,20 @@ code.plain { font-weight: 400; color: var(--ink-soft); }
 .account { position: relative; display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
 .net-badge { flex: none; padding: 0.125rem 0.5rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font-size: 0.75rem; font-weight: 600; line-height: 1.4; }
 .account-trigger { display: flex; align-items: center; gap: 0.5rem; min-width: 0; max-width: 100%; padding: 0.25rem 0.75rem 0.25rem 0.25rem; border-radius: 999px; background: var(--sheet); color: var(--ink); border: 1px solid var(--line); }
-.account-trigger:hover:not(:disabled) { background: var(--accent-soft); color: var(--ink); }
 .account-trigger .wallet-account { max-width: 14rem; }
 .avatar { flex: none; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.8125rem; font-weight: 700; }
 .account-menu { position: absolute; z-index: 30; top: calc(100% + 0.5rem); right: 0; min-width: 12rem; padding: 0.375rem; border-radius: 14px; background: var(--sheet); border: 1px solid var(--line); box-shadow: 0 12px 32px rgb(21 74 143 / 0.16); }
 .account-menu .item { display: flex; align-items: center; gap: 0.625rem; width: 100%; min-height: 2.5rem; padding: 0.375rem 0.625rem; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font-weight: 500; text-align: left; }
-.account-menu .item:hover:not(:disabled), .account-menu .item:focus-visible { background: var(--accent-soft); color: var(--accent-ink); }
+.account-menu .item:focus-visible { background: var(--accent-soft); color: var(--accent-ink); }
 /* FE-057: Cmd-K palette, table tools, next-step links */
 .topbar-tools { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; min-width: 0; }
 .palette-trigger { display: flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0.25rem 0.75rem; border-radius: 999px; background: var(--sheet); color: var(--ink-soft); border: 1px solid var(--line); font-weight: 500; }
-.palette-trigger:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent-ink); }
 .palette-trigger kbd { display: none; padding: 0 0.375rem; border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: 0.75rem; }
 .palette-label { display: none; }
 @media (min-width: 600px) { .palette-label { display: inline; } }
 @media (min-width: 840px) and (hover: hover) { .palette-trigger kbd { display: inline; } }
 .palette-backdrop { align-items: flex-start; justify-content: center; padding: max(1rem, env(safe-area-inset-top)) 1rem 1rem; }
-@media (min-width: 840px) { .palette-backdrop { padding-top: 12vh; } }
+@media (min-width: 840px) { .palette-backdrop { padding-top: 12vh; padding-top: 12dvh; } }
 .palette { width: 100%; max-width: 34rem; max-height: calc(100dvh - 2rem); display: flex; flex-direction: column; background: var(--sheet); border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 24px 64px rgb(21 74 143 / 0.25); overflow: hidden; }
 .palette input { width: 100%; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 0.875rem 1rem; background: transparent; font-size: 1rem; }
 .palette ul { margin: 0; padding: 0.375rem; list-style: none; overflow-y: auto; }
@@ -182,7 +179,6 @@ code.plain { font-weight: 400; color: var(--ink-soft); }
 .table-tools label { display: flex; align-items: center; gap: 0.5rem; }
 .table-tools .state { margin: 0; }
 button.th-sort { padding: 0; min-height: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: inherit; text-align: inherit; cursor: pointer; }
-button.th-sort:hover:not(:disabled) { background: transparent; color: var(--accent-ink); }
 .next-step { font-weight: 600; }
 
 /* FE-056: Home */
@@ -202,7 +198,23 @@ button.th-sort:hover:not(:disabled) { background: transparent; color: var(--acce
 .vh-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 420px) { .account-trigger .wallet-account { display: none; } .account-trigger { padding: 0.25rem; } }
 button.quiet { color: var(--ink); background: transparent; border-color: var(--ink-soft); }
-button.quiet:hover:not(:disabled) { color: #fff; }
+
+/* FE-058: phone and tablet fixes.
+   Hover only where a pointer can hover: on a touch screen a tap leaves :hover stuck on the button until the next tap elsewhere. The focus ring covers keyboard use. */
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) { background: #0f2347; }
+  .account-trigger:hover:not(:disabled) { background: var(--accent-soft); color: var(--ink); }
+  .account-menu .item:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent-ink); }
+  .palette-trigger:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent-ink); }
+  button.th-sort:hover:not(:disabled) { background: transparent; color: var(--accent-ink); }
+  button.quiet:hover:not(:disabled) { color: #fff; }
+}
+/* Fields stay at 16px or more: iOS Safari zooms the whole page into any field under 16px and does not zoom back out. */
+select, input, textarea { font-size: max(16px, 1rem); }
+/* A tap on a control is a tap: no double-tap-to-zoom delay and no grey flash. */
+a, button, select, input, textarea, summary, label, [role='option'], [role='menuitem'] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+/* No text-size jump when the phone turns sideways. */
+:root { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 .form { display: grid; gap: 0.75rem; max-width: 36rem; }
 .form label { display: grid; gap: 0.25rem; font-weight: 600; }
