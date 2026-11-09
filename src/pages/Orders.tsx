@@ -5,6 +5,7 @@ import { useDaoRegistry, useOrder, useOrderProofs, useOrders } from '../api/quer
 import type { OrderMilestoneView, OrderView } from '../api/types'
 import { EmptyHint } from '../components/EmptyHint'
 import { QueryState } from '../components/QueryState'
+import { SortableTable, type Column } from '../components/SortableTable'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { formatCredit, formatTime, shortAccount } from '../lib/format'
@@ -71,7 +72,7 @@ function CreateOrder({ voucherKey, onVoucherKey, onCreated }: { voucherKey: stri
 
   return (
     <form className="form" aria-label="Create order" onSubmit={(e) => { e.preventDefault(); void submit() }}>
-      <h3>Create a service order (buyer)</h3>
+      <h3 id="create-order">Create a service order (buyer)</h3>
       {!account && <p className="state">Sign in with your wallet to create an order.</p>}
       <label>
         <span>Service kind</span>
@@ -323,6 +324,18 @@ function OrderDetail({ hash, voucherKey }: { hash: string; voucherKey: string })
   )
 }
 
+// FE-057: the order list can be filtered and sorted on what the reader sees.
+const kindLabel = (o: OrderView) => KIND_LABEL[o.order.kind as keyof typeof KIND_LABEL] ?? o.order.kind
+const ORDER_COLUMNS: Column<OrderView>[] = [
+  { key: 'kind', label: 'Kind', sortValue: kindLabel },
+  { key: 'buyer', label: 'Buyer', sortValue: (o) => o.order.buyer },
+  { key: 'seller', label: 'Seller', sortValue: (o) => o.order.seller },
+  { key: 'milestones', label: 'Milestones', sortValue: (o) => o.milestones.length },
+  { key: 'status', label: 'Status', sortValue: (o) => o.status },
+  { key: 'open', label: '' },
+]
+const orderText = (o: OrderView) => `${kindLabel(o)} ${o.order.buyer} ${o.order.seller} ${o.status} ${o.orderHash.slice(0, 8)}`
+
 export function Orders() {
   const { account } = useWallet()
   const [selected, setSelected] = useState<string | null>(null)
@@ -333,25 +346,25 @@ export function Orders() {
       <h2>Service orders</h2>
       {!account && <p className="state">Sign in with your wallet to see your orders.</p>}
       {account && (
-        <QueryState query={orders} loadingLabel="Loading orders" isEmpty={(d) => d.items.length === 0} empty={<><span>No orders for this account yet.</span><EmptyHint what="an order" /></>}>
+        <QueryState query={orders} loadingLabel="Loading orders" isEmpty={(d) => d.items.length === 0} empty={<><span>No orders for this account yet.</span><EmptyHint what="an order" next={{ href: '#create-order', label: 'Create the first order below' }} /></>}>
           {(data) => (
-            <div className="table-wrap">
-              <table aria-label="Order list">
-                <thead><tr><th>Kind</th><th>Buyer</th><th>Seller</th><th>Milestones</th><th>Status</th><th /></tr></thead>
-                <tbody>
-                  {data.items.map((o) => (
-                    <tr key={o.orderHash} aria-selected={selected === o.orderHash}>
-                      <td>{KIND_LABEL[o.order.kind as keyof typeof KIND_LABEL] ?? o.order.kind}</td>
-                      <td><code>{shortAccount(o.order.buyer)}</code></td>
-                      <td><code>{shortAccount(o.order.seller)}</code></td>
-                      <td>{o.milestones.length}</td>
-                      <td>{o.status}</td>
-                      <td><button type="button" aria-label={`Open order ${o.orderHash.slice(0, 8)}`} onClick={() => setSelected(o.orderHash)}>Open</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <SortableTable
+              label="Order list"
+              filterLabel="Filter the orders shown"
+              rows={data.items}
+              columns={ORDER_COLUMNS}
+              searchText={orderText}
+              renderRow={(o) => (
+                <tr key={o.orderHash} aria-selected={selected === o.orderHash}>
+                  <td>{kindLabel(o)}</td>
+                  <td><code>{shortAccount(o.order.buyer)}</code></td>
+                  <td><code>{shortAccount(o.order.seller)}</code></td>
+                  <td>{o.milestones.length}</td>
+                  <td>{o.status}</td>
+                  <td><button type="button" aria-label={`Open order ${o.orderHash.slice(0, 8)}`} onClick={() => setSelected(o.orderHash)}>Open</button></td>
+                </tr>
+              )}
+            />
           )}
         </QueryState>
       )}

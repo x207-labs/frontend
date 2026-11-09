@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useEpochSettlements, useMemberLimits, useMembers } from '../api/queries'
-import type { SettlementItem } from '../api/types'
+import type { Member, SettlementItem } from '../api/types'
 import { EvmBadge } from '../components/EvmBadge'
 import { QueryState } from '../components/QueryState'
+import { SortableTable, type Column } from '../components/SortableTable'
 import { useSelectedEpoch } from '../epoch'
 import { formatCredit, shortAccount } from '../lib/format'
 
@@ -18,6 +19,17 @@ export function lossAllocation(item: Pick<SettlementItem, 'amount' | 'paidAmount
 
 /** FE-042: a member that has not been admitted (`pending`) has no stake, limit or history, and the contract cannot remove it; the risk views list admitted members only. */
 const admitted = <T extends { status: string }>(items: T[]): T[] => items.filter((m) => m.status !== 'pending')
+
+// FE-057: the member table can be filtered and sorted on what the reader sees.
+const MEMBER_COLUMNS: Column<Member>[] = [
+  { key: 'member', label: 'Member', sortValue: (m) => m.account },
+  { key: 'status', label: 'Status', sortValue: (m) => m.status },
+  { key: 'stake', label: 'Stake', className: 'num', sortValue: (m) => BigInt(m.stake) },
+  { key: 'limit', label: 'Limit', className: 'num', sortValue: (m) => BigInt(m.limit) },
+  { key: 'headroom', label: 'Headroom', className: 'num', sortValue: (m) => BigInt(m.headroom) },
+  { key: 'history', label: 'Cash settlement history', className: 'num', sortValue: (m) => BigInt(m.settledHistory) },
+]
+const memberText = (m: Member) => `${m.account} ${m.status}`
 
 function LimitHistory() {
   const members = useMembers()
@@ -139,37 +151,28 @@ export function Risk() {
         empty="No admitted members in this circle yet."
       >
         {(data) => (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Member</th>
-                  <th scope="col">Status</th>
-                  <th scope="col" className="num">Stake</th>
-                  <th scope="col" className="num">Limit</th>
-                  <th scope="col" className="num">Headroom</th>
-                  <th scope="col" className="num">Cash settlement history</th>
-                </tr>
-              </thead>
-              <tbody>
-                {admitted(data.items).map((m) => (
-                  <tr key={m.account}>
-                    <td>
-                      <span title={m.account}>{shortAccount(m.account)}</span>
-                      <EvmBadge account={m.account} />
-                    </td>
-                    <td>
-                      <span className={m.status === 'suspended' ? 'member-suspended' : undefined}>{m.status}</span>
-                    </td>
-                    <td className="num">{formatCredit(m.stake)}</td>
-                    <td className="num">{formatCredit(m.limit)}</td>
-                    <td className="num">{formatCredit(m.headroom)}</td>
-                    <td className="num">{formatCredit(m.settledHistory)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SortableTable
+            label="Members"
+            filterLabel="Filter the members shown"
+            rows={admitted(data.items)}
+            columns={MEMBER_COLUMNS}
+            searchText={memberText}
+            renderRow={(m) => (
+              <tr key={m.account}>
+                <td>
+                  <span title={m.account}>{shortAccount(m.account)}</span>
+                  <EvmBadge account={m.account} />
+                </td>
+                <td>
+                  <span className={m.status === 'suspended' ? 'member-suspended' : undefined}>{m.status}</span>
+                </td>
+                <td className="num">{formatCredit(m.stake)}</td>
+                <td className="num">{formatCredit(m.limit)}</td>
+                <td className="num">{formatCredit(m.headroom)}</td>
+                <td className="num">{formatCredit(m.settledHistory)}</td>
+              </tr>
+            )}
+          />
         )}
       </QueryState>
       <LimitHistory />

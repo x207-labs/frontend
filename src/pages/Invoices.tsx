@@ -6,6 +6,7 @@ import { useInvoice, useInvoices } from '../api/queries'
 import type { InstallmentReason, InstallmentView, InvoiceStatus, InvoiceView } from '../api/types'
 import { EmptyHint } from '../components/EmptyHint'
 import { QueryState } from '../components/QueryState'
+import { SortableTable, type Column } from '../components/SortableTable'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { assertInvoiceHash, buildApproval, buildCatchUp, buildCreateInvoice, buildRejection } from '../lib/invoiceFlow'
@@ -16,6 +17,18 @@ import { useWallet } from '../wallet/WalletContext'
 // FE-025: invoices and installments (pipeline P8, ADR-44), built from Backend API Spec 5e. The issuer requests, the debtor approves by signing all installment vouchers
 // at once (seq 1 in their epoch) or declines; a failed installment is shifted once with a follow-up voucher signed after the failure. An upfront signature is evidence,
 // not a payment guarantee (ADR-44): the page says so where the debtor can see it.
+// FE-057: the invoice list can be filtered and sorted on what the reader sees.
+const INVOICE_COLUMNS: Column<InvoiceView>[] = [
+  { key: 'number', label: 'Number', sortValue: (i) => i.document.id },
+  { key: 'issuer', label: 'Issuer', sortValue: (i) => i.document.issuer },
+  { key: 'debtor', label: 'Debtor', sortValue: (i) => i.document.debtor },
+  { key: 'amount', label: 'Amount', sortValue: (i) => BigInt(i.document.amount) },
+  { key: 'installments', label: 'Installments', sortValue: (i) => i.installments.length },
+  { key: 'status', label: 'Status', sortValue: (i) => i.status },
+  { key: 'open', label: '' },
+]
+const invoiceText = (i: InvoiceView) => `${i.document.id} ${i.document.issuer} ${i.document.debtor} ${i.status} ${i.invoiceHash.slice(0, 8)}`
+
 const STATUS_LABEL: Record<InvoiceStatus, string> = {
   requested: 'Requested', approved: 'Approved', registered: 'Registered', rejected: 'Rejected', expired: 'Expired', missed: 'Missed',
 }
@@ -61,7 +74,7 @@ function CreateInvoice({ voucherKey, onVoucherKey, onCreated }: { voucherKey: st
 
   return (
     <form className="form" aria-label="Request invoice" onSubmit={(e) => { e.preventDefault(); void submit() }}>
-      <h3>Request an invoice (issuer)</h3>
+      <h3 id="request-invoice">Request an invoice (issuer)</h3>
       {!account && <p className="state">Sign in with your wallet to request an invoice.</p>}
       <label><span>Debtor (the account that pays the issuer)</span><input value={debtor} onChange={(e) => setDebtor(e.target.value)} placeholder="maker.x207-circle.near" /></label>
       <label><span>Invoice number</span><input value={id} onChange={(e) => setId(e.target.value)} placeholder="INV-2026-001" /></label>
@@ -228,26 +241,26 @@ export function Invoices() {
         </label>
       </div>
       {account && (
-        <QueryState query={invoices} loadingLabel="Loading invoices" isEmpty={(d) => d.items.length === 0} empty={<><span>No invoices for this account yet.</span><EmptyHint what="an invoice" /></>}>
+        <QueryState query={invoices} loadingLabel="Loading invoices" isEmpty={(d) => d.items.length === 0} empty={<><span>No invoices for this account yet.</span><EmptyHint what="an invoice" next={{ href: '#request-invoice', label: 'Request the first invoice below' }} /></>}>
           {(data) => (
-            <div className="table-wrap">
-              <table aria-label="Invoice list">
-                <thead><tr><th>Number</th><th>Issuer</th><th>Debtor</th><th>Amount</th><th>Installments</th><th>Status</th><th /></tr></thead>
-                <tbody>
-                  {data.items.map((i) => (
-                    <tr key={i.invoiceHash} aria-selected={selected === i.invoiceHash}>
-                      <td>{i.document.id}</td>
-                      <td><code>{shortAccount(i.document.issuer)}</code></td>
-                      <td><code>{shortAccount(i.document.debtor)}</code></td>
-                      <td>{formatCredit(i.document.amount)}</td>
-                      <td>{i.installments.length}</td>
-                      <td>{STATUS_LABEL[i.status]}</td>
-                      <td><button type="button" aria-label={`Open ${i.document.id}`} onClick={() => setSelected(i.invoiceHash)}>Open</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <SortableTable
+              label="Invoice list"
+              filterLabel="Filter the invoices shown"
+              rows={data.items}
+              columns={INVOICE_COLUMNS}
+              searchText={invoiceText}
+              renderRow={(i) => (
+                <tr key={i.invoiceHash} aria-selected={selected === i.invoiceHash}>
+                  <td>{i.document.id}</td>
+                  <td><code>{shortAccount(i.document.issuer)}</code></td>
+                  <td><code>{shortAccount(i.document.debtor)}</code></td>
+                  <td>{formatCredit(i.document.amount)}</td>
+                  <td>{i.installments.length}</td>
+                  <td>{STATUS_LABEL[i.status]}</td>
+                  <td><button type="button" aria-label={`Open ${i.document.id}`} onClick={() => setSelected(i.invoiceHash)}>Open</button></td>
+                </tr>
+              )}
+            />
           )}
         </QueryState>
       )}

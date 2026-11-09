@@ -10,6 +10,7 @@ import { EpochPicker } from './EpochPicker'
 import { LateEpochNotice } from './LateEpochNotice'
 import { PhaseStrip } from './PhaseStrip'
 import { AccountMenu } from './AccountMenu'
+import { CommandPalette } from './CommandPalette'
 
 function Header() {
   const { pathname } = useLocation()
@@ -52,7 +53,10 @@ export function Layout() {
               <p className="brand-compact">
                 x207 <span>{CIRCLE}</span>
               </p>
-              <AccountMenu />
+              <div className="topbar-tools">
+                <CommandPalette />
+                <AccountMenu />
+              </div>
             </div>
             <main id="content" ref={main} tabIndex={-1}>
               <Header />

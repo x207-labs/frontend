@@ -11,6 +11,7 @@ import { Negotiation } from '../components/Negotiation'
 import { OwnIntents } from '../components/OwnIntents'
 import { EmptyHint } from '../components/EmptyHint'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
+import { SortableTable, type Column } from '../components/SortableTable'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { ASSET_CLASSES, listingHash, signListing, type AssetClass, type Listing } from '../lib/barter'
@@ -216,6 +217,18 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
   )
 }
 
+// FE-057: the listing table can be filtered and sorted on what the reader sees.
+const LISTING_COLUMNS: Column<ListingView>[] = [
+  { key: 'poster', label: 'Poster', sortValue: (l) => l.account },
+  { key: 'offering', label: 'Offering', sortValue: (l) => l.offer.assetType },
+  { key: 'seeking', label: 'Seeking', sortValue: (l) => l.want.assetType },
+  { key: 'discount', label: 'Discount', sortValue: (l) => l.discountBps },
+  { key: 'valid', label: 'Valid until', sortValue: (l) => l.expiresAt },
+  { key: 'status', label: 'Status', sortValue: (l) => l.status },
+  { key: 'open', label: '' },
+]
+const listingText = (l: ListingView) => `${l.account} ${l.offer.assetType} ${l.want.assetType} ${l.status} ${l.listingHash.slice(0, 8)}`
+
 function ListingRow({ listing, selected, onSelect }: { listing: ListingView; selected: boolean; onSelect: () => void }) {
   const side = (s: ListingView['offer']) => `${s.assetType} · class ${s.assetClass} · ${formatNumber(s.quantity, 0)} units · ${formatCredit(s.value)} credit`
   return (
@@ -281,28 +294,16 @@ export function Marketplace() {
           <input value={offerType} onChange={(e) => setOfferType(e.target.value)} placeholder="gpu-hours" />
         </label>
       </div>
-      <QueryState query={listings} loadingLabel="Loading listings" isEmpty={(d) => d.items.length === 0} empty={<><span>No listing matches the filter yet.</span><EmptyHint what="a listing" /></>}>
+      <QueryState query={listings} loadingLabel="Loading listings" isEmpty={(d) => d.items.length === 0} empty={<><span>No listing matches the filter yet.</span><EmptyHint what="a listing" next={{ href: '#post-listing', label: 'Post the first listing below' }} /></>}>
         {(data) => (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Poster</th>
-                  <th>Offering</th>
-                  <th>Seeking</th>
-                  <th>Discount</th>
-                  <th>Valid until</th>
-                  <th>Status</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((l) => (
-                  <ListingRow key={l.listingHash} listing={l} selected={selected?.listingHash === l.listingHash} onSelect={() => setSelected(l)} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SortableTable
+            label="Listings"
+            filterLabel="Filter the listings shown"
+            rows={data.items}
+            columns={LISTING_COLUMNS}
+            searchText={listingText}
+            renderRow={(l) => <ListingRow key={l.listingHash} listing={l} selected={selected?.listingHash === l.listingHash} onSelect={() => setSelected(l)} />}
+          />
         )}
       </QueryState>
       {selected && <Negotiation listing={selected} voucherKey={voucherKey} onVoucherKey={setVoucherKey} onClose={() => setSelected(null)} />}
