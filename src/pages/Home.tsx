@@ -171,7 +171,7 @@ function Dashboard({ account }: { account: string }) {
       {/* FE-069: a greeting line as in the reference dashboards, with the epoch it is about, so the page says whose it is and when at a glance */}
       <p className="greet span-all">
         {hello}, <strong>{account}</strong>
-        {current && <span> · epoch {current.epoch}, {current.phase.replace('_', ' ')}</span>}
+        {current && <span>, epoch {current.epoch}, {current.phase.replace('_', ' ')}</span>}
       </p>
       {notMember && <StartHere account={account} member={memberState} />}
 

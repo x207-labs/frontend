@@ -186,7 +186,7 @@ function Stage({ live, cleared }: { live: Obligations; cleared: Obligations | nu
         </p>
         {cleared && (
           <p className="flow-pill">
-            Cleared value: <strong>{formatCredit(totalCleared.toString())}</strong> credit · {formatPercent(share)} of the debts
+            Cleared value: <strong>{formatCredit(totalCleared.toString())}</strong> credit, {formatPercent(share)} of the debts
           </p>
         )}
         {cleared && (
