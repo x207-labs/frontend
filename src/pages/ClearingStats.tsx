@@ -57,6 +57,61 @@ export function defaultNote(m: EpochMetrics): string | null {
   return `Default rate: ${formatPercent(m.defaultRate)} of the residual debt of ${formatCredit(m.netDebt)} credit was not paid in the payment window and was covered from the stake of the debtors.`
 }
 
+/** A thin bar for a figure that is a share of a whole (0 to 1). Decorative: the figure itself is in the text next to it. */
+function Meter({ share, tone }: { share: number; tone: 'blue' | 'green' | 'violet' }) {
+  const pct = Math.max(0, Math.min(1, share)) * 100
+  return (
+    <dd className="meter" data-tone={tone} aria-hidden="true">
+      <span style={{ width: `${Math.max(pct, 1.5)}%` }} />
+    </dd>
+  )
+}
+
+// FE-070: the result of the epoch as a picture. Each small dot on the left is a voucher (one dot stands for several when there are many), the large dots on
+// the right are the settlement transfers that are left; the lines between them carry the flow. The sentence above says the same in words.
+const DOT_MAX = 128
+const COLS = 16
+function Compression({ vouchers, transfers }: { vouchers: number; transfers: number }) {
+  const per = Math.max(1, Math.ceil(vouchers / DOT_MAX))
+  const dots = Math.ceil(vouchers / per)
+  const rows = Math.ceil(dots / COLS)
+  const big = Math.min(transfers, 12)
+  const gap = 15
+  const left = { x: 24, y: 100 - ((rows - 1) * gap) / 2 }
+  const rightX = 560
+  const spread = Math.min(30, 150 / Math.max(big, 1))
+  const ty = (i: number) => 100 + (i - (big - 1) / 2) * spread * 1.6
+  return (
+    <figure className="compress">
+      <svg viewBox="0 0 640 200" role="img" aria-label={`${formatNumber(vouchers, 0)} vouchers settled as ${formatNumber(transfers, 0)} transfers`}>
+        <defs>
+          <linearGradient id="compress-flow" x1="0" x2="1">
+            <stop offset="0" stopColor="#8fc0ff" stopOpacity="0.05" />
+            <stop offset="1" stopColor="#3d8bff" stopOpacity="0.7" />
+          </linearGradient>
+        </defs>
+        {Array.from({ length: big }, (_, i) => (
+          <path key={`f${i}`} className="compress-flow" d={`M${left.x + (COLS - 1) * gap + 14} ${100} C 420 100, 440 ${ty(i)}, ${rightX - 18} ${ty(i)}`} stroke="url(#compress-flow)" />
+        ))}
+        {Array.from({ length: dots }, (_, i) => (
+          <circle key={i} className="compress-dot" cx={left.x + (i % COLS) * gap} cy={left.y + Math.floor(i / COLS) * gap} r={4} style={{ animationDelay: `${(i % COLS) * 30 + Math.floor(i / COLS) * 20}ms` }} />
+        ))}
+        {Array.from({ length: big }, (_, i) => (
+          <circle key={`t${i}`} className="compress-big" cx={rightX} cy={ty(i)} r={Math.min(12, spread / 1.4 + 3)} style={{ animationDelay: `${600 + i * 80}ms` }} />
+        ))}
+      </svg>
+      <figcaption>
+        <span>
+          <strong>{formatNumber(vouchers, 0)}</strong> vouchers{per > 1 ? ` (one dot = ${per})` : ''}
+        </span>
+        <span>
+          <strong>{formatNumber(transfers, 0)}</strong> {transfers === 1 ? 'transfer' : 'transfers'}
+        </span>
+      </figcaption>
+    </figure>
+  )
+}
+
 function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline: string | null; cutoffAt: string | null; pruned: boolean }) {
   const eff = efficiency(m)
   return (
@@ -68,46 +123,58 @@ function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline
           ? noResultText(m, deadline, Date.now(), cutoffAt)
           : transfersText(m.voucherCount, m.residualTransfers)}
       </p>
-      <dl className="facts">
+      {eff && m.residualTransfers !== null && <Compression vouchers={m.voucherCount} transfers={m.residualTransfers} />}
+      {/* FE-070: four figures up front, each with a meter where it is a share; the rest one click away, so the page reads as a picture first */}
+      <dl className="facts facts-main">
+        <div>
+          <dt>Transfers avoided</dt>
+          <dd>{eff ? `${formatNumber(eff.avoided, 0)} of ${formatNumber(m.voucherCount, 0)} (${formatPercent(eff.avoidedShare)})` : '—'}</dd>
+          {eff && <Meter share={eff.avoidedShare} tone="blue" />}
+        </div>
+        <div>
+          <dt>Cash needed</dt>
+          <dd>{eff ? `${formatCredit(eff.cashNeeded)} of ${formatCredit(m.totalVoucherValue)} credit (${formatPercent(eff.cashShare)})` : '—'}</dd>
+          {eff && <Meter share={eff.cashShare} tone="green" />}
+        </div>
         <div>
           <dt>Cleared ratio</dt>
           <dd>{ratioText(m)}</dd>
-        </div>
-        <div>
-          <dt>Transfer savings</dt>
-          <dd>{formatNumber(m.transferSavings)}</dd>
-        </div>
-        <div>
-          <dt>Graph density</dt>
-          <dd>{formatNumber(m.graph.density, 4)}</dd>
+          {!noClearing(m) && m.clearedRatio !== null && <Meter share={m.clearedRatio} tone="violet" />}
         </div>
         <div>
           <dt>Cleared value</dt>
           <dd>{formatCredit(m.cleared)}</dd>
         </div>
-        <div>
-          <dt>Net debt reduction</dt>
-          <dd>{formatPercent(m.debtReduction)}</dd>
-        </div>
-        <div>
-          <dt>Transfers avoided</dt>
-          <dd>{eff ? `${formatNumber(eff.avoided, 0)} of ${formatNumber(m.voucherCount, 0)} (${formatPercent(eff.avoidedShare)})` : '—'}</dd>
-        </div>
-        <div>
-          <dt>Cash needed</dt>
-          <dd>{eff ? `${formatCredit(eff.cashNeeded)} of ${formatCredit(m.totalVoucherValue)} credit (${formatPercent(eff.cashShare)})` : '—'}</dd>
-        </div>
-        <div>
-          <dt>Default rate</dt>
-          <dd>{formatPercent(m.defaultRate)}</dd>
-        </div>
-        <div>
-          <dt>Clearing time</dt>
-          <dd>{m.clearingTimeSeconds === null ? 'not available' : `${formatNumber(m.clearingTimeSeconds, 0)} seconds`}</dd>
-        </div>
       </dl>
-      <p className="state">
-        Transfers avoided counts vouchers that did not become their own transfer; cash needed is the net debt that members owe in cash after netting (it does not depend on the solver). Neither counts fees or locked stake.{' '}
+      <details className="more">
+        <summary>More figures</summary>
+        <dl className="facts">
+          <div>
+            <dt>Transfer savings</dt>
+            <dd>{formatNumber(m.transferSavings)}</dd>
+          </div>
+          <div>
+            <dt>Graph density</dt>
+            <dd>{formatNumber(m.graph.density, 4)}</dd>
+          </div>
+          <div>
+            <dt>Net debt reduction</dt>
+            <dd>{formatPercent(m.debtReduction)}</dd>
+          </div>
+          <div>
+            <dt>Default rate</dt>
+            <dd>{formatPercent(m.defaultRate)}</dd>
+          </div>
+          <div>
+            <dt>Clearing time</dt>
+            <dd>{m.clearingTimeSeconds === null ? 'not available' : `${formatNumber(m.clearingTimeSeconds, 0)} seconds`}</dd>
+          </div>
+        </dl>
+        <p className="state">
+          Transfers avoided counts vouchers that did not become their own transfer; cash needed is the net debt that members owe in cash after netting (it does not depend on the solver). Neither counts fees or locked stake.
+        </p>
+      </details>
+      <p className="how-link">
         <a href="https://github.com/x207-labs/frontend/blob/main/docs/capital-efficiency.md" target="_blank" rel="noreferrer">How they are computed</a>
       </p>
       {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}
@@ -162,7 +229,8 @@ export function ClearingStats() {
         <Scatter title="Cleared ratio" xLabel="Graph density" yLabel="Cleared ratio" yMax={1} formatY={(v) => formatNumber(v)} points={ratioPoints} />
         <Scatter title="Transfer savings" xLabel="Graph density" yLabel="Vouchers per transfer" yMax={savingMax} formatY={(v) => formatNumber(v, 0)} points={savingPoints} />
       </div>
-      <h2>Per epoch</h2>
+      <details className="more">
+      <summary>Per epoch</summary>
       <div className="table-wrap">
         <table>
           <thead>
@@ -197,6 +265,7 @@ export function ClearingStats() {
           </tbody>
         </table>
       </div>
+      </details>
     </>
   )
 }

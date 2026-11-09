@@ -1,4 +1,5 @@
 import { screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { obligations } from '../api/fixtures'
 import { apiError, renderApp } from '../test/render'
@@ -19,8 +20,9 @@ describe('obligation graph', () => {
   it('TC-FE-006-01 directed graph: the number of edges equals edgeCount', async () => {
     renderApp('/charts?epoch=42')
     expect(await screen.findByText(/2 obligations worth/)).toBeInTheDocument()
-    const graph = screen.getByRole('img', { name: /Current epoch, 2 edges/ })
-    expect(graph.querySelectorAll('line.edge')).toHaveLength(2)
+    // FE-070: one map with a Before/After switch; it opens on After clearing when the epoch has a clearing result
+    const graph = screen.getByRole('img', { name: /After clearing, 2 edges/ })
+    expect(graph.querySelectorAll('path.edge')).toHaveLength(2)
     expect(within(graph.closest('figure')!).getAllByText(/translator|summarizer|scraper|gpu/).length).toBeGreaterThan(0)
   })
 
@@ -29,7 +31,15 @@ describe('obligation graph', () => {
     expect(await screen.findByText(/Cleared value:/)).toHaveTextContent('377.74')
     expect(screen.getByTestId('edge-after-translator-summarizer')).toHaveClass('edge-dim')
     expect(screen.getByTestId('edge-after-scraper-gpu')).not.toHaveClass('edge-dim')
+    await userEvent.click(screen.getByRole('button', { name: 'Before clearing' }))
     expect(screen.getByTestId('edge-before-translator-summarizer')).not.toHaveClass('edge-dim')
+    expect(screen.getByRole('img', { name: /Before clearing, 2 edges/ })).toBeInTheDocument()
+  })
+
+  it('TC-FE-070-01 without a clearing result the map shows the current epoch and no switch', async () => {
+    renderApp('/charts?epoch=42', only('cleared', staged('cleared', [])))
+    expect(await screen.findByRole('img', { name: /Current epoch, 2 edges/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Before clearing' })).not.toBeInTheDocument()
   })
 
   it('TC-FE-006-03 cycle translator → summarizer → scraper → translator is highlighted with value 5 per edge', async () => {
@@ -101,7 +111,7 @@ describe('FE-036 graph of an epoch whose edges were pruned', () => {
     renderApp('/charts?epoch=42', flagged(true))
     expect(await screen.findByText(/2 obligations worth/)).toBeInTheDocument()
     expect(screen.getByRole('note')).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: /Current epoch, 2 edges/ })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /(Current epoch|After clearing), 2 edges/ })).toBeInTheDocument()
   })
 
   it('TC-FE-036-05 not flagged: no note and the usual empty text', async () => {

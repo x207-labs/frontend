@@ -27,6 +27,7 @@ export function Scatter({ title, xLabel, yLabel, yMax, formatY, points }: Props)
       <figcaption>{title}</figcaption>
       <div className="scatter-plot">
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${title}. Details are in the per-epoch table.`}>
+          <rect className="plot-bg" x={M.left} y={M.top} width={W - M.left - M.right} height={H - M.top - M.bottom} rx={10} />
           {yTicks.map((t) => (
             <g key={t}>
               <line className="grid" x1={M.left} x2={W - M.right} y1={sy(t)} y2={sy(t)} />
@@ -54,6 +55,7 @@ export function Scatter({ title, xLabel, yLabel, yMax, formatY, points }: Props)
               onMouseLeave={() => setHover(null)}
             >
               <circle className="hit" cx={sx(p.x)} cy={sy(p.y)} r={14} />
+              {p.selected && <circle className="dot-halo" cx={sx(p.x)} cy={sy(p.y)} r={14} aria-hidden="true" />}
               <circle className={p.selected ? 'dot dot-selected' : 'dot'} cx={sx(p.x)} cy={sy(p.y)} r={p.selected ? 7 : 5} />
               {p.selected && (
                 <text className="dot-label" x={sx(p.x)} y={sy(p.y) - 12} textAnchor="middle">

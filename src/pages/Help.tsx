@@ -1,14 +1,18 @@
 // FE-069: the help page a first-time customer can reach from every page (sidebar, page search, sign-in cards, not-found page).
 // It explains the product in four steps, defines every word the other pages use, answers the first questions, and links every page.
+// FE-070: fewer words, more pictures. Each step is a drawing and one short line; the loop animation shows the idea; one word is read at a time.
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ExploreGrid } from '../components/ExploreGrid'
+import { LoopMotif } from '../components/LoopMotif'
+import { StepGlyph, type Glyph } from '../components/StepGlyph'
 import { GROUPS } from '../routes'
 
-const HOW: { title: string; text: string }[] = [
-  { title: 'Join a circle', text: 'A circle is a group of members (people or AI agents) who agree to trade on credit. You join with a NEAR wallet and put down a small stake, which gives you a credit limit.' },
-  { title: 'Trade in credit', text: 'When you buy something from another member you sign a voucher: a promise to pay later. No money moves yet, so many small trades cost nothing to make.' },
-  { title: 'Loops cancel out', text: 'At the end of each epoch x207 looks at every voucher together. When A owes B, B owes C and C owes A, those debts cancel each other and never need paying.' },
-  { title: 'Pay only the net', text: 'What is left becomes one net amount per member. You either pay it once or claim it once, in USDT, during the payment window.' },
+const HOW: { title: string; text: string; glyph: Glyph }[] = [
+  { title: 'Join a circle', text: 'Stake a little, get a credit limit.', glyph: 'join' },
+  { title: 'Trade in credit', text: 'Sign a voucher. No money moves yet.', glyph: 'trade' },
+  { title: 'Loops cancel out', text: 'Debts that go round in a loop vanish.', glyph: 'loop' },
+  { title: 'Pay only the net', text: 'One payment or one claim, in USDT.', glyph: 'net' },
 ]
 
 const GLOSSARY: { id: string; term: string; text: string }[] = [
@@ -45,41 +49,60 @@ const FAQ: { q: string; a: string }[] = [
   { q: 'Some pages say “read only”. Why?', a: 'Access grants and Governance show what the contract and the DAO decided. Changes are made there, not on this page.' },
 ]
 
+// One word at a time: a row of chips, and the chosen word large beside it. A #term-<id> link opens on that word.
+function Words() {
+  const { hash } = useLocation()
+  const [picked, setPicked] = useState(() => GLOSSARY.find((g) => `#term-${g.id}` === hash)?.id ?? GLOSSARY[0].id)
+  const word = GLOSSARY.find((g) => g.id === picked) ?? GLOSSARY[0]
+  return (
+    <div className="words">
+      <ul className="word-chips" aria-label="Words">
+        {GLOSSARY.map((g) => (
+          <li key={g.id}>
+            <button type="button" aria-pressed={g.id === picked} onClick={() => setPicked(g.id)}>
+              {g.term}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="word-card" id={`term-${word.id}`} aria-live="polite">
+        <p className="word-term" key={word.id}>{word.term}</p>
+        <p className="word-text">{word.text}</p>
+      </div>
+    </div>
+  )
+}
+
 export function Help() {
   const { search } = useLocation()
   return (
     <div className="home-grid bento">
-      <section className="card span-all" aria-labelledby="help-how">
-        <div className="card-head">
-          <h2 id="help-how">How x207 works</h2>
+      <section className="card span-all how" aria-labelledby="help-how">
+        <div className="how-intro">
           <p className="section-eyebrow">The idea in one minute</p>
+          <h2 id="help-how">Owe in a loop, pay almost nothing.</h2>
+          <p className="cta-row">
+            <Link className="btn" to={{ pathname: '/onboarding', search }}>Join the circle</Link>
+            <Link className="btn quiet" to={{ pathname: '/stats', search }}>See a real epoch</Link>
+          </p>
         </div>
-        <ol className="steps">
+        <LoopMotif />
+        <ol className="how-flow">
           {HOW.map((s) => (
-            <li key={s.title} className="step">
+            <li key={s.title} className="how-step">
+              <StepGlyph name={s.glyph} />
               <h3>{s.title}</h3>
               <p>{s.text}</p>
             </li>
           ))}
         </ol>
-        <p className="cta-row">
-          <Link className="btn" to={{ pathname: '/onboarding', search }}>Join the circle</Link>
-          <Link className="btn quiet" to={{ pathname: '/stats', search }}>See a real epoch</Link>
-        </p>
       </section>
 
       <section className="card span-all" aria-labelledby="help-words">
         <div className="card-head">
           <h2 id="help-words">What the words mean</h2>
         </div>
-        <dl className="glossary">
-          {GLOSSARY.map((g) => (
-            <div key={g.id} id={`term-${g.id}`}>
-              <dt>{g.term}</dt>
-              <dd>{g.text}</dd>
-            </div>
-          ))}
-        </dl>
+        <Words />
       </section>
 
       <section aria-labelledby="help-faq" className="card span-all faq">

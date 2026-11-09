@@ -6,6 +6,7 @@ import { useEpochs, useMember } from '../api/queries'
 import type { EpochItem, SettlementItem } from '../api/types'
 import { ExploreGrid } from '../components/ExploreGrid'
 import { NavIcon } from '../components/icons'
+import { LoopMotif } from '../components/LoopMotif'
 import { ErrorNotice, Loading } from '../components/QueryState'
 import { useProgress } from '../onboarding/progress'
 import { computeSteps, type MemberState, type StepId } from '../onboarding/steps'
@@ -84,13 +85,11 @@ function SignedOut() {
   const { busy, error, login } = useWallet()
   return (
     <div className="home-grid bento">
-      <section className="welcome span-all" aria-label="Home: sign in">
+      <section className="welcome welcome-visual span-all" aria-label="Home: sign in">
+        <LoopMotif className="welcome-motif" />
         <p className="eyebrow">Welcome to x207</p>
         <h2>Trade with other members now. Pay only the difference later.</h2>
-        <p>
-          Members of a circle pay each other with signed promises called vouchers. At the end of each epoch, x207 cancels the debts that go round in loops, and
-          each member pays or receives one net amount. Sign in to see your credit limit, what you owe or can claim, and your next deadline.
-        </p>
+        <p>Sign vouchers as you trade. Loops cancel. Each epoch you pay or claim one net amount.</p>
         {error && (
           <p className="wallet-error" role="alert">
             {error}
