@@ -11,9 +11,10 @@ import {
   useVelocity,
   type MotionValue,
 } from 'motion/react'
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type PointerEvent } from 'react'
 import { BARTER, BARTER_TOTAL, EPOCH8, LIVE } from './facts'
 import { BrainStage } from './BrainStage'
+import { Icon, type IconName } from './icons'
 import { Ring } from './Ring'
 import { EASE_OUT, SPRING, STORY } from './tokens'
 
@@ -25,6 +26,23 @@ const ON_TESTNET = BARTER.find((r) => r.key === 'testnet')?.count ?? 0
 
 /** What an agent can pay with, cycled in the headline. Each is a kind of the barter catalog; screen readers hear "anything". */
 const WORDS = ['GPU hours', 'datasets', 'API keys', 'NEAR accounts', 'NFTs', 'model weights', 'anything']
+/** FE-051: the object of each word, in the pill under the buttons; "anything" lights them all. */
+const WORD_ICONS: IconName[] = ['chip', 'dataset', 'key', 'account', 'frame', 'weights']
+
+// The headline word and the pill read one index, so the timer lives in one place and the theatre does not re-render with it.
+let wordAt = WORDS.length - 1
+const wordSubs = new Set<() => void>()
+const subscribeWord = (fn: () => void) => {
+  wordSubs.add(fn)
+  return () => {
+    wordSubs.delete(fn)
+  }
+}
+const readWord = () => wordAt
+const setWord = (i: number) => {
+  wordAt = i
+  wordSubs.forEach((fn) => fn())
+}
 
 type Chapter = {
   key: 'kinds' | 'vouchers' | 'loops' | 'net'
@@ -85,11 +103,25 @@ const CHAPTERS: Chapter[] = [
   },
 ]
 
+function WordPill({ reduced }: { reduced: boolean }) {
+  const index = useSyncExternalStore(subscribeWord, readWord, readWord)
+  const all = reduced || index === WORDS.length - 1
+  return (
+    <m.ul className="hero-pill" aria-hidden="true" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.75 }}>
+      {WORD_ICONS.map((name, i) => (
+        <li key={name} className={all || i === index ? 'is-lit' : undefined} title={WORDS[i]}>
+          <Icon name={name} />
+        </li>
+      ))}
+    </m.ul>
+  )
+}
+
 function MorphWord({ reduced }: { reduced: boolean }) {
-  const [index, setIndex] = useState(WORDS.length - 1)
+  const index = useSyncExternalStore(subscribeWord, readWord, readWord)
   useEffect(() => {
     if (reduced) return
-    const t = setTimeout(() => setIndex((i) => (i + 1) % WORDS.length), index === WORDS.length - 1 ? 2600 : 1150)
+    const t = setTimeout(() => setWord((index + 1) % WORDS.length), index === WORDS.length - 1 ? 2600 : 1150)
     return () => clearTimeout(t)
   }, [index, reduced])
   const word = reduced ? 'anything' : WORDS[index]
@@ -220,6 +252,7 @@ export function Theatre() {
             <a className="btn is-primary" href="#epoch">Watch one epoch</a>
             <a className="btn" href={LIVE.dashboard}>Open the dashboard</a>
           </m.div>
+          <WordPill reduced={reduced} />
         </m.div>
 
         <div className="chapters">

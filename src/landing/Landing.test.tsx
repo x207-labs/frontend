@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import axe from 'axe-core'
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { BARTER, BARTER_TOTAL, DEFAULTER, EDGES, EPOCH8, NET } from './facts'
+import { BARTER, BARTER_TOTAL, DEFAULTER, EDGES, EPOCH8, KIND_CLASSES, NET } from './facts'
 import Landing from './Landing'
 
 const sum = (xs: readonly number[]) => Math.round(xs.reduce((a, b) => a + b, 0) * 100) / 100
@@ -43,6 +43,18 @@ describe('FE-044 landing page facts', () => {
     expect(Object.fromEntries(BARTER.map((r) => [statusOf[r.key], r.count]))).toEqual(Object.fromEntries(Object.entries(rows).filter(([k]) => k !== 'All')))
     expect(BARTER_TOTAL).toBe(rows.All)
   })
+
+  // FE-051: the shelf names every kind. Each id, code and status must be the row of docs/barter-evidence.md "Table", and the shelf must hold every row.
+  it.skipIf(!existsSync(evidence))('the shelf kinds match the rows of the table "Table" of docs/barter-evidence.md', () => {
+    const table = readFileSync(evidence, 'utf8').split('## Table')[1].split('\n## ')[0]
+    const doc = [...table.matchAll(/^\| (X?\d+) \| `([^`]+)` \| `([^`]+)`/gm)].map(([, id, code, status]) => [id, code, status])
+    const statusOf: Record<(typeof BARTER)[number]['key'], string> = {
+      testnet: 'testnet', sandbox: 'sandbox', mock: 'mock', unit: 'unit', generic: 'generic', p1: 'P1 in progress', roadmap: 'roadmap', refused: 'X',
+    }
+    const shelf = KIND_CLASSES.flatMap((cls) => cls.kinds.map(([id, code, status]) => [id, code, statusOf[status]]))
+    expect(shelf).toEqual(doc)
+    for (const row of BARTER) expect(shelf.filter(([, , s]) => s === statusOf[row.key])).toHaveLength(row.count)
+  })
 })
 
 describe('FE-044 landing page', () => {
@@ -57,7 +69,14 @@ describe('FE-044 landing page', () => {
     // FE-045: every dashboard link opens the live circle v018
     expect(screen.getByRole('link', { name: 'Open dashboard' })).toHaveAttribute('href', '/stats?circle=v018')
     for (const link of screen.getAllByRole('link', { name: /^(Open the dashboard|Dashboard)$/ })) expect(link).toHaveAttribute('href', '/stats?circle=v018')
-    expect(container.querySelectorAll('.dot')).toHaveLength(BARTER_TOTAL)
+    // FE-051: one bar and one shelf tile per catalog entry (the marquee copy of each row is hidden from screen readers and not counted).
+    expect(container.querySelectorAll('.strip .bar')).toHaveLength(BARTER_TOTAL)
+    expect(container.querySelectorAll('.kinds:not(.is-copy) .kind')).toHaveLength(BARTER_TOTAL)
+    for (const copy of container.querySelectorAll('.kinds.is-copy')) expect(copy).toHaveAttribute('aria-hidden', 'true')
+    // FE-051: the footer has the brand, the live contract, and the proof column.
+    const footer = within(container.querySelector('footer')!)
+    expect(footer.getByRole('link', { name: 'Every claim' })).toHaveAttribute('href', expect.stringContaining('CLAIMS.md'))
+    expect(footer.getByText(/Testnet only, with a mock USDT/)).toBeInTheDocument()
     // Without WebGL (jsdom) the theatre shows the flat ring of epoch 8 in the brain's place: one arc per voucher.
     expect(container.querySelectorAll('.ring-voucher').length).toBe(EDGES.length)
     // FE-048: every chapter figure is a number from facts.ts, read out in full to screen readers.

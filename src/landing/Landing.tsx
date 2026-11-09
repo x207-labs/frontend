@@ -3,39 +3,45 @@ import { useEffect } from 'react'
 import { Barter } from './Barter'
 import { Builders } from './Builders'
 import { LIVE } from './facts'
+import { Footer } from './Footer'
+import { Icon, type IconName } from './icons'
 import { Limits } from './Limits'
-import { Logo } from './Logo'
 import { Nav } from './Nav'
 import { Reveal } from './motion'
 import { Theatre } from './Theatre'
 import './landing.css'
 
-// FE-044, FE-048: the landing page of x207. It has no wallet and no read-API query: it loads on its own, and the dashboard stays at /stats.
-// FE-048 put the first screen and the story of epoch 8 in one scroll theatre with a hologram brain, and cut the copy to a line per idea.
+// FE-044: the landing page of x207. It has no wallet and no read-API query: it loads on its own, and the dashboard stays at /stats.
+// FE-048: the first screen and the story of epoch 8 are one scroll theatre with a hologram brain, and the copy is cut to a line per idea.
+// FE-051: the sections after the theatre carry the object of each line, and the footer is its own component (Footer.tsx).
 
-const LINKS = [
-  { label: 'Contract', value: LIVE.contract, href: LIVE.contractUrl },
-  { label: 'Read API', value: 'v018.x207.boxd.sh', href: LIVE.apiEpochs },
-  { label: 'MCP server', value: 'mcp.x207.boxd.sh', href: LIVE.mcp },
-  { label: 'Source', value: 'github.com/x207-labs', href: LIVE.github },
-  { label: 'Every claim, with its proof', value: 'CLAIMS.md', href: LIVE.claims },
+const LINKS: { label: string; value: string; href: string; icon: IconName }[] = [
+  { label: 'Contract', value: LIVE.contract, href: LIVE.contractUrl, icon: 'seal' },
+  { label: 'Read API', value: 'v018.x207.boxd.sh', href: LIVE.apiEpochs, icon: 'plug' },
+  { label: 'MCP server', value: 'mcp.x207.boxd.sh', href: LIVE.mcp, icon: 'connector' },
+  { label: 'Source', value: 'github.com/x207-labs', href: LIVE.github, icon: 'branch' },
+  { label: 'Every claim, with its proof', value: 'CLAIMS.md', href: LIVE.claims, icon: 'claims' },
 ]
 
 function Live() {
   return (
     <section id="live" className="section live" aria-labelledby="live-title">
-      <Reveal>
-        <h2 id="live-title" className="section-title">Check it yourself.</h2>
-      </Reveal>
-      <ul className="live-list glass">
-        {LINKS.map((l) => (
-          <li key={l.label}>
+      <p className="section-kicker">
+        Fig. 08 <span>Verify</span>
+      </p>
+      <h2 id="live-title" className="section-title">Check it yourself.</h2>
+      <ul className="live-list">
+        {LINKS.map((l, i) => (
+          <Reveal key={l.label} as="li" delay={i * 0.04}>
             <a href={l.href} target="_blank" rel="noreferrer">
+              <span className="live-icon">
+                <Icon name={l.icon} />
+              </span>
               <span className="live-label">{l.label}</span>
               <span className="live-value">{l.value}</span>
-              <span className="live-arrow" aria-hidden="true">↗</span>
+              <Icon name="arrowUpRight" className="live-arrow" />
             </a>
-          </li>
+          </Reveal>
         ))}
       </ul>
       <div className="live-cta">
@@ -69,15 +75,7 @@ export default function Landing() {
             <Builders />
             <Live />
           </main>
-          <footer className="footer">
-            <p>
-              <Logo className="footer-logo" title="x207" />
-              Mutual-credit settlement for x402 agent payments on NEAR. Testnet only, with a mock USDT.
-            </p>
-            <p>
-              <a href={LIVE.github} target="_blank" rel="noreferrer">GitHub</a> · <a href={LIVE.claims} target="_blank" rel="noreferrer">Claims</a> · <a href={LIVE.dashboard}>Dashboard</a>
-            </p>
-          </footer>
+          <Footer />
         </div>
       </MotionConfig>
     </LazyMotion>

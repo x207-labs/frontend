@@ -71,3 +71,70 @@ export const BARTER = [
 ] as const
 
 export const BARTER_TOTAL = BARTER.reduce((sum, row) => sum + row.count, 0)
+
+type Status = (typeof BARTER)[number]['key']
+
+/** FE-051: every kind of the catalog, by class, as docs/barter-evidence.md "Table" lists it: row number, kind code, status.
+ * Landing.test.tsx reads that table and fails when a code or a status here differs. */
+export const KIND_CLASSES: readonly { key: string; name: string; kinds: readonly (readonly [string, string, Status])[] }[] = [
+  {
+    key: 'A',
+    name: 'On-chain assets, moved by escrow',
+    kinds: [
+      ['1', 'nft:nep171', 'testnet'], ['2', 'ticket:event-nft', 'testnet'], ['3', 'game:item-nft', 'testnet'], ['4', 'coupon:voucher-nft', 'testnet'],
+      ['5', 'license:software-nft', 'testnet'], ['6', 'token:nep141', 'testnet'], ['7', 'rwa:tokenized', 'testnet'], ['8', 'lst:liquid-staking', 'testnet'],
+      ['9', 'intents:multi-token', 'testnet'], ['10', 'amm:lp-share', 'testnet'], ['11', 'near:named-account', 'testnet'], ['12', 'chain-signatures:derived-address', 'p1'],
+      ['13', 'vesting:transferable-lockup', 'p1'], ['14', 'claim:cross-circle-receivable', 'testnet'],
+    ],
+  },
+  {
+    key: 'B',
+    name: 'Limited access that can be revoked',
+    kinds: [
+      ['15', 'near-rpc:access', 'testnet'], ['16', 'dao:vote-delegation', 'unit'], ['17', 'saas:team-seat', 'mock'], ['18', 'git:repo-collaborator', 'mock'],
+      ['19', 'oauth:scoped-token', 'mock'], ['20', 'cloud:temporary-role', 'mock'], ['21', 'storage:signed-url', 'roadmap'], ['22', 'ssh:restricted-key', 'mock'],
+      ['23', 'database:readonly-user', 'mock'], ['24', 'community:paid-role', 'mock'], ['25', 'org:spend-limited-member', 'mock'],
+    ],
+  },
+  {
+    key: 'C',
+    name: 'A single secret through the broker',
+    kinds: [['26', 'api:delegated-key', 'mock'], ['27', 'giftcard:code', 'mock'], ['28', 'license:key', 'mock'], ['29', 'domain:transfer-code', 'mock'], ['30', 'api:quota-proxy', 'mock']],
+  },
+  {
+    key: 'D',
+    name: 'Own resources and services',
+    kinds: [
+      ['31', 'compute:cpu-idle', 'unit'], ['32', 'compute:gpu-hours', 'unit'], ['33', 'storage:capacity', 'unit'], ['34', 'cdn:static-cache', 'unit'],
+      ['35', 'model:inference', 'unit'], ['36', 'model:fine-tuning', 'unit'], ['37', 'data:dataset', 'sandbox'], ['38', 'model:weights', 'generic'],
+      ['39', 'agent:prompt-workflow', 'generic'], ['40', 'research:report', 'generic'], ['41', 'text:translation-summary', 'generic'], ['42', 'data:annotation', 'generic'],
+      ['43', 'data:web-crawl', 'generic'], ['44', 'oracle:data-feed', 'unit'], ['45', 'iot:sensor-data', 'unit'], ['46', 'x207:keeper-cron', 'generic'],
+      ['47', 'gas:relayer', 'unit'], ['48', 'x207:solver-routing', 'generic'], ['49', 'queue:priority-slot', 'unit'], ['50', 'ads:promo-slot', 'generic'],
+      ['51', 'sales:referral-lead', 'generic'], ['52', 'code:audit-review', 'generic'], ['53', 'qa:load-test', 'generic'], ['54', 'ops:monitoring-alert', 'generic'],
+      ['55', 'network:proxy-bandwidth', 'unit'],
+    ],
+  },
+  {
+    key: 'E',
+    name: 'Off-chain digital assets of ordinary people',
+    kinds: [
+      ['61', 'ai-credit:api', 'mock'], ['62', 'cloud:credit', 'mock'], ['63', 'messaging:subaccount', 'mock'], ['64', 'maps:geocoding-quota', 'mock'],
+      ['65', 'hosting:reseller-account', 'mock'], ['66', 'domain:name', 'mock'], ['67', 'site:web-property', 'mock'], ['68', 'design:template', 'sandbox'],
+      ['69', 'creative:licensed-asset', 'sandbox'], ['70', 'plugin:preset', 'sandbox'], ['71', 'course:own-class', 'sandbox'], ['72', 'course:gift-code', 'mock'],
+      ['73', 'ticket:digital-event', 'mock'], ['74', 'game:key-code', 'mock'], ['75', 'game:tradable-item', 'mock'], ['76', 'promo:voucher-code', 'mock'],
+      ['77', 'giftcard:digital-store', 'mock'], ['78', 'telco:airtime-data', 'sandbox'], ['79', 'loyalty:transferable-points', 'sandbox'], ['80', 'plan:family-or-team-seat', 'sandbox'],
+      ['81', 'storage:shared-folder', 'mock'], ['82', 'content:own-work', 'sandbox'], ['83', 'service:freelance', 'sandbox'], ['84', 'service:consultation-slot', 'sandbox'],
+      ['85', 'community:own-paid-group', 'mock'], ['86', 'newsletter:own-archive', 'mock'], ['87', 'beta:invite-code', 'mock'], ['88', 'service:product-testing', 'sandbox'],
+      ['89', 'data:own-anonymized', 'sandbox'], ['90', 'compute:home-device', 'mock'],
+    ],
+  },
+  {
+    key: 'X',
+    name: 'Refused on purpose',
+    kinds: [
+      ['X1', 'payment:digital-wallet-balance', 'refused'], ['X2', 'account:game-or-platform', 'refused'], ['X3', 'voucher:identity-bound', 'refused'],
+      ['X4', 'securities:equity', 'refused'], ['X5', 'subscription:consumer-nonshareable', 'refused'], ['X6', 'social:account', 'refused'],
+      ['X7', 'pii:third-party-data', 'refused'], ['X8', 'token:soulbound', 'refused'], ['X9', 'credential:stolen-access', 'refused'],
+    ],
+  },
+]
