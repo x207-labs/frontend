@@ -28,6 +28,7 @@ export const NEAR_CONNECT_ICON_ORIGINS = [
 export const CIRCLE_API_ORIGINS = ['https://v018.x207.boxd.sh', 'https://v017.x207.boxd.sh', 'https://v015.x207.boxd.sh', 'https://v014.x207.boxd.sh', 'https://x207.boxd.sh']
 
 export const PRIVY_ORIGIN = 'https://auth.privy.io'
+export const ACCOUNT_SERVICE_ORIGIN = 'https://vldhsabgpfxccsljdtye.supabase.co'
 
 export function buildCsp(env: Env, nonce?: string): string {
   const rpc = env.VITE_NEAR_RPC_URL ?? (env.VITE_NEAR_NETWORK === 'mainnet' ? 'https://rpc.mainnet.fastnear.com' : 'https://rpc.testnet.fastnear.com')
@@ -49,6 +50,7 @@ export function buildCsp(env: Env, nonce?: string): string {
   // FE-059: the Privy wallet talks to the Privy API and loads its key frame from the same host; both are opened only when the build has a Privy app id.
   const privy = env.VITE_PRIVY_APP_ID?.trim() // FE-066: the Client ID is optional
   if (privy) connect.add(PRIVY_ORIGIN)
+  connect.add(ACCOUNT_SERVICE_ORIGIN) // FE-068: the account service (Supabase Edge Function x207-account)
   return [
     "default-src 'self'",
     ...(privy ? [`frame-src ${PRIVY_ORIGIN}`] : []),

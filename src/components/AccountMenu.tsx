@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useCachedAccount } from '../account/cache'
 import { NEAR_NETWORK } from '../config'
 import { displayAccount, initial } from '../lib/account'
 import { useWallet } from '../wallet/WalletContext'
@@ -10,6 +12,7 @@ const NETWORK = NEAR_NETWORK === 'mainnet' ? 'Mainnet' : 'Testnet'
 // copy address and disconnect. The menu opens with the keyboard too: Enter or Space on the account, the arrows between the items, Escape to close and give the focus back.
 export function AccountMenu() {
   const { account, busy, error, login, logout } = useWallet()
+  const cached = useCachedAccount(account) // FE-068: the display name the person saved in Settings
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState<'ok' | 'failed' | null>(null)
   const root = useRef<HTMLDivElement>(null)
@@ -72,7 +75,7 @@ export function AccountMenu() {
       <span className="net-badge" title={`The wallet is on NEAR ${NETWORK.toLowerCase()}`}>{NETWORK}</span>
       <button type="button" className="account-trigger" ref={trigger} aria-haspopup="menu" aria-expanded={open} aria-label={`Account menu for ${account}`} title={account} onClick={() => setOpen((o) => !o)}>
         <span className="avatar" aria-hidden="true">{initial(account)}</span>
-        <span className="wallet-account">{displayAccount(account)}</span>
+        <span className="wallet-account">{cached.displayName || displayAccount(account)}</span>
       </button>
       {open && (
         <div className="account-menu" role="menu" aria-label="Account" ref={menu}>
@@ -80,6 +83,9 @@ export function AccountMenu() {
             <NavIcon name="copy" size={18} />
             Copy address
           </button>
+          <Link to="/settings" role="menuitem" className="item" onClick={() => close(false)}>
+            Settings
+          </Link>
           <button type="button" role="menuitem" className="item" onClick={() => { close(false); void logout() }}>
             <NavIcon name="out" size={18} />
             Disconnect

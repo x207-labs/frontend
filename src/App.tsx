@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react'
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { FeedbackButton } from './account/FeedbackButton'
 import { Layout } from './components/Layout'
+import { Settings } from './pages/Settings'
 import { LEGACY_ROUTES } from './legacyRoutes'
 import { RequireWallet } from './components/RequireWallet'
 import { pages } from './routes'
@@ -34,6 +36,7 @@ export function NotFound() {
 
 export function App() {
   return (
+    <>
     <Routes>
       {/* FE-037: outside the layout, so the first paint of "/" is not the layout with "Page not found". FE-044: "/" is the landing page; a full load of "/" gets it from main.tsx without the wallet, this route covers a link inside the dashboard. */}
       <Route path="/" element={<Root />} />
@@ -42,11 +45,14 @@ export function App() {
         {pages.map(({ path, title, needsWallet, Page }) => (
           <Route key={path} path={path} element={needsWallet ? <RequireWallet title={title}><Page /></RequireWallet> : <Page />} />
         ))}
+        <Route path="/settings" element={<RequireWallet title="Settings"><Settings /></RequireWallet>} />
         {Object.entries(LEGACY_ROUTES).map(([from, to]) => (
           <Route key={from} path={from} element={<Redirect to={to} />} />
         ))}
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+    <FeedbackButton /> {/* FE-068: last in the page, so the skip link stays the first stop of the keyboard */}
+    </>
   )
 }

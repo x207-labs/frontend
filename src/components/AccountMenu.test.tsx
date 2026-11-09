@@ -33,10 +33,12 @@ describe('FE-055 account menu', () => {
     await user.click(trigger)
     expect(trigger).toHaveAttribute('aria-expanded', 'true')
     const items = screen.getAllByRole('menuitem')
-    expect(items.map((i) => i.textContent)).toEqual(['Copy address', 'Disconnect'])
+    expect(items.map((i) => i.textContent)).toEqual(['Copy address', 'Settings', 'Disconnect']) // FE-068: Settings between the two
     expect(items[0]).toHaveFocus()
     await user.keyboard('{ArrowDown}')
     expect(items[1]).toHaveFocus()
+    await user.keyboard('{ArrowDown}')
+    expect(items[2]).toHaveFocus()
     await user.keyboard('{ArrowDown}')
     expect(items[0]).toHaveFocus()
     await user.keyboard('{Escape}')

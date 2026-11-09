@@ -24,6 +24,8 @@ function positive(value: string | undefined): boolean {
   }
 }
 
+export const isStaked = (member: Pick<Member, 'stake'>): boolean => positive(member.stake)
+
 export function computeSteps({ account, member, acknowledged }: StepsInput): StepView[] {
   const loading = member.kind === 'loading' && account !== null
   const m = member.kind === 'member' ? member.member : null

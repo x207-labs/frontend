@@ -1,0 +1,6 @@
+/* FE-068: feedback button and panel. Own file; it reads the app's colour variables when they exist and has plain fallbacks. */
+.feedback { position: fixed; right: max(1rem, env(safe-area-inset-right)); bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 40; display: grid; justify-items: end; gap: 0.5rem; }
+.feedback-panel { width: min(22rem, calc(100vw - 2rem)); display: grid; gap: 0.5rem; padding: 1rem; border: 1px solid var(--line, #d0d7de); border-radius: 16px; background: var(--glass, #fff); color: inherit; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.feedback-panel textarea { width: 100%; box-sizing: border-box; font-size: 1rem; }
+.feedback-actions { display: flex; gap: 0.5rem; }
+.feedback-toggle { min-height: 44px; }
