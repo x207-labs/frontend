@@ -1,0 +1,12 @@
+/* FE-059: the login on the /sign popup. Own file; colours come from the tokens of styles.css. */
+.privy-sign { max-width: 24rem; margin: 0 auto; padding: 2rem 1rem; color: var(--ink); }
+.privy-sign h1 { margin: 0 0 0.75rem; font-size: 1.5rem; }
+.privy-sign form { display: flex; flex-direction: column; gap: 0.75rem; }
+.privy-sign label { display: flex; flex-direction: column; gap: 0.25rem; }
+.privy-sign input { min-height: 2.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+.privy-sign button { min-height: 2.75rem; padding: 0.5rem 1rem; border: 1px solid var(--accent-ink); border-radius: 6px; background: var(--accent-ink); color: #fff; font: inherit; cursor: pointer; }
+.privy-sign button:disabled { opacity: 0.6; cursor: not-allowed; }
+.privy-sign .privy-actions { display: flex; gap: 0.5rem; }
+.privy-sign .privy-actions button:last-child { background: var(--sheet); color: var(--accent-ink); }
+.privy-or { margin: 0.75rem 0; text-align: center; color: var(--ink-soft); }
+.privy-error { color: var(--s409); }

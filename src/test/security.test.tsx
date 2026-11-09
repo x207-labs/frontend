@@ -30,7 +30,7 @@ describe('keamanan frontend: sumber', () => {
   it('TC-FE-SEC-12 VITE_* variables hold only addresses, ids, and choices; no secret name', () => {
     const names = new Set<string>()
     for (const text of Object.values(files)) for (const m of text.matchAll(/VITE_[A-Z0-9_]+/g)) names.add(m[0])
-    expect([...names].sort()).toEqual(['VITE_NEAR_NETWORK', 'VITE_NEAR_RPC_URL', 'VITE_X207_API_URL', 'VITE_X207_BROKER_URL', 'VITE_X207_CIRCLE', 'VITE_X207_CONTRACT_ID', 'VITE_X207_CSP', 'VITE_X207_INTENTS_EXPLORER_URL', 'VITE_X207_POLL_MS', 'VITE_X207_USE_FIXTURES', 'VITE_X207_WALLET_ORIGINS'])
+    expect([...names].sort()).toEqual(['VITE_NEAR_NETWORK', 'VITE_NEAR_RPC_URL', 'VITE_PRIVY_APP_CLIENT_ID', 'VITE_PRIVY_APP_ID', 'VITE_X207_API_URL', 'VITE_X207_BROKER_URL', 'VITE_X207_CIRCLE', 'VITE_X207_CONTRACT_ID', 'VITE_X207_CSP', 'VITE_X207_INTENTS_EXPLORER_URL', 'VITE_X207_POLL_MS', 'VITE_X207_USE_FIXTURES', 'VITE_X207_WALLET_ORIGINS'])
     for (const name of names) expect(name).not.toMatch(/KEY|SECRET|TOKEN|PRIVATE|PASSWORD|JWT|MNEMONIC|SEED/)
   })
 

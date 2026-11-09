@@ -1,6 +1,8 @@
 import type { NearConnector } from '@hot-labs/near-connect'
 import { NEAR_NETWORK } from '../config'
 import { outcomeFailure } from '../tx/outcome'
+import { privyEnabled } from './privyConfig'
+import { buildManifest } from './privyManifest'
 import type { WalletPort } from './types'
 
 const CONNECTED_FLAG = 'x207.wallet.connected'
@@ -30,8 +32,13 @@ let connector: Promise<NearConnector> | undefined
 // NearConnector fetches the wallet manifest from the network when created, so it is only created
 // when the user logs in or has a session. Read pages still only call the read API.
 function getConnector(): Promise<NearConnector> {
-  connector ??= import('@hot-labs/near-connect').then(
-    ({ NearConnector }) => new NearConnector({ network: NEAR_NETWORK, cspNonce: typeof __X207_CSP_NONCE__ === 'string' ? __X207_CSP_NONCE__ : undefined }),
+  connector ??= Promise.all([
+    import('@hot-labs/near-connect'),
+    // FE-059: with the Privy ids set, the wallet list is the library's list plus the Privy wallet; without them `manifest` stays unset and nothing changes.
+    buildManifest({ enabled: privyEnabled, origin: window.location.origin }),
+  ]).then(
+    ([{ NearConnector }, manifest]) =>
+      new NearConnector({ network: NEAR_NETWORK, cspNonce: typeof __X207_CSP_NONCE__ === 'string' ? __X207_CSP_NONCE__ : undefined, ...(manifest ? { manifest: manifest as unknown as NonNullable<ConstructorParameters<typeof NearConnector>[0]>['manifest'] } : {}) }),
   )
   return connector
 }
