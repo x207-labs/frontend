@@ -101,9 +101,9 @@ function MorphWord({ reduced }: { reduced: boolean }) {
           <m.span
             key={word}
             className="morph-word"
-            initial={{ y: '0.55em', opacity: 0, filter: 'blur(12px)' }}
-            animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-            exit={{ y: '-0.55em', opacity: 0, filter: 'blur(12px)' }}
+            initial={{ y: '1.05em' }}
+            animate={{ y: 0 }}
+            exit={{ y: '-1.05em' }}
             transition={{ duration: 0.6, ease: EASE_OUT }}
           >
             {word}.
@@ -118,13 +118,12 @@ function Caption({ chapter, story, reduced, skew }: { chapter: Chapter; story: M
   const [a, b] = STORY[chapter.key]
   const opacity = useTransform(story, [a, a + 0.035, b - 0.035, b], [0, 1, 1, 0])
   const y = useTransform(story, [a, a + 0.05, b - 0.05, b], reduced ? [0, 0, 0, 0] : [70, 0, 0, -70])
-  const filter = useTransform(story, [a, a + 0.04, b - 0.04, b], reduced ? ['none', 'none', 'none', 'none'] : ['blur(14px)', 'blur(0px)', 'blur(0px)', 'blur(14px)'])
   const count = useTransform(story, [a + 0.01, a + 0.08], [chapter.from, chapter.to])
   const figure = useTransform(count, chapter.format)
   return (
-    <m.article className="chapter" style={{ opacity, y, filter, skewY: skew }} aria-labelledby={`chapter-${chapter.key}`}>
+    <m.article className="chapter" style={{ opacity, y, skewY: skew }} aria-labelledby={`chapter-${chapter.key}`}>
       <p className="chapter-kicker">
-        <span>{chapter.n}</span> {chapter.kicker}
+        Fig. {chapter.n} <span>{chapter.kicker}</span>
       </p>
       <h2 id={`chapter-${chapter.key}`} className="chapter-title">{chapter.title}</h2>
       <p className="chapter-figure">
@@ -170,7 +169,6 @@ export function Theatre() {
 
   const heroOpacity = useTransform(story, [0, STORY.hero[1] - 0.02], [1, 0])
   const heroY = useTransform(story, [0, STORY.hero[1]], [0, reduced ? 0 : -90])
-  const heroFilter = useTransform(story, [0, STORY.hero[1]], reduced ? ['none', 'none'] : ['blur(0px)', 'blur(10px)'])
   const heroVisibility = useTransform(story, (v) => (v > STORY.hero[1] ? 'hidden' : 'visible'))
   const diveFlash = useTransform(story, [STORY.dive[0] + 0.06, 0.985, 1], [0, 0.85, 1])
   const rail = useTransform(story, [STORY.kinds[0], STORY.net[1]], [0, 1])
@@ -205,17 +203,11 @@ export function Theatre() {
           />
         </m.div>
 
-        <m.div className="hero-copy" style={{ opacity: heroOpacity, y: heroY, filter: heroFilter, visibility: heroVisibility }}>
-          <m.p className="eyebrow chip" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.05 }}>
-            <span className="pulse" aria-hidden="true" /> Live on NEAR testnet · <code>{LIVE.contract}</code>
+        <m.div className="hero-copy" style={{ opacity: heroOpacity, y: heroY, visibility: heroVisibility }}>
+          <m.p className="hero-live" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.05 }}>
+            Live on NEAR testnet, contract <code>{LIVE.contract}</code>
           </m.p>
-          <m.h1
-            id="hero-title"
-            className="hero-title"
-            initial={{ opacity: 0, y: 24, filter: 'blur(16px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            transition={{ ...SPRING, delay: 0.15, filter: { duration: 1, delay: 0.15, ease: EASE_OUT } }}
-          >
+          <m.h1 id="hero-title" className="hero-title" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.15 }}>
             {/* The spaces between the lines keep the accessible name one sentence. */}
             <span className="line">Agents pay in</span>{' '}
             <MorphWord reduced={reduced} />{' '}
@@ -243,14 +235,14 @@ export function Theatre() {
           <ol className="hud-ticks">
             {CHAPTERS.map((c, i) => (
               <li key={c.key} className={i === active ? 'is-on' : i < active ? 'is-past' : undefined}>
-                {c.n}
+                {c.kicker}
               </li>
             ))}
           </ol>
         </div>
         <p className="hud-source">
-          <span className="pulse" aria-hidden="true" /> Numbers from {EPOCH8.tag} ·{' '}
-          <a href={LIVE.epoch8Run} target="_blank" rel="noreferrer">source</a>
+          Numbers from {EPOCH8.tag}.{' '}
+          <a href={LIVE.epoch8Run} target="_blank" rel="noreferrer">Source</a>
         </p>
         <a className="skip-story" href="#barter">Skip the story</a>
         <m.div className="dive-flash" style={{ opacity: diveFlash }} aria-hidden="true" />

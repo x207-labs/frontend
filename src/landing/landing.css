@@ -7,22 +7,24 @@ html.is-landing,
   --lp-bg-2: #0a0f17;
   --lp-ink: #eaf6ff;
   --lp-ink-2: #8fa3b5; /* 7.6:1 on --lp-bg */
-  --lp-hair: rgb(160 220 255 / 0.12);
-  --lp-gross: rgb(160 220 255 / 0.3);
-  --lp-glass: rgb(12 18 28 / 0.58);
-  --lp-glass-line: rgb(255 255 255 / 0.06);
+  --lp-hair: rgb(140 180 255 / 0.12);
+  --lp-gross: rgb(140 180 255 / 0.3);
+  --lp-glass: rgb(8 11 17 / 0.9);
+  --lp-glass-line: rgb(255 255 255 / 0.05);
   --lp-shadow: 0 1px 1px rgb(0 0 0 / 0.3), 0 18px 48px -18px rgb(0 0 0 / 0.8);
-  --lp-holo: #5fe1ff;
+  /* FE-050: back to the true blue of FE-044. One blue for the brand, the debtors and the hologram; green for creditors, orange for the defaulter. */
+  --lp-holo: #3d8bff;
   --lp-holo-deep: #1a3cff;
-  --lp-violet: #8b7bff;
-  --lp-accent: #5fe1ff;
-  --lp-accent-fill: #5fe1ff;
-  --lp-on-accent: #03141c; /* dark text on the cyan button: 13:1 */
-  --lp-green: #34e39a;
-  --lp-orange: #ffae42;
+  --lp-accent: #3d8bff; /* 6.1:1 on --lp-bg */
+  --lp-accent-fill: #1a62d6;
+  --lp-on-accent: #ffffff; /* white on the blue button: 5.6:1 */
+  --lp-pay: #3d8bff;
+  --lp-green: #34c46e;
+  --lp-orange: #f5a524;
+  --lp-late: #f5a524;
+  --lp-line: #8fb4ff; /* line art and leader lines */
   --lp-logo-ink: #eaf6ff; /* brand/README: ink and teal of the logo on dark */
   --lp-logo-teal: #5dcaa5;
-  --lp-glow: 0 0 24px rgb(95 225 255 / 0.45);
   --lp-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Schibsted Grotesk Variable', system-ui, sans-serif;
   --lp-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
   --lp-ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -64,34 +66,26 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .skip { position: absolute; left: 16px; top: -60px; z-index: 100; padding: 10px 16px; border-radius: 999px; background: var(--lp-ink); color: var(--lp-bg); text-decoration: none; }
 .lp .skip:focus { top: 16px; }
 
-/* Glass and shared parts */
+/* Panels and shared parts. FE-050: opaque panels, no frosted blur. */
 .lp .glass {
   background: var(--lp-glass);
-  -webkit-backdrop-filter: saturate(160%) blur(20px);
-  backdrop-filter: saturate(160%) blur(20px);
   border: 1px solid var(--lp-hair);
   box-shadow: var(--lp-shadow), inset 0 1px 0 var(--lp-glass-line);
 }
-.lp .eyebrow.chip {
-  display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 12px; border-radius: 999px; color: var(--lp-ink-2); font-size: 13px; font-weight: 500;
-  background: var(--lp-glass); border: 1px solid var(--lp-hair); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-}
-.lp .eyebrow.chip code { color: var(--lp-ink); }
-.lp .pulse { position: relative; flex: none; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--lp-green); }
-.lp .pulse::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--lp-green); opacity: 0; animation: lp-pulse 2.4s var(--lp-ease) infinite; }
-@keyframes lp-pulse { 0% { transform: scale(0.4); opacity: 0.7; } 100% { transform: scale(1.6); opacity: 0; } }
+.lp .hero-live { font-size: 13px; color: var(--lp-ink-2); }
+.lp .hero-live code { color: var(--lp-ink); }
 .lp .is-quiet { color: var(--lp-ink-2); }
 
 .lp .btn {
   display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 22px; border-radius: 999px;
   font-weight: 600; font-size: 16px; text-decoration: none; white-space: nowrap; color: var(--lp-ink);
-  background: var(--lp-glass); border: 1px solid var(--lp-gross); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-  transition: transform 0.5s var(--lp-spring), background-color 0.2s, box-shadow 0.3s var(--lp-ease);
+  background: var(--lp-glass); border: 1px solid var(--lp-gross);
+  transition: transform 0.5s var(--lp-spring), background-color 0.2s, border-color 0.2s;
 }
-.lp .btn:hover { transform: translateY(-1px); box-shadow: var(--lp-glow); }
+.lp .btn:hover { transform: translateY(-1px); border-color: var(--lp-line); }
 .lp .btn:active { transform: scale(0.97); transition-duration: 0.12s; }
-.lp .btn.is-primary { background: var(--lp-accent-fill); border-color: transparent; color: var(--lp-on-accent); box-shadow: 0 0 32px -6px rgb(95 225 255 / 0.6); }
-.lp .btn.is-primary:hover { box-shadow: 0 0 44px -4px rgb(95 225 255 / 0.8); }
+.lp .btn.is-primary { background: var(--lp-accent-fill); border-color: transparent; color: var(--lp-on-accent); }
+.lp .btn.is-primary:hover { background: #2470e6; }
 .lp .btn.is-small { height: 36px; padding: 0 16px; font-size: 14px; }
 
 /* Nav */
@@ -117,41 +111,42 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .theatre-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; isolation: isolate; }
 .lp .holo-fog {
   position: absolute; inset: -12%; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(40% 36% at 62% 40%, rgb(26 60 255 / 0.22), transparent 70%),
-    radial-gradient(30% 30% at 38% 64%, rgb(139 123 255 / 0.14), transparent 70%),
-    radial-gradient(60% 50% at 50% 50%, rgb(95 225 255 / 0.07), transparent 75%);
-  filter: blur(20px);
+  background: radial-gradient(44% 40% at 62% 44%, rgb(26 60 255 / 0.14), transparent 72%);
 }
 .lp .holo-grid {
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background-image: radial-gradient(rgb(160 220 255 / 0.16) 1px, transparent 1.2px);
+  background-image: radial-gradient(rgb(140 180 255 / 0.14) 1px, transparent 1.2px);
   background-size: 28px 28px;
   -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000 20%, transparent 75%);
   mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000 20%, transparent 75%);
 }
 .lp .holo-visual { position: absolute; inset: 0; z-index: 1; }
 
-/* The 3D brain fills the stage; scene.ts moves it aside for the chapters. Chips behind it sit at z-index 0, in front at 3. */
+/* The 3D world fills the stage; scene.ts flies the camera through it. */
 .lp .brain { position: absolute; inset: 0; }
 .lp .brain-stage { position: absolute; inset: 0; isolation: isolate; pointer-events: none; }
 .lp .brain-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; transform: scale(0.94); transition: opacity 1.4s var(--lp-ease), transform 1.8s var(--lp-ease); }
 .lp .brain.is-ready .brain-canvas { opacity: 1; transform: none; }
-.lp .orbit-tag {
-  position: absolute; left: 0; top: 0; white-space: nowrap; will-change: transform, opacity; opacity: 0;
-  padding: 4px 10px 4px 8px; border-radius: 999px; font-family: var(--lp-mono); font-size: 11px; color: var(--lp-holo);
-  background: rgb(95 225 255 / 0.07); border: 1px solid rgb(95 225 255 / 0.35);
-  box-shadow: 0 0 18px -6px rgb(95 225 255 / 0.7), inset 0 0 10px -4px rgb(95 225 255 / 0.5);
-  text-shadow: 0 0 8px rgb(95 225 255 / 0.6);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+
+/* Callouts of the 3D world, in the manner of a technical figure: a thin leader line from the part, then plain text. scene.ts places them each frame. */
+.lp .callouts { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.lp .callout-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.lp .callout-lines polyline { fill: none; stroke: var(--lp-line); stroke-width: 1; opacity: 0; transition: opacity 0.3s var(--lp-ease); }
+.lp .callout-lines polyline.is-on { opacity: 0.8; }
+.lp .callout {
+  position: absolute; left: 0; top: 0; white-space: nowrap; will-change: transform; opacity: 0;
+  font-size: 12.5px; line-height: 1.2; color: var(--lp-ink-2); font-variant-numeric: tabular-nums; letter-spacing: 0;
+  transition: opacity 0.35s var(--lp-ease);
 }
-.lp .orbit-tag::before { content: ''; display: inline-block; width: 5px; height: 5px; margin-right: 6px; border-radius: 50%; background: var(--lp-holo); vertical-align: 1px; box-shadow: 0 0 8px var(--lp-holo); }
+.lp .callout.is-on { opacity: 1; }
+.lp .callout b { color: var(--lp-ink); font-weight: 650; }
+.lp .callout.is-kinds { color: var(--lp-ink); font-size: 13px; }
+.lp .callout.is-members { font-size: 11.5px; padding: 0 6px; }
 
 /* Without a fast GPU the flat ring of epoch 8 takes the brain's place. */
 .lp .holo-fallback {
   position: absolute; left: 50%; top: 40%; width: min(540px, 58svh, 88vw);
   transform: translate(-50%, -50%) translateX(calc(var(--aside, 0) * 22vw));
-  filter: drop-shadow(0 0 24px rgb(95 225 255 / 0.25));
 }
 
 /* The first screen: headline left and brain right on a wide screen; brain above and headline below on a portrait one (media query below). */
@@ -162,45 +157,38 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .hero-title { font-size: clamp(38px, min(5.6vw, 9.5svh), 92px); line-height: 1; font-weight: 700; letter-spacing: -0.045em; margin: 18px 0 16px; color: var(--lp-ink); }
 .lp .hero-title .line { display: block; }
 .lp .morph { position: relative; height: 1.08em; }
-.lp .morph-slot { position: absolute; inset: 0; }
-.lp .morph-word {
-  position: absolute; left: 0; top: 0; white-space: nowrap; padding-bottom: 0.08em;
-  background: linear-gradient(90deg, #b7f3ff 0%, var(--lp-holo) 45%, var(--lp-violet) 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  text-shadow: 0 0 42px rgb(95 225 255 / 0.35);
-}
+/* The word slides up through a mask: one solid colour, no blur. */
+.lp .morph-slot { position: absolute; inset: -0.04em 0 -0.12em; overflow: hidden; }
+.lp .morph-word { position: absolute; left: 0; top: 0.04em; white-space: nowrap; color: var(--lp-accent); }
 .lp .hero-lead { font-size: clamp(15px, 1.3vw, 18px); color: var(--lp-ink-2); max-width: 34em; }
 .lp .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 
 /* Chapters: one line and one number each, on the left while the brain plays on the right. */
 .lp .chapters { position: absolute; inset: 0; z-index: 3; display: grid; align-items: center; padding: 96px var(--lp-gutter) 72px var(--lp-side); pointer-events: none; }
-.lp .chapter { grid-area: 1 / 1; max-width: min(540px, 44vw); opacity: 0; will-change: transform, opacity, filter; }
-.lp .chapter-kicker { display: flex; align-items: center; gap: 10px; font-family: var(--lp-mono); font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lp-holo); margin-bottom: 18px; }
-.lp .chapter-kicker span { padding: 2px 8px; border-radius: 999px; border: 1px solid rgb(95 225 255 / 0.4); box-shadow: 0 0 12px -4px var(--lp-holo); }
+.lp .chapter { grid-area: 1 / 1; max-width: min(540px, 44vw); opacity: 0; will-change: transform, opacity; }
+/* "Fig. 1  Barter": the figure number of a technical drawing, then the chapter name. */
+.lp .chapter-kicker { font-size: 14px; color: var(--lp-ink-2); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--lp-hair); max-width: 22em; }
+.lp .chapter-kicker span { margin-left: 10px; color: var(--lp-ink); font-weight: 600; }
 .lp .chapter-title { font-size: clamp(32px, 4.4vw, 62px); line-height: 1.02; font-weight: 700; letter-spacing: -0.04em; }
 .lp .chapter-figure { margin-top: 26px; display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
-.lp .chapter-figure > span:first-child {
-  font-size: clamp(52px, 7.4vw, 112px); line-height: 0.95; font-weight: 700; letter-spacing: -0.05em; white-space: nowrap;
-  background: linear-gradient(90deg, #d4f8ff, var(--lp-holo) 50%, var(--lp-violet)); -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 0 22px rgb(95 225 255 / 0.35));
-}
+.lp .chapter-figure > span:first-child { font-size: clamp(52px, 7.4vw, 112px); line-height: 0.95; font-weight: 700; letter-spacing: -0.05em; white-space: nowrap; color: var(--lp-accent); }
 .lp .chapter-figure small { font-size: 15px; color: var(--lp-ink-2); }
 .lp .chapter-note { margin-top: 14px; font-size: 16px; color: var(--lp-ink-2); }
 
 /* HUD: progress rail, chapter ticks, source line, skip link, and the flash of the final dive. */
 .lp .hud { position: absolute; z-index: 5; right: var(--lp-side); top: 50%; transform: translateY(-50%); display: flex; gap: 12px; align-items: stretch; pointer-events: none; }
 .lp .hud-rail { position: relative; width: 2px; border-radius: 2px; background: var(--lp-hair); overflow: hidden; }
-.lp .hud-fill { position: absolute; inset: 0; background: linear-gradient(var(--lp-holo), var(--lp-violet)); transform-origin: top; box-shadow: 0 0 10px var(--lp-holo); }
-.lp .hud-ticks { display: grid; gap: 22px; font-family: var(--lp-mono); font-size: 11px; color: var(--lp-ink-2); }
-.lp .hud-ticks li { opacity: 0.4; transition: opacity 0.4s, color 0.4s, transform 0.5s var(--lp-spring); }
-.lp .hud-ticks li.is-past { opacity: 0.75; }
-.lp .hud-ticks li.is-on { opacity: 1; color: var(--lp-holo); transform: translateX(-4px); text-shadow: 0 0 10px var(--lp-holo); }
+.lp .hud-fill { position: absolute; inset: 0; background: var(--lp-accent); transform-origin: top; }
+.lp .hud-ticks { display: grid; gap: 22px; font-size: 12px; color: var(--lp-ink-2); }
+.lp .hud-ticks li { opacity: 0.45; transition: opacity 0.4s, color 0.4s, transform 0.5s var(--lp-spring); }
+.lp .hud-ticks li.is-past { opacity: 0.7; }
+.lp .hud-ticks li.is-on { opacity: 1; color: var(--lp-ink); transform: translateX(-4px); }
 .lp .hud-source { position: absolute; z-index: 5; left: var(--lp-side); bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--lp-ink-2); }
 .lp .hud-source a { color: var(--lp-accent); text-decoration: none; }
 .lp .hud-source a:hover { text-decoration: underline; }
 .lp .skip-story { position: absolute; z-index: 5; right: var(--lp-side); bottom: 14px; padding: 8px 14px; border-radius: 999px; font-size: 13px; color: var(--lp-ink-2); text-decoration: none; border: 1px solid var(--lp-hair); background: var(--lp-glass); transition: color 0.2s, border-color 0.2s; }
 .lp .skip-story:hover { color: var(--lp-ink); border-color: var(--lp-gross); }
-.lp .dive-flash { position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 46%, rgb(190 245 255 / 0.55), rgb(95 225 255 / 0.18) 32%, var(--lp-bg) 72%); }
+.lp .dive-flash { position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 46%, rgb(160 196 255 / 0.4), rgb(61 139 255 / 0.16) 32%, var(--lp-bg) 72%); }
 
 /* The ring (fallback for the brain) */
 .lp .ring { display: block; width: 100%; height: auto; overflow: visible; }
@@ -212,7 +200,7 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .ring-net.is-out { stroke: var(--lp-green); }
 .lp .ring-head.is-in { fill: var(--lp-accent); }
 .lp .ring-head.is-out { fill: var(--lp-green); }
-.lp .ring-stake { fill: rgb(95 225 255 / 0.05); stroke: var(--lp-hair); stroke-width: 1; }
+.lp .ring-stake { fill: rgb(61 139 255 / 0.05); stroke: var(--lp-hair); stroke-width: 1; }
 .lp .ring-node { fill: var(--lp-bg); stroke: var(--lp-ink-2); stroke-width: 2.5; }
 .lp .is-debtor .ring-node { stroke: var(--lp-accent); }
 .lp .is-creditor .ring-node { stroke: var(--lp-green); }
@@ -239,10 +227,10 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .dots.is-in .dot { opacity: 1; transform: none; }
 .lp .dots[data-active] .dot:not(.is-lit) { opacity: 0.14; transition-delay: 0s !important; }
 .lp .dots[data-active] .dot.is-lit { transform: scale(1.12); transition-delay: 0s !important; }
-.lp .is-testnet { background: var(--lp-holo); box-shadow: 0 0 12px -2px var(--lp-holo); }
-.lp .is-sandbox { background: rgb(95 225 255 / 0.7); }
-.lp .is-mock { background: rgb(95 225 255 / 0.42); }
-.lp .is-unit { background: rgb(95 225 255 / 0.22); }
+.lp .is-testnet { background: var(--lp-accent); }
+.lp .is-sandbox { background: rgb(61 139 255 / 0.7); }
+.lp .is-mock { background: rgb(61 139 255 / 0.42); }
+.lp .is-unit { background: rgb(61 139 255 / 0.22); }
 .lp .is-generic { background: var(--lp-gross); }
 .lp .is-p1 { background: transparent; box-shadow: inset 0 0 0 2px var(--lp-gross); }
 .lp .is-roadmap { background: transparent; box-shadow: inset 0 0 0 2px var(--lp-hair); }
@@ -262,9 +250,9 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 
 /* Limits */
 .lp .rows { margin-top: 48px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
-.lp .row { display: grid; align-content: start; gap: 8px; padding: 22px; border-radius: 20px; border: 1px solid var(--lp-hair); background: linear-gradient(160deg, rgb(95 225 255 / 0.05), transparent 60%); }
+.lp .row { display: grid; align-content: start; gap: 8px; padding: 22px; border-radius: 20px; border: 1px solid var(--lp-hair); }
 .lp .row h3 { font-size: 20px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.2; }
-.lp .row-figure { justify-self: start; padding: 3px 10px; border-radius: 999px; border: 1px solid rgb(95 225 255 / 0.35); color: var(--lp-holo); font-family: var(--lp-mono); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lp .row-figure { justify-self: start; color: var(--lp-accent); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .lp .row p { font-size: 15px; color: var(--lp-ink-2); }
 
 /* Build */
@@ -272,7 +260,7 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .snippet { min-width: 0; border-radius: 22px; padding: 22px; }
 .lp .snippet-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .lp .snippet h3 { font-size: 18px; font-weight: 650; letter-spacing: -0.02em; }
-.lp .snippet pre { overflow-x: auto; padding: 16px; border-radius: 14px; background: rgb(0 0 0 / 0.45); border: 1px solid var(--lp-hair); color: #c9f4ff; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.lp .snippet pre { overflow-x: auto; padding: 16px; border-radius: 14px; background: rgb(0 0 0 / 0.45); border: 1px solid var(--lp-hair); color: #d4e3ff; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
 .lp .snippet pre code { font-size: inherit; }
 .lp .copy {
   flex: none; min-width: 76px; height: 34px; padding: 0 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
@@ -320,8 +308,8 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
   .lp { font-size: 16px; }
   .lp .nav-git { display: none; }
   .lp .ring-label { display: none; }
-  .lp .orbit-tag { font-size: 10px; }
-  .lp .orbit-tag.is-extra { display: none; }
+  .lp .callout { font-size: 11px; }
+  .lp .callout.is-members span { display: none; }
   .lp .hero-actions .btn { height: 44px; padding: 0 18px; font-size: 15px; }
   .lp .chapter-note { font-size: 15px; }
   .lp .hud-source { bottom: 18px; font-size: 11px; }

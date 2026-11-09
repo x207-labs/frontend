@@ -2,22 +2,9 @@ import type { MotionValue } from 'motion/react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { EPOCH8 } from './facts'
 
-// FE-044, FE-048: the visual of the scroll theatre. A hologram brain (three.js, loaded after the page is idle, so the first paint and the headline never wait for
-// it) with pipelines and asset kinds orbiting it. Without a GPU-backed WebGL 2 (old browsers, software rendering, the tests) the flat ring of epoch 8 stays in its place.
-
-/** Asset kinds of the barter catalog (docs/barter-evidence.md), as the contract names them. The last ones are hidden on a phone. */
-const KINDS = [
-  'near:named-account',
-  'compute:gpu-hours',
-  'data:dataset',
-  'api:delegated-key',
-  'nft:nep171',
-  'token:nep141',
-  'model:weights',
-  'storage:capacity',
-  'saas:team-seat',
-  'rwa:tokenized',
-]
+// FE-044, FE-048, FE-050: the visual of the scroll theatre. A 3D world (three.js, loaded after the page is idle, so the first paint and the headline never wait
+// for it): the hologram brain, a barter cabinet, and the circle of epoch 8 that the camera flies through (brain/scene.ts). Without a GPU-backed WebGL 2 (old
+// browsers, software rendering, the tests) the flat ring of epoch 8 stays in its place.
 
 type Props = { reduced: boolean; px: MotionValue<number>; py: MotionValue<number>; story: MotionValue<number>; fallback: ReactNode }
 
@@ -73,15 +60,9 @@ export function BrainStage({ reduced, px, py, story, fallback }: Props) {
       ref={host}
       className={state === 'ready' ? 'brain is-ready' : 'brain'}
       role="img"
-      aria-label={`A hologram brain for the circle of ${EPOCH8.tag}: asset kinds are drawn into it, ${EPOCH8.vouchers} pipelines flow in, one per voucher, and ${EPOCH8.movements} flow out, one per net position that moved`}
+      aria-label={`The circle of ${EPOCH8.tag} in 3D: asset kinds leave a barter cabinet for the circle contract, ${EPOCH8.members} members register ${EPOCH8.vouchers} vouchers, loops clear, and ${EPOCH8.movements} net transfers settle the rest`}
     >
-      <div className="brain-stage">
-        {KINDS.map((k, i) => (
-          <span key={k} className={i >= 6 ? 'orbit-tag is-extra' : 'orbit-tag'} data-orbit="0" aria-hidden="true">
-            {k}
-          </span>
-        ))}
-      </div>
+      <div className="brain-stage" />
     </div>
   )
 }
