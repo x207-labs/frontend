@@ -26,6 +26,8 @@ function Header() {
           {page?.perEpoch && <EpochPicker />}
         </div>
       </div>
+      {/* FE-069: one plain sentence on what the page is for, so a first-time visitor knows why they are here */}
+      {page && <p className="page-intro">{page.intro}</p>}
       {page?.perEpoch && <LateEpochNotice />}
       {page?.perEpoch && selected && <PhaseStrip phase={selected.phase} />}
     </header>

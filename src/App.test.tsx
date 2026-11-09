@@ -13,11 +13,12 @@ describe('dashboard shell', () => {
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
   })
 
-  it('TC-FE-002-01 sixteen pages (Home, F1-F4, governance, marketplace F9, access F8, invoices P8, orders P6, licenses P7, codes P3, transfers P4 and access rent P2) open from one navigation', async () => {
+  it('TC-FE-002-01 eighteen pages (Overview, My account, Marketplace, Governance and Help) open from one navigation', async () => {
     const user = userEvent.setup()
     renderApp('/stats')
     const nav = screen.getByRole('navigation', { name: 'Pages' })
-    expect(within(nav).getAllByRole('link')).toHaveLength(16)
+    expect(within(nav).getAllByRole('link')).toHaveLength(18)
+    expect(pages).toHaveLength(18)
     for (const { title } of pages) {
       await user.click(within(nav).getByRole('link', { name: title }))
       expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument()
@@ -42,7 +43,7 @@ describe('dashboard shell', () => {
 
   it.each(['/?circle=v014', '/?epoch=8'])('FE-044 an old dashboard link %s on "/" opens the stats page, not the landing', async (path) => {
     renderApp(path)
-    expect(await screen.findByRole('heading', { level: 1, name: 'Clearing stats' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Clearing results' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Pages' })).toBeInTheDocument()
   })
 
@@ -50,7 +51,9 @@ describe('dashboard shell', () => {
     renderApp('/nope')
     expect(await screen.findByRole('heading', { level: 1, name: 'Page not found' })).toBeInTheDocument()
     expect(screen.getByText('/nope')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Open the clearing stats' })).toHaveAttribute('href', '/stats')
+    expect(screen.getByRole('link', { name: 'Go to Home' })).toHaveAttribute('href', '/app')
+    expect(screen.getByRole('link', { name: 'Get help' })).toHaveAttribute('href', '/help')
+    expect(screen.getByRole('link', { name: 'See the clearing results' })).toHaveAttribute('href', '/stats')
   })
 
   it('TC-FE-002-02 the epoch picker is sorted descending and calls the selected {n}', async () => {
@@ -66,7 +69,7 @@ describe('dashboard shell', () => {
     const user = userEvent.setup()
     const { calls } = renderApp('/stats')
     await user.selectOptions(await screen.findByRole('combobox', { name: 'Epoch' }), '40')
-    await user.click(screen.getByRole('link', { name: '207 report' }))
+    await user.click(screen.getByRole('link', { name: 'Epoch report' }))
     await waitFor(() => expect(calls().some((c) => c.endsWith('/epochs/40'))).toBe(true))
     expect(screen.getByRole('combobox', { name: 'Epoch' })).toHaveValue('40')
   })

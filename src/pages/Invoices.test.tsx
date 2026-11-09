@@ -224,7 +224,7 @@ describe('FE-025 invoice and installments', () => {
     renderApp('/invoices', (p) => (p.includes('/invoices') ? apiError(409, 'invoice_duplicate', 'An invoice with this hash already exists') : undefined), false, createMockWallet(SUPPLIER, SUPPLIER))
     expect(await screen.findByRole('alert')).toHaveTextContent('invoice_duplicate')
     renderApp('/invoices')
-    expect(await screen.findByText(/Sign in with your wallet to see your invoices/)).toBeInTheDocument()
+    expect(await screen.findByRole('group', { name: 'Sign in to see your invoices' })).toBeInTheDocument()
   })
 
   it('TC-FE-025-12 the answer of BE-051 (camelCase, with voucherEpoch, shifted, rejectReason): a shifted installment shows its new epoch and has no second catch-up, a missed one has none either', async () => {

@@ -46,7 +46,7 @@ describe('FE-034 the frontend is in English', () => {
 
   it('TC-FE-034-02 the routes and the titles are English', () => {
     expect(pages.map((p) => p.path)).toEqual([
-      '/app', '/stats', '/reports', '/charts', '/risk', '/onboarding', '/settlement', '/marketplace', '/invoices', '/orders', '/licenses', '/codes', '/transfers', '/rent', '/access', '/governance',
+      '/app', '/stats', '/reports', '/charts', '/risk', '/onboarding', '/settlement', '/settings', '/marketplace', '/invoices', '/orders', '/licenses', '/codes', '/transfers', '/rent', '/access', '/governance', '/help',
     ])
     for (const p of pages) expect(PATTERN.test(`${p.path} ${p.title}`), p.path).toBe(false)
   })

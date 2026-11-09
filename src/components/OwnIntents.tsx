@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { MAX_OPEN_INTENTS_PER_MEMBER } from '@x207/core'
 import { useOwnIntents, usePostedIntents } from '../api/queries'
 import { QueryState } from './QueryState'
+import { SignInPrompt } from './SignInPrompt'
 import { TxResult } from './TxResult'
 import { shortAccount } from '../lib/format'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
@@ -27,7 +28,7 @@ export function OwnIntents() {
     <section aria-label="My barter intents">
       <h2>My barter intents</h2>
       {!account ? (
-        <p className="state">Sign in with a wallet to see your intents.</p>
+        <SignInPrompt action="see your intents" />
       ) : (
         <QueryState query={posted} loadingLabel="Loading intents" isEmpty={(d) => d.items.length === 0} empty="No intent posted on the contract. Limit: 64 open intents per member.">
           {(data) => (

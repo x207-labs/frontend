@@ -171,7 +171,7 @@ describe('negotiation and quick barter (FE-020)', () => {
 
   it('TC-FE-020-08 rounds table, waiting-for-counterparty status, and no login', async () => {
     const view = await open(null, { offers: [offer(), offer({ offerHash: 'd'.repeat(64), proposer: OWNER, round: 2, awaiting: BUDI, value: C(98), status: 'pending' })] }, [])
-    expect(await screen.findByText(/Sign in with a wallet to negotiate/)).toBeInTheDocument()
+    expect(await screen.findByRole('group', { name: 'Sign in to negotiate' })).toBeInTheDocument()
     expect(within(await screen.findByRole('table', { name: 'Negotiation rounds' })).getAllByRole('row')).toHaveLength(1 + 2)
     void view
   })

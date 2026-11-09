@@ -1,6 +1,7 @@
 import { pages, type PageRoute } from '../routes'
 
-const text = (p: PageRoute) => `${p.title} ${p.group} ${p.path.slice(1)}`.toLowerCase()
+// FE-069: the old names (`aka`) and the one-line purpose (`intro`) are searched too, so "207 report" or "pay" still finds the page.
+const text = (p: PageRoute) => `${p.title} ${p.group} ${p.path.slice(1)} ${(p.aka ?? []).join(' ')} ${p.intro}`.toLowerCase()
 
 /** FE-057: the pages that match every word typed; titles that start with the first word come first. Empty query: all pages in sidebar order. */
 export function matchPages(query: string, list: PageRoute[] = pages): PageRoute[] {

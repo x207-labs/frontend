@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useIntentWithdrawals, useIntentsBalance } from '../api/queries'
 import { QueryState } from './QueryState'
+import { SignInPrompt } from './SignInPrompt'
 import { TxResult } from './TxResult'
 import { formatCredit } from '../lib/format'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
@@ -44,7 +45,7 @@ export function IntentsBalancePanel() {
               <button type="button" disabled={!account || !waiting || signing} onClick={() => void withdraw()}>
                 {signing ? 'Waiting for wallet…' : 'Withdraw Intents balance to the contract'}
               </button>
-              {!account && <p className="state">Sign in with a wallet to sign.</p>}
+              {!account && <SignInPrompt action="withdraw the Intents balance" />}
               <TxResult state={state} />
             </>
           )

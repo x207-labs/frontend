@@ -32,15 +32,15 @@ describe('FE-031 accessibility (axe-core)', () => {
     const user = userEvent.setup()
     renderApp('/reports', undefined, false, createMockWallet(ACCOUNT, ACCOUNT))
     await screen.findAllByRole('heading')
-    expect(document.title).toBe('207 report · x207')
+    expect(document.title).toBe('Epoch report · x207')
     await user.tab()
     const skip = screen.getByRole('link', { name: 'Skip to content' })
     expect(skip).toHaveFocus()
     await user.keyboard('{Enter}')
     expect(screen.getByRole('main')).toHaveFocus()
     // a change of page moves the focus to the content and changes the title
-    await user.click(within(screen.getByRole('navigation', { name: 'Pages' })).getByRole('link', { name: 'Clearing stats' }))
-    await waitFor(() => expect(document.title).toBe('Clearing stats · x207'))
+    await user.click(within(screen.getByRole('navigation', { name: 'Pages' })).getByRole('link', { name: 'Clearing results' }))
+    await waitFor(() => expect(document.title).toBe('Clearing results · x207'))
     expect(screen.getByRole('main')).toHaveFocus()
   })
 

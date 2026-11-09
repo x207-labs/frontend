@@ -4,8 +4,10 @@ import { api } from '../api/client'
 import { viewContract } from '../api/chain'
 import { useInvoice, useInvoices } from '../api/queries'
 import type { InstallmentReason, InstallmentView, InvoiceStatus, InvoiceView } from '../api/types'
+import { CopyButton } from '../components/CopyButton'
 import { EmptyHint } from '../components/EmptyHint'
 import { QueryState } from '../components/QueryState'
+import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
@@ -75,7 +77,7 @@ function CreateInvoice({ voucherKey, onVoucherKey, onCreated }: { voucherKey: st
   return (
     <form className="form" aria-label="Request invoice" onSubmit={(e) => { e.preventDefault(); void submit() }}>
       <h3 id="request-invoice">Request an invoice (issuer)</h3>
-      {!account && <p className="state">Sign in with your wallet to request an invoice.</p>}
+      {!account && <SignInPrompt action="request an invoice" />}
       <label><span>Debtor (the account that pays the issuer)</span><input value={debtor} onChange={(e) => setDebtor(e.target.value)} placeholder="maker.x207-circle.near" /></label>
       <label><span>Invoice number</span><input value={id} onChange={(e) => setId(e.target.value)} placeholder="INV-2026-001" /></label>
       <label><span>Amount (credit)</span><input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" /></label>
@@ -170,7 +172,7 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
                 <dt>Debtor</dt><dd><code>{view.document.debtor}</code></dd>
                 <dt>Amount</dt><dd>{formatCredit(view.document.amount)} credit</dd>
                 <dt>Memo</dt><dd>{view.document.memo || '-'}</dd>
-                <dt>Hash</dt><dd><code>{view.invoiceHash}</code></dd>
+                <dt>Hash</dt><dd><code>{view.invoiceHash}</code><CopyButton value={view.invoiceHash} label="invoice hash" /></dd>
               </dl>
               {view.rejectReason && <p className="state" role="status">Rejection reason: {view.rejectReason}</p>}
               {view.needsBond && <p className="state state-error" role="status" data-testid="invoice-bond">This invoice is at or above the bond threshold: it needs a two-sided bond (CT-094) before it is registered.</p>}
@@ -231,7 +233,7 @@ export function Invoices() {
   return (
     <>
       <h2>Invoices and installments</h2>
-      {!account && <p className="state">Sign in with your wallet to see your invoices.</p>}
+      {!account && <SignInPrompt action="see your invoices" />}
       <div className="filters">
         <label>
           <span>Status</span>

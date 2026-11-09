@@ -41,7 +41,7 @@ describe('NEAR Connect', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'Disconnect' }))
     expect(screen.queryByText('a.testnet')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Sign join and stake' })).toBeNull()
-    expect(screen.getByText(/Onboarding works on your own account/)).toBeInTheDocument()
+    expect(screen.getByText(/Join the circle works on your own account/)).toBeInTheDocument()
   })
 
   it('TC-FE-003-06 the join transaction carries network, receiver, gas, and deposit', async () => {

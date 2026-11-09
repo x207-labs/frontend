@@ -5,6 +5,7 @@ import { viewContract } from '../api/chain'
 import { usePurchase } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { QueryState } from '../components/QueryState'
+import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import {
@@ -64,7 +65,7 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
   return (
     <form className="form" aria-label="Prepare license" onSubmit={(e) => { e.preventDefault(); void prepare() }}>
       <h3>Prepare a license (seller)</h3>
-      {!account && <p className="state">Sign in with your wallet to prepare a license.</p>}
+      {!account && <SignInPrompt action="prepare a license" />}
       <label><span>File (sent nowhere)</span><input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
       <label>
         <span>Asset type</span>

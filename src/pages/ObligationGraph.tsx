@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { ApiError } from '../api/client'
 import { useObligations } from '../api/queries'
 import type { ObligationEdge, Obligations } from '../api/types'
+import { NoEpoch } from '../components/NoEpoch'
 import { QueryState } from '../components/QueryState'
 import { useEpochSelection, useSelectedEpoch } from '../epoch'
 import { decomposeCycles } from '../lib/cycles'
@@ -138,7 +139,7 @@ export function ObligationGraph() {
   const pruned = useEpochSelection().selected?.edgesUnavailable === true
   const live = useObligations(epoch, 'live')
   const cleared = useObligations(epoch, 'cleared')
-  if (epoch === null) return null
+  if (epoch === null) return <NoEpoch />
   return (
     <>
       {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}

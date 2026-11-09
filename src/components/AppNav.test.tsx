@@ -36,15 +36,15 @@ describe('FE-054 app frame', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(more).toHaveFocus()
     await user.click(more)
-    await user.click(within(screen.getByRole('dialog')).getByRole('link', { name: 'Access rent' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Access rent' })).toBeInTheDocument()
+    await user.click(within(screen.getByRole('dialog')).getByRole('link', { name: 'Rent access' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Rent access' })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('the sidebar is still one navigation named Pages with a labelled group per section', () => {
     renderApp('/stats')
     const nav = screen.getByRole('navigation', { name: 'Pages' })
-    expect(within(nav).getAllByRole('group').map((g) => g.getAttribute('aria-labelledby'))).toEqual(['nav-Overview', 'nav-My-account', 'nav-Marketplace', 'nav-Governance'])
+    expect(within(nav).getAllByRole('group').map((g) => g.getAttribute('aria-labelledby'))).toEqual(['nav-Overview', 'nav-My-account', 'nav-Marketplace', 'nav-Governance', 'nav-Help'])
   })
 
   it('the detail slot shows what a page puts in it and stays empty (hidden by CSS) when nothing is', () => {

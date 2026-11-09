@@ -8,6 +8,13 @@ const withReport = (body: unknown, status = 207) => (p: string) =>
   /\/epochs\/\d+$/.test(p) ? { status, body } : undefined
 
 describe('207 report', () => {
+  it('TC-FE-069-01 with no epoch yet the page says so and links on, instead of staying blank', async () => {
+    renderApp('/reports', (p) => (/\/epochs(\?.*)?$/.test(p) ? { status: 200, body: { items: [] } } : undefined))
+    const empty = await screen.findByRole('region', { name: 'No epoch yet' })
+    expect(within(empty).getByRole('link', { name: 'Go to Home' })).toHaveAttribute('href', expect.stringContaining('/app'))
+    expect(within(empty).getByRole('link', { name: 'What is an epoch?' })).toHaveAttribute('href', expect.stringContaining('/help'))
+  })
+
   it('TC-FE-007-01 and -07 a 207 response is read as success', async () => {
     renderApp('/reports')
     await screen.findByText('Status per member')

@@ -51,6 +51,18 @@ const PATHS: Record<string, ReactNode> = {
     </>
   ),
   '/governance': <path d="M3 9l9-5 9 5M5 9v9M10 9v9M14 9v9M19 9v9M3 20h18" />,
+  '/settings': (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8" />
+    </>
+  ),
+  '/help': (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 16.8v.2" />
+    </>
+  ),
   account: (
     <>
       <circle cx="12" cy="8" r="3.5" />

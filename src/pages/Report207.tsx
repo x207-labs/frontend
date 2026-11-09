@@ -1,5 +1,6 @@
 import { useReport } from '../api/queries'
 import type { ClearingReport, ReportMember } from '../api/types'
+import { NoEpoch } from '../components/NoEpoch'
 import { PrunePanel } from '../components/PrunePanel'
 import { QueryState } from '../components/QueryState'
 import { useSelectedEpoch } from '../epoch'
@@ -78,7 +79,7 @@ function Report({ report }: { report: ClearingReport }) {
 export function Report207() {
   const epoch = useSelectedEpoch()
   const report = useReport(epoch)
-  if (epoch === null) return null
+  if (epoch === null) return <NoEpoch />
   return (
     <>
       <QueryState

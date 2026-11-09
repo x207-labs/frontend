@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { PRUNE_MAX_ITEMS_PER_CALL } from '@x207/core'
 import { useEpochPairsLeft, useEpochs } from '../api/queries'
+import { SignInPrompt } from './SignInPrompt'
 import { TxResult } from './TxResult'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { pruneEpochTx } from '../wallet/transactions'
@@ -46,7 +47,7 @@ export function PrunePanel({ epoch }: { epoch: number }) {
       <button type="button" disabled={!account || signing} onClick={() => void prune()}>
         {signing ? 'Waiting for wallet…' : `Prune epoch ${epoch}`}
       </button>
-      {!account && <p className="state">Sign in with a wallet to sign.</p>}
+      {!account && <SignInPrompt action="prune this epoch" />}
       <TxResult state={state} />
     </section>
   )

@@ -13,6 +13,7 @@ import { formatCredit, formatNumber, formatTime, shortAccount } from '../lib/for
 import { describeMarketError } from '../lib/marketError'
 import { useWallet } from '../wallet/WalletContext'
 import { ErrorNotice, Loading } from './QueryState'
+import { SignInPrompt } from './SignInPrompt'
 import { VoucherKeyField } from './VoucherKeyField'
 
 const SECONDS_PER_DAY = 86_400
@@ -317,7 +318,7 @@ export function Negotiation({ listing, voucherKey, onVoucherKey, onClose }: {
           </table>
         </div>
       )}
-      {!account && <p className="state">Sign in with a wallet to negotiate.</p>}
+      {!account && <SignInPrompt action="negotiate" />}
       {account && !open && <p className="state">The listing is no longer open ({listing.status}).</p>}
       {account && open && !owner && !hasThread && (
         <OfferForm listing={listing} voucherKey={voucherKey} onVoucherKey={onVoucherKey} onDone={() => undefined} />

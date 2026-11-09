@@ -5,6 +5,7 @@ import { viewContract } from '../api/chain'
 import { usePurchase } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { QueryState } from '../components/QueryState'
+import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { keyFingerprint } from '../lib/barter'
@@ -55,7 +56,7 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
   return (
     <form className="form" aria-label="Prepare code" onSubmit={(e) => { e.preventDefault(); prepare() }}>
       <h3>Sell a code (seller)</h3>
-      {!account && <p className="state">Sign in with your wallet to prepare a code.</p>}
+      {!account && <SignInPrompt action="prepare a code" />}
       <label><span>Code (the listing holds only a salted commitment; a checkable code is sent once to the backend during the issuer check, an uncheckable code is sent nowhere)</span><input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" /></label>
       <small>The code must be at least 8 characters. The listing holds only a commitment with a random salt, so even a short code cannot be guessed from the listing.</small>
       <label><span>Issuer (service name, or none)</span><input value={issuer} onChange={(e) => setIssuer(e.target.value)} /></label>

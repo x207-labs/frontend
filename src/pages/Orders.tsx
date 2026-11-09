@@ -5,6 +5,7 @@ import { useDaoRegistry, useOrder, useOrderProofs, useOrders } from '../api/quer
 import type { OrderMilestoneView, OrderView } from '../api/types'
 import { EmptyHint } from '../components/EmptyHint'
 import { QueryState } from '../components/QueryState'
+import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
@@ -73,7 +74,7 @@ function CreateOrder({ voucherKey, onVoucherKey, onCreated }: { voucherKey: stri
   return (
     <form className="form" aria-label="Create order" onSubmit={(e) => { e.preventDefault(); void submit() }}>
       <h3 id="create-order">Create a service order (buyer)</h3>
-      {!account && <p className="state">Sign in with your wallet to create an order.</p>}
+      {!account && <SignInPrompt action="create an order" />}
       <label>
         <span>Service kind</span>
         <select value={form.kind} onChange={(e) => setForm({ ...EMPTY_ORDER, seller: form.seller, kind: e.target.value as OrderForm['kind'] })}>
@@ -344,7 +345,7 @@ export function Orders() {
   return (
     <>
       <h2>Service orders</h2>
-      {!account && <p className="state">Sign in with your wallet to see your orders.</p>}
+      {!account && <SignInPrompt action="see your orders" />}
       {account && (
         <QueryState query={orders} loadingLabel="Loading orders" isEmpty={(d) => d.items.length === 0} empty={<><span>No orders for this account yet.</span><EmptyHint what="an order" next={{ href: '#create-order', label: 'Create the first order below' }} /></>}>
           {(data) => (

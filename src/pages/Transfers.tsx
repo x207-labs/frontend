@@ -6,6 +6,7 @@ import { useTransfer } from '../api/queries'
 import type { ListingView } from '../api/types'
 import type { TransferView } from '../api/transferView'
 import { QueryState } from '../components/QueryState'
+import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { pairStateWithHeld, recallHeld, rememberHeld } from '../lib/codeFlow'
@@ -65,7 +66,7 @@ function Seller({ onPrepared }: { onPrepared: (p: PreparedTransfer) => void }) {
   return (
     <form className="form" aria-label="Prepare transfer listing" onSubmit={(e) => { e.preventDefault(); prepare() }}>
       <h3>List a transfer (seller)</h3>
-      {!account && <p className="state">Sign in with a wallet to prepare a transfer listing.</p>}
+      {!account && <SignInPrompt action="prepare a transfer listing" />}
       <label>
         <span>Platform</span>
         <select value={platform} onChange={(e) => { setPlatform(e.target.value as TransferPlatform); setDone(null) }}>

@@ -68,7 +68,7 @@ describe('marketplace F9: browse and create listings', () => {
     const user = userEvent.setup()
     const { requests } = renderApp('/marketplace', (p, init) => (init?.method === 'POST' && p.endsWith('/listings') ? { status: 201, body: { ...listings[0], listingHash: 'c'.repeat(64) } } : undefined), false, login())
     await screen.findByText(/translate-calls · class D/)
-    await screen.findByText(/Sign in with a wallet|Voucher key/)
+    await screen.findByText(/Sign in to create a listing|Voucher key/)
     await fillCreate(user, { offerClass: 'A' })
     await user.click(screen.getByRole('button', { name: /Sign and post listing/ }))
     expect(await screen.findByText(/Listing posted/)).toBeInTheDocument()
@@ -109,7 +109,7 @@ describe('marketplace F9: browse and create listings', () => {
     await screen.findByText(/translate-calls · class D/)
     const select = screen.getByLabelText('Class (Offering)')
     expect(within(select).getAllByRole('option').map((o) => o.textContent?.[0])).toEqual(['A', 'B', 'C', 'D'])
-    expect(screen.getByText(/Sign in with a wallet to create a listing/)).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Sign in to create a listing' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Sign and post listing/ })).toBeDisabled()
   })
 

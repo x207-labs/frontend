@@ -70,7 +70,7 @@ describe('TC-FE-068-02 Settings', () => {
   it('opening the page asks for no signature and calls nothing', async () => {
     const svc = service()
     const { wallet } = await open('/settings', svc)
-    expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument()
     expect(wallet.messages).toHaveLength(0)
     expect(svc.sent).toHaveLength(0)
   })

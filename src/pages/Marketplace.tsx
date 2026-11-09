@@ -6,11 +6,13 @@ import { api } from '../api/client'
 import { useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { AssetTemplateForm, type TemplateCheck } from '../components/AssetTemplateForm'
+import { CopyButton } from '../components/CopyButton'
 import { ResourceListingForm } from '../components/ResourceListingForm'
 import { Negotiation } from '../components/Negotiation'
 import { OwnIntents } from '../components/OwnIntents'
 import { EmptyHint } from '../components/EmptyHint'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
+import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
@@ -157,7 +159,7 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
         void submit()
       }}
     >
-      {!account && <p className="state">Sign in with a wallet to create a listing.</p>}
+      {!account && <SignInPrompt action="create a listing" />}
       <AssetTemplateForm
         onApply={(t) => {
           setOffer({ type: t.side.asset_type, cls: t.side.asset_class, quantity: String(t.side.quantity), value: fromAtomic(t.side.value) })
@@ -212,7 +214,7 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
         </button>
       </div>
       {error && <p className="state state-error" role="alert">{error}</p>}
-      {created && <p className="state" role="status">Listing posted: <code>{created}</code></p>}
+      {created && <p className="state" role="status">Listing posted: <code>{created}</code><CopyButton value={created} label="listing hash" /></p>}
     </form>
   )
 }

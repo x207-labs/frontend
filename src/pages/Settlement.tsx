@@ -5,7 +5,9 @@ import { useEpochSettlements } from '../api/queries'
 import type { SettlementItem } from '../api/types'
 import { DepositBranch } from '../components/DepositBranch'
 import { IntentsBalancePanel } from '../components/IntentsBalancePanel'
+import { NoEpoch } from '../components/NoEpoch'
 import { QueryState } from '../components/QueryState'
+import { SignInPrompt } from '../components/SignInPrompt'
 import { WithdrawPanel } from '../components/WithdrawPanel'
 import { TxResult } from '../components/TxResult'
 import { useSelectedEpoch } from '../epoch'
@@ -130,7 +132,7 @@ function MyDues() {
     enabled: account !== null,
     retry: false,
   })
-  if (!account) return <p className="state">Sign in with a wallet to see your dues.</p>
+  if (!account) return <SignInPrompt action="see your dues" />
   return (
     <QueryState
       query={query}
@@ -173,7 +175,7 @@ function MyDues() {
 export function Settlement() {
   const epoch = useSelectedEpoch()
   const settlements = useEpochSettlements(epoch)
-  if (epoch === null) return null
+  if (epoch === null) return <NoEpoch />
   return (
     <>
       <h2>Your dues</h2>

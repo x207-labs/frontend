@@ -1,5 +1,6 @@
 import { NEAR_NETWORK } from '../config'
 import type { SignState } from '../wallet/WalletContext'
+import { CopyButton } from './CopyButton'
 
 const EXPLORER = NEAR_NETWORK === 'mainnet' ? 'https://nearblocks.io/txns/' : 'https://testnet.nearblocks.io/txns/'
 
@@ -18,6 +19,7 @@ export function TxResult({ state }: { state: SignState }) {
         <p className="state" role="status">
           Transaction sent:{' '}
           <a href={`${EXPLORER}${state.hash}`} target="_blank" rel="noreferrer">{state.hash}</a>
+          <CopyButton value={state.hash} label="transaction hash" />
         </p>
       )
   }

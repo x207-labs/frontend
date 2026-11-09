@@ -60,6 +60,9 @@ describe('FE-056 home page', () => {
     const numbers = screen.getByRole('region', { name: 'Your account' })
     expect(numbers).toHaveTextContent('Credit limit')
     expect(numbers).toHaveTextContent('Remaining limit')
+    // FE-069: the hero card says how much of the limit is used, and leads to the two main tasks
+    expect(numbers).toHaveTextContent(/\d+% used/)
+    expect(within(numbers).getByRole('link', { name: 'Pay and claim' })).toHaveAttribute('href', expect.stringContaining('/settlement'))
     const epochBlock = screen.getByRole('region', { name: 'This epoch' })
     expect(epochBlock).toHaveTextContent('Payment deadline')
     expect(epochBlock).toHaveTextContent('Nov 9, 2026')
@@ -85,6 +88,9 @@ describe('FE-056 home page', () => {
   it('an account the read API does not know is offered onboarding, not an error', async () => {
     renderApp('/app', (p) => (p.includes('/members/new.testnet') && !p.includes('settlements') ? apiError(404, 'not_found', 'no such member') : undefined), false, createMockWallet('new.testnet', 'new.testnet'))
     expect(await screen.findByText(/not a member of the circle yet/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Join the circle' })).toHaveAttribute('href', expect.stringContaining('/onboarding'))
+    // FE-069: the sidebar now names the onboarding page "Join the circle" too, so the action link is looked up inside its own block.
+    const actions = screen.getByRole('region', { name: 'Actions to take' })
+    expect(within(actions).getByRole('link', { name: 'Join the circle' })).toHaveAttribute('href', expect.stringContaining('/onboarding'))
+    expect(screen.getByRole('region', { name: 'Start here' })).toHaveTextContent('Register and stake')
   })
 })

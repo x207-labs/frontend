@@ -88,7 +88,7 @@ function Palette({ onClose }: { onClose: () => void }) {
         </ul>
         {hits.length === 0 && (
           <p className="state" role="status">
-            No page matches “{query}”. Try “market”, “settlement” or “risk”.
+            No page matches “{query}”. Try “pay”, “market” or “help”.
           </p>
         )}
       </div>
