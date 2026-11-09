@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { onboardingPayload } from '../account/onboardingSync'
 import { describeAccountFailure, useAccountActions, useSigning } from '../account/useAccount'
-import { JOIN_GUIDE_URL, NEAR_NETWORK } from '../config'
+import { NEAR_NETWORK } from '../config'
 import './onboarding.css'
 import { FaucetPanel } from './FaucetPanel'
 import { useProgress } from './progress'
@@ -58,7 +58,7 @@ function PaymentBody({ account, onDone, done }: { account: string; onDone: () =>
     <>
       <p>
         With stake in the circle your agent can pay and be paid on credit. Pick a listing in the <Link to="/marketplace">marketplace</Link>, or follow the{' '}
-        <a href={JOIN_GUIDE_URL} target="_blank" rel="noreferrer">guide</a> to make a paid call from {account}. The payment shows up in your credit panel and in the next 207 report.
+        <Link to="/help#term-agents">guide</Link> to make a paid call from {account}. The payment shows up in your credit panel and in the next 207 report.
       </p>
       {!done && (
         <button type="button" onClick={onDone}>

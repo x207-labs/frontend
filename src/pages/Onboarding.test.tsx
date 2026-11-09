@@ -44,7 +44,8 @@ describe('onboarding F1', () => {
   it('FE-035 the sign-in prompt of Onboarding links the guide to join the circle', async () => {
     renderApp('/onboarding')
     const link = await screen.findByRole('link', { name: /Join the circle step by step/ })
-    expect(link).toHaveAttribute('href', expect.stringContaining('docs/join-the-circle.md'))
+    // FE-072: the guide is the Help page of the app, not a file on GitHub
+    expect(link).toHaveAttribute('href', expect.stringContaining('/help'))
   })
 
   it('TC-FE-004-02 three validation messages and a disabled button', async () => {

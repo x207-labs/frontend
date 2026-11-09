@@ -156,7 +156,7 @@ describe('plural and the default note (epoch 7 of the testnet circle: one vouche
     await screen.findByText('Transfers avoided', { selector: 'dt' })
     expect(fact('Transfers avoided')).toHaveTextContent('509 of 512 (99.41%)')
     expect(fact('Cash needed')).toHaveTextContent('45 of 2,563.38 credit (1.76%)')
-    expect(screen.getByRole('link', { name: 'How they are computed' })).toHaveAttribute('href', expect.stringContaining('capital-efficiency.md'))
+    expect(screen.getByRole('link', { name: 'How they are computed' })).toHaveAttribute('href', expect.stringContaining('/help?epoch=42#term-transfers-avoided'))
   })
 
   it('defaultNote says what a default rate above 0 is and is absent when nobody defaulted', async () => {

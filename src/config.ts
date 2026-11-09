@@ -21,8 +21,6 @@ const chosen = CIRCLE_PICKER ? CIRCLE_OPTIONS.find((o) => o.key === new URLSearc
 export const SELECTED_CIRCLE: CircleKey | null = chosen?.key ?? (CIRCLE_PICKER ? (CIRCLE_OPTIONS.find((o) => o.apiUrl === ENV_API_URL)?.key ?? null) : null)
 
 export const API_URL: string = chosen?.apiUrl ?? ENV_API_URL
-/** The guide for the owner of an agent: join, sell a service, pay it, see the position (docs of the umbrella repository). */
-export const JOIN_GUIDE_URL = 'https://github.com/x207-labs/x207/blob/main/docs/join-the-circle.md'
 
 export const CIRCLE: string = env.VITE_X207_CIRCLE ?? 'agents-main'
 export const POLL_MS = Number(env.VITE_X207_POLL_MS ?? 5000)
@@ -37,5 +35,5 @@ export const NEAR_RPC_URL: string =
   env.VITE_NEAR_RPC_URL ?? (NEAR_NETWORK === 'mainnet' ? 'https://rpc.mainnet.fastnear.com' : 'https://rpc.testnet.fastnear.com')
 /** Access rental broker (BE-060): the provider's broker server address, not the read API. */
 export const BROKER_URL: string = env.VITE_X207_BROKER_URL ?? 'http://localhost:8788'
-/** FE-041: the guide for agents that hold only a `0x` key. */
-export const EVM_GUIDE_URL = 'https://github.com/x207-labs/x207/blob/main/docs/evm-agents.md'
+/** FE-041: the guide for agents that hold only a `0x` key. FE-072: the app's own Help, never GitHub. */
+export const EVM_GUIDE_URL = '/help#term-evm'

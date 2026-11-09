@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useAllMetrics } from '../api/queries'
 import type { EpochMetrics } from '../api/types'
 import { ErrorNotice, Loading } from '../components/QueryState'
@@ -114,6 +115,7 @@ function Compression({ vouchers, transfers }: { vouchers: number; transfers: num
 
 function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline: string | null; cutoffAt: string | null; pruned: boolean }) {
   const eff = efficiency(m)
+  const { search } = useLocation()
   return (
     <div className="headline">
       <p className="headline-main">
@@ -170,12 +172,10 @@ function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline
             <dd>{m.clearingTimeSeconds === null ? 'not available' : `${formatNumber(m.clearingTimeSeconds, 0)} seconds`}</dd>
           </div>
         </dl>
-        <p className="state">
-          Transfers avoided counts vouchers that did not become their own transfer; cash needed is the net debt that members owe in cash after netting (it does not depend on the solver). Neither counts fees or locked stake.
-        </p>
       </details>
       <p className="how-link">
-        <a href="https://github.com/x207-labs/frontend/blob/main/docs/capital-efficiency.md" target="_blank" rel="noreferrer">How they are computed</a>
+        {/* FE-072: explained in the app's own Help, never on GitHub */}
+        <Link to={{ pathname: '/help', search, hash: '#term-transfers-avoided' }}>How they are computed</Link>
       </p>
       {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}
       {defaultNote(m) && <p className="state">{defaultNote(m)}</p>}

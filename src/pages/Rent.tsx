@@ -12,13 +12,14 @@ import { useWallet } from '../wallet/WalletContext'
 
 // FE-029: daily access rental (pipeline P2, ADR-47), from the broker README (BE-060). The provider prepares the scope and rental listing; the renter sees the access state, today's cost, checks
 // the access before paying for the next day (the only rule is in the SDK: `checkAccessBeforeNextDay`), and stops the rental. Daily payment is made by the x402 client or agent, not this page.
-export const PROVIDERS: Record<string, { label: string; costly: boolean; note: string }> = {
-  github: { label: 'GitHub (repo collaborator or org seat)', costly: true, note: 'GitHub terms restrict account sharing; collaborators and org seats are not password sharing. You are responsible for your own org policy.' },
-  discord: { label: 'Discord (server role)', costly: false, note: 'A role is only for existing server members; Discord terms forbid selling accounts, not roles.' },
-  ssh: { label: 'SSH (key with command= and expiry)', costly: false, note: 'The key is valid until the end of the paid day on your own machine, even if the broker is down.' },
-  's3-presigned': { label: 'S3 (presigned URL)', costly: false, note: 'A presigned URL cannot be revoked; the loss is at most one day.' },
-  'aws-sts': { label: 'AWS (role with permission boundary)', costly: true, note: 'A session cannot be revoked before it expires. Real costs are billed per day with a daily cap.' },
-  mock: { label: 'Mock provider (demo)', costly: false, note: 'Demo only; touches no real service.' },
+// The six providers are the adapters the broker ships (ADR-47); a new kind of access needs a new broker adapter first, so the page offers exactly these.
+export const PROVIDERS: Record<string, { label: string; short: string; what: string; glyph: string; costly: boolean; note: string }> = {
+  github: { label: 'GitHub (repo collaborator or org seat)', short: 'GitHub', what: 'Repo or org seat', glyph: 'GH', costly: true, note: 'GitHub terms restrict account sharing; collaborators and org seats are not password sharing. You are responsible for your own org policy.' },
+  discord: { label: 'Discord (server role)', short: 'Discord', what: 'Server role', glyph: 'DC', costly: false, note: 'A role is only for existing server members; Discord terms forbid selling accounts, not roles.' },
+  ssh: { label: 'SSH (key with command= and expiry)', short: 'SSH', what: 'Key with expiry', glyph: '>_', costly: false, note: 'The key is valid until the end of the paid day on your own machine, even if the broker is down.' },
+  's3-presigned': { label: 'S3 (presigned URL)', short: 'S3', what: 'Presigned link', glyph: 'S3', costly: false, note: 'A presigned URL cannot be revoked; the loss is at most one day.' },
+  'aws-sts': { label: 'AWS (role with permission boundary)', short: 'AWS', what: 'Bounded role', glyph: 'AW', costly: true, note: 'A session cannot be revoked before it expires. Real costs are billed per day with a daily cap.' },
+  mock: { label: 'Mock provider (demo)', short: 'Demo', what: 'Touches nothing', glyph: '◎', costly: false, note: 'Demo only; touches no real service.' },
 }
 /** B4-F5 (review batch 4): the reference of the lessee as the broker can prove it. An SSH key must be `ssh-ed25519` (the proof is a raw ed25519 signature); a key of another type is accepted by the contract and by the broker's first check but can never be proven, so the grant could never open. */
 export function granteeRefProblem(provider: string, ref: string): string | null {
@@ -55,22 +56,42 @@ function Offer() {
   const detail = JSON.stringify({ kind: 'access-rent', provider, ...(resource.trim() ? { resource: resource.trim() } : {}), ...(permission.trim() ? { permission: permission.trim() } : {}), price_per_day: priceAtomic, ...(capAtomic !== null ? { daily_cap: capAtomic } : {}) })
   return (
     <section className="form" aria-label="Offer access rent">
-      <h3>Offer access rent (grantor)</h3>
-      <label><span>Provider</span><select value={provider} onChange={(e) => setProvider(e.target.value)}>{Object.entries(PROVIDERS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></label>
-      <label><span>Lessee reference (grantee_ref; empty = filled in at offer_grant)</span><input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={provider === 'ssh' ? 'ssh-ed25519 AAAA…' : provider === 'discord' ? '123456789012345678' : 'login'} /></label>
-      <label><span>Resource (repo, role, command, object)</span><input value={resource} onChange={(e) => setResource(e.target.value)} /></label>
-      <label><span>Permission</span><input value={permission} onChange={(e) => setPermission(e.target.value)} placeholder="pull" /></label>
-      <label><span>Price per day (credit)</span><input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" /></label>
-      <label><span>Daily spending cap at the provider (credit){info.costly ? ' · required' : ' · optional'}</span><input value={cap} onChange={(e) => setCap(e.target.value)} inputMode="decimal" /></label>
-      <p className="state" role="note" data-testid="rent-provider-note">{info.note} The provider admin token stays on your machine: the grantor runs the broker themselves.</p>
+      {/* FE-072: the provider is picked from tiles (one tap, the name and what is rented), not from a long dropdown */}
+      <fieldset className="provider-tiles">
+        <legend>Provider</legend>
+        {Object.entries(PROVIDERS).map(([k, v]) => (
+          <label key={k} className="provider-tile" title={v.label} data-costly={v.costly ? 'true' : undefined}>
+            <input type="radio" name="rent-provider" value={k} checked={provider === k} onChange={() => setProvider(k)} />
+            <span className="provider-glyph" aria-hidden="true">{v.glyph}</span>
+            <strong>{v.short}</strong>
+            <small>{v.what}</small>
+          </label>
+        ))}
+      </fieldset>
+      <p className="state" role="note" data-testid="rent-provider-note">{info.note}</p>
+      <div className="field-pair">
+        <label><span>Resource</span><input value={resource} onChange={(e) => setResource(e.target.value)} placeholder={provider === 'github' ? 'owner/repo' : provider === 'discord' ? 'role id' : provider === 'ssh' ? 'command' : 'object'} /></label>
+        <label><span>Permission</span><input value={permission} onChange={(e) => setPermission(e.target.value)} placeholder="pull" /></label>
+      </div>
+      <div className="field-pair">
+        <label><span>Price per day (credit)</span><input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" /></label>
+        <label><span>Daily spending cap{info.costly ? ' · required' : ' · optional'}</span><input value={cap} onChange={(e) => setCap(e.target.value)} inputMode="decimal" /></label>
+      </div>
+      <label><span>Lessee reference · optional</span><input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={provider === 'ssh' ? 'ssh-ed25519 AAAA…' : provider === 'discord' ? '123456789012345678' : 'Empty: the lessee fills it in'} /></label>
       {problem && <p className="state state-error" role="alert" data-testid="rent-offer-error">{problem}</p>}
       {!problem && (
         <>
-          <p>Scope for <code>offer_grant</code> (<code>limits.scope</code>); the lessee fills in <code>grantee_ref</code>, and that reference is locked on-chain:</p>
-          <pre data-testid="rent-scope">{JSON.stringify(scope)}</pre>
-          <p>Listing detail:</p>
-          <pre data-testid="rent-detail">{detail}</pre>
-          <p>Per day: {formatCredit(priceAtomic!)} credit{capAtomic !== null ? `, real cost cap ${fromAtomic(capAtomic)} credit` : ''}. A lessee who stops paying loses access at the end of the paid day.</p>
+          <p className="rent-price">
+            <strong>{formatCredit(priceAtomic!)}</strong> credit / day
+            {capAtomic !== null && <span>cost cap {fromAtomic(capAtomic)}</span>}
+          </p>
+          <details className="tech">
+            <summary>For your broker: scope and listing detail</summary>
+            <p>Scope for <code>offer_grant</code> (<code>limits.scope</code>). The lessee fills in <code>grantee_ref</code>, locked on-chain.</p>
+            <pre data-testid="rent-scope">{JSON.stringify(scope)}</pre>
+            <p>Listing detail:</p>
+            <pre data-testid="rent-detail">{detail}</pre>
+          </details>
         </>
       )}
     </section>
@@ -255,14 +276,34 @@ function Renter({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey
   )
 }
 
+// FE-072: two views (lend access, or the access you rent) instead of both forms on one long page; both stay in the page and only hide with CSS.
+const RENT_VIEWS = [['offer', 'Offer access'], ['mine', 'My rentals']] as const
 export function Rent() {
   const [voucherKey, setVoucherKey] = useState('')
+  const [tab, setTab] = useState<'offer' | 'mine'>('offer')
   return (
-    <>
-      <h2>Access rent</h2>
-      <p className="state">Access is rented per day: pay one day in advance, and the next day only if access is still running, so each party loses at most one day.</p>
-      <Offer />
-      <Renter voucherKey={voucherKey} onVoucherKey={setVoucherKey} />
-    </>
+    <div className="market rent" data-view={tab}>
+      <div className="rent-hero">
+        <ol className="rent-days" aria-label="How a rent runs">
+          <li><span aria-hidden="true">1</span>Pay one day</li>
+          <li><span aria-hidden="true">✓</span>Access works</li>
+          <li><span aria-hidden="true">↻</span>Pay the next day</li>
+          <li><span aria-hidden="true">✕</span>Stop any day</li>
+        </ol>
+        <div className="segmented market-views" role="group" aria-label="Rent view">
+          {RENT_VIEWS.map(([v, label]) => (
+            <button key={v} type="button" aria-pressed={tab === v} onClick={() => setTab(v)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="market-pane" data-pane="offer">
+        <Offer />
+      </div>
+      <div className="market-pane" data-pane="mine">
+        <Renter voucherKey={voucherKey} onVoucherKey={setVoucherKey} />
+      </div>
+    </div>
   )
 }

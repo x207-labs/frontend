@@ -43,7 +43,7 @@ describe('FE-029 daily rent of an access', () => {
     await user.type(within(form).getByLabelText(/^Daily spending cap/), '5')
     expect(JSON.parse(within(form).getByTestId('rent-scope').textContent!)).toEqual({ provider: 'github', grantee_ref: '<filled in by the lessee at offer_grant>', resource: 'x207-labs/contracts', permission: 'pull', daily_cap: '5000000' })
     expect(JSON.parse(within(form).getByTestId('rent-detail').textContent!)).toEqual({ kind: 'access-rent', provider: 'github', resource: 'x207-labs/contracts', permission: 'pull', price_per_day: '2000000', daily_cap: '5000000' })
-    await user.selectOptions(within(form).getByLabelText('Provider'), 'ssh')
+    await user.click(within(form).getByRole('radio', { name: /^SSH/ })) // FE-072: providers are tiles (radios), not a dropdown
     expect(within(form).getByTestId('rent-provider-note')).toHaveTextContent('The key is valid until the end of the paid day')
   })
 
@@ -195,7 +195,7 @@ describe('FE-029 daily rent of an access', () => {
     expect(granteeRefProblem('discord', '123456789012345678')).toBeNull()
     renderApp('/rent', undefined, false, createMockWallet(RENTER, RENTER))
     const form = await screen.findByRole('region', { name: 'Offer access rent' })
-    await user.selectOptions(within(form).getByLabelText('Provider'), 'ssh')
+    await user.click(within(form).getByRole('radio', { name: /^SSH/ }))
     await user.type(within(form).getByLabelText(/^Price per day/), '2')
     await user.type(within(form).getByLabelText(/^Lessee reference/), 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ')
     expect(within(form).getByTestId('rent-offer-error')).toHaveTextContent('Only ssh-ed25519 keys')

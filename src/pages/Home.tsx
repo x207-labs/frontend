@@ -100,9 +100,6 @@ function SignedOut() {
             {busy ? 'Opening wallet…' : 'Sign in with wallet'}
           </button>
           <Link className="btn quiet" to={{ pathname: '/help', search }}>How it works</Link>
-          <span className="state">
-            No wallet? <Link to={{ pathname: '/stats', search }}>Look at the clearing results</Link> first, no account needed.
-          </span>
         </p>
       </section>
       <StartHere account={null} member={{ kind: 'loading' }} />

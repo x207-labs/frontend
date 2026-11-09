@@ -20,8 +20,10 @@ describe('207 report', () => {
     await screen.findByText('Status per member')
     expect(fact('Cleared value')).toHaveTextContent('1,820')
     expect(fact('Cleared ratio')).toHaveTextContent('71%')
-    const statuses = screen.getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('cell')[0].textContent)
-    expect(statuses).toEqual(['200', '200', '200', '402', '402', '202'])
+    // FE-072: the cell shows a word and a sign; the status number stays in data-status
+    const cells = screen.getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('cell')[0])
+    expect(cells.map((c) => c.querySelector('[data-status]')?.getAttribute('data-status'))).toEqual(['200', '200', '200', '402', '402', '202'])
+    expect(cells.map((c) => c.textContent)).toEqual(['Settled', 'Settled', 'Settled', 'Pays', 'Pays', 'Claims'])
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 

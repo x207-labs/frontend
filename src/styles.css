@@ -263,7 +263,9 @@ button.th-sort { padding: 0; min-height: 0; border: 0; border-radius: 0; backgro
   a.btn:hover { background: #2373ee; }
   a.btn.quiet:hover { background: var(--accent-soft); }
   .word-chips button:hover:not([aria-pressed='true']) { background: rgb(255 255 255 / 0.1); box-shadow: none; }
-  .explore a:hover { border-color: rgb(61 139 255 / 0.5); background: rgb(61 139 255 / 0.08); }
+  .explore a:hover { border-color: var(--line); background: var(--tile); }
+  .explore a:hover .explore-icon { transform: translateY(-3px) scale(1.05); }
+  .gate-explore a:hover { border-color: rgb(61 139 255 / 0.5); background: var(--accent-soft); text-decoration: none; }
   button.copy:hover:not(:disabled) { background: var(--accent-soft); box-shadow: none; }
   .see-all:hover { background: rgb(61 139 255 / 0.28); text-decoration: none; }
   .hero-card .see-all:hover { background: rgb(255 255 255 / 0.26); }
@@ -296,6 +298,81 @@ a, button, select, input, textarea, summary, label, [role='option'], [role='menu
 .form input { width: 100%; }
 .form input:disabled { background: transparent; border-color: var(--line); }
 .filters { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; margin-bottom: 1rem; }
+
+/* FE-072: on/off choices are iOS switches on one row each (text left, switch right), grouped in one inset list, never a checkbox floating mid-form. */
+.switches { display: grid; border-radius: 16px; background: var(--tile); border: 1px solid var(--line); overflow: hidden; }
+.form label.check { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3rem; padding: 0.5rem 0.875rem; color: var(--ink); font-weight: 550; cursor: pointer; }
+.switches label.check + label.check { border-top: 1px solid var(--line); }
+.form label.check input { order: 2; flex: none; position: relative; width: 3.1rem; height: 1.9rem; margin: 0; padding: 0; border: 0; border-radius: 999px; background: rgb(120 128 150 / 0.35); appearance: none; -webkit-appearance: none; cursor: pointer; transition: background 240ms var(--ease); }
+.form label.check input::before { content: ''; position: absolute; top: 2px; left: 2px; width: calc(1.9rem - 4px); height: calc(1.9rem - 4px); border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / 0.3); transition: transform 280ms var(--spring); }
+.form label.check input:checked { background: #34c759; }
+.form label.check input:checked::before { transform: translateX(1.2rem); }
+.form label.check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* FE-072: the marketplace shows one view at a time; the panes stay in the page and only hide here. */
+.market-top { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+.market-top .market-views { margin-left: 0; }
+.market:not([data-view='browse']) [data-pane='browse'], .market:not([data-view='post']) [data-pane='post'], .market:not([data-view='mine']) [data-pane='mine'] { display: none; }
+.market-pane { animation: gate-in 420ms var(--ease) both; }
+.market-pane > h2:first-child { margin-top: 0; }
+.rent:not([data-view='offer']) [data-pane='offer'] { display: none; }
+.rent-hero { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+.rent-days { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.rent-days li { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem 0.375rem 0.375rem; border-radius: 999px; background: var(--tile); border: 1px solid var(--line); font-size: 0.875rem; font-weight: 600; }
+.rent-days span { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; }
+.rent-days li:last-child span { background: rgb(255 124 142 / 0.14); color: var(--s409); }
+.rent .form { max-width: 44rem; }
+.provider-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr)); gap: 0.5rem; margin: 0; padding: 0; border: 0; }
+.provider-tiles legend { margin-bottom: 0.5rem; padding: 0; font-weight: 600; color: var(--ink-soft); }
+.form label.provider-tile { position: relative; display: grid; justify-items: center; gap: 0.25rem; padding: 0.875rem 0.5rem; border-radius: 16px; background: var(--tile); border: 1px solid var(--line); color: var(--ink); text-align: center; cursor: pointer; transition: border-color 240ms var(--ease), background 240ms var(--ease), transform 280ms var(--spring); }
+.provider-tile input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.provider-tile small { color: var(--ink-soft); font-size: 0.75rem; font-weight: 500; }
+.provider-glyph { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 12px; background: linear-gradient(145deg, #8fc0ff, #1a62d6); color: #fff; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.02em; }
+.provider-tile[data-costly] .provider-glyph { background: linear-gradient(145deg, #ffc46b, #e2801f); }
+.form label.provider-tile:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-2px); }
+.provider-tile:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.field-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.875rem; }
+.rent-price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.25rem 0.75rem; margin: 0; color: var(--ink-soft); }
+.rent-price strong { font-size: 2rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.rent-price span { padding: 0.125rem 0.625rem; border-radius: 999px; background: rgb(245 165 36 / 0.12); color: var(--s402); font-size: 0.8rem; font-weight: 600; }
+details.tech { border-radius: 14px; border: 1px solid var(--line); background: var(--tile); }
+details.tech summary { padding: 0.75rem 1rem; color: var(--ink-soft); font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+details.tech > :not(summary) { margin: 0 1rem 0.75rem; }
+.market-top .status-panel { flex: 1 1 100%; display: grid; grid-auto-flow: column; grid-template-rows: auto auto; grid-template-columns: none; grid-auto-columns: minmax(7.5rem, 1fr); gap: 0 0.5rem; margin: 0; padding: 0.875rem 0.5rem; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.market-top .status-panel >dt, .market-top .status-panel >dd { padding: 0 0.75rem; border: 0; scroll-snap-align: start; }
+.market-top .status-panel >dt { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
+.market-top .status-panel >dd { padding-top: 0.25rem; font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* FE-072: posting a listing is four short steps; only the current step shows. */
+.listing-form .step-pane { display: none; grid-template-columns: minmax(0, 1fr); gap: 0.875rem; }
+.listing-form[data-step='1'] [data-pane='1'], .listing-form[data-step='2'] [data-pane='2'], .listing-form[data-step='3'] [data-pane='3'], .listing-form[data-step='4'] [data-pane='4'] { display: grid; animation: gate-in 360ms var(--ease) both; }
+.stepper { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 0 0.25rem; padding: 0; list-style: none; counter-reset: none; }
+.stepper li { position: relative; }
+.stepper li + li::before { content: ''; position: absolute; top: 1rem; right: 50%; width: 100%; height: 2px; background: var(--line); z-index: 0; }
+.stepper button { position: relative; z-index: 1; display: grid; justify-items: center; gap: 0.375rem; width: 100%; min-height: 0; padding: 0; border: 0; background: none; box-shadow: none; color: var(--ink-soft); font: inherit; font-size: 0.75rem; font-weight: 600; }
+.stepper-dot { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--tile); border: 1px solid var(--line); color: var(--ink-soft); font-weight: 700; transition: background 240ms var(--ease), color 240ms var(--ease), transform 280ms var(--spring); }
+.stepper button[data-done] .stepper-dot { background: rgb(52 199 89 / 0.18); border-color: rgb(52 199 89 / 0.5); color: #34c759; }
+.stepper button[aria-current='step'] { color: var(--ink); }
+.stepper button[aria-current='step'] .stepper-dot { background: var(--accent-fill); border-color: transparent; color: #fff; transform: scale(1.1); box-shadow: 0 4px 16px rgb(26 98 214 / 0.45); }
+.step-nav { display: flex; justify-content: space-between; gap: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
+.step-nav button:disabled { visibility: hidden; }
+.deal { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 0.75rem; }
+.deal-side { display: grid; gap: 0.25rem; padding: 1rem; border-radius: 16px; background: var(--tile); border: 1px solid var(--line); text-align: center; overflow-wrap: anywhere; }
+.deal-side strong { font-size: 1.125rem; }
+.deal-side > span:last-child { color: var(--ink-soft); font-size: 0.875rem; }
+.deal-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); }
+.deal-arrow { font-size: 1.5rem; color: var(--accent-ink); }
+.state-warn button.quiet { min-height: 2rem; margin: 0.25rem 0.375rem 0 0; padding: 0 0.75rem; font-size: 0.875rem; }
+@media (max-width: 40rem) {
+  .stepper-label { display: none; }
+  .stepper button[aria-current='step'] .stepper-label { display: block; }
+  .deal { grid-template-columns: minmax(0, 1fr); }
+  .deal-arrow { justify-self: center; transform: rotate(90deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-pane, .listing-form .step-pane { animation: none !important; }
+  .form label.check input, .form label.check input::before, .stepper-dot { transition: none; }
+}
 .side { display: grid; gap: 0.75rem; margin: 0; border: 1px solid var(--line); border-radius: 18px; padding: 0.875rem 1rem; background: var(--tile); min-width: 0; }
 .side legend { font-weight: 700; padding: 0 0.5rem; }
 .listing-form textarea, .negotiation textarea { width: 100%; font: inherit; }
@@ -320,8 +397,26 @@ a { color: var(--accent-ink); text-decoration-color: rgb(143 192 255 / 0.4); ove
 .stamp-402 { color: var(--s402); }
 .stamp-202 { color: var(--s202); }
 .stamp-409 { color: var(--s409); }
-.stamp-207 { color: var(--accent-ink); font-size: clamp(2.5rem, 8vw, 4.5rem); padding: 0 0.75rem; border-width: 4px; border-radius: 12px; text-shadow: 0 0 32px rgb(61 139 255 / 0.8); box-shadow: 0 0 40px -8px rgb(61 139 255 / 0.6), inset 0 0 24px -10px rgb(61 139 255 / 0.6); }
-@media (max-width: 30rem) { .report-head { grid-template-columns: minmax(0, 1fr); } .stamp-207 { justify-self: start; } }
+/* FE-072: the report opens on the x207 ring (share cleared), and each member's state is a word with a drawn sign, not a number. */
+.cleared-ring { position: relative; display: grid; place-items: center; filter: drop-shadow(0 0 24px rgb(61 139 255 / 0.35)); }
+.cleared-ring .ring-track { fill: none; stroke: rgb(255 255 255 / 0.08); stroke-width: 12; }
+.cleared-ring .ring-arc { fill: none; stroke-width: 12; stroke-linecap: round; animation: ring-in 1.2s var(--ease) both; }
+.ring-label { position: absolute; display: grid; justify-items: center; font-size: 0.8125rem; color: var(--ink-soft); }
+.ring-label strong { font-size: 2rem; font-weight: 750; letter-spacing: -0.03em; color: var(--ink); line-height: 1.1; }
+@keyframes ring-in { from { stroke-dasharray: 0 400; } }
+.status-pill { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.6rem 0.2rem 0.45rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 650; white-space: nowrap; color: var(--tone); background: color-mix(in srgb, var(--tone) 16%, transparent); }
+[data-status='200'] { --tone: var(--s200); }
+[data-status='402'] { --tone: var(--s402); }
+[data-status='202'] { --tone: var(--s202); }
+[data-status='409'] { --tone: var(--s409); }
+.status-bar { display: grid; gap: 0.75rem; margin-bottom: 1rem; }
+.status-track { display: flex; gap: 2px; height: 10px; border-radius: 999px; overflow: hidden; background: rgb(255 255 255 / 0.06); }
+.status-track span { background: var(--tone); transform-origin: left; animation: meter-in 900ms var(--spring) both; }
+.status-counts { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: 0; padding: 0; list-style: none; }
+.status-counts li { display: inline-flex; align-items: center; gap: 0.5rem; }
+.status-counts strong { font-variant-numeric: tabular-nums; }
+@media (max-width: 30rem) { .report-head { grid-template-columns: minmax(0, 1fr); } .cleared-ring { justify-self: start; } }
+@media (prefers-reduced-motion: reduce) { .cleared-ring .ring-arc, .status-track span { animation: none; } }
 
 /* Grafik kewajiban (FE-006) */
 /* FE-070: one large debt map. Arrow thickness is the amount; the colour follows the debtor; the switch animates the same arrows shrinking. */
@@ -419,16 +514,48 @@ a.btn:active { transform: scale(0.97); }
 .step p { margin: 0; color: var(--ink-soft); line-height: 1.5; flex: 1; }
 .step .step-state { font-size: 0.8125rem; font-weight: 650; color: var(--s200); }
 .step a { align-self: flex-start; margin-top: 0.5rem; }
-.explore { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
-.explore a { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.25rem 0.75rem; height: 100%; padding: 1rem 1.125rem; border-radius: 16px; border: 1px solid var(--line); background: var(--tile); color: var(--ink); text-decoration: none; transition: border-color 0.2s var(--ease), transform 0.3s var(--spring), background-color 0.2s var(--ease); }
-.explore a svg { grid-row: span 2; margin-top: 0.125rem; color: var(--accent-ink); }
-.explore a strong { font-weight: 650; }
-.explore a span { color: var(--ink-soft); font-size: 0.9375rem; line-height: 1.45; }
-.explore a:active { transform: scale(0.98); }
-.signin-card { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; padding: 1.125rem 1.25rem; border-radius: 18px; border: 1px solid rgb(61 139 255 / 0.35); background: linear-gradient(90deg, rgb(61 139 255 / 0.12), transparent 70%), var(--tile); }
-.signin-card > div { flex: 1 1 18rem; min-width: 0; }
+/* FE-072: the page list is an app grid, as on an iPhone home screen: one glowing icon tile and the name, grouped by section. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.explore { display: flex; flex-wrap: wrap; gap: 1.25rem 2.5rem; }
+.explore-group { display: grid; align-content: start; gap: 0.625rem; }
+.explore-label { margin: 0; padding-left: 0.5rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.explore ul { display: flex; flex-wrap: wrap; gap: 0.25rem; margin: 0; padding: 0; list-style: none; }
+.explore li { width: 6.75rem; }
+.explore a { display: grid; justify-items: center; align-content: start; gap: 0.5rem; height: 100%; padding: 0.875rem 0.5rem 0.75rem; border-radius: 18px; border: 1px solid transparent; color: var(--ink); text-align: center; text-decoration: none; transition: border-color 0.2s var(--ease), transform 0.3s var(--spring), background-color 0.2s var(--ease); }
+.explore-icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 15px; color: #fff; background: linear-gradient(160deg, color-mix(in srgb, var(--tone) 85%, white), color-mix(in srgb, var(--tone) 70%, black)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 10px 24px -10px var(--tone); transition: transform 0.35s var(--spring); }
+.explore a strong { font-size: 0.875rem; font-weight: 600; line-height: 1.25; }
+.explore a:active { transform: scale(0.96); }
+
+/* FE-072: the sign-in banner of a form: a lock tile, one line, the button. */
+.signin-card { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; padding: 0.875rem 1rem; border-radius: 18px; border: 1px solid rgb(61 139 255 / 0.35); background: linear-gradient(90deg, rgb(61 139 255 / 0.14), transparent 70%), var(--tile); }
+.signin-card > div { flex: 1 1 14rem; min-width: 0; }
 .signin-card strong { display: block; font-size: 1.0625rem; }
-.signin-card p { margin: 0.25rem 0 0; color: var(--ink-soft); }
+.signin-card p { margin: 0.125rem 0 0; color: var(--ink-soft); font-size: 0.9375rem; }
+.signin-lock { display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: 12px; color: #fff; background: linear-gradient(160deg, #5aa0ff, var(--accent-fill)); box-shadow: 0 8px 20px -8px var(--accent); }
+
+/* FE-072: the sign-in screen of a private page. The page's own icon glows in the middle with a lock on it; what signing in unlocks is three icons. */
+.gate { display: grid; justify-items: center; gap: 1.125rem; max-width: 34rem; margin: 1.5rem auto; padding: 2.5rem 1.5rem 1.75rem; border-radius: 28px; text-align: center; border: 1px solid var(--line); background: radial-gradient(120% 70% at 50% 0%, rgb(61 139 255 / 0.2), transparent 65%), var(--glass); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--shadow); animation: gate-in 0.6s var(--ease) both; }
+.gate-art { position: relative; display: grid; place-items: center; width: 9rem; height: 9rem; }
+.gate-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgb(61 139 255 / 0.35); animation: gate-ring 3.2s var(--ease) infinite; }
+.gate-ring-2 { animation-delay: 1.6s; }
+.gate-tile { position: relative; display: grid; place-items: center; width: 5.5rem; height: 5.5rem; border-radius: 26px; color: #fff; background: linear-gradient(160deg, #6aa9ff, var(--accent-fill) 70%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 22px 50px -14px var(--accent); animation: gate-float 5s ease-in-out infinite; }
+.gate-lock { position: absolute; right: 1.35rem; bottom: 1.35rem; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; color: var(--accent-fill); background: #fff; box-shadow: 0 6px 16px -4px rgb(0 0 0 / 0.6); }
+.gate-lead { margin: 0; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; color: var(--ink); }
+.gate-unlocks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; width: 100%; margin: 0; padding: 0; list-style: none; }
+.gate-unlocks li { display: grid; justify-items: center; gap: 0.5rem; padding: 0.875rem 0.5rem; border-radius: 18px; background: var(--tile); border: 1px solid var(--line); font-size: 0.875rem; font-weight: 600; color: var(--ink); line-height: 1.3; animation: gate-in 0.6s var(--ease) both; }
+.gate-unlocks li:nth-child(2) { animation-delay: 0.08s; }
+.gate-unlocks li:nth-child(3) { animation-delay: 0.16s; }
+.gate-dot { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 11px; color: var(--accent-ink); background: var(--accent-soft); }
+.gate-cta { width: 100%; max-width: 20rem; min-height: 3rem; border-radius: 999px; font-size: 1.0625rem; }
+.gate-guide { color: var(--accent-ink); font-weight: 600; }
+.gate-explore { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.5rem; padding-top: 0.75rem; border-top: 1px solid var(--line); width: 100%; }
+.gate-explore > span { width: 100%; font-size: 0.8125rem; color: var(--ink-soft); }
+.gate-explore a { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.75rem; border-radius: 999px; background: var(--tile); border: 1px solid var(--line); color: var(--ink); font-size: 0.875rem; text-decoration: none; }
+.gate-explore a svg { color: var(--accent-ink); }
+@keyframes gate-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes gate-ring { 0% { transform: scale(0.62); opacity: 0.9; } 100% { transform: scale(1.12); opacity: 0; } }
+@keyframes gate-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@media (prefers-reduced-motion: reduce) { .gate, .gate-unlocks li, .gate-ring, .gate-tile { animation: none; } .gate-ring { opacity: 0.4; transform: scale(0.9); } }
 /* FE-070: Help as pictures. The loop animation, one drawing per step, and a word picker that shows one definition at a time. */
 .how { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); gap: 1.5rem 2rem; align-items: center; }
 .how-intro h2 { margin: 0.375rem 0 0; font-size: clamp(1.75rem, 2.6vw, 2.5rem); letter-spacing: -0.035em; line-height: 1.08; }
@@ -498,10 +625,15 @@ a.btn:active { transform: scale(0.97); }
   .loop-motif .loop-after, .loop-motif .loop-num-after, .loop-motif .loop-cap-after { animation: none; opacity: 1; }
   .loop-motif .loop-pulse { display: none; }
 }
-.faq details { padding: 0.875rem 1.125rem; border-radius: 16px; border: 1px solid var(--line); background: var(--tile); }
-.faq details + details { margin-top: 0.5rem; }
-.faq summary { cursor: pointer; font-weight: 650; }
-.faq details p { margin: 0.625rem 0 0; color: var(--ink-soft); line-height: 1.55; }
+/* FE-072: the questions are one iOS grouped list: an icon tile, the question, a chevron that turns; the answer slides open under it. */
+.faq-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 0.5rem; }
+.faq details { border-radius: 16px; border: 1px solid var(--line); background: var(--tile); overflow: hidden; }
+.faq summary { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; list-style: none; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: ''; margin-left: auto; flex: none; width: 0.5rem; height: 0.5rem; border-right: 2px solid var(--ink-soft); border-bottom: 2px solid var(--ink-soft); transform: rotate(-45deg); transition: transform 0.3s var(--spring); }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq-icon { display: grid; place-items: center; flex: none; width: 2.125rem; height: 2.125rem; border-radius: 10px; color: #fff; background: linear-gradient(160deg, color-mix(in srgb, var(--tone, #3d8bff) 85%, white), color-mix(in srgb, var(--tone, #3d8bff) 70%, black)); }
+.faq details p { margin: 0; padding: 0 1rem 0.875rem 3.875rem; color: var(--ink-soft); line-height: 1.5; animation: gate-in 0.35s var(--ease) both; }
 .home-grid { display: grid; gap: 2.25rem; }
 .home-grid > section > h2 { margin-top: 0; }
 button.copy { min-height: 0; padding: 0.125rem 0.625rem; margin-left: 0.375rem; font-size: 0.8125rem; color: var(--ink); background: var(--tile); border-color: var(--line); box-shadow: none; vertical-align: middle; }
@@ -540,12 +672,11 @@ a.btn.ghost { color: #fff; background: rgb(255 255 255 / 0.14); box-shadow: inse
 .stat[data-tone='blue'] { --tone: #8fc0ff; }
 .stat[data-tone='green'] { --tone: var(--s200); }
 .stat[data-tone='amber'] { --tone: var(--s402); }
-.explore li { --tone: var(--accent-ink); }
-.explore li[data-group='My account'] { --tone: var(--s200); }
-.explore li[data-group='Marketplace'] { --tone: var(--s402); }
-.explore li[data-group='Governance'] { --tone: #c3a6ff; }
-.explore li[data-group='Help'] { --tone: var(--s409); }
-.explore a svg { box-sizing: content-box; padding: 0.5rem; border-radius: 12px; color: var(--tone); background: color-mix(in srgb, var(--tone) 15%, transparent); }
+.explore li { --tone: #3d8bff; }
+.explore li[data-group='My account'] { --tone: #2fae6a; }
+.explore li[data-group='Marketplace'] { --tone: #e2801f; }
+.explore li[data-group='Governance'] { --tone: #8b6cf0; }
+.explore li[data-group='Help'] { --tone: #e0567f; }
 @media (min-width: 1024px) {
   .bento { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); align-items: start; }
   .bento > .span-all { grid-column: 1 / -1; }

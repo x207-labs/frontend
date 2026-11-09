@@ -5,7 +5,7 @@ import { isEvmAccount } from '../lib/evm'
 export function EvmBadge({ account }: { account: string }) {
   if (!isEvmAccount(account)) return null
   return (
-    <a className="evm-badge" href={EVM_GUIDE_URL} target="_blank" rel="noreferrer" title="This member holds a 0x key: it joined with join_evm and signs with EIP-712">
+    <a className="evm-badge" href={EVM_GUIDE_URL} title="This member holds a 0x key: it joined with join_evm and signs with EIP-712">
       EVM
     </a>
   )

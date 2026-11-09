@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { JOIN_GUIDE_URL } from '../config'
+import { Link } from 'react-router-dom'
 import { useMember, useMembers } from '../api/queries'
 import { DepositBranch } from '../components/DepositBranch'
 import { ExitPanel } from '../components/ExitPanel'
@@ -63,7 +63,7 @@ function JoinForm({ registered }: { registered: boolean }) {
       }}
     >
       <p className="state">
-        New to x207? <a href={JOIN_GUIDE_URL} target="_blank" rel="noreferrer">Join the circle step by step</a>, from the account to the first paid call.
+        New to x207? <Link to="/help">Join the circle step by step</Link>, from the account to the first paid call.
       </p>
       {!account && <SignInPrompt action="join the circle" />}
       {account && registered && <p className="state">Account {account} is already registered; just add stake.</p>}

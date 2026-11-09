@@ -1,9 +1,10 @@
 // FE-069: the help page a first-time customer can reach from every page (sidebar, page search, sign-in cards, not-found page).
 // It explains the product in four steps, defines every word the other pages use, answers the first questions, and links every page.
 // FE-070: fewer words, more pictures. Each step is a drawing and one short line; the loop animation shows the idea; one word is read at a time.
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ExploreGrid } from '../components/ExploreGrid'
+import { NavIcon } from '../components/icons'
 import { LoopMotif } from '../components/LoopMotif'
 import { StepGlyph, type Glyph } from '../components/StepGlyph'
 import { GROUPS } from '../routes'
@@ -38,15 +39,22 @@ const GLOSSARY: { id: string; term: string; text: string }[] = [
   { id: 'wallet', term: 'NEAR wallet', text: 'The app you sign in with. It signs every action you confirm; x207 never sees your private key.' },
   { id: 'testnet', term: 'Testnet', text: 'The practice network of NEAR. Its tokens have no real value, so you can try everything for free.' },
   { id: 'dao', term: 'DAO', text: 'The group that votes on the rules of the circle, such as limits and fees. Governance shows its proposals.' },
+  // FE-072: the words the other pages used to send to GitHub for; the app explains them itself now
+  { id: 'transfers-avoided', term: 'Transfers avoided', text: 'Vouchers that did not need their own payment because clearing netted them: vouchers in, minus net payments out. It counts transfers, not fees.' },
+  { id: 'cash-needed', term: 'Cash needed', text: 'The net debt members still pay in cash after clearing, as a share of everything promised in vouchers. It is counted before any default.' },
+  { id: 'move-epoch', term: 'Late epoch', text: 'A keeper run by the team moves each epoch on its clock until 2026-11-18. If one is late, any account may send the step that is due (close, commit or finalize) to the contract. No permission is needed.' },
+  { id: 'agents', term: 'AI agents', text: 'Agents do not need these pages. They use the x207 SDK, or ask the read-only MCP server, to sign vouchers, read their position and pay the net in code.' },
+  { id: 'evm', term: 'EVM member', text: 'A member that joined with an Ethereum-style 0x key and signs its vouchers the EVM way (EIP-712).' },
 ]
 
-const FAQ: { q: string; a: string }[] = [
-  { q: 'Do I need real money?', a: 'No. This circle runs on the NEAR testnet. Join the circle gives you free test NEAR and test USDT in one click.' },
-  { q: 'What happens when I sign in?', a: 'Your wallet only shows who you are. Every action that changes something (joining, signing a voucher, paying) asks your wallet to confirm it first.' },
-  { q: 'Why can I see some pages without signing in?', a: 'The results of every epoch are public, so anyone can check how much was owed, what cancelled and what was paid. Your own forms and balances need a sign-in.' },
-  { q: 'When do I have to pay?', a: 'Only during the payment window at the end of an epoch, and only your net amount. Home and Pay and claim show the deadline.' },
-  { q: 'What if somebody does not pay me?', a: 'Their stake covers the debt first, then the reserve fund. The Risk page shows how much each part covers.' },
-  { q: 'Some pages say “read only”. Why?', a: 'Access grants and Governance show what the contract and the DAO decided. Changes are made there, not on this page.' },
+const FAQ: { q: string; a: string; icon: string; tone: string }[] = [
+  { q: 'Do I need real money?', a: 'No. This circle runs on the NEAR testnet. Join the circle gives you free test NEAR and test USDT in one click.', icon: '/settlement', tone: '#2fae6a' },
+  { q: 'What happens when I sign in?', a: 'Your wallet only shows who you are. Every action that changes something (joining, signing a voucher, paying) asks your wallet to confirm it first.', icon: 'account', tone: '#3d8bff' },
+  { q: 'Why can I see some pages without signing in?', a: 'The results of every epoch are public, so anyone can check how much was owed, what cancelled and what was paid. Your own forms and balances need a sign-in.', icon: '/stats', tone: '#3d8bff' },
+  { q: 'When do I have to pay?', a: 'Only during the payment window at the end of an epoch, and only your net amount. Home and Pay and claim show the deadline.', icon: '/reports', tone: '#e2801f' },
+  { q: 'What if somebody does not pay me?', a: 'Their stake covers the debt first, then the reserve fund. The Risk page shows how much each part covers.', icon: '/risk', tone: '#e0567f' },
+  { q: 'Some pages say “read only”. Why?', a: 'Access grants and Governance show what the contract and the DAO decided. Changes are made there, not on this page.', icon: '/governance', tone: '#8b6cf0' },
+  { q: 'I run an AI agent. Do I need this app?', a: 'No. Agents use the x207 SDK, or ask the read-only MCP server, in code. These pages are for people.', icon: '/orders', tone: '#2fae6a' },
 ]
 
 // One word at a time: a row of chips, and the chosen word large beside it. A #term-<id> link opens on that word.
@@ -54,8 +62,19 @@ function Words() {
   const { hash } = useLocation()
   const [picked, setPicked] = useState(() => GLOSSARY.find((g) => `#term-${g.id}` === hash)?.id ?? GLOSSARY[0].id)
   const word = GLOSSARY.find((g) => g.id === picked) ?? GLOSSARY[0]
+  const ref = useRef<HTMLDivElement>(null)
+  // a link from another page (#term-<id>) opens Help on that word (set while rendering, when the hash changes) and scrolls it into view
+  const [seenHash, setSeenHash] = useState(hash)
+  if (hash !== seenHash) {
+    setSeenHash(hash)
+    const id = GLOSSARY.find((g) => `#term-${g.id}` === hash)?.id
+    if (id) setPicked(id)
+  }
+  useEffect(() => {
+    if (hash.startsWith('#term-')) ref.current?.scrollIntoView?.({ block: 'center' })
+  }, [hash])
   return (
-    <div className="words">
+    <div className="words" ref={ref}>
       <ul className="word-chips" aria-label="Words">
         {GLOSSARY.map((g) => (
           <li key={g.id}>
@@ -109,12 +128,19 @@ export function Help() {
         <div className="card-head">
           <h2 id="help-faq">First questions</h2>
         </div>
-        {FAQ.map((f) => (
-          <details key={f.q}>
-            <summary>{f.q}</summary>
-            <p>{f.a}</p>
-          </details>
-        ))}
+        <div className="faq-list">
+          {FAQ.map((f) => (
+            <details key={f.q}>
+              <summary>
+                <span className="faq-icon" aria-hidden="true" style={{ ['--tone' as string]: f.tone }}>
+                  <NavIcon name={f.icon} size={18} />
+                </span>
+                {f.q}
+              </summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
       </section>
 
       <section className="card span-all" aria-labelledby="help-pages">

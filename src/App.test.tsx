@@ -86,7 +86,8 @@ describe('dashboard shell', () => {
     const notice = await screen.findByText(/Epoch 43 is late/)
     expect(notice).toHaveTextContent('moved by a keeper the team runs until 2026-11-18; if one is late, anyone can move it')
     expect(notice).not.toHaveTextContent('manual')
-    expect(within(notice.closest('p')!).getByRole('link', { name: 'How to move it' })).toHaveAttribute('href', expect.stringContaining('join-the-circle.md#move-the-epoch-yourself'))
+    expect(within(notice.closest('p')!).getByRole('link', { name: 'How to move it' })).toHaveAttribute('href', expect.stringContaining('/help'))
+    expect(within(notice.closest('p')!).getByRole('link', { name: 'How to move it' }).getAttribute('href')).toMatch(/#term-move-epoch$/)
   })
 
   it('TC-FE-002-03 loading in the epoch picker', () => {

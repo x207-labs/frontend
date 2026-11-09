@@ -2,6 +2,7 @@
 // The negotiation panel (FE-020) is in components/Negotiation.tsx and opens from the listing row.
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { api } from '../api/client'
 import { useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
@@ -36,6 +37,9 @@ const CLASS_LABEL: Record<AssetClass, string> = {
   C: 'C · TEE broker (x402)',
   D: 'D · direct service (voucher)',
 }
+const STEPS = ['What you give', 'What you want', 'Terms', 'Sign and post'] as const
+type View = 'browse' | 'post' | 'mine'
+const VIEWS: [View, string][] = [['browse', 'Browse'], ['post', 'Post a listing'], ['mine', 'Mine']]
 const ASSET_TYPE = /^[a-z0-9][a-z0-9._:-]{0,63}$/
 const SECONDS_PER_HOUR = 3600
 
@@ -91,6 +95,7 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [created, setCreated] = useState<string | null>(null)
+  const [step, setStep] = useState(1)
 
   const sideOk = (s: Side) => ASSET_TYPE.test(s.type) && /^[1-9]\d*$/.test(s.quantity) && toAtomic(s.value) !== null
   const discountBps = bps(discount)
@@ -150,16 +155,32 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
     }
   }
 
+  // FE-072: the form is four short steps instead of one long page. Every field stays in the DOM (the steps only hide panes with CSS),
+  // so a value typed in one step is kept when the member moves on, and the last step lists what still needs fixing, with a jump back to it.
+  const stepOk = [sideOk(offer), sideOk(want), discountBps !== null && hoursOk, voucherKey.trim() !== '']
+  const missing = STEPS.slice(0, 3).flatMap((s, i) => (stepOk[i] ? [] : [{ step: i + 1, label: s }]))
   return (
     <form
       className="form listing-form"
       aria-label="Create listing"
+      data-step={step}
       onSubmit={(e) => {
         e.preventDefault()
         void submit()
       }}
     >
       {!account && <SignInPrompt action="create a listing" />}
+      <ol className="stepper" aria-label="Steps">
+        {STEPS.map((s, i) => (
+          <li key={s}>
+            <button type="button" aria-current={step === i + 1 ? 'step' : undefined} data-done={stepOk[i] ? 'true' : undefined} onClick={() => setStep(i + 1)}>
+              <span className="stepper-dot" aria-hidden="true">{stepOk[i] && step !== i + 1 ? '✓' : i + 1}</span>
+              <span className="stepper-label">{s}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div className="step-pane" data-pane="1">
       <AssetTemplateForm
         onApply={(t) => {
           setOffer({ type: t.side.asset_type, cls: t.side.asset_class, quantity: String(t.side.quantity), value: fromAtomic(t.side.value) })
@@ -176,7 +197,11 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
         }}
       />
       <SideFields legend="Offering" value={offer} onChange={setOffer} />
+      </div>
+      <div className="step-pane" data-pane="2">
       <SideFields legend="Seeking" value={want} onChange={setWant} />
+      </div>
+      <div className="step-pane" data-pane="3">
       <label>
         <span>Terms</span>
         <input value={terms} onChange={(e) => setTerms(e.target.value)} maxLength={512} placeholder="delivery within 7 days" />
@@ -195,26 +220,64 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
         <input value={discount} onChange={(e) => setDiscount(e.target.value)} inputMode="decimal" />
         {discountBps === null && <small className="state-error" role="alert">Discount 0–100% with at most 2 decimals.</small>}
       </label>
-      <label className="check">
-        <input type="checkbox" checked={acceptPayment} onChange={(e) => setAcceptPayment(e.target.checked)} />
-        <span>The counterparty may pay the discounted price</span>
-      </label>
-      <label className="check">
-        <input type="checkbox" checked={human} onChange={(e) => setHuman(e.target.checked)} />
-        <span>Done by a human (a “human” mark on the listing; humans take part as ordinary members through the web wallet)</span>
-      </label>
-      <label className="check">
-        <input type="checkbox" checked={discoverable} onChange={(e) => setDiscoverable(e.target.checked)} />
-        <span>Autonomous seekers may approach this agent</span>
-      </label>
-      <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
-      <div>
-        <button type="submit" disabled={!valid || busy}>
-          {busy ? 'Signing…' : 'Sign and post listing'}
-        </button>
+      <div className="switches">
+        <label className="check">
+          <input type="checkbox" role="switch" checked={acceptPayment} onChange={(e) => setAcceptPayment(e.target.checked)} />
+          <span>Allow paying the discounted price</span>
+        </label>
+        <label className="check" title="Adds a “human” mark to the listing. Humans take part as ordinary members through the web wallet.">
+          <input type="checkbox" role="switch" checked={human} onChange={(e) => setHuman(e.target.checked)} />
+          <span>Done by a human</span>
+        </label>
+        <label className="check">
+          <input type="checkbox" role="switch" checked={discoverable} onChange={(e) => setDiscoverable(e.target.checked)} />
+          <span>Let seeking agents approach me</span>
+        </label>
       </div>
-      {error && <p className="state state-error" role="alert">{error}</p>}
-      {created && <p className="state" role="status">Listing posted: <code>{created}</code><CopyButton value={created} label="listing hash" /></p>}
+      </div>
+      <div className="step-pane" data-pane="4">
+        <div className="deal" aria-label="Your listing">
+          <div className="deal-side">
+            <span className="deal-tag">You give</span>
+            <strong>{offer.type || '—'}</strong>
+            <span>{offer.quantity || '?'} × · {offer.value || '?'} credit</span>
+          </div>
+          <span className="deal-arrow" aria-hidden="true">⇄</span>
+          <div className="deal-side">
+            <span className="deal-tag">You get</span>
+            <strong>{want.type || '—'}</strong>
+            <span>{want.quantity || '?'} × · {want.value || '?'} credit</span>
+          </div>
+        </div>
+        {missing.length > 0 && (
+          <p className="state state-warn">
+            Still to fill:{' '}
+            {missing.map((m) => (
+              <button key={m.step} type="button" className="quiet" onClick={() => setStep(m.step)}>
+                {m.label}
+              </button>
+            ))}
+          </p>
+        )}
+        <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
+        <div>
+          <button type="submit" disabled={!valid || busy}>
+            {busy ? 'Signing…' : 'Sign and post listing'}
+          </button>
+        </div>
+        {error && <p className="state state-error" role="alert">{error}</p>}
+        {created && <p className="state" role="status">Listing posted: <code>{created}</code><CopyButton value={created} label="listing hash" /></p>}
+      </div>
+      <div className="step-nav">
+        <button type="button" className="quiet" disabled={step === 1} onClick={() => setStep(step - 1)}>
+          Back
+        </button>
+        {step < STEPS.length && (
+          <button type="button" onClick={() => setStep(step + 1)}>
+            Continue
+          </button>
+        )}
+      </div>
     </form>
   )
 }
@@ -277,10 +340,29 @@ export function Marketplace() {
   const [selected, setSelected] = useState<ListingView | null>(null)
   const query: Record<string, string> = { status, ...(offerType.trim() ? { offerType: offerType.trim() } : {}) }
   const listings = useListings(query)
+  // FE-072: one view at a time (browse, post, your own), as a store app does, instead of every part on one long page. The views only hide
+  // with CSS, so links and tests still reach every part; #post-listing (from the empty hint) opens the post view.
+  const { hash } = useLocation()
+  const [view, setView] = useState<View>(hash === '#post-listing' ? 'post' : 'browse')
+  const [seenHash, setSeenHash] = useState(hash)
+  if (hash !== seenHash) {
+    setSeenHash(hash)
+    if (hash === '#post-listing') setView('post')
+  }
 
   return (
-    <>
-      <Stats />
+    <div className="market" data-view={view}>
+      <div className="market-top">
+        <Stats />
+        <div className="segmented market-views" role="group" aria-label="Marketplace view">
+          {VIEWS.map(([v, label]) => (
+            <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <section className="market-pane" data-pane="browse" aria-label="Browse listings">
       <h2>Listing</h2>
       <div className="filters">
         <label>
@@ -309,9 +391,14 @@ export function Marketplace() {
         )}
       </QueryState>
       {selected && <Negotiation listing={selected} voucherKey={voucherKey} onVoucherKey={setVoucherKey} onClose={() => setSelected(null)} />}
-      <OwnIntents />
-      <h2 id="post-listing">Post a listing</h2>
-      <CreateListing voucherKey={voucherKey} onVoucherKey={setVoucherKey} />
-    </>
+      </section>
+      <section className="market-pane" data-pane="mine" aria-label="Your intents">
+        <OwnIntents />
+      </section>
+      <section className="market-pane" data-pane="post" aria-labelledby="post-listing">
+        <h2 id="post-listing">Post a listing</h2>
+        <CreateListing voucherKey={voucherKey} onVoucherKey={setVoucherKey} />
+      </section>
+    </div>
   )
 }
