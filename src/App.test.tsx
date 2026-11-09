@@ -15,7 +15,7 @@ describe('dashboard shell', () => {
 
   it('TC-FE-002-01 fifteen pages (F1-F4, governance, marketplace F9, access F8, invoices P8, orders P6, licenses P7, codes P3, transfers P4 and access rent P2) open from one navigation', async () => {
     const user = userEvent.setup()
-    renderApp('/')
+    renderApp('/stats')
     const nav = screen.getByRole('navigation', { name: 'Pages' })
     expect(within(nav).getAllByRole('link')).toHaveLength(15)
     for (const { title } of pages) {
@@ -24,16 +24,20 @@ describe('dashboard shell', () => {
     }
   })
 
-  it('FE-037 "/" goes to the clearing stats and "Page not found" is never in the document, not even for one frame', async () => {
+  it('FE-037 FE-044 "/" opens the landing page outside the dashboard layout, and "Page not found" is never in the document, not even for one frame', async () => {
     let seen = false
     const watch = new MutationObserver(() => {
       if (document.body.textContent?.includes('Page not found')) seen = true
     })
     watch.observe(document.body, { childList: true, subtree: true, characterData: true })
-    renderApp('/')
-    expect(await screen.findByRole('heading', { level: 1, name: pages.find((p) => p.path === '/stats')!.title })).toBeInTheDocument()
+    const { calls } = renderApp('/')
+    // The landing is a lazy chunk; its first import in a test run takes longer than the default second.
+    expect(await screen.findByRole('heading', { level: 1 }, { timeout: 8000 })).toHaveTextContent('x207 lets many agents settle at once.')
+    expect(screen.queryByRole('navigation', { name: 'Pages' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: /dashboard/i })[0]).toHaveAttribute('href', '/stats')
     watch.disconnect()
     expect(seen).toBe(false)
+    expect(calls()).toEqual([])
   })
 
   it('FE-035 a path that no page owns shows a not-found page with a link, not a blank page', async () => {

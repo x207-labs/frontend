@@ -12,7 +12,11 @@ const CSP_NONCE = randomBytes(16).toString('base64')
 export default defineConfig(({ mode }) => ({
   define: { __X207_CSP_NONCE__: mode === 'production' ? JSON.stringify(CSP_NONCE) : 'undefined' },
   // FE-031: `@x207/core` imports `node:crypto`; the browser gets a small stand-in (see the file). The tests run on Node and keep the real module.
-  resolve: mode === 'test' ? {} : { alias: { 'node:crypto': fileURLToPath(new URL('./src/lib/node-crypto-shim.ts', import.meta.url)) } },
+  // FE-044: in the umbrella workspace `motion` is hoisted to the root node_modules while React stays in this package's own; dedupe makes `motion` find this React.
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+    ...(mode === 'test' ? {} : { alias: { 'node:crypto': fileURLToPath(new URL('./src/lib/node-crypto-shim.ts', import.meta.url)) } }),
+  },
   plugins: [
     react(),
     {
@@ -36,6 +40,7 @@ export default defineConfig(({ mode }) => ({
     css: { include: [/styles\.css/] }, // the contrast test reads the colour tokens of styles.css as text
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    server: { deps: { inline: ['motion', 'framer-motion', 'motion-dom', 'motion-utils'] } }, // FE-044: so the dedupe above applies to them in the tests too
     restoreMocks: true,
     unstubGlobals: true,
   },

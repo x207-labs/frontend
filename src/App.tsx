@@ -1,8 +1,11 @@
+import { lazy, Suspense } from 'react'
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { LEGACY_ROUTES } from './legacyRoutes'
 import { RequireWallet } from './components/RequireWallet'
 import { pages } from './routes'
+
+const Landing = lazy(() => import('./landing/Landing'))
 
 // FE-034: the routes are English. The old Indonesian paths still open (a bookmark, a link in an old note) and go to the new one, with the query (the epoch) kept.
 function Redirect({ to }: { to: string }) {
@@ -23,8 +26,8 @@ export function NotFound() {
 export function App() {
   return (
     <Routes>
-      {/* FE-037: outside the layout, so the first paint of "/" is not the layout with "Page not found". Search and hash are kept. */}
-      <Route path="/" element={<Redirect to="/stats" />} />
+      {/* FE-037: outside the layout, so the first paint of "/" is not the layout with "Page not found". FE-044: "/" is the landing page; a full load of "/" gets it from main.tsx without the wallet, this route covers a link inside the dashboard. */}
+      <Route path="/" element={<Suspense fallback={null}><Landing /></Suspense>} />
       <Route element={<Layout />}>
         {pages.map(({ path, title, needsWallet, Page }) => (
           <Route key={path} path={path} element={needsWallet ? <RequireWallet title={title}><Page /></RequireWallet> : <Page />} />
