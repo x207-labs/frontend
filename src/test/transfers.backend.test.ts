@@ -6,7 +6,7 @@
 // the page reads. It needs the repositories `agents` and `backend` next to this one (the same fixtures as the agents) and is skipped without them.
 import { existsSync } from 'node:fs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { listingHash, signListing, type Listing } from '@x207/core'
 import { toTransferView } from '../api/transferView'
 import { signSellerNotice } from '../lib/licenseFlow'
@@ -20,6 +20,8 @@ type Fx = { CONTRACT: string; CIRCLE_ID: string; acct: (n: string) => string; st
 const credit = (n: number): string => (BigInt(n) * 1_000_000n).toString()
 
 describe.skipIf(!AVAILABLE)('FE-033 the page library against the real transfer ledger (BE-074)', () => {
+  // FE-049: the real backend stamps and checks times with the real clock, so this test does not use the fixed one of src/test/setup.ts.
+  beforeEach(() => vi.useRealTimers())
   let market: any
   afterEach(async () => {
     await market?.srv.close()

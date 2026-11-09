@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { afterAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FunctionCallTx, WalletPort } from '../wallet/types'
 
 declare const process: { env: Record<string, string | undefined>; stderr: { write(text: string): void }; cwd(): string }
@@ -27,6 +27,8 @@ const SIBLINGS = {
 const load = (path: string): Promise<any> => import(/* @vite-ignore */ `/@fs${path}`)
 
 describe.skipIf(!enabled)('FE-018 exit and withdraw stake from the UI to near-sandbox', () => {
+  // FE-049: the sandbox chain runs on the real clock, so this test does not use the fixed one of src/test/setup.ts.
+  beforeEach(() => vi.useRealTimers())
   const cleanup: Array<() => Promise<void> | void> = []
   afterAll(async () => {
     for (const fn of cleanup.reverse()) await fn()
