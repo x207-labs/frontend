@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildCsp } from '../lib/csp'
 import { PRIVY_EXECUTOR_COMMIT, PRIVY_EXECUTOR_URL, PRIVY_WALLET_ID, buildManifest, privyWalletEntry } from './privyManifest'
 import { PrivySignFlow } from './PrivySignFlow'
@@ -61,7 +61,10 @@ describe('TC-FE-059-02 the CSP opens the Privy host only when the build has a Pr
   it('off by default; on with both ids', () => {
     const base = { VITE_X207_API_URL: 'https://x207.boxd.sh' }
     expect(buildCsp(base)).not.toContain('privy')
-    expect(buildCsp({ ...base, VITE_PRIVY_APP_ID: 'app' })).not.toContain('privy')
+    expect(buildCsp({ ...base, VITE_PRIVY_APP_CLIENT_ID: 'client' })).not.toContain('privy') // a Client ID alone is not enough
+    expect(buildCsp({ ...base, VITE_PRIVY_APP_ID: '  ' })).not.toContain('privy')
+    // FE-066: the App ID alone turns it on; the Client ID is optional
+    expect(buildCsp({ ...base, VITE_PRIVY_APP_ID: 'app' })).toContain('frame-src https://auth.privy.io')
     const on = buildCsp({ ...base, VITE_PRIVY_APP_ID: 'app', VITE_PRIVY_APP_CLIENT_ID: 'client' })
     expect(on).toContain('frame-src https://auth.privy.io')
     expect(on.split('; ').find((d) => d.startsWith('connect-src'))).toContain('https://auth.privy.io')
@@ -175,5 +178,34 @@ describe('TC-FE-059-04 helpers', () => {
     expect(readOAuthReturn('?privy_oauth_code=a&privy_oauth_state=b')).toEqual({ code: 'a', state: 'b' })
     expect(readOAuthReturn('?privy_oauth_code=a')).toBeNull()
     expect(readOAuthReturn('')).toBeNull()
+  })
+})
+
+// Last in the file: it resets the module registry, which the lazy /sign chunk of the test above must not see.
+describe('TC-FE-066-01 the Client ID is optional', () => {
+  const load = async (env: Record<string, string>) => {
+    vi.resetModules()
+    for (const [k, v] of Object.entries(env)) vi.stubEnv(k, v)
+    return import('./privyConfig')
+  }
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('no App ID: off, even with a Client ID', async () => {
+    const c = await load({ VITE_PRIVY_APP_ID: '', VITE_PRIVY_APP_CLIENT_ID: 'client' })
+    expect(c.privyEnabled).toBe(false)
+  })
+  it('App ID only: on, and `clientId` is not sent at all', async () => {
+    const c = await load({ VITE_PRIVY_APP_ID: 'app', VITE_PRIVY_APP_CLIENT_ID: '' })
+    expect(c.privyEnabled).toBe(true)
+    expect(c.privyClientOptions()).toEqual({ appId: 'app' })
+    expect('clientId' in c.privyClientOptions()).toBe(false)
+  })
+  it('both: `clientId` is sent', async () => {
+    const c = await load({ VITE_PRIVY_APP_ID: 'app', VITE_PRIVY_APP_CLIENT_ID: ' client ' })
+    expect(c.privyClientOptions()).toEqual({ appId: 'app', clientId: 'client' })
+  })
+  it('the sources never read a Privy secret', () => {
+    const files = import.meta.glob(['../**/*.{ts,tsx}', '!../**/*.test.{ts,tsx}'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+    for (const [file, text] of Object.entries(files)) expect(text, file).not.toMatch(/PRIVY_APP_SECRET|PRIVY_SECRET|appSecret/i)
   })
 })

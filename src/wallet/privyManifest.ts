@@ -1,5 +1,5 @@
 // FE-059: the Privy wallet (Google or email login) as one more entry of the NEAR Connect wallet list. The list is the library's own list plus this entry, so the other wallets stay.
-// Without VITE_PRIVY_APP_ID and VITE_PRIVY_APP_CLIENT_ID the entry is left out and the connector behaves as before.
+// Without VITE_PRIVY_APP_ID the entry is left out and the connector behaves as before.
 
 /** The wallet id of the entry; `connector.connect({ walletId })` uses it. */
 export const PRIVY_WALLET_ID = 'x207privy'

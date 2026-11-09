@@ -47,7 +47,7 @@ export function buildCsp(env: Env, nonce?: string): string {
   }
   for (const o of NEAR_CONNECT_MANIFEST_ORIGINS) connect.add(o)
   // FE-059: the Privy wallet talks to the Privy API and loads its key frame from the same host; both are opened only when the build has a Privy app id.
-  const privy = env.VITE_PRIVY_APP_ID?.trim() && env.VITE_PRIVY_APP_CLIENT_ID?.trim()
+  const privy = env.VITE_PRIVY_APP_ID?.trim() // FE-066: the Client ID is optional
   if (privy) connect.add(PRIVY_ORIGIN)
   return [
     "default-src 'self'",

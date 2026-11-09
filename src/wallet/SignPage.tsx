@@ -4,7 +4,7 @@ import { SignPagePlugin } from '@peerfolio/privy-near-connect/sign-page-plugin'
 import type { SignPageProps } from '@peerfolio/privy-near-connect/sign-page-plugin'
 import '@radix-ui/themes/styles.css'
 import '@peerfolio/privy-near-connect/sign-page-plugin/theme.css'
-import { PRIVY_APP_CLIENT_ID, PRIVY_APP_ID, privyEnabled } from './privyConfig'
+import { privyClientOptions, privyEnabled } from './privyConfig'
 import { PrivySignFlow, type PluginProps } from './PrivySignFlow'
 import type { PrivyLike } from './privyLogin'
 
@@ -12,7 +12,7 @@ import type { PrivyLike } from './privyLogin'
 ;(globalThis as Record<string, unknown>).Buffer ??= Buffer
 
 // Built once, when the page loads. Not built at all without the Privy ids (the route then explains that the wallet is off).
-const privy = privyEnabled ? new Privy({ appId: PRIVY_APP_ID, clientId: PRIVY_APP_CLIENT_ID, storage: new LocalStorage() }) : null
+const privy = privyEnabled ? new Privy({ ...privyClientOptions(), storage: new LocalStorage() }) : null
 
 function Plugin({ origin }: PluginProps) {
   // Only the app's own origin may ask this page to sign.

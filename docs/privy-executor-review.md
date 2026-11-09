@@ -32,7 +32,7 @@ A search of the file finds none of: `fetch`, `XMLHttpRequest`, `WebSocket`, `sen
 
 ## CSP
 
-With the two Privy ids set, the build allows `https://auth.privy.io` in `connect-src` and `frame-src` (Privy's key frame). Without them the policy is unchanged. The executor host `raw.githubusercontent.com` was already allowed for NEAR Connect's manifests. See `src/lib/csp.ts`.
+With `VITE_PRIVY_APP_ID` set (the Client ID is optional, FE-066), the build allows `https://auth.privy.io` in `connect-src` and `frame-src` (Privy's key frame). Without them the policy is unchanged. The executor host `raw.githubusercontent.com` was already allowed for NEAR Connect's manifests. See `src/lib/csp.ts`.
 
 ## To move the pin
 
