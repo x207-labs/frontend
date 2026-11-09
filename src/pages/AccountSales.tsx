@@ -1,8 +1,9 @@
+import { useEffect } from 'react'
 import { ApiError } from '../api/client'
-import { useAccountEscrow, useAccountEscrows, useGrants, useMaxEscrowTtl } from '../api/queries'
+import { useAccountEscrow, useAccountEscrows, useEpochs, useGrants, useMaxEscrowTtl } from '../api/queries'
 import type { AccountEscrowItem, AccountEscrowState } from '../api/types'
 import { ErrorNotice, Loading } from '../components/QueryState'
-import { formatExpiry, shortAccount } from '../lib/format'
+import { formatExpiry, formatTtl, shortAccount } from '../lib/format'
 
 // FE-045: sales of a NEAR account through a locker (contract 0.0.18, barter kinds #11 and #14), read only. The list comes from `GET account-escrows`, the expiry
 // from the grant of the same id (`GET grants`), the lock epoch from `GET account-escrows/{grantId}`, the time limit from the contract view `get_max_escrow_ttl`.
@@ -13,22 +14,8 @@ const STATE_LABEL: Record<AccountEscrowState, string> = {
   delivered: 'delivered to the buyer',
   cancelled: "cancelled: seller's key returned",
 }
-const NS_PER_HOUR = 3_600_000_000_000n
 /** Detail reads are one request per row: only the newest rows get one. */
 const DETAIL_ROWS = 50
-
-/** Nanoseconds (string or number) to a duration in hours; `null` if unreadable. */
-export function formatTtl(ns: string | number): string | null {
-  try {
-    const value = BigInt(ns)
-    if (value <= 0n) return null
-    const hours = Number(value) / Number(NS_PER_HOUR)
-    const text = Number.isInteger(hours) ? String(hours) : hours.toFixed(1)
-    return `${text} ${hours === 1 ? 'hour' : 'hours'}`
-  } catch {
-    return null
-  }
-}
 
 const notOnThisCircle = (error: unknown) => error instanceof ApiError && error.status === 404
 
@@ -44,8 +31,8 @@ function TtlLine() {
   )
 }
 
-function DetailCells({ item, withDetail }: { item: AccountEscrowItem; withDetail: boolean }) {
-  const detail = useAccountEscrow(item.grantId, withDetail)
+function DetailCells({ item, withDetail, finalizedHead }: { item: AccountEscrowItem; withDetail: boolean; finalizedHead: number | null }) {
+  const detail = useAccountEscrow(item.grantId, item.state, finalizedHead, withDetail)
   if (!withDetail) return <><td>-</td><td>-</td><td>-</td></>
   if (detail.isPending) return <><td colSpan={3}>loading…</td></>
   if (detail.isError || !detail.data) return <><td colSpan={3}>not available</td></>
@@ -64,8 +51,17 @@ function DetailCells({ item, withDetail }: { item: AccountEscrowItem; withDetail
 
 export function AccountSales() {
   const escrows = useAccountEscrows()
-  const grants = useGrants({})
+  const items = escrows.data?.items ?? []
+  // FE-046: the expiry of a grant never changes, so the grant list is read once (only when there are sales) and again only when a sale shows a grant it lacks.
+  const grants = useGrants({}, items.length > 0, false)
   const expiry = new Map((grants.data?.items ?? []).map((g) => [g.grantId, g.expiresAt]))
+  const missing = grants.data ? items.filter((e) => !expiry.has(e.grantId)).map((e) => e.grantId).join() : ''
+  const { refetch: refetchGrants } = grants
+  useEffect(() => {
+    if (missing) void refetchGrants()
+  }, [missing, refetchGrants])
+  // A held sale can change once an epoch is finalized (EpochProvider polls the list already).
+  const finalizedHead = useEpochs().data?.items.find((e) => e.phase === 'finalized')?.epoch ?? null
 
   let body
   if (escrows.isPending) body = <Loading label="Loading account sales" />
@@ -99,7 +95,7 @@ export function AccountSales() {
                 <td>{STATE_LABEL[e.state] ?? e.state}</td>
                 <td>{e.newOwner ? shortAccount(e.newOwner) : '-'}</td>
                 <td>{expiry.has(e.grantId) ? formatExpiry(expiry.get(e.grantId)!) : 'not available'}</td>
-                <DetailCells item={e} withDetail={i < DETAIL_ROWS} />
+                <DetailCells item={e} withDetail={i < DETAIL_ROWS} finalizedHead={finalizedHead} />
               </tr>
             ))}
           </tbody>

@@ -48,8 +48,7 @@ export function EscrowCell({ escrow }: { escrow: GrantEscrow | null | undefined 
   )
 }
 
-// FE-045: moved to lib/format (the account sales use it too); still exported from here for the tests of FE-017.
-export { formatExpiry }
+// FE-045: formatExpiry moved to lib/format (the account sales use it too).
 
 type Row = Grant & { role: 'grantor' | 'grantee' }
 

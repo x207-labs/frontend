@@ -13,6 +13,21 @@ export function formatCredit(raw: string | null | undefined): string {
   return `${sign}${whole}${fraction ? `.${fraction}` : ''}`
 }
 
+const NS_PER_HOUR = 3_600_000_000_000n
+
+/** Nanoseconds (string or number) to a duration in hours; `null` if unreadable (FE-045, `max_escrow_ttl`). */
+export function formatTtl(ns: string | number): string | null {
+  try {
+    const value = BigInt(ns)
+    if (value <= 0n) return null
+    const hours = Number(value) / Number(NS_PER_HOUR)
+    const text = Number.isInteger(hours) ? String(hours) : hours.toFixed(1)
+    return `${text} ${hours === 1 ? 'hour' : 'hours'}`
+  } catch {
+    return null
+  }
+}
+
 /** Nanoseconds (string) to a UTC date; `not available` if unreadable. */
 export function formatExpiry(ns: string): string {
   try {

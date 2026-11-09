@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { grants } from '../api/fixtures'
 import { apiError, renderApp } from '../test/render'
 import { createMockWallet } from '../test/walletMock'
-import { formatExpiry } from './Grants'
+import { formatExpiry } from '../lib/format'
 
 const SCRAPER = 'scraper.x207-circle.near'
 const TRANSLATOR = 'translator.x207-circle.near'

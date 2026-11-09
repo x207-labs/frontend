@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach } from 'vitest'
+import { resetRateLimit } from '../api/client'
 
 afterEach(cleanup)
+// FE-046: a 429 in one test must not slow the polling of the next one.
+afterEach(resetRateLimit)
 
 // FE-044: the landing page uses motion, which asks for IntersectionObserver (reveal on scroll) and matchMedia (reduced motion); jsdom has neither.
 if (typeof window !== 'undefined' && !('IntersectionObserver' in window)) {

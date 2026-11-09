@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import { fixtureFetch, type FixtureReply } from '../api/fixtures'
 import { App } from '../App'
+import { pollEvery } from '../queryClient'
 import { WalletProvider } from '../wallet/WalletContext'
 import { createMockWallet, type MockWallet } from './walletMock'
 
@@ -18,7 +19,8 @@ export function renderApp(route: string, override?: Override, pollMs: number | f
   const fetchMock = vi.fn(fixtureFetch(override))
   vi.stubGlobal('fetch', fetchMock)
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, refetchInterval: pollMs } },
+    // FE-046: the same interval rule as the app (stretched after a 429, paused while the tab is hidden).
+    defaultOptions: { queries: { retry: false, refetchInterval: pollMs === false ? false : pollEvery(pollMs), refetchIntervalInBackground: false } },
   })
   const view = render(
     <QueryClientProvider client={client}>

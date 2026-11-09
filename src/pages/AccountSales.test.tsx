@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { CIRCLE_OPTIONS } from '../config'
 import { CIRCLE_API_ORIGINS } from '../lib/csp'
 import { apiError, renderApp } from '../test/render'
-import { formatTtl } from './AccountSales'
+import { formatTtl } from '../lib/format'
 
 const rowOf = (table: HTMLElement, id: number) => within(table).getByText(String(id), { selector: 'td.num' }).closest('tr') as HTMLElement
 

@@ -2,6 +2,7 @@ import { useQueries, useQuery } from '@tanstack/react-query'
 import { api } from './client'
 import { viewContract } from './chain'
 import type { ObligationStage } from './types'
+import { FINAL } from '../queryClient'
 
 export const useEpochs = () => useQuery({ queryKey: ['epochs'], queryFn: api.epochs })
 export const useMember = (account: string | null) =>
@@ -42,11 +43,14 @@ export const useMetrics = (epoch: number | null) =>
     queryFn: () => api.metrics(epoch!),
     enabled: epoch !== null,
   })
-export const useAllMetrics = (epochs: number[]) =>
+// FE-046: the metrics of a finalized epoch never change, so they are read once and kept; only epochs still moving are polled. `final` is in the key, so an epoch that
+// becomes finalized is read one last time.
+export const useAllMetrics = (epochs: { epoch: number; final: boolean }[]) =>
   useQueries({
-    queries: epochs.map((epoch) => ({
-      queryKey: ['metrics', epoch],
+    queries: epochs.map(({ epoch, final }) => ({
+      queryKey: ['metrics', epoch, final],
       queryFn: () => api.metrics(epoch),
+      ...(final ? FINAL : {}),
     })),
   })
 
@@ -60,14 +64,23 @@ export const useProposals = (account: string | null) =>
 export const useMemberLimits = (account: string | null) =>
   useQuery({ queryKey: ['limits', account], queryFn: () => api.memberLimits(account!), enabled: account !== null, retry: false })
 export const useDaoProposals = () => useQuery({ queryKey: ['dao-proposals'], queryFn: api.daoProposals })
-export const useGrants = (query: Record<string, string>, enabled = true) =>
-  useQuery({ queryKey: ['grants', query], queryFn: () => api.grants(query), enabled })
+export const useGrants = (query: Record<string, string>, enabled = true, poll = true) =>
+  useQuery({ queryKey: ['grants', query], queryFn: () => api.grants(query), enabled, ...(poll ? {} : FINAL) })
 // FE-045: account sales (contract 0.0.18). A read API without the route (circles before 0.0.18) answers 404 `not_found`: no retry.
 export const useAccountEscrows = () => useQuery({ queryKey: ['account-escrows'], queryFn: api.accountEscrows, retry: false })
-export const useAccountEscrow = (grantId: number, enabled = true) =>
-  useQuery({ queryKey: ['account-escrow', grantId], queryFn: () => api.accountEscrow(grantId), enabled, retry: false })
-/** Owner limit on the time an account sale may stay locked (CT-129, nanoseconds as text). Contracts before 0.0.18 have no such view. */
-export const useMaxEscrowTtl = () => useQuery({ queryKey: ['chain', 'get_max_escrow_ttl'], queryFn: () => viewContract<string | number>('get_max_escrow_ttl'), retry: false })
+// FE-046: the detail is never polled. A delivered or cancelled sale is final; a held one only changes when an epoch is finalized (`ready`, `lockedEpochFinalized`) or
+// when the list shows a new state, so both are in the key and a change reads the detail once.
+export const useAccountEscrow = (grantId: number, state: string, finalizedHead: number | null, enabled = true) =>
+  useQuery({
+    queryKey: ['account-escrow', grantId, state, state === 'held' ? finalizedHead : null],
+    queryFn: () => api.accountEscrow(grantId),
+    enabled,
+    retry: false,
+    ...FINAL,
+  })
+/** Owner limit on the time an account sale may stay locked (CT-129, nanoseconds as text). Contracts before 0.0.18 have no such view. Read once per page load. */
+export const useMaxEscrowTtl = () =>
+  useQuery({ queryKey: ['chain', 'get_max_escrow_ttl'], queryFn: () => viewContract<string | number>('get_max_escrow_ttl'), retry: false, ...FINAL })
 
 // On-chain data not yet in the read API: read from contract views (src/api/chain.ts).
 /** USDT balance (smallest unit) recorded by `mt_on_transfer` and not yet withdrawn from Intents. */

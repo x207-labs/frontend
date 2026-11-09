@@ -28,6 +28,9 @@ export function defaultEpoch(items: EpochItem[], results: ReadonlyMap<number, Ep
   )
 }
 
+/** How many of the newest finalized epochs the default choice looks at (FE-046: a circle with hundreds of epochs must not read them all). */
+const DEFAULT_SCAN = 10
+
 const EpochContext = createContext<Selection | null>(null)
 
 // The selected epoch is kept in the ?epoch= query so it follows page changes and can be shared.
@@ -35,7 +38,8 @@ export function EpochProvider({ children }: { children: ReactNode }) {
   const query = useEpochs()
   const [params, setParams] = useSearchParams()
   const wanted = params.get('epoch')
-  const finalized = (query.data?.items ?? []).filter((e) => e.phase === 'finalized').map((e) => e.epoch)
+  // FE-046: only the newest finalized epochs are read to choose the default, once each (finalized metrics never change).
+  const finalized = (query.data?.items ?? []).filter((e) => e.phase === 'finalized').slice(0, DEFAULT_SCAN).map((e) => ({ epoch: e.epoch, final: true }))
   const metrics = useAllMetrics(wanted === null ? finalized : [])
   const settled = metrics.every((m) => m.data !== undefined || m.isError)
 

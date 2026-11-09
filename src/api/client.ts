@@ -60,9 +60,35 @@ function withRetryAfter(res: Response, details: Record<string, unknown> | undefi
   return Number.isFinite(wait) && wait > 0 ? { ...details, retryAfter: Math.ceil(wait) } : details
 }
 
+// FE-046: after a 429 the dashboard backs off. Polling waits for the server's Retry-After, or for a doubling pause (10 s, 20 s, … up to 2 minutes) when the
+// answer has none; the first answer that is not a 429 ends the backoff. The read API limit is shared with every other visitor, so polling must not keep hitting it.
+const BACKOFF_BASE_MS = 5_000
+const BACKOFF_MAX_MS = 120_000
+let coolUntil = 0
+let strikes = 0
+
+/** Milliseconds left before polling may call the read API again (0 when it is not rate limited). */
+export const rateLimitWait = (now = Date.now()) => Math.max(0, coolUntil - now)
+/** Test helper: forget an earlier 429. */
+export const resetRateLimit = () => {
+  coolUntil = 0
+  strikes = 0
+}
+function noteRateLimit(res: Response) {
+  if (res.status !== 429) {
+    strikes = 0
+    return
+  }
+  strikes += 1
+  const asked = Number(res.headers.get('Retry-After')) * 1000
+  const pause = Math.min(BACKOFF_BASE_MS * 2 ** strikes, BACKOFF_MAX_MS)
+  coolUntil = Date.now() + Math.max(Number.isFinite(asked) ? asked : 0, pause)
+}
+
 // 207 Multi-Status is within the 2xx range, so the clearing report is read as success.
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`)
+  noteRateLimit(res)
   if (res.ok) return res.json() as Promise<T>
   const body = await res.json().catch(() => null)
   const error = body?.error

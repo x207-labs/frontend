@@ -5,6 +5,9 @@ import { Scatter } from '../components/Scatter'
 import { useEpochSelection } from '../epoch'
 import { EDGES_PRUNED_NOTE, formatCredit, formatNumber, formatPercent } from '../lib/format'
 
+/** How many of the newest epochs the density charts show (FE-046: a circle with hundreds of epochs must not read them all). */
+const CHART_EPOCHS = 20
+
 const utc = (iso: string): string => iso.replace('T', ' ').replace(/:\d\d(\.\d+)?Z$/, ' UTC')
 
 /** An epoch that was committed with vouchers and no clearing applied: a ratio of 0 and no transfers there mean "nothing was cleared", not a result of the clearing. */
@@ -112,7 +115,10 @@ function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline
 
 export function ClearingStats() {
   const { query, selected, resolving } = useEpochSelection()
-  const results = useAllMetrics((query.data?.items ?? []).map((e) => e.epoch))
+  // FE-046: the charts use the newest CHART_EPOCHS epochs and the selected one; finalized ones are read once, the rest follow the poll.
+  const items = query.data?.items ?? []
+  const charted = items.filter((e, i) => i < CHART_EPOCHS || e.epoch === selected?.epoch)
+  const results = useAllMetrics(charted.map((e) => ({ epoch: e.epoch, final: e.phase === 'finalized' })))
   if (!selected) {
     if (resolving) return <Loading label="Loading epoch" />
     return query.data ? <p className="state">No epoch with clearing metrics yet.</p> : null
