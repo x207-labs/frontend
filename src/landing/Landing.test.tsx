@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import axe from 'axe-core'
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { BARTER, BARTER_TOTAL, DEFAULTER, EDGES, EPOCH8, KIND_CLASSES, NET } from './facts'
+import { BARTER, BARTER_TOTAL, DEFAULTER, EDGES, EPOCH8, KIND_CLASSES, LIVE, NET } from './facts'
 import Landing from './Landing'
 import { CHAPTER_KEYS } from './tokens'
 
@@ -57,6 +57,18 @@ describe('FE-044 landing page facts', () => {
     expect(ticks.map((li) => li.getAttribute('data-chapter'))).toEqual([...CHAPTER_KEYS])
     expect(ticks.map((li) => li.textContent)).toEqual(['Barter', 'Vouchers', 'Clearing', 'Settlement'])
     expect(container.querySelectorAll('.hud-ticks .is-on, .hud-ticks .is-past')).toHaveLength(0)
+  })
+
+  // UM-195: the bare boxd.sh origins answer 404 and the MCP endpoint answers 405 to a GET; a link people click must go to a path that answers 200.
+  it('UM-195: every boxd.sh link on the page has a path, and none points at the POST-only /mcp endpoint', () => {
+    const { container } = render(<Landing />)
+    const hrefs = [...container.querySelectorAll('a[href*="boxd.sh"]')].map((a) => new URL(a.getAttribute('href')!))
+    expect(hrefs.length).toBeGreaterThanOrEqual(3)
+    for (const u of hrefs) {
+      expect(u.pathname, u.href).not.toBe('/')
+      expect(u.pathname, u.href).not.toBe('/mcp')
+    }
+    expect(hrefs.map((u) => u.href)).toContain(LIVE.mcpHealth)
   })
 
   // The counts come from one source, docs/barter-evidence.md "The counts" of the umbrella repository. When the frontend is checked out inside the

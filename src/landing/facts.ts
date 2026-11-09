@@ -18,6 +18,8 @@ export const LIVE = {
   finalizeTx: 'https://testnet.nearblocks.io/txns/BLsJyPoQykcQr2X5VaqxMH2dY2bon1B1U4d71FNc4bRi',
   x402Proposal: 'https://github.com/x402-foundation/x402/issues/4131',
   mcp: 'https://mcp.x207.boxd.sh/mcp',
+  // UM-195: the MCP endpoint is POST-only (a GET answers 405), so the links people click go to its health check, which answers 200.
+  mcpHealth: 'https://mcp.x207.boxd.sh/healthz',
 } as const
 
 /** Epoch 8 of `x207-v013.testnet`, mock USDT. */

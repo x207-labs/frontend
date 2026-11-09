@@ -18,7 +18,7 @@ import './landing.css'
 const LINKS: { label: string; value: string; href: string; icon: IconName }[] = [
   { label: 'Contract', value: LIVE.contract, href: LIVE.contractUrl, icon: 'seal' },
   { label: 'Read API', value: 'v018.x207.boxd.sh', href: LIVE.apiEpochs, icon: 'plug' },
-  { label: 'MCP server', value: 'mcp.x207.boxd.sh', href: LIVE.mcp, icon: 'connector' },
+  { label: 'MCP server', value: 'mcp.x207.boxd.sh', href: LIVE.mcpHealth, icon: 'connector' },
   { label: 'Source', value: 'github.com/x207-labs', href: LIVE.github, icon: 'branch' },
   { label: 'Every claim, with its proof', value: 'CLAIMS.md', href: LIVE.claims, icon: 'claims' },
 ]

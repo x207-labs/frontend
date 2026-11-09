@@ -38,7 +38,7 @@ const COLUMNS = [
     title: 'Developers',
     links: [
       { text: 'Read API', href: LIVE.apiEpochs, out: true },
-      { text: 'MCP server', href: LIVE.mcp, out: true },
+      { text: 'MCP server', href: LIVE.mcpHealth, out: true },
       { text: 'Source', href: LIVE.github, out: true },
       { text: 'README', href: LIVE.repo, out: true },
     ],
