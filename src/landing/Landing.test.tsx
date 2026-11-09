@@ -5,6 +5,7 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { BARTER, BARTER_TOTAL, DEFAULTER, EDGES, EPOCH8, KIND_CLASSES, NET } from './facts'
 import Landing from './Landing'
+import { CHAPTER_KEYS } from './tokens'
 
 const sum = (xs: readonly number[]) => Math.round(xs.reduce((a, b) => a + b, 0) * 100) / 100
 
@@ -48,6 +49,14 @@ describe('FE-044 landing page facts', () => {
     expect(block).toContain('.lp .shelf-track { width: auto; }')
     expect(block).toContain('.lp .kinds { flex-wrap: wrap;')
     expect(block).toContain('.lp .kinds.is-copy { display: none; }')
+  })
+
+  it('FE-052: the HUD ticks are the chapters in story order, the order chapterAt walks; none is lit on the first screen', () => {
+    const { container } = render(<Landing />)
+    const ticks = [...container.querySelectorAll('.hud-ticks li')]
+    expect(ticks.map((li) => li.getAttribute('data-chapter'))).toEqual([...CHAPTER_KEYS])
+    expect(ticks.map((li) => li.textContent)).toEqual(['Barter', 'Vouchers', 'Clearing', 'Settlement'])
+    expect(container.querySelectorAll('.hud-ticks .is-on, .hud-ticks .is-past')).toHaveLength(0)
   })
 
   // The counts come from one source, docs/barter-evidence.md "The counts" of the umbrella repository. When the frontend is checked out inside the

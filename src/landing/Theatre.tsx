@@ -16,7 +16,7 @@ import { BARTER, BARTER_TOTAL, EPOCH8, LIVE } from './facts'
 import { BrainStage } from './BrainStage'
 import { Icon, type IconName } from './icons'
 import { Ring } from './Ring'
-import { EASE_OUT, SPRING, STORY } from './tokens'
+import { CHAPTER_KEYS, captionFade, chapterAt, EASE_OUT, RAIL, SPRING, STORY, type ChapterKey } from './tokens'
 
 // FE-048: the scroll theatre, the first screen and the story of one epoch in one sticky stage. The hologram brain stays on stage the whole way; each chapter is
 // one line and one number, and the brain plays it as the page scrolls (tokens.ts STORY). Numbers: facts.ts (testnet epoch 8 on x207-v013, docs/barter-evidence.md).
@@ -45,7 +45,7 @@ const setWord = (i: number) => {
 }
 
 type Chapter = {
-  key: 'kinds' | 'vouchers' | 'loops' | 'net'
+  key: ChapterKey
   n: string
   kicker: string
   title: string
@@ -148,7 +148,8 @@ function MorphWord({ reduced }: { reduced: boolean }) {
 
 function Caption({ chapter, story, reduced, skew }: { chapter: Chapter; story: MotionValue<number>; reduced: boolean; skew: MotionValue<number> }) {
   const [a, b] = STORY[chapter.key]
-  const opacity = useTransform(story, [a, a + 0.035, b - 0.035, b], [0, 1, 1, 0])
+  const fade = captionFade(chapter.key)
+  const opacity = useTransform(story, fade.at, fade.opacity)
   const y = useTransform(story, [a, a + 0.05, b - 0.05, b], reduced ? [0, 0, 0, 0] : [70, 0, 0, -70])
   const count = useTransform(story, [a + 0.01, a + 0.08], [chapter.from, chapter.to])
   const figure = useTransform(count, chapter.format)
@@ -203,10 +204,13 @@ export function Theatre() {
   const heroY = useTransform(story, [0, STORY.hero[1]], [0, reduced ? 0 : -90])
   const heroVisibility = useTransform(story, (v) => (v > STORY.hero[1] ? 'hidden' : 'visible'))
   const diveFlash = useTransform(story, [STORY.dive[0] + 0.06, 0.985, 1], [0, 0.85, 1])
-  const rail = useTransform(story, [STORY.kinds[0], STORY.net[1]], [0, 1])
+  // FE-052: the rail reaches each tick as its chapter starts (a straight line from the first chapter to the last lagged a tick behind).
+  const rail = useTransform(story, [...RAIL.at], [...RAIL.fill])
 
-  const [active, setActive] = useState(-1)
-  useMotionValueEvent(story, 'change', (v) => setActive(CHAPTERS.findIndex((c) => v >= STORY[c.key][0] && v < STORY[c.key][1])))
+  // FE-052: the HUD reads the same mapping as the captions (tokens.ts chapterAt), and is set from the story value at mount too.
+  const [activeKey, setActiveKey] = useState<ChapterKey | null>(() => chapterAt(story.get()))
+  useMotionValueEvent(story, 'change', (v) => setActiveKey(chapterAt(v)))
+  const active = activeKey ? CHAPTER_KEYS.indexOf(activeKey) : -1
 
   const onMove = (event: PointerEvent<HTMLElement>) => {
     if (reduced || event.pointerType !== 'mouse') return
@@ -266,8 +270,12 @@ export function Theatre() {
             <m.span className="hud-fill" style={{ scaleY: rail }} />
           </div>
           <ol className="hud-ticks">
-            {CHAPTERS.map((c, i) => (
-              <li key={c.key} className={i === active ? 'is-on' : i < active ? 'is-past' : undefined}>
+            {CHAPTERS.map((c) => (
+              <li
+                key={c.key}
+                className={c.key === activeKey ? 'is-on' : CHAPTER_KEYS.indexOf(c.key) < active ? 'is-past' : undefined}
+                data-chapter={c.key}
+              >
                 {c.kicker}
               </li>
             ))}
