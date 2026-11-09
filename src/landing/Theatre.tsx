@@ -88,7 +88,7 @@ const CHAPTERS: Chapter[] = [
     to: EPOCH8.clearedShare,
     format: (v) => `${v.toFixed(1)}%`,
     unit: 'of the credit cleared in loops',
-    note: `${EPOCH8.cleared} credit never had to move.`,
+    note: `${EPOCH8.cleared} of ${EPOCH8.gross} credit cancels in loops and never moves.`,
   },
   {
     key: 'net',
@@ -99,7 +99,7 @@ const CHAPTERS: Chapter[] = [
     to: EPOCH8.moved,
     format: (v) => `${EPOCH8.gross} → ${v.toFixed(2)}`,
     unit: 'credit in, USDT moved',
-    note: `${EPOCH8.movements} transfers settle ${EPOCH8.vouchers} vouchers.`,
+    note: `The other ${EPOCH8.netted} nets per member: ${EPOCH8.movements} transfers move ${EPOCH8.moved} USDT.`,
   },
 ]
 

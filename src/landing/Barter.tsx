@@ -1,6 +1,7 @@
 import { useInView } from 'motion/react'
 import { useRef, useState } from 'react'
 import { BARTER, BARTER_TOTAL, KIND_CLASSES, LIVE } from './facts'
+import { SectionFigure } from './figures'
 import { Icon } from './icons'
 import { kindIcon } from './kindIcon'
 
@@ -52,6 +53,7 @@ export function Barter() {
       <p className="section-kicker">
         Fig. 05 <span>Catalog</span>
       </p>
+      <SectionFigure name="cabinet" />
       <h2 id="barter-title" className="section-title">
         {BARTER_TOTAL - REFUSED} ways to pay. <span className="is-quiet">{REFUSED} refused on purpose.</span>
       </h2>

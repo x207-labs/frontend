@@ -1,6 +1,7 @@
 import { AnimatePresence, m } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { LIVE } from './facts'
+import { SectionFigure } from './figures'
 import { Icon, type IconName } from './icons'
 import { Reveal } from './motion'
 import { SPRING_PRESS } from './tokens'
@@ -56,6 +57,7 @@ export function Builders() {
       <p className="section-kicker">
         Fig. 07 <span>Build</span>
       </p>
+      <SectionFigure name="window" />
       <h2 id="build-title" className="section-title">Start from one line.</h2>
       <div className="snippets">
         {SNIPPETS.map((s, i) => (

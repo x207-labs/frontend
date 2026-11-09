@@ -1,4 +1,5 @@
 import { EPOCH8, LIVE } from './facts'
+import { SectionFigure } from './figures'
 import { Icon, type IconName } from './icons'
 import { Reveal } from './motion'
 
@@ -43,6 +44,7 @@ export function Limits() {
       <p className="section-kicker">
         Fig. 06 <span>Limits</span>
       </p>
+      <SectionFigure name="hub" />
       <h2 id="limits-title" className="section-title">What x207 is not.</h2>
       <ul className="spec">
         {ROWS.map((row, i) => (

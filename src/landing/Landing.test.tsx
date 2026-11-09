@@ -31,6 +31,15 @@ describe('FE-044 landing page facts', () => {
     expect(Math.round((EPOCH8.cleared / EPOCH8.gross) * 1000) / 10).toBe(EPOCH8.clearedShare)
   })
 
+  it('FE-051: clearing and settlement tell one story: the loops cancel part of the gross, the rest nets down to what moved', () => {
+    expect(sum([EPOCH8.cleared, EPOCH8.netted])).toBe(EPOCH8.gross)
+    expect(EPOCH8.moved).toBeLessThan(EPOCH8.netted)
+    render(<Landing />)
+    expect(screen.getByText(`${EPOCH8.cleared} of ${EPOCH8.gross} credit cancels in loops and never moves.`)).toBeTruthy()
+    expect(screen.getByText(`The other ${EPOCH8.netted} nets per member: ${EPOCH8.movements} transfers move ${EPOCH8.moved} USDT.`)).toBeTruthy()
+    expect(document.body.textContent).not.toContain('never had to move')
+  })
+
   // The counts come from one source, docs/barter-evidence.md "The counts" of the umbrella repository. When the frontend is checked out inside the
   // umbrella, the table is read and every row must match; a standalone checkout of this repository skips the comparison.
   const evidence = resolve(process.cwd(), '..', 'docs', 'barter-evidence.md')
@@ -73,6 +82,10 @@ describe('FE-044 landing page', () => {
     expect(container.querySelectorAll('.strip .bar')).toHaveLength(BARTER_TOTAL)
     expect(container.querySelectorAll('.kinds:not(.is-copy) .kind')).toHaveLength(BARTER_TOTAL)
     for (const copy of container.querySelectorAll('.kinds.is-copy')) expect(copy).toHaveAttribute('aria-hidden', 'true')
+    // FE-051: the hairline figures of Barter, Limits and Build are decorative and hidden from screen readers.
+    const figures = container.querySelectorAll('svg.section-figure')
+    expect([...figures].map((f) => f.closest('section')?.id)).toEqual(['barter', 'limits', 'build'])
+    for (const f of figures) expect(f).toHaveAttribute('aria-hidden', 'true')
     // FE-051: the footer has the brand, the live contract, and the proof column.
     const footer = within(container.querySelector('footer')!)
     expect(footer.getByRole('link', { name: 'Every claim' })).toHaveAttribute('href', expect.stringContaining('CLAIMS.md'))

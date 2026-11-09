@@ -439,13 +439,29 @@ export function mountBrain(host: HTMLElement, input: BrainInput): () => void {
   const centre = new Vector3()
   const placeCallouts = () => {
     const mid = project(centre)
+    // FE-051: on a portrait screen the lockers sit too close for a label beside each, so the kind names stand in one column right of the
+    // cabinet, in locker order, each joined to its locker by a leader line.
+    const shelf = wide ? [] : callouts.filter((c) => c.group === 'kinds').map((c) => project(c.anchor))
+    const shelfX = Math.max(...shelf.map((s) => s.x)) + 34
+    const shelfY = Math.min(...shelf.map((s) => s.y)) - 8
+    let k = 0
     for (const c of callouts) {
       const a = project(c.anchor)
-      if (c.label) {
+      if (c.group === 'kinds' && !wide) {
+        const ey = shelfY + k++ * 19
+        c.line?.setAttribute('points', `${a.x.toFixed(1)},${a.y.toFixed(1)} ${(shelfX - 12).toFixed(1)},${ey.toFixed(1)} ${shelfX.toFixed(1)},${ey.toFixed(1)}`)
+        c.el.style.transform = `translate3d(${(shelfX + 6).toFixed(1)}px, ${ey.toFixed(1)}px, 0) translate(0, -50%)`
+      } else if (c.label) {
         // A member label stands just outside its node, on the side away from the centre of the circle.
         const l = project(c.label)
         const side = l.x > mid.x + 24 ? 0 : l.x < mid.x - 24 ? -100 : -50
         c.el.style.transform = `translate3d(${l.x.toFixed(1)}px, ${l.y.toFixed(1)}px, 0) translate(${side}%, -50%)`
+      } else if (c.group === 'core' && !wide) {
+        // FE-051: on a portrait screen the contract's label goes straight up from the core and stands centred inside the circle, clear of the
+        // member ids on the rim.
+        const ey = a.y - 30
+        c.line?.setAttribute('points', `${a.x.toFixed(1)},${a.y.toFixed(1)} ${a.x.toFixed(1)},${ey.toFixed(1)}`)
+        c.el.style.transform = `translate3d(${a.x.toFixed(1)}px, ${(ey - 4).toFixed(1)}px, 0) translate(-50%, -100%)`
       } else {
         // A leader line: up and out at 45 degrees, then a short level run to the text.
         // The contract's label leans left, so it never meets the voucher's, which leans right.
@@ -464,6 +480,7 @@ export function mountBrain(host: HTMLElement, input: BrainInput): () => void {
   let height = 1
   let wide = true
   let fit = 1
+  let fitRing = 1
   const resize = () => {
     width = Math.max(1, stage.clientWidth)
     height = Math.max(1, stage.clientHeight)
@@ -473,6 +490,8 @@ export function mountBrain(host: HTMLElement, input: BrainInput): () => void {
     wide = aspect > 1.15
     // A portrait screen moves the camera back, so the circle and its labels still fit the width.
     fit = Math.max(1, 1.5 / aspect)
+    // FE-051: while the circle is on stage it only needs its own width (ring, member ids), so the camera comes closer and the ring grows.
+    fitRing = Math.max(1, 0.95 / aspect)
     camera.aspect = aspect
     camera.updateProjectionMatrix()
   }
@@ -482,6 +501,10 @@ export function mountBrain(host: HTMLElement, input: BrainInput): () => void {
   const at = new Vector3()
   const keyPos = new Vector3()
   const keyAt = new Vector3()
+  // 0 off the circle's chapters, half in the vouchers (the oblique view spreads the circle wider), 1 from the clearing to the end of the settlement.
+  const ringStageAt = (p: number) =>
+    (0.5 * ease(STORY.vouchers[0], STORY.vouchers[0] + 0.05, p) + 0.5 * ease(STORY.vouchers[1] - 0.04, STORY.loops[0] + 0.04, p)) *
+    (1 - ease(STORY.net[1], STORY.dive[0] + 0.04, p))
   const placeCamera = (p: number, px: number, py: number) => {
     let i = 0
     while (i < KEYS.length - 2 && p > KEYS[i + 1].p) i++
@@ -492,7 +515,7 @@ export function mountBrain(host: HTMLElement, input: BrainInput): () => void {
     at.set(...a.at).lerp(keyAt.set(...b.at), t)
     // Between two stations the camera lifts a little, so a move reads as a flight rather than a slide.
     pos.y += Math.sin(Math.PI * t) * 0.5 * (a.p === b.p ? 0 : 1)
-    pos.sub(at).multiplyScalar(fit).add(at)
+    pos.sub(at).multiplyScalar(fit + (fitRing - fit) * ringStageAt(p)).add(at)
     pos.x += px * 0.3
     pos.y += py * 0.18
     camera.position.copy(pos)
@@ -519,7 +542,8 @@ export function mountBrain(host: HTMLElement, input: BrainInput): () => void {
 
     // The frame: on a wide screen the stage stands right of the captions, on a portrait one above them. The dive centres it.
     const offset = (wide ? -0.16 * width : 0) * (1 - dive)
-    const lift = (wide ? 0 : 0.16 * height) * (1 - dive)
+    // FE-051: on a portrait screen the larger circle sits a little lower, below the chapter list in the top right corner.
+    const lift = (wide ? 0 : (0.16 - 0.06 * ringStageAt(p)) * height) * (1 - dive)
     camera.setViewOffset(width, height, offset, lift, width, height)
     placeCamera(p, pointerX, pointerY)
 

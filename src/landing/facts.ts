@@ -39,6 +39,8 @@ export const EPOCH8 = {
   creditors: 8,
   cleared: 21.8,
   clearedShare: 52.7,
+  /** gross - cleared: the credit left after the loops cancel, netted per member down to `moved` (FE-051). */
+  netted: 19.55,
   defaultDue: 0.55,
   staked: '1,499.10',
   gasEpoch: 109.7,
