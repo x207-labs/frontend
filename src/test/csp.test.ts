@@ -47,7 +47,15 @@ describe('batch 3 F4 content security policy of the build', () => {
   it('FE-041 a build that points at the boxd API also allows the other circle API, one that does not stays closed', () => {
     expect(buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh' })).toContain('https://v014.x207.boxd.sh')
     expect(buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh' })).toContain('https://v015.x207.boxd.sh')
-    expect(buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh' })).toContain('https://v016.x207.boxd.sh') // FE-043
     expect(buildCsp({ VITE_X207_API_URL: 'https://api.x207.example' })).not.toContain('boxd.sh')
+  })
+  it('FE-045 the v018 build allows every circle API of the picker (v013 history included) and not the v016 host, which does not exist', () => {
+    const csp = buildCsp({ VITE_X207_API_URL: 'https://v018.x207.boxd.sh', VITE_NEAR_NETWORK: 'testnet' })
+    const connect = csp.split('; ').find((d) => d.startsWith('connect-src')) ?? ''
+    for (const host of ['v018', 'v017', 'v015', 'v014']) expect(connect).toContain(`https://${host}.x207.boxd.sh`)
+    expect(connect).toContain('https://x207.boxd.sh')
+    expect(connect).toContain('https://rpc.testnet.fastnear.com')
+    expect(connect).not.toContain('v016')
+    expect(connect).not.toContain('localhost')
   })
 })

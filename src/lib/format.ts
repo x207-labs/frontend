@@ -13,6 +13,16 @@ export function formatCredit(raw: string | null | undefined): string {
   return `${sign}${whole}${fraction ? `.${fraction}` : ''}`
 }
 
+/** Nanoseconds (string) to a UTC date; `not available` if unreadable. */
+export function formatExpiry(ns: string): string {
+  try {
+    const ms = Number(BigInt(ns) / 1_000_000n)
+    return new Date(ms).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC'
+  } catch {
+    return 'not available'
+  }
+}
+
 export function formatNumber(value: number | null | undefined, digits = 2): string {
   if (value === null || value === undefined) return 'not available'
   return value.toLocaleString('en-US', { maximumFractionDigits: digits })

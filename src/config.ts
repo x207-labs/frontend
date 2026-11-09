@@ -1,12 +1,16 @@
 const env = import.meta.env
 
-/** FE-041: circles that have a public read API. The picker only exists where the build points at one of these (the deployed dashboard). */
+/**
+ * FE-041: circles that have a public read API. The picker only exists where the build points at one of these (the deployed dashboard).
+ * FE-045: v018 (contract 0.0.18, account sales through a locker) is the main circle; v013 stays as the circle of the epoch 8 history. v016 has no read API host
+ * (the circle was never deployed to boxd), so it is not offered: add it back only when its host answers.
+ */
 export const CIRCLE_OPTIONS = [
-  { key: 'v013', label: 'x207-v013 (main circle)', contract: 'x207-v013.testnet', apiUrl: 'https://x207.boxd.sh' },
-  { key: 'v014', label: 'x207-v014 (EVM agents)', contract: 'x207-v014.testnet', apiUrl: 'https://v014.x207.boxd.sh' },
+  { key: 'v018', label: 'x207-v018 (main circle, 0.0.18)', contract: 'x207-v018.testnet', apiUrl: 'https://v018.x207.boxd.sh' },
+  { key: 'v017', label: 'x207-v017 (auto-settle, relayer fee)', contract: 'x207-v017.testnet', apiUrl: 'https://v017.x207.boxd.sh' },
   { key: 'v015', label: 'x207-v015 (auto-settle)', contract: 'x207-v015.testnet', apiUrl: 'https://v015.x207.boxd.sh' },
-  // FE-043: contract 0.0.16 (relayer fee). The circle is not deployed yet and the read API host is a placeholder that follows the pattern of the others: check it before the next deploy.
-  { key: 'v016', label: 'x207-v016 (relayer fee)', contract: 'x207-v016.testnet', apiUrl: 'https://v016.x207.boxd.sh' },
+  { key: 'v014', label: 'x207-v014 (EVM agents)', contract: 'x207-v014.testnet', apiUrl: 'https://v014.x207.boxd.sh' },
+  { key: 'v013', label: 'x207-v013 (history, epoch 8)', contract: 'x207-v013.testnet', apiUrl: 'https://x207.boxd.sh' },
 ] as const
 export type CircleKey = (typeof CIRCLE_OPTIONS)[number]['key']
 

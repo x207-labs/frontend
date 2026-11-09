@@ -12,7 +12,7 @@ html.is-landing,
   --lp-glass-line: rgb(255 255 255 / 0.7);
   --lp-shadow: 0 1px 1px rgb(0 0 0 / 0.04), 0 12px 40px -12px rgb(30 30 20 / 0.18);
   --lp-accent: #0a6cff;
-  --lp-accent-fill: var(--lp-accent); /* behind white button text: kept at 4.5:1 or more */
+  --lp-accent-fill: #0a5fe0; /* behind white button text: 5.6:1 (FE-045: #0a6cff gave only 4.57) */
   --lp-green: #1f9d55;
   --lp-orange: #e07a00;
   --lp-on-accent: #fff;
@@ -40,7 +40,7 @@ html.is-landing,
     --lp-glass-line: rgb(255 255 255 / 0.08);
     --lp-shadow: 0 1px 1px rgb(0 0 0 / 0.3), 0 16px 48px -16px rgb(0 0 0 / 0.7);
     --lp-accent: #3d8bff;
-    --lp-accent-fill: #1f6feb;
+    --lp-accent-fill: #1a62d6; /* 5.6:1 with white (FE-045: #1f6feb gave 4.6) */
     --lp-green: #34c46e;
     --lp-orange: #ff9f0a;
     --lp-logo-ink: #f1efe8;

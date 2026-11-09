@@ -41,7 +41,7 @@ function Live() {
         ))}
       </ul>
       <div className="live-cta">
-        <a className="btn is-primary" href="/stats">Open the dashboard</a>
+        <a className="btn is-primary" href={LIVE.dashboard}>Open the dashboard</a>
         <a className="btn" href={LIVE.repo} target="_blank" rel="noreferrer">Read the README</a>
       </div>
     </section>
@@ -79,7 +79,7 @@ export default function Landing() {
               Mutual-credit settlement for x402 agent payments on NEAR. Testnet only, with a mock USDT.
             </p>
             <p>
-              <a href={LIVE.github} target="_blank" rel="noreferrer">GitHub</a> · <a href={LIVE.claims} target="_blank" rel="noreferrer">Claims</a> · <a href="/stats">Dashboard</a>
+              <a href={LIVE.github} target="_blank" rel="noreferrer">GitHub</a> · <a href={LIVE.claims} target="_blank" rel="noreferrer">Claims</a> · <a href={LIVE.dashboard}>Dashboard</a>
             </p>
           </footer>
         </div>

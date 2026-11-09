@@ -41,7 +41,34 @@ export const grants = [
   { grantId: 2, assetType: 'near-rpc:access', grantor: near('scraper'), grantee: near('gpu'), class: 'B', unit: 'day', unitPrice: '50000', expiresAt: nsAt('2026-12-15T00:00:00Z'), deliveryPubkey: 'ed25519:9hSR6S7WPtxmTojgo6GG3k4yDPecgJY292j7xrsUGWBu', status: 'active', revokeReason: null, changedBlock: 171234510 },
   { grantId: 3, assetType: 'x402:endpoint', grantor: near('summarizer'), grantee: near('translator'), class: 'D', unit: 'call', unitPrice: '20000', expiresAt: nsAt('2026-11-05T00:00:00Z'), deliveryPubkey: null, status: 'expired', revokeReason: 'expired', changedBlock: 171234520 },
   { grantId: 4, assetType: 'near-rpc:access', grantor: near('translator'), grantee: null, class: 'B', unit: 'day', unitPrice: '40000', expiresAt: nsAt('2026-12-20T00:00:00Z'), deliveryPubkey: null, status: 'offered', revokeReason: null, changedBlock: 171234530 },
+  // FE-045: account sales (contract 0.0.18); the seller and the sold accounts are not members of the fixture circle
+  { grantId: 5, assetType: 'near:account', grantor: 'seller.testnet', grantee: 'buyer.testnet', class: 'A', unit: 'once', unitPrice: '10000000', expiresAt: nsAt('2026-11-10T12:00:00Z'), deliveryPubkey: null, status: 'active', revokeReason: null, changedBlock: 171234540 },
+  { grantId: 6, assetType: 'near:member_account', grantor: 'seller.testnet', grantee: 'buyer.testnet', class: 'A', unit: 'once', unitPrice: '10000000', expiresAt: nsAt('2026-11-11T09:30:00Z'), deliveryPubkey: null, status: 'active', revokeReason: null, changedBlock: 171234550 },
+  { grantId: 7, assetType: 'near:account', grantor: 'seller.testnet', grantee: null, class: 'A', unit: 'once', unitPrice: '10000000', expiresAt: nsAt('2026-11-08T00:00:00Z'), deliveryPubkey: null, status: 'expired', revokeReason: 'expired', changedBlock: 171234560 },
 ]
+
+/** FE-045: `GET account-escrows` and the detail of each row, shaped like the v018 read API. */
+export const accountEscrows = [
+  { grantId: 7, account: 'expired.seller.testnet', state: 'cancelled', newOwner: null },
+  { grantId: 6, account: 'member.seller.testnet', state: 'held', newOwner: null },
+  { grantId: 5, account: 'sold.seller.testnet', state: 'delivered', newOwner: 'buyer.testnet' },
+]
+export const accountEscrowDetail = (grantId: number) => {
+  const item = accountEscrows.find((e) => e.grantId === grantId)
+  if (!item) return undefined
+  const member = grantId === 6
+  return {
+    ...item,
+    assetType: member ? 'near:member_account' : 'near:account',
+    member,
+    lockedEpoch: { 5: 40, 6: 42, 7: 41 }[grantId] ?? null,
+    lockedEpochFinalized: grantId !== 6,
+    openEpoch: 42,
+    waitOver: !member,
+    ready: false,
+    reputationResetAt: null,
+  }
+}
 
 export const daoProposals = {
   circle,
@@ -233,6 +260,8 @@ export function chainFixture(methodName: string): FixtureReply {
       return rpcResult('0')
     case 'list_obligations':
       return rpcResult([{ debtor: near('scraper'), creditor: near('gpu') }])
+    case 'get_max_escrow_ttl':
+      return rpcResult('259200000000000') // 72 hours, the default of CT-129
     default:
       return { status: 200, body: { jsonrpc: '2.0', id: 'x207', error: { cause: { name: 'UNKNOWN_METHOD' } } } }
   }
@@ -254,6 +283,12 @@ export function fixtureReply(path: string): FixtureReply {
     return ok({ ...relayerFeeEvents, items: relayerFeeEvents.items.filter((e) => names.length === 0 || names.includes(e.event)) })
   }
   if (rest === '/proposals') return ok(daoProposals)
+  if (rest === '/account-escrows') return ok({ items: accountEscrows })
+  const accountEscrowOne = rest.match(/^\/account-escrows\/(\d+)$/)
+  if (accountEscrowOne) {
+    const found = accountEscrowDetail(Number(accountEscrowOne[1]))
+    return found ? ok(found) : notFound('account_escrow_not_found', `No account escrow for grant ${accountEscrowOne[1]}`)
+  }
   if (rest === '/grants') {
     const grantee = url.searchParams.get('grantee')
     const grantor = url.searchParams.get('grantor')

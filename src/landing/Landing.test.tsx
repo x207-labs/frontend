@@ -52,7 +52,9 @@ describe('FE-044 landing page', () => {
     for (const name of [/Many lines become a few arrows/, /Epoch 8:/, /Pay in what you have/, /What x207 is not/, /Start from one line/, /Check it yourself/]) {
       expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
     }
-    expect(screen.getByRole('link', { name: 'Open dashboard' })).toHaveAttribute('href', '/stats')
+    // FE-045: every dashboard link opens the live circle v018
+    expect(screen.getByRole('link', { name: 'Open dashboard' })).toHaveAttribute('href', '/stats?circle=v018')
+    for (const link of screen.getAllByRole('link', { name: /^(Open the dashboard|Dashboard)$/ })) expect(link).toHaveAttribute('href', '/stats?circle=v018')
     expect(container.querySelectorAll('.dot')).toHaveLength(BARTER_TOTAL)
     expect(container.querySelectorAll('.ring-voucher').length).toBe(EDGES.length * 2)
     const limits = screen.getByRole('heading', { level: 2, name: /What x207 is not/ }).closest('section')!

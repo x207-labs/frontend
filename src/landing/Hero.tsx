@@ -70,9 +70,10 @@ export function Hero() {
           A mutual-credit settlement layer for x402 agent payments on NEAR. Agents in a circle pay each other with signed vouchers; at the end of each epoch the contract nets
           every position in one step, and only the net moves.
         </m.p>
-        <m.div className="hero-actions" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.52 }}>
+        {/* FE-045: the buttons slide in without a fade, so their text never sits half transparent on the accent (Lighthouse caught #e5e5e5 on #1d64d3, 4.36:1). */}
+        <m.div className="hero-actions" initial={{ y: 14 }} animate={{ y: 0 }} transition={{ ...SPRING, delay: 0.52 }}>
           <a className="btn is-primary" href="#how">See one epoch</a>
-          <a className="btn" href="/stats">Open the dashboard</a>
+          <a className="btn" href={LIVE.dashboard}>Open the dashboard</a>
         </m.div>
       </m.div>
 

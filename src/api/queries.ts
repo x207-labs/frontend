@@ -62,6 +62,12 @@ export const useMemberLimits = (account: string | null) =>
 export const useDaoProposals = () => useQuery({ queryKey: ['dao-proposals'], queryFn: api.daoProposals })
 export const useGrants = (query: Record<string, string>, enabled = true) =>
   useQuery({ queryKey: ['grants', query], queryFn: () => api.grants(query), enabled })
+// FE-045: account sales (contract 0.0.18). A read API without the route (circles before 0.0.18) answers 404 `not_found`: no retry.
+export const useAccountEscrows = () => useQuery({ queryKey: ['account-escrows'], queryFn: api.accountEscrows, retry: false })
+export const useAccountEscrow = (grantId: number, enabled = true) =>
+  useQuery({ queryKey: ['account-escrow', grantId], queryFn: () => api.accountEscrow(grantId), enabled, retry: false })
+/** Owner limit on the time an account sale may stay locked (CT-129, nanoseconds as text). Contracts before 0.0.18 have no such view. */
+export const useMaxEscrowTtl = () => useQuery({ queryKey: ['chain', 'get_max_escrow_ttl'], queryFn: () => viewContract<string | number>('get_max_escrow_ttl'), retry: false })
 
 // On-chain data not yet in the read API: read from contract views (src/api/chain.ts).
 /** USDT balance (smallest unit) recorded by `mt_on_transfer` and not yet withdrawn from Intents. */

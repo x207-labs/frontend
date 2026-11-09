@@ -34,7 +34,7 @@ describe('dashboard shell', () => {
     // The landing is a lazy chunk; its first import in a test run takes longer than the default second.
     expect(await screen.findByRole('heading', { level: 1 }, { timeout: 8000 })).toHaveTextContent('x207 lets many agents settle at once.')
     expect(screen.queryByRole('navigation', { name: 'Pages' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: /dashboard/i })[0]).toHaveAttribute('href', '/stats')
+    expect(screen.getAllByRole('link', { name: /dashboard/i })[0]).toHaveAttribute('href', '/stats?circle=v018') // FE-045: the live circle
     watch.disconnect()
     expect(seen).toBe(false)
     expect(calls()).toEqual([])

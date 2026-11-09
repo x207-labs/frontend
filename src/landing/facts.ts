@@ -8,6 +8,8 @@ export const LIVE = {
   contractUrl: 'https://testnet.nearblocks.io/address/x207-v018.testnet',
   api: 'https://v018.x207.boxd.sh',
   apiEpochs: 'https://v018.x207.boxd.sh/x207/circles/agents-main/epochs',
+  // FE-045: every "open the dashboard" link opens the live circle v018 (the picker still offers v013 for the epoch 8 history).
+  dashboard: '/stats?circle=v018',
   github: 'https://github.com/x207-labs',
   repo: 'https://github.com/x207-labs/x207',
   claims: 'https://github.com/x207-labs/x207/blob/main/CLAIMS.md',

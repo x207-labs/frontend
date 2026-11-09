@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useGrants, useMembers } from '../api/queries'
 import type { Grant, GrantEscrow, GrantStatus } from '../api/types'
 import { QueryState } from '../components/QueryState'
-import { formatCredit, shortAccount } from '../lib/format'
+import { formatCredit, formatExpiry, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
+import { AccountSales } from './AccountSales'
 
 // FE-017 (F8): per-member access grants from D9 `grants` (BE-038). Read only. Classes A to D as in the D10 registry; secrets are not in D9.
 const STATUS_LABEL: Record<GrantStatus, string> = { offered: 'Offered', active: 'Active', revoked: 'Revoked', expired: 'Expired' }
@@ -47,15 +48,8 @@ export function EscrowCell({ escrow }: { escrow: GrantEscrow | null | undefined 
   )
 }
 
-/** Nanoseconds (string) to a UTC date; `not available` if unreadable. */
-export function formatExpiry(ns: string): string {
-  try {
-    const ms = Number(BigInt(ns) / 1_000_000n)
-    return new Date(ms).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC'
-  } catch {
-    return 'not available'
-  }
-}
+// FE-045: moved to lib/format (the account sales use it too); still exported from here for the tests of FE-017.
+export { formatExpiry }
 
 type Row = Grant & { role: 'grantor' | 'grantee' }
 
@@ -167,6 +161,7 @@ export function Grants() {
       >
         {(data: { items: Row[] }) => <GrantTable rows={data.items} />}
       </QueryState>
+      <AccountSales />
     </>
   )
 }

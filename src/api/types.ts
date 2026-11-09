@@ -362,6 +362,22 @@ export type Grant = {
 }
 export type GrantList = { circle: string; unit: 'credit'; decimals: number; items: Grant[]; nextCursor: string | null }
 
+/** FE-045: `GET /x207/circles/{circle}/account-escrows` (contract 0.0.18, sale of a NEAR account through a locker), newest first, at most 200. */
+export type AccountEscrowState = 'held' | 'delivered' | 'cancelled'
+export type AccountEscrowItem = { grantId: number; account: string; state: AccountEscrowState; newOwner: string | null }
+export type AccountEscrowList = { items: AccountEscrowItem[] }
+/** `GET /x207/circles/{circle}/account-escrows/{grantId}`: the lock epoch and, for a member account, whether the wait of one finished epoch is over. */
+export type AccountEscrowDetail = AccountEscrowItem & {
+  assetType: string | null
+  member: boolean
+  lockedEpoch: number | null
+  lockedEpochFinalized: boolean
+  openEpoch: number | null
+  waitOver: boolean
+  ready: boolean
+  reputationResetAt: string | null
+}
+
 /** `GET /x207/circles/{circle}/intents` (BE-035): off-chain barter intents with the on-chain `post_intent` status from the `intent_posted` event. */
 export type IntentView = {
   intentHash: string

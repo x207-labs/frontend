@@ -14,6 +14,8 @@ import type {
   WithdrawSubmit,
   DaoProposals,
   GrantList,
+  AccountEscrowDetail,
+  AccountEscrowList,
   IntentHashList,
   IntentList,
   IntentWithdrawals,
@@ -104,6 +106,8 @@ export const api = {
     const qs = new URLSearchParams(query).toString()
     return get<GrantList>(`${circle}/grants${qs ? `?${qs}` : ''}`)
   },
+  accountEscrows: () => get<AccountEscrowList>(`${circle}/account-escrows`),
+  accountEscrow: (grantId: number) => get<AccountEscrowDetail>(`${circle}/account-escrows/${grantId}`),
   daoProposals: () => get<DaoProposals>(`${circle}/proposals`),
   report: (epoch: number) => get<ClearingReport>(`${circle}/epochs/${epoch}`),
   obligations: (epoch: number, stage: ObligationStage) =>

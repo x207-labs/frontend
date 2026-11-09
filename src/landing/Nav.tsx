@@ -19,7 +19,7 @@ export function Nav() {
   useMotionValueEvent(scrollY, 'change', (y) => setTight(y > 24))
   return (
     <header className="nav-wrap">
-      <m.nav className={tight ? 'nav glass is-tight' : 'nav glass'} aria-label="Landing" initial={{ y: -24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={SPRING}>
+      <m.nav className={tight ? 'nav glass is-tight' : 'nav glass'} aria-label="Landing" initial={{ y: -24 }} animate={{ y: 0 }} transition={SPRING}>
         <a className="brand" href="#top" aria-label="x207, back to top">
           <Logo className="brand-logo" title="x207" />
         </a>
@@ -29,7 +29,7 @@ export function Nav() {
           ))}
         </ul>
         <a className="nav-git" href={LIVE.github} target="_blank" rel="noreferrer">GitHub</a>
-        <a className="btn is-primary is-small" href="/stats">Open dashboard</a>
+        <a className="btn is-primary is-small" href={LIVE.dashboard}>Open dashboard</a>
       </m.nav>
     </header>
   )
