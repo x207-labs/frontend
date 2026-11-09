@@ -8,7 +8,7 @@ import { PRIVY_EXECUTOR_COMMIT, PRIVY_EXECUTOR_URL, PRIVY_WALLET_ID, buildManife
 import { PrivySignFlow } from './PrivySignFlow'
 import { ensureNearWallet, hasNearWallet, readOAuthReturn, type PrivyLike } from './privyLogin'
 
-const ORIGIN = 'https://x207-dashboard.vercel.app'
+const ORIGIN = 'https://x207.vercel.app'
 const near = { type: 'wallet', chain_type: 'near' }
 
 describe('TC-FE-059-01 the Privy wallet is one more entry of the wallet list', () => {
@@ -44,6 +44,16 @@ describe('TC-FE-059-01 the Privy wallet is one more entry of the wallet list', (
   it('public/manifest.json is the same entry for the production origin', () => {
     const file = JSON.parse(readFileSync(resolve(process.cwd(), 'public/manifest.json'), 'utf8'))
     expect(file).toEqual({ version: '1.0.0', wallets: [privyWalletEntry(ORIGIN)] })
+  })
+
+  it('FE-065 the manifest file uses https://x207.vercel.app everywhere and keeps no trace of the old dashboard domain', () => {
+    const text = readFileSync(resolve(process.cwd(), 'public/manifest.json'), 'utf8')
+    const entry = JSON.parse(text).wallets[0]
+    expect(entry.permissions.allowsOpen).toEqual(['https://x207.vercel.app'])
+    expect(entry.metadata.signPageURL).toBe('https://x207.vercel.app/sign')
+    expect(entry.website).toBe('https://x207.vercel.app')
+    expect(entry.icon).toBe('https://x207.vercel.app/favicon.svg')
+    expect(text).not.toContain('x207-dashboard')
   })
 })
 

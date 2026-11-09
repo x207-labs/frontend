@@ -4,13 +4,13 @@
     {
       "id": "x207privy",
       "name": "Email or Google",
-      "icon": "https://x207-dashboard.vercel.app/favicon.svg",
+      "icon": "https://x207.vercel.app/favicon.svg",
       "description": "A NEAR wallet behind an email or Google login. Powered by Privy.",
-      "website": "https://x207-dashboard.vercel.app",
+      "website": "https://x207.vercel.app",
       "version": "1.0.0",
       "executor": "https://raw.githubusercontent.com/beneviolabs/privy-near-connect/9a149fcb319b9208557452a1ea1287a0e4877c6c/executor.js",
       "type": "sandbox",
-      "platform": { "web": "https://x207-dashboard.vercel.app" },
+      "platform": { "web": "https://x207.vercel.app" },
       "features": {
         "signMessage": true,
         "signInWithoutAddKey": true,
@@ -21,8 +21,8 @@
         "mainnet": false,
         "testnet": true
       },
-      "permissions": { "isPrivyConnect": true, "storage": true, "allowsOpen": ["https://x207-dashboard.vercel.app"] },
-      "metadata": { "signPageURL": "https://x207-dashboard.vercel.app/sign", "debug": false }
+      "permissions": { "isPrivyConnect": true, "storage": true, "allowsOpen": ["https://x207.vercel.app"] },
+      "metadata": { "signPageURL": "https://x207.vercel.app/sign", "debug": false }
     }
   ]
 }

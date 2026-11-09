@@ -32,7 +32,7 @@ sequenceDiagram
 
 ## Try it
 
-**Live:** <https://x207-dashboard.vercel.app> opens on the landing page; the dashboard starts at <https://x207-dashboard.vercel.app/stats>. An old dashboard link on the root with `?circle=` or `?epoch=` still opens the dashboard, at `/stats` with the query kept. This app is built for the circle `agents-main` on `x207-v013.testnet`. It is read-only static hosting on Vercel; data comes from the hosted read API (CORS allows this origin only) and the testnet RPC. The marketplace lists (listings, invoices, orders) are empty on the hosted circle and say so, with a link to the epoch 8 stats and to the join guide; the pages for licenses, codes, transfers and rent are forms for a signed-in wallet. A real wallet through NEAR Connect has not been tried on it.
+**Live:** <https://x207.vercel.app> opens on the landing page; the dashboard starts at <https://x207.vercel.app/stats>. An old dashboard link on the root with `?circle=` or `?epoch=` still opens the dashboard, at `/stats` with the query kept. This app is built for the circle `agents-main` on `x207-v013.testnet`. It is read-only static hosting on Vercel; data comes from the hosted read API (CORS allows this origin only) and the testnet RPC. The marketplace lists (listings, invoices, orders) are empty on the hosted circle and say so, with a link to the epoch 8 stats and to the join guide; the pages for licenses, codes, transfers and rent are forms for a signed-in wallet. A real wallet through NEAR Connect has not been tried on it.
 
 **Locally:** this repository installs and runs on its own (it uses the published `@x207/core`); needs Node 22.22.2 or newer.
 
