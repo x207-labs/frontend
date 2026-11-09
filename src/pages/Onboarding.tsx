@@ -9,6 +9,8 @@ import { CIRCLE } from '../config'
 import { ApiError } from '../api/client'
 import { toAtomic } from '../lib/amount'
 import { formatCredit } from '../lib/format'
+import { OnboardingSteps } from '../onboarding/OnboardingSteps'
+import type { MemberState } from '../onboarding/steps'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { JOIN_STORAGE_DEPOSIT, formatNear } from '@x207/core'
 import { ftWithdrawTx, joinTx, stakeTx } from '../wallet/transactions'
@@ -155,6 +157,12 @@ export function Onboarding() {
   const { account } = useWallet()
   const memberQuery = useMember(account)
   const registered = Boolean(memberQuery.data)
+  // FE-060: what the read API says about this account feeds the wizard (member_not_found = not a member yet; any other error = unknown, treated as loading).
+  const memberState: MemberState = memberQuery.data
+    ? { kind: 'member', member: memberQuery.data }
+    : memberQuery.error instanceof ApiError && memberQuery.error.code === 'member_not_found'
+      ? { kind: 'none' }
+      : { kind: 'loading' }
   return (
     <>
       <QueryState query={members} loadingLabel="Loading members">
@@ -164,10 +172,12 @@ export function Onboarding() {
           </p>
         )}
       </QueryState>
-      {account && <StatusPanel account={account} />}
-      {memberQuery.data && <ExitPanel member={memberQuery.data} />}
-      <h2 id="join">Join</h2>
-      <JoinForm registered={registered} />
+      <OnboardingSteps account={account} member={memberState}>
+        {account && <StatusPanel account={account} />}
+        {memberQuery.data && <ExitPanel member={memberQuery.data} />}
+        <h4 id="join">Join and stake</h4>
+        <JoinForm registered={registered} />
+      </OnboardingSteps>
     </>
   )
 }

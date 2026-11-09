@@ -42,7 +42,7 @@ describe('keamanan frontend: sumber', () => {
 
   it('TC-FE-SEC-13 the voucher key is not stored: localStorage holds only the wallet connection marker', () => {
     for (const [file, text] of Object.entries(files)) {
-      for (const m of text.matchAll(/(?:localStorage|sessionStorage)\.setItem\(([^,)]+)/g)) expect(m[1], file).toBe('CONNECTED_FLAG')
+      for (const m of text.matchAll(/(?:localStorage|sessionStorage)\.setItem\(([^,)]+)/g)) expect(m[1], file).toMatch(/^(CONNECTED_FLAG|PROGRESS_KEY)$/) // PROGRESS_KEY (FE-060): two booleans per account id, no secret
       expect(text, file).not.toMatch(/indexedDB|document\.cookie|console\.(log|debug|info)\(.*(key|Key)/)
     }
   })
