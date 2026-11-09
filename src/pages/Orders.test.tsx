@@ -90,7 +90,7 @@ describe('FE-027 service orders', () => {
     const { requests } = renderApp('/orders', (p, init) => (init?.method === 'POST' && p.endsWith('/target-check') ? { status: 200, body: { target_verified: true } } : undefined), false, asBuyer())
     const table = await screen.findByRole('table', { name: 'Order list' })
     await open(table, orderHashes.loadtest, user)
-    expect(await screen.findByText(/ownership not yet proven/)).toBeInTheDocument()
+    expect(await screen.findByText(/Ownership not yet proven/)).toBeInTheDocument()
     expect(screen.getByTestId('order-bond')).toHaveTextContent('CT-094')
     await user.click(screen.getByRole('button', { name: 'Check target ownership' }))
     await screen.findByText(/Sent: target checked/)

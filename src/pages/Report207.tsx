@@ -50,14 +50,8 @@ function ClearedRing({ ratio }: { ratio: number | null }) {
   return (
     <div className="cleared-ring" aria-hidden="true">
       <svg viewBox="0 0 128 128" width="148" height="148">
-        <defs>
-          <linearGradient id="ring-fill" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#8fc0ff" />
-            <stop offset="1" stopColor="#1a62d6" />
-          </linearGradient>
-        </defs>
         <circle cx="64" cy="64" r={r} className="ring-track" />
-        <circle cx="64" cy="64" r={r} className="ring-arc" stroke="url(#ring-fill)" strokeDasharray={`${share * c} ${c}`} transform="rotate(-90 64 64)" />
+        <circle cx="64" cy="64" r={r} className="ring-arc" stroke="var(--accent)" strokeDasharray={`${share * c} ${c}`} transform="rotate(-90 64 64)" />
       </svg>
       <span className="ring-label">
         <strong>{ratio === null ? '–' : `${Math.round(share * 100)}%`}</strong>

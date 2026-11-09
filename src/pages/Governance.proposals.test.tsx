@@ -9,7 +9,7 @@ describe('FE-015 DAO proposals on the governance page', () => {
     renderApp('/governance')
     const table = await screen.findByRole('table', { name: 'Open proposals' })
     expect(table).toHaveTextContent('Open')
-    expect(table).toHaveTextContent('payment_window = 45 minutes')
+    expect(table).toHaveTextContent('Payment window: 45 minutes')
     expect(table).toHaveTextContent('council1.near')
     expect(table).toHaveTextContent('1 / 0 / 0')
     expect(within(table).getByRole('link', { name: '7' })).toHaveAttribute('href', expect.stringContaining('x207.sputnik-dao.near'))
@@ -28,7 +28,7 @@ describe('FE-015 DAO proposals on the governance page', () => {
     renderApp('/governance')
     const note = await screen.findByLabelText('Next epoch parameters')
     expect(note).toHaveTextContent('Effective from epoch 43')
-    expect(note).toHaveTextContent('payment_window = 45 minutes')
+    expect(note).toHaveTextContent('Payment window 30 minutes becomes 45 minutes')
   })
 
   it('TC-FE-015-04 no open proposal: a message, the closed table stays', async () => {

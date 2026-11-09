@@ -1,11 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { api } from '../api/client'
 import { viewContract } from '../api/chain'
 import { useInvoice, useInvoices } from '../api/queries'
-import type { InstallmentReason, InstallmentView, InvoiceStatus, InvoiceView } from '../api/types'
+import type { InstallmentReason, InstallmentStatus, InstallmentView, InvoiceStatus, InvoiceView } from '../api/types'
 import { CopyButton } from '../components/CopyButton'
-import { EmptyHint } from '../components/EmptyHint'
+import { NavIcon } from '../components/icons'
 import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
@@ -20,6 +20,11 @@ import { useWallet } from '../wallet/WalletContext'
 // at once (seq 1 in their epoch) or declines; a failed installment is shifted once with a follow-up voucher signed after the failure. An upfront signature is evidence,
 // not a payment guarantee (ADR-44): the page says so where the debtor can see it.
 // FE-057: the invoice list can be filtered and sorted on what the reader sees.
+// FE-073: one role at a time (your invoices, one invoice, request a new one). The panes stay in the DOM and only hide in CSS. The voucher key field exists once: in the form,
+// or in the open invoice when it has something to sign.
+type Tone = 'ok' | 'warn' | 'bad' | 'info'
+type View = 'list' | 'detail' | 'request'
+
 const INVOICE_COLUMNS: Column<InvoiceView>[] = [
   { key: 'number', label: 'Number', sortValue: (i) => i.document.id },
   { key: 'issuer', label: 'Issuer', sortValue: (i) => i.document.issuer },
@@ -34,15 +39,22 @@ const invoiceText = (i: InvoiceView) => `${i.document.id} ${i.document.issuer} $
 const STATUS_LABEL: Record<InvoiceStatus, string> = {
   requested: 'Requested', approved: 'Approved', registered: 'Registered', rejected: 'Rejected', expired: 'Expired', missed: 'Missed',
 }
+const STATUS_TONE: Record<InvoiceStatus, Tone> = { requested: 'info', approved: 'ok', registered: 'ok', rejected: 'bad', expired: 'warn', missed: 'bad' }
+const INSTALLMENT_LABEL: Record<InstallmentStatus, string> = { scheduled: 'Scheduled', registered: 'Registered', shifted: 'Shifted', missed: 'Missed' }
+const INSTALLMENT_TONE: Record<InstallmentStatus, Tone> = { scheduled: 'info', registered: 'ok', shifted: 'warn', missed: 'bad' }
 const REASON_LABEL: Record<InstallmentReason, string> = {
   headroom: 'debtor headroom exhausted',
-  blocked_by_debtor: 'blocked by the debtor (a voucher with a higher seq was registered first)',
+  blocked_by_debtor: 'blocked by the debtor',
 }
 const STATUS_FILTERS = ['', 'requested', 'approved', 'registered', 'rejected', 'expired', 'missed'] as const
 
 type Obligation = { cumulative: string; last_seq: number } | null
 
-function CreateInvoice({ voucherKey, onVoucherKey, onCreated }: { voucherKey: string; onVoucherKey: (v: string) => void; onCreated: (hash: string) => void }) {
+const Pill = ({ tone, children }: { tone: Tone; children: ReactNode }) => <span className="pill" data-tone={tone}>{children}</span>
+/** A failed installment the debtor may still shift once (a catch-up voucher is signed after the failure). */
+const canShift = (item: InstallmentView) => item.reason === 'headroom' && item.status === 'scheduled' && !item.shifted
+
+function CreateInvoice({ voucherKey, onVoucherKey, showKey, onCreated }: { voucherKey: string; onVoucherKey: (v: string) => void; showKey: boolean; onCreated: (hash: string) => void }) {
   const { account } = useWallet()
   const client = useQueryClient()
   const [debtor, setDebtor] = useState('')
@@ -76,14 +88,16 @@ function CreateInvoice({ voucherKey, onVoucherKey, onCreated }: { voucherKey: st
 
   return (
     <form className="form" aria-label="Request invoice" onSubmit={(e) => { e.preventDefault(); void submit() }}>
-      <h3 id="request-invoice">Request an invoice (issuer)</h3>
-      {!account && <SignInPrompt action="request an invoice" />}
-      <label><span>Debtor (the account that pays the issuer)</span><input value={debtor} onChange={(e) => setDebtor(e.target.value)} placeholder="maker.x207-circle.near" /></label>
-      <label><span>Invoice number</span><input value={id} onChange={(e) => setId(e.target.value)} placeholder="INV-2026-001" /></label>
-      <label><span>Amount (credit)</span><input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" /></label>
-      <label><span>Memo</span><input value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={256} /></label>
-      <label><span>Number of installments (1 to 24, one per epoch)</span><input value={installments} onChange={(e) => setInstallments(e.target.value)} inputMode="numeric" /></label>
-      <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
+      <label><span>Debtor (who pays you)</span><input value={debtor} onChange={(e) => setDebtor(e.target.value)} placeholder="maker.x207-circle.near" /></label>
+      <div className="field-pair">
+        <label><span>Invoice number</span><input value={id} onChange={(e) => setId(e.target.value)} placeholder="INV-2026-001" /></label>
+        <label><span>Amount (credit)</span><input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" /></label>
+      </div>
+      <div className="field-pair">
+        <label><span>Number of installments (1 to 24)</span><input value={installments} onChange={(e) => setInstallments(e.target.value)} inputMode="numeric" /></label>
+        <label><span>Memo (optional)</span><input value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={256} /></label>
+      </div>
+      {showKey && <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />}
       <div><button type="submit" disabled={!ready || busy}>{busy ? 'Signing…' : 'Sign and request'}</button></div>
       {error && <p className="state state-error" role="alert">{error}</p>}
     </form>
@@ -91,13 +105,17 @@ function CreateInvoice({ voucherKey, onVoucherKey, onCreated }: { voucherKey: st
 }
 
 function InstallmentRow({ item, canCatchUp, onCatchUp, busy }: { item: InstallmentView; canCatchUp: boolean; onCatchUp: () => void; busy: boolean }) {
+  const moved = item.shifted && item.voucherEpoch !== null
   return (
     <tr>
       <td>{item.index}</td>
       <td>{item.epoch}</td>
       <td>{formatCredit(item.amount)}</td>
-      <td>{item.status}{item.shifted && item.voucherEpoch !== null ? ` (shifted to epoch ${item.voucherEpoch})` : ''}</td>
-      <td>{item.reason ? REASON_LABEL[item.reason] : '-'}</td>
+      <td>
+        {!(moved && item.status === 'shifted') && <Pill tone={INSTALLMENT_TONE[item.status]}>{INSTALLMENT_LABEL[item.status]}</Pill>}
+        {moved && <p className="item-meta">shifted to epoch {item.voucherEpoch}</p>}
+        {item.reason && <p className="item-meta">{REASON_LABEL[item.reason]}</p>}
+      </td>
       <td>
         {canCatchUp && (
           <button type="button" disabled={busy} onClick={onCatchUp} aria-label={`Catch-up installment ${item.index}`}>
@@ -109,7 +127,7 @@ function InstallmentRow({ item, canCatchUp, onCatchUp, busy }: { item: Installme
   )
 }
 
-function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string }) {
+function InvoiceDetail({ hash, voucherKey, onVoucherKey, showKey }: { hash: string; voucherKey: string; onVoucherKey: (v: string) => void; showKey: boolean }) {
   const { account } = useWallet()
   const client = useQueryClient()
   const query = useInvoice(hash)
@@ -139,7 +157,7 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
     const vouchers = await buildApproval(CONTRACT_ID, view, voucherKey, hash)
     if (typeof vouchers === 'string') return fail(vouchers)
     await api.approveInvoice(hash, vouchers)
-    return `Approved: ${vouchers.length} installment vouchers signed, one per epoch.`
+    return `Approved. ${vouchers.length} installment vouchers signed, one per epoch.`
   })
   const reject = () => act(async (view) => {
     await assertInvoiceHash(view, hash)
@@ -159,33 +177,40 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
   })
 
   return (
-    <section className="detail" aria-label="Invoice details">
+    <section aria-label="Invoice details">
       <QueryState query={query} loadingLabel="Loading invoices">
         {(view) => {
-          const isDebtor = account === view.document.debtor
-          const isIssuer = account === view.document.issuer
+          const doc = view.document
+          const isDebtor = account === doc.debtor
+          const isIssuer = account === doc.issuer
+          const requested = view.status === 'requested'
+          const needsKey = isDebtor && (requested || view.installments.some(canShift))
+          const amount = formatCredit(doc.amount)
           return (
             <>
-              <h3>{view.document.id} · {STATUS_LABEL[view.status]}</h3>
+              <h2>{doc.id} <Pill tone={STATUS_TONE[view.status]}>{STATUS_LABEL[view.status]}</Pill></h2>
+              <dl className="figures">
+                <div><dt>Amount</dt><dd>{amount} credit</dd></div>
+                <div><dt>Installments</dt><dd>{view.installments.length}</dd></div>
+              </dl>
               <dl className="status-panel">
-                <dt>Issuer (collector)</dt><dd><code>{view.document.issuer}</code></dd>
-                <dt>Debtor</dt><dd><code>{view.document.debtor}</code></dd>
-                <dt>Amount</dt><dd>{formatCredit(view.document.amount)} credit</dd>
-                <dt>Memo</dt><dd>{view.document.memo || '-'}</dd>
-                <dt>Hash</dt><dd><code>{view.invoiceHash}</code><CopyButton value={view.invoiceHash} label="invoice hash" /></dd>
+                <dt>Issuer</dt><dd><code>{doc.issuer}</code>{isIssuer && <> <Pill tone="info">You</Pill></>}</dd>
+                <dt>Debtor</dt><dd><code>{doc.debtor}</code>{isDebtor && <> <Pill tone="info">You</Pill></>}</dd>
+                {doc.memo && <><dt>Memo</dt><dd>{doc.memo}</dd></>}
               </dl>
               {view.rejectReason && <p className="state" role="status">Rejection reason: {view.rejectReason}</p>}
-              {view.needsBond && <p className="state state-error" role="status" data-testid="invoice-bond">This invoice is at or above the bond threshold: it needs a two-sided bond (CT-094) before it is registered.</p>}
+              {view.needsBond && <p className="state state-warn" role="status" data-testid="invoice-bond">Needs a two-sided bond before it is registered (CT-094).</p>}
+              <h3>Installments</h3>
               <div className="table-wrap">
                 <table aria-label="Installment schedule">
-                  <thead><tr><th>#</th><th>Epoch</th><th>Amount</th><th>Status</th><th>Reason</th><th /></tr></thead>
+                  <thead><tr><th>#</th><th>Epoch</th><th>Amount</th><th>Status</th><th /></tr></thead>
                   <tbody>
                     {view.installments.map((item) => (
                       <InstallmentRow
                         key={item.index}
                         item={item}
                         busy={busy}
-                        canCatchUp={isDebtor && item.reason === 'headroom' && item.status === 'scheduled' && !item.shifted}
+                        canCatchUp={isDebtor && canShift(item)}
                         onCatchUp={() => void catchUp(item)}
                       />
                     ))}
@@ -194,28 +219,47 @@ function InvoiceDetail({ hash, voucherKey }: { hash: string; voucherKey: string 
               </div>
               {view.installments.some((i) => i.reason === 'blocked_by_debtor') && (
                 <p className="state state-error" role="status" data-testid="invoice-blocked">
-                  An installment was blocked by the debtor. There is no catch-up voucher for this; only reputation and the CT-094 bond answer it.
+                  Blocked by the debtor: no catch-up is possible. Only reputation and the bond (CT-094) answer it.
                 </p>
               )}
-              {isDebtor && view.status === 'requested' && (
+              {isDebtor && requested && (
                 <>
                   <p className="state" data-testid="invoice-advance-note">
-                    Approving means signing {view.installments.length} vouchers now, one per epoch. It is proof that you acknowledge the invoice, not a guarantee for the issuer: the contract
-                    allows a voucher with a higher seq to go first. There are no spare vouchers; if an installment fails, a catch-up voucher is signed only after the failure.
+                    Approving signs {view.installments.length} vouchers now, one per epoch. It proves you accept the invoice, not a guarantee of payment.
                   </p>
-                  <div className="actions">
-                    <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void approve()}>
-                      Approve and sign {view.installments.length} installments: {formatCredit(view.document.amount)} credit to {view.document.issuer}
-                    </button>
-                    <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void reject()}>Reject invoice {formatCredit(view.document.amount)} credit from {view.document.issuer}</button>
-                  </div>
+                  <details className="tech">
+                    <summary>How approval works</summary>
+                    <p>
+                      The contract lets a voucher with a higher seq go first, so an upfront signature is evidence, not a guarantee for the issuer. There are no spare vouchers:
+                      if an installment fails, a catch-up voucher is signed only after the failure.
+                    </p>
+                  </details>
                 </>
               )}
-              {isIssuer && view.status === 'requested' && <p className="state">Waiting for the debtor to approve.</p>}
+              {showKey && (needsKey || voucherKey !== '') && <div className="form"><VoucherKeyField value={voucherKey} onChange={onVoucherKey} /></div>}
+              {isDebtor && requested && (
+                <div>
+                  <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void approve()} aria-label={`Approve and sign ${view.installments.length} installments: ${amount} credit to ${doc.issuer}`}>
+                    Approve and sign {view.installments.length} installments
+                  </button>{' '}
+                  <button type="button" className="quiet" disabled={busy || voucherKey.trim() === ''} onClick={() => void reject()} aria-label={`Reject invoice ${amount} credit from ${doc.issuer}`}>
+                    Reject
+                  </button>
+                </div>
+              )}
+              {isIssuer && requested && <p className="state">Waiting for the debtor to approve.</p>}
+              <details className="tech">
+                <summary>Technical details</summary>
+                <dl>
+                  <dt>Invoice hash</dt><dd><code>{view.invoiceHash}</code><CopyButton value={view.invoiceHash} label="invoice hash" /></dd>
+                </dl>
+              </details>
             </>
           )
         }}
       </QueryState>
+      {/* the key field must stay mounted while a key is held (it clears the key after idle), also while the invoice is loading or failed */}
+      {showKey && voucherKey !== '' && query.data === undefined && <div className="form"><VoucherKeyField value={voucherKey} onChange={onVoucherKey} /></div>}
       {message && <p className="state" role="status">{message}</p>}
       {error && <p className="state state-error" role="alert">{error}</p>}
     </section>
@@ -227,47 +271,82 @@ export function Invoices() {
   const [status, setStatus] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
   const [voucherKey, setVoucherKey] = useState('')
+  const [picked, setPicked] = useState<View | null>(null)
   const query: Record<string, string> = { ...(account ? { party: account } : {}), ...(status ? { status } : {}) }
   const invoices = useInvoices(query, Boolean(account))
+  // A first visit with nothing to list starts on the request form; everything else starts on the list.
+  const nothingYet = status === '' && invoices.data !== undefined && invoices.data.items.length === 0
+  const shown: View = picked ?? (account && !nothingYet ? 'list' : 'request')
+  const open = (hash: string) => { setSelected(hash); setPicked('detail') }
 
   return (
     <>
-      <h2>Invoices and installments</h2>
-      {!account && <SignInPrompt action="see your invoices" />}
-      <div className="filters">
-        <label>
-          <span>Status</span>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            {STATUS_FILTERS.map((s) => <option key={s} value={s}>{s === '' ? 'All' : STATUS_LABEL[s]}</option>)}
-          </select>
-        </label>
+      <div className="page-lead">
+        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+          <NavIcon name="/invoices" size={22} />
+        </span>
+        <p>Ask a customer to pay in installments, or approve an invoice sent to you.</p>
+        <ol className="lead-steps" aria-label="How it works">
+          <li>Issuer requests</li>
+          <li>Debtor approves</li>
+          <li>Paid each epoch</li>
+        </ol>
       </div>
-      {account && (
-        <QueryState query={invoices} loadingLabel="Loading invoices" isEmpty={(d) => d.items.length === 0} empty={<><span>No invoices for this account yet.</span><EmptyHint what="an invoice" next={{ href: '#request-invoice', label: 'Request the first invoice below' }} /></>}>
-          {(data) => (
-            <SortableTable
-              label="Invoice list"
-              filterLabel="Filter the invoices shown"
-              rows={data.items}
-              columns={INVOICE_COLUMNS}
-              searchText={invoiceText}
-              renderRow={(i) => (
-                <tr key={i.invoiceHash} aria-selected={selected === i.invoiceHash}>
-                  <td>{i.document.id}</td>
-                  <td><code>{shortAccount(i.document.issuer)}</code></td>
-                  <td><code>{shortAccount(i.document.debtor)}</code></td>
-                  <td>{formatCredit(i.document.amount)}</td>
-                  <td>{i.installments.length}</td>
-                  <td>{STATUS_LABEL[i.status]}</td>
-                  <td><button type="button" aria-label={`Open ${i.document.id}`} onClick={() => setSelected(i.invoiceHash)}>Open</button></td>
-                </tr>
+      {!account && <SignInPrompt action="see your invoices" />}
+      <div className="views" data-view={shown}>
+        <div className="filters">
+          <div className="segmented" role="group" aria-label="Invoice view">
+            <button type="button" aria-pressed={shown !== 'request'} onClick={() => setPicked('list')}>Your invoices</button>
+            <button type="button" aria-pressed={shown === 'request'} onClick={() => setPicked('request')}>Request</button>
+          </div>
+        </div>
+        <section className="views-pane" data-pane="list" data-active={shown === 'list'} aria-label="Your invoices">
+          <div className="filters">
+            <label>
+              <span>Status</span>
+              <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                {STATUS_FILTERS.map((s) => <option key={s} value={s}>{s === '' ? 'All' : STATUS_LABEL[s]}</option>)}
+              </select>
+            </label>
+          </div>
+          {account && (
+            <QueryState
+              query={invoices}
+              loadingLabel="Loading invoices"
+              isEmpty={(d) => d.items.length === 0}
+              empty={<>No invoices yet. <button type="button" className="quiet" onClick={() => setPicked('request')}>Request one</button></>}
+            >
+              {(data) => (
+                <SortableTable
+                  label="Invoice list"
+                  filterLabel="Filter the invoices shown"
+                  rows={data.items}
+                  columns={INVOICE_COLUMNS}
+                  searchText={invoiceText}
+                  renderRow={(i) => (
+                    <tr key={i.invoiceHash} aria-selected={selected === i.invoiceHash}>
+                      <td>{i.document.id}</td>
+                      <td><code>{shortAccount(i.document.issuer)}</code></td>
+                      <td><code>{shortAccount(i.document.debtor)}</code></td>
+                      <td>{formatCredit(i.document.amount)}</td>
+                      <td>{i.installments.length}</td>
+                      <td><Pill tone={STATUS_TONE[i.status]}>{STATUS_LABEL[i.status]}</Pill></td>
+                      <td><button type="button" className="quiet" aria-label={`Open ${i.document.id}`} onClick={() => open(i.invoiceHash)}>Open</button></td>
+                    </tr>
+                  )}
+                />
               )}
-            />
+            </QueryState>
           )}
-        </QueryState>
-      )}
-      {selected && <InvoiceDetail hash={selected} voucherKey={voucherKey} />}
-      <CreateInvoice voucherKey={voucherKey} onVoucherKey={setVoucherKey} onCreated={setSelected} />
+        </section>
+        <section className="views-pane" data-pane="detail" data-active={shown === 'detail'} aria-label="Selected invoice">
+          <button type="button" className="quiet" onClick={() => setPicked('list')}>Back to your invoices</button>
+          {selected && <InvoiceDetail hash={selected} voucherKey={voucherKey} onVoucherKey={setVoucherKey} showKey={shown === 'detail'} />}
+        </section>
+        <section className="views-pane" data-pane="request" data-active={shown === 'request'} aria-label="Request an invoice">
+          <CreateInvoice voucherKey={voucherKey} onVoucherKey={setVoucherKey} showKey={shown !== 'detail'} onCreated={open} />
+        </section>
+      </div>
     </>
   )
 }

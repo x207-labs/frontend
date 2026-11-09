@@ -108,11 +108,16 @@ export function AccountSales() {
 
   return (
     <section aria-labelledby="account-sales-title">
-      <h2 id="account-sales-title">Account sales (contract 0.0.18)</h2>
-      <p>
-        A seller locks a NEAR account with a small locker contract and deletes its own keys; the circle holds the sale until the buyer pays with a voucher, then the locker adds
-        the buyer's key. A member account (with its stake and debts) is delivered only after the epoch of the lock is finalized. Read only.
-      </p>
+      <h2 id="account-sales-title">Account sales</h2>
+      <p className="state">Whole NEAR accounts changing hands, held by the circle until the buyer pays.</p>
+      {/* FE-073: the mechanism folds away; the list is what a visitor came for */}
+      <details className="tech">
+        <summary>How an account sale works</summary>
+        <p>
+          A seller locks a NEAR account with a small locker contract and deletes its own keys; the circle holds the sale until the buyer pays with a voucher, then the locker adds
+          the buyer's key. A member account (with its stake and debts) is delivered only after the epoch of the lock is finalized. Needs contract 0.0.18.
+        </p>
+      </details>
       {escrows.isSuccess && <TtlLine />}
       {body}
     </section>

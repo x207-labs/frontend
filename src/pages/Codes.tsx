@@ -1,16 +1,17 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { api } from '../api/client'
 import { viewContract } from '../api/chain'
 import { usePurchase } from '../api/queries'
 import type { ListingView } from '../api/types'
+import { NavIcon } from '../components/icons'
 import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { keyFingerprint } from '../lib/barter'
 import {
-  CODE_DISPUTE_WINDOW_SECONDS, UNVERIFIABLE_CODE_LIMIT, VERIFIABLE_CODE_LIMIT, buildCodeKeyRelease, buildCodePurchase, codeCheckNotice, codeDocumentOfListing, codeOverLimit, disputeSecondsLeft, pairStateWithHeld, parseCodeListing, prepareCode, receiveCode, recallHeld, rememberHeld,
+  UNVERIFIABLE_CODE_LIMIT, VERIFIABLE_CODE_LIMIT, buildCodeKeyRelease, buildCodePurchase, codeCheckNotice, codeDocumentOfListing, codeOverLimit, disputeSecondsLeft, pairStateWithHeld, parseCodeListing, prepareCode, receiveCode, recallHeld, rememberHeld,
   type CodeListing, type CodeReceive, type HeldVoucher, type PreparedCode,
 } from '../lib/codeFlow'
 import { formatCredit } from '../lib/format'
@@ -23,13 +24,40 @@ import { useWallet } from '../wallet/WalletContext'
 // FE-032: single-use exchange codes (pipeline P3, ADR-48). Codes are sold via the P7 fair exchange (SD-076, SD-070): the code is encrypted, the key is released to the buyer after they pay (voucher
 // held), and a wrong code is proven with a cheating proof. The code does not appear in the listing and is only revealed in the buyer's browser after they request it. A dispute opens one hour
 // after the key is released; silence until then means automatic confirmation. Codes whose issuer has no check API are capped at 20 credit.
+// Presentation: one role at a time (Buy, Sell, Deliver) with the voucher key entered once for the page; commitments, hashes and listing detail sit in "Technical details".
+type Tone = 'ok' | 'warn' | 'bad' | 'info'
 const STATUS_LABEL: Record<string, string> = {
-  paid_held: 'Paid, voucher held', cipher_posted: 'Ciphertext posted', key_released: 'Key released', confirmed: 'Confirmed', disputed: 'Disputed', refuted: 'Dispute rejected', cancelled: 'Cancelled',
+  paid_held: 'Paid', cipher_posted: 'Code posted', key_released: 'Key released', confirmed: 'Confirmed', disputed: 'Disputed', refuted: 'Dispute rejected', cancelled: 'Cancelled',
 }
+const STATUS_TONE: Record<string, Tone> = { paid_held: 'info', cipher_posted: 'info', key_released: 'warn', confirmed: 'ok', disputed: 'bad', refuted: 'warn', cancelled: 'bad' }
+const BUYER_HINT: Record<string, string> = { paid_held: 'Waiting for the seller to post the code.', cipher_posted: 'Waiting for the seller to release the key.' }
+// Cards in a view are spaced with a grid gap; the hidden panes stay display:none from the stylesheet.
+// The layout header already carries the page h1, so each card title is an h2 (.card-title) sized like a card title.
 const now = () => Math.floor(Date.now() / 1000)
 const minutes = (seconds: number): string => `${Math.floor(seconds / 60)} min ${seconds % 60} s`
 
-function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; onVoucherKey: (v: string) => void; onPrepared: (p: PreparedCode) => void }) {
+const Pill = ({ tone, children }: { tone: Tone; children: ReactNode }) => <span className="pill" data-tone={tone}>{children}</span>
+const Tile = () => (
+  <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+    <NavIcon name="/codes" size={18} />
+  </span>
+)
+
+/** One purchase as a card: its number, its status as a pill, and one line of what comes next. */
+function PurchaseCard({ id, status, children }: { id: string; status: string; children?: ReactNode }) {
+  return (
+    <ul className="item-cards">
+      <li className="item-card">
+        <Tile />
+        <p className="item-title">Purchase {id}</p>
+        <Pill tone={STATUS_TONE[status] ?? 'info'}>{STATUS_LABEL[status] ?? status}</Pill>
+        {children && <p className="item-meta">{children}</p>}
+      </li>
+    </ul>
+  )
+}
+
+function Seller({ onPrepared, onDeliver }: { onPrepared: (p: PreparedCode) => void; onDeliver: () => void }) {
   const { account } = useWallet()
   const [code, setCode] = useState('')
   const [issuer, setIssuer] = useState('none')
@@ -55,27 +83,36 @@ function Seller({ voucherKey, onVoucherKey, onPrepared }: { voucherKey: string; 
   }
   return (
     <form className="form" aria-label="Prepare code" onSubmit={(e) => { e.preventDefault(); prepare() }}>
-      <h3>Sell a code (seller)</h3>
-      {!account && <SignInPrompt action="prepare a code" />}
-      <label><span>Code (the listing holds only a salted commitment; a checkable code is sent once to the backend during the issuer check, an uncheckable code is sent nowhere)</span><input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" /></label>
-      <small>The code must be at least 8 characters. The listing holds only a commitment with a random salt, so even a short code cannot be guessed from the listing.</small>
-      <label><span>Issuer (service name, or none)</span><input value={issuer} onChange={(e) => setIssuer(e.target.value)} /></label>
-      <label className="check"><input type="checkbox" checked={verifiable} onChange={(e) => setVerifiable(e.target.checked)} /><span>The issuer has a check API (the code is checked before the key is released)</span></label>
-      <label><span>Value (credit)</span><input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="5" /></label>
-      {overCap && <p className="state state-warn" role="note">A code that {verifiable ? 'can' : 'cannot'} be checked is limited to {formatCredit(cap)} credit. No bond raises the limit{verifiable ? '' : '; above it, use an issuer that has a check API (limit ' + formatCredit(VERIFIABLE_CODE_LIMIT) + ' credit)'}.</p>}
-      <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
-      <div><button type="submit" disabled={!account || code.trim() === '' || atomic === null || overCap}>Hash and encrypt code</button></div>
+      <h2 className="card-title">Prepare a code</h2>
+      <label><span>Code</span><input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" placeholder="At least 8 characters" /></label>
+      <p className="state">A checkable code is sent once to the backend during the issuer check. Otherwise it stays in this browser.</p>
+      <div className="field-pair">
+        <label><span>Issuer</span><input value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="Service name, or none" /></label>
+        <label><span>Value (credit)</span><input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="5" /></label>
+      </div>
+      <div className="switches">
+        <label className="check"><span>The issuer has a check API</span><input type="checkbox" checked={verifiable} onChange={(e) => setVerifiable(e.target.checked)} /></label>
+      </div>
+      {overCap && <p className="state state-warn" role="note">A code that {verifiable ? 'can' : 'cannot'} be checked is limited to {formatCredit(cap)} credit.{verifiable ? '' : ` For more, use an issuer with a check API (limit ${formatCredit(VERIFIABLE_CODE_LIMIT)} credit).`}</p>}
+      <div><button type="submit" disabled={!account || code.trim() === '' || atomic === null || overCap}>Encrypt and prepare</button></div>
       {error && <p className="state state-error" role="alert">{error}</p>}
       {done && (
-        <div data-testid="code-prepared">
-          <dl className="status-panel">
-            <dt>code_commitment</dt><dd><code>{done.document.code_commitment}</code></dd>
-            <dt>cipher_hash</dt><dd><code>{done.cipherHash}</code></dd>
-            <dt>Resource</dt><dd><code>{done.resource}</code></dd>
-          </dl>
-          <p className="state state-warn" data-testid="code-keep-page" role="note">The code, salt, and key exist only on this page. Closing or reloading the tab loses them: you cannot release the key to the buyer, and the held voucher is cancelled. A code may be sold only once; duplicate listings of the same code are not detected by hash, so a seller who sells it twice is caught through the issuer check, disputes, and reputation.</p>
-          <p>Listing detail (copy into the class D Listing detail field):</p>
-          <pre data-testid="code-detail">{done.detail}</pre>
+        <div data-testid="code-prepared" className="stack">
+          <p className="state"><Pill tone="ok">Ready</Pill> Post the encrypted code anywhere, then serve each buyer.</p>
+          <p className="state state-warn" data-testid="code-keep-page" role="note">The code, salt, and key exist only on this page. Close the tab and buyers lose their key, and their held payment is cancelled.</p>
+          <div><button type="button" className="quiet" onClick={onDeliver}>Serve a purchase</button></div>
+          <details className="tech">
+            <summary>Technical details</summary>
+            <dl className="status-panel">
+              <dt>code_commitment</dt><dd><code>{done.document.code_commitment}</code></dd>
+              <dt>cipher_hash</dt><dd><code>{done.cipherHash}</code></dd>
+              <dt>Resource</dt><dd><code>{done.resource}</code></dd>
+            </dl>
+            <p>The listing holds only a commitment with a random salt, so even a short code cannot be guessed from it.</p>
+            <p>Sell each code once. A repeat sale is not detected by hash; it is caught through the issuer check, disputes, and reputation.</p>
+            <p>Listing detail (copy into the class D Listing detail field):</p>
+            <pre data-testid="code-detail">{done.detail}</pre>
+          </details>
         </div>
       )}
     </form>
@@ -114,7 +151,7 @@ function Serve({ voucherKey, onVoucherKey, prepared }: { voucherKey: string; onV
   const sameId = (answered: string): void => {
     if (answered !== open) throw new Error(`The server answered for purchase ${answered}, not ${open} which you opened: not signed.`)
   }
-  const postCipher = () => send('Ciphertext recorded.', async () => {
+  const postCipher = () => send('Location saved.', async () => {
     sameId(query.data!.purchaseId)
     const notice = cipherPostedNotice(CONTRACT_ID, query.data!.purchaseId, account!, now(), { kind, ref: ref.trim() }, prepared!.cipherHash)
     await api.purchaseNotice(query.data!.purchaseId, notice, await signSellerNotice(notice, CONTRACT_ID, voucherKey))
@@ -138,7 +175,7 @@ function Serve({ voucherKey, onVoucherKey, prepared }: { voucherKey: string; onV
       setError(describeMarketError(e))
     }
   }
-  const releaseKey = () => send('Key released to the buyer (sealed). The one-hour dispute window starts.', async () => {
+  const releaseKey = () => send('Key released to the buyer. The one-hour dispute window starts.', async () => {
     const view = query.data!
     sameId(view.purchaseId)
     if (buyerKey === null || buyerKey.buyer !== view.buyer) throw new Error('Check the buyer key first.')
@@ -150,55 +187,65 @@ function Serve({ voucherKey, onVoucherKey, prepared }: { voucherKey: string; onV
 
   return (
     <section className="form" aria-label="Serve code purchase">
-      <h3>Serve a purchase (seller)</h3>
-      {!prepared && <p className="state">Prepare the code above first: the code, key, and ciphertext live on this page, not on the server.</p>}
+      <h2 className="card-title">Serve a purchase</h2>
+      {!prepared && <p className="state state-warn">Prepare a code in Sell first. The code and key live on this page.</p>}
       <label><span>Purchase number</span><input value={id} onChange={(e) => setId(e.target.value)} /></label>
       <div><button type="button" disabled={id.trim() === ''} onClick={() => setOpen(id.trim())}>Open purchase</button></div>
       {open && (
         <QueryState query={query} loadingLabel="Loading purchase">
           {(view) => (
-            <div data-testid="serve">
-              <p>Status: <strong>{STATUS_LABEL[view.status] ?? view.status}</strong> · buyer <code>{view.buyer}</code></p>
+            <div data-testid="serve" className="stack">
+              <PurchaseCard id={view.purchaseId} status={view.status}>
+                Buyer <code>{view.buyer}</code>
+              </PurchaseCard>
               {view.status === 'paid_held' && prepared && (
                 <>
-                  <p>Post the ciphertext (<code>{prepared.cipherHash.slice(0, 12)}…</code>) at the source, then record its address.</p>
-                  <label><span>Source type</span><select value={kind} onChange={(e) => setKind(e.target.value as 'https' | 'ipfs')}><option value="https">https</option><option value="ipfs">ipfs (CIDv1 raw)</option></select></label>
-                  <label><span>Address or CID</span><input value={ref} onChange={(e) => setRef(e.target.value)} /></label>
-                  <button type="button" disabled={busy || voucherKey.trim() === '' || ref.trim() === ''} onClick={() => void postCipher()}>Record ciphertext</button>
+                  <p className="state">Post the encrypted code, then say where it is.</p>
+                  <div className="field-pair">
+                    <label><span>Source type</span><select value={kind} onChange={(e) => setKind(e.target.value as 'https' | 'ipfs')}><option value="https">https</option><option value="ipfs">ipfs (CIDv1 raw)</option></select></label>
+                    <label><span>Address or CID</span><input value={ref} onChange={(e) => setRef(e.target.value)} /></label>
+                  </div>
+                  <div><button type="button" disabled={busy || voucherKey.trim() === '' || ref.trim() === ''} onClick={() => void postCipher()}>Save location</button></div>
                 </>
               )}
               {view.status === 'cipher_posted' && prepared && prepared.document.verifiable && (
-                <div data-testid="issuer-check">
+                <div data-testid="issuer-check" className="stack">
                   <p className="state state-warn" role="note" data-testid="check-disclosure">
-                    For a checkable code, the backend sees the code and salt once during the check: both are sent to the backend, forwarded to the issuer <code>{prepared.document.issuer}</code>, and not stored.
-                    The backend stores only the verdict and its time. A dishonest backend could redeem the code first; if you do not trust this backend, do not sell a checkable code here.
-                    The verdict is valid for 10 minutes; the key is not released without a still-valid <em>valid</em> verdict.
+                    During the check, the backend sees the code and salt once. It forwards them to the issuer <code>{prepared.document.issuer}</code>; they are not stored.
+                    If you do not trust this backend, do not sell a checkable code here.
                   </p>
-                  <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void checkWithIssuer()}>Show the code to the backend for the issuer check</button>
+                  <div><button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void checkWithIssuer()}>Send code for issuer check</button></div>
                   {verdict && verdict.listingHash === view.listingHash && (
-                    <p className={verdict.verdict === 'valid' ? 'state' : 'state state-error'} role={verdict.verdict === 'valid' ? 'status' : 'alert'} data-testid="issuer-verdict">
-                      {verdict.verdict === 'valid' && 'The issuer says the code is valid. The key may be released within 10 minutes.'}
-                      {verdict.verdict === 'used' && 'The issuer says the code is already used: the purchase and listing are cancelled, the key is not released, the buyer voucher does not move.'}
+                    <p className="state" role={verdict.verdict === 'valid' ? 'status' : 'alert'} data-testid="issuer-verdict">
+                      <Pill tone={verdict.verdict === 'valid' ? 'ok' : 'bad'}>{verdict.verdict === 'valid' ? 'Valid' : verdict.verdict === 'used' ? 'Used' : 'Unknown'}</Pill>
+                      {verdict.verdict === 'valid' && 'The issuer says the code is valid. Release the key within 10 minutes.'}
+                      {verdict.verdict === 'used' && 'The issuer says the code is already used. The purchase and listing are cancelled, the key is not released, and the buyer voucher does not move.'}
                       {verdict.verdict === 'unknown' && 'The issuer does not recognize this code: key not released.'}
                     </p>
                   )}
+                  <details className="tech">
+                    <summary>More about the check</summary>
+                    <p>The backend stores only the verdict and its time. A dishonest backend could redeem the code first.</p>
+                    <p>The verdict is valid for 10 minutes; the key is not released without a still-valid valid verdict.</p>
+                  </details>
                 </div>
               )}
               {view.status === 'cipher_posted' && prepared && !prepared.document.verifiable && (
-                <p className="state state-warn" role="note" data-testid="no-check-note">This code cannot be checked: the backend does not see the code, and nothing confirms the code is unused before the key is released. The buyer is protected only by the one-hour dispute and the value limit.</p>
+                <p className="state state-warn" role="note" data-testid="no-check-note">This code cannot be checked: the backend does not see the code, and nothing confirms it is unused. The buyer relies on the one-hour dispute and the value limit.</p>
               )}
               {view.status === 'cipher_posted' && prepared && (
                 <>
-                  <button type="button" disabled={busy} onClick={() => void checkBuyer()}>Check the buyer key in the contract</button>
+                  <div><button type="button" disabled={busy} onClick={() => void checkBuyer()}>Check buyer key</button></div>
                   {buyerKey && (
-                    <div data-testid="buyer-key">
-                      <p>The key will be sealed to the voucher key of <code>{buyerKey.buyer}</code> per the contract, fingerprint <code data-testid="buyer-fingerprint">{buyerKey.fingerprint}</code>.</p>
-                      <button type="button" disabled={busy || voucherKey.trim() === '' || (prepared.document.verifiable && !(verdict !== null && verdict.listingHash === view.listingHash && verdict.verdict === 'valid' && (verdict.validUntilMs === null || verdict.validUntilMs > Date.now())))} onClick={() => void releaseKey()}>Release key to {buyerKey.buyer} (fingerprint {buyerKey.fingerprint})</button>
+                    <div data-testid="buyer-key" className="stack">
+                      <dl className="figures"><div><dt>Buyer key fingerprint</dt><dd data-testid="buyer-fingerprint">{buyerKey.fingerprint}</dd></div></dl>
+                      <p className="state">The key will be sealed to <code>{buyerKey.buyer}</code>, read from the contract.</p>
+                      <div><button type="button" disabled={busy || voucherKey.trim() === '' || (prepared.document.verifiable && !(verdict !== null && verdict.listingHash === view.listingHash && verdict.verdict === 'valid' && (verdict.validUntilMs === null || verdict.validUntilMs > Date.now())))} onClick={() => void releaseKey()}>Release key to buyer</button></div>
                     </div>
                   )}
                 </>
               )}
-              {view.status === 'confirmed' && <p className="state" role="status">Confirmed{view.autoConfirmed ? ' automatically' : ''}: the buyer voucher is released to you.</p>}
+              {view.status === 'confirmed' && <p className="state" role="status">Confirmed{view.autoConfirmed ? ' automatically' : ''}. The buyer&apos;s voucher is yours to register.</p>}
             </div>
           )}
         </QueryState>
@@ -214,8 +261,7 @@ function Warnings({ listing }: { listing: CodeListing }) {
     <>
       {!listing.verifiable && (
         <p className="state state-warn" role="note" data-testid="unverifiable-warning">
-          This code cannot be checked: the issuer <code>{listing.issuer}</code> has no check API, so nothing confirms the code is unused before you pay.
-          Your only protection is proof of mismatched content (a one-hour dispute after the key is released); a code that was already used can only be reported to reputation and payment still goes through. The code value is limited to {formatCredit(UNVERIFIABLE_CODE_LIMIT)} credit.
+          This code cannot be checked: nothing confirms it is unused before you pay. You can dispute wrong content for one hour after the key arrives. A used code can only be reported, and payment still goes through.
         </p>
       )}
       {listing.overLimit && (
@@ -286,25 +332,32 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
     }
   }
   return (
-    <div>
+    <div className="form">
+      <h2 className="card-title">Buy a code</h2>
       <label><span>Code listing hash</span><input value={hash} onChange={(e) => { setHash(e.target.value); setChecked(null) }} placeholder="64 hex" /></label>
-      <button type="button" disabled={!account || busy || !/^[0-9a-f]{64}$/.test(hash.trim())} onClick={() => void check()}>Check listing</button>
+      <div><button type="button" disabled={!account || busy || !/^[0-9a-f]{64}$/.test(hash.trim())} onClick={() => void check()}>Check listing</button></div>
       {checked && (
-        <div data-testid="code-summary">
-          <dl className="status-panel">
-            <dt>Code</dt><dd data-testid="code-hidden">hidden until purchased; commitment <code>{checked.listing.codeCommitment}</code></dd>
-            <dt>Value</dt><dd>{formatCredit(checked.listing.value)} credit</dd>
-            <dt>Issuer</dt><dd><code>{checked.listing.issuer}</code> · {checked.listing.verifiable ? 'checkable' : 'not checkable'}</dd>
-            <dt>Paid to</dt><dd><code>{checked.view.account}</code> · seller key fingerprint <code>{checked.fingerprint}</code></dd>
-            <dt>Price</dt><dd>{formatCredit(checked.view.offer.value)} credit</dd>
+        <div data-testid="code-summary" className="stack">
+          <dl className="figures">
+            <div><dt>Code value</dt><dd>{formatCredit(checked.listing.value)} credit</dd></div>
+            <div><dt>You pay</dt><dd>{formatCredit(checked.view.offer.value)} credit</dd></div>
           </dl>
+          <p className="state" data-testid="code-hidden"><Pill tone="info">Hidden</Pill> Code hidden until purchased.</p>
+          <p className="state">Issuer <code>{checked.listing.issuer}</code> <Pill tone={checked.listing.verifiable ? 'ok' : 'warn'}>{checked.listing.verifiable ? 'checkable' : 'not checkable'}</Pill></p>
+          <p className="state">You pay <code>{checked.view.account}</code>. Your payment is held until the code checks out.</p>
           <Warnings listing={checked.listing} />
-          <button type="button" disabled={busy || voucherKey.trim() === '' || checked.listing.overLimit} onClick={() => void buy()}>
-            Buy for {formatCredit(checked.view.offer.value)} credit from {checked.view.account} (voucher held by the backend)
-          </button>
+          <div><button type="button" disabled={busy || voucherKey.trim() === '' || checked.listing.overLimit} onClick={() => void buy()}>Buy for {formatCredit(checked.view.offer.value)} credit</button></div>
+          <details className="tech">
+            <summary>Technical details</summary>
+            <dl className="status-panel">
+              <dt>code_commitment</dt><dd><code>{checked.listing.codeCommitment}</code></dd>
+              <dt>Seller key fingerprint</dt><dd><code>{checked.fingerprint}</code></dd>
+            </dl>
+            <p>The voucher is not given to the seller: the backend registers it only after the code matches or on automatic confirmation.</p>
+            <p>A seller who sells the same code twice is not detected by hash: protect yourself with the one-hour dispute.</p>
+          </details>
         </div>
       )}
-      <small>The voucher is not given to the seller: the backend registers it only after the code matches or on automatic confirmation. A seller who sells the same code twice is not detected by hash: protect yourself with the one-hour dispute.</small>
       {error && <p className="state state-error" role="alert">{error}</p>}
     </div>
   )
@@ -364,11 +417,11 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
       const notice = purchaseNotice(CONTRACT_ID, query.data.purchaseId, account, action, now(), reason, proof)
       const answer = (await api.purchaseNotice(query.data.purchaseId, notice, await signPurchaseNotice(notice, voucherKey))) as { notDelivered?: boolean } | undefined
       if (answer?.notDelivered === true) {
-        setMessage('The backend could not fetch the ciphertext that the seller signed, so the sale is disputed and the voucher stays held: the seller is not paid.')
+        setMessage('The backend could not fetch the ciphertext that the seller signed. The sale is disputed, the voucher stays held, and the seller is not paid.')
         await client.invalidateQueries({ queryKey: ['purchase', open] })
         return
       }
-      setMessage(action === 'confirmed' ? 'Confirmed: the voucher will be registered.' : proof === null ? 'Complaint recorded in the seller reputation. This does not stop payment: the purchase is still confirmed automatically when the one-hour window ends.' : 'Dispute sent with proof.')
+      setMessage(action === 'confirmed' ? 'Confirmed: the voucher will be registered.' : proof === null ? 'Complaint recorded. This does not stop payment: the purchase still confirms automatically when the one-hour window ends.' : 'Dispute sent with proof.')
       await client.invalidateQueries({ queryKey: ['purchase', open] })
     } catch (e) {
       setError(describeMarketError(e))
@@ -378,70 +431,112 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
   }
 
   return (
-    <section className="form" aria-label="Code purchase">
-      <h3>Purchase (buyer)</h3>
+    <section aria-label="Code purchase" className="stack">
       <BuyForm voucherKey={voucherKey} onBought={(pid) => { setId(pid); setOpen(pid) }} />
-      <label><span>Purchase number</span><input value={id} onChange={(e) => setId(e.target.value)} /></label>
-      <div><button type="button" disabled={id.trim() === ''} onClick={() => setOpen(id.trim())}>Open purchase</button></div>
-      {open && (
-        <QueryState query={query} loadingLabel="Loading purchase">
-          {(view) => {
-            const left = disputeSecondsLeft(view.disputeUntil, tick)
-            const canDispute = view.status === 'key_released' && (left === null || left > 0)
-            return (
-              <div data-testid="purchase">
-                <p>Status: <strong>{STATUS_LABEL[view.status] ?? view.status}</strong></p>
-                {left !== null && view.status === 'key_released' && (
-                  <p data-testid="dispute-window" role="status">
-                    {left > 0 ? `Disputes open for ${minutes(left)} more (${CODE_DISPUTE_WINDOW_SECONDS / 60}-minute window); staying silent until then means automatic confirmation.` : 'The dispute window has passed: the purchase is confirmed automatically.'}
-                  </p>
-                )}
-                {view.source && <p>Source: <code>{view.source.kind}</code> <code>{view.source.ref}</code></p>}
-                {view.status === 'key_released' && (
-                  <>
-                    <p className="state" data-testid="seller-key-note">The seller public key is read from the contract when you press the button, not typed.</p>
-                    <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void receive()}>Download and check code</button>
-                    {sellerFingerprint && <p data-testid="seller-fingerprint">Seller key fingerprint from the contract: <code>{sellerFingerprint}</code></p>}
-                  </>
-                )}
-                {result?.state === 'ok' && (
-                  <div data-testid="code-ok">
-                    <p className="state" role="status">The code matches code_commitment. Confirm if you are satisfied; otherwise the purchase is confirmed automatically when the one-hour window ends.</p>
-                    {shown ? <p>Code: <code data-testid="code-value">{result.code}</code></p> : <button type="button" onClick={() => setShown(true)}>Show code</button>}
-                    <button type="button" disabled={busy} onClick={() => void notify('confirmed', null, null)}>Confirm</button>
-                  </div>
-                )}
-                {result?.state === 'cheated' && (
-                  <div data-testid="code-cheated">
-                    <p className="state state-error" role="alert">The code does not match ({result.reason}). Cheat proof is ready; a wrong code is not paid for.</p>
-                    <button type="button" disabled={busy || !canDispute} onClick={() => void notify('disputed', 'content_mismatch', proofForApi(result.proof))}>Dispute with proof</button>
-                  </div>
-                )}
-                {result?.state === 'refused' && <p className="state state-error" role="alert" data-testid="code-refused">{result.reason}</p>}
-                {view.status === 'key_released' && (
-                  <button type="button" disabled={busy || !canDispute} onClick={() => void notify('disputed', 'other', null)}>Report to reputation (does not stop payment)</button>
-                )}
-              </div>
-            )
-          }}
-        </QueryState>
-      )}
-      {message && <p className="state" role="status">{message}</p>}
-      {error && <p className="state state-error" role="alert">{error}</p>}
+      <div className="form">
+        <h2 className="card-title">Your purchase</h2>
+        <label><span>Purchase number</span><input value={id} onChange={(e) => setId(e.target.value)} /></label>
+        <div><button type="button" disabled={id.trim() === ''} onClick={() => setOpen(id.trim())}>Open purchase</button></div>
+        {open && (
+          <QueryState query={query} loadingLabel="Loading purchase">
+            {(view) => {
+              const left = disputeSecondsLeft(view.disputeUntil, tick)
+              const canDispute = view.status === 'key_released' && (left === null || left > 0)
+              return (
+                <div data-testid="purchase" className="stack">
+                  <PurchaseCard id={view.purchaseId} status={view.status}>{BUYER_HINT[view.status]}</PurchaseCard>
+                  {left !== null && view.status === 'key_released' && (
+                    <p className="state" data-testid="dispute-window" role="status">
+                      {left > 0 ? `Disputes open for ${minutes(left)}. No reply by then confirms automatically.` : 'The dispute window has passed: the purchase is confirmed automatically.'}
+                    </p>
+                  )}
+                  {view.status === 'key_released' && (
+                    <>
+                      <p className="state" data-testid="seller-key-note">The seller key is read from the contract, not typed.</p>
+                      <div><button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void receive()}>Download and check code</button></div>
+                      {sellerFingerprint && <dl className="figures"><div><dt>Seller key fingerprint</dt><dd data-testid="seller-fingerprint">{sellerFingerprint}</dd></div></dl>}
+                    </>
+                  )}
+                  {result?.state === 'ok' && (
+                    <div data-testid="code-ok" className="stack">
+                      <p className="state" role="status"><Pill tone="ok">Matches</Pill> The code matches the listing. Confirm to release your payment, or do nothing and it confirms when the window ends.</p>
+                      {shown && <dl className="figures"><div><dt>Your code</dt><dd><code data-testid="code-value" style={{ fontSize: '1em' }}>{result.code}</code></dd></div></dl>}
+                      <div className="actions">
+                        <button type="button" disabled={busy} onClick={() => void notify('confirmed', null, null)}>Confirm</button>
+                        {!shown && <button type="button" className="quiet" onClick={() => setShown(true)}>Show code</button>}
+                      </div>
+                    </div>
+                  )}
+                  {result?.state === 'cheated' && (
+                    <div data-testid="code-cheated" className="stack">
+                      <p className="state state-error" role="alert">Wrong code ({result.reason}). The proof is ready, so a wrong code is not paid for.</p>
+                      <div><button type="button" disabled={busy || !canDispute} onClick={() => void notify('disputed', 'content_mismatch', proofForApi(result.proof))}>Dispute with proof</button></div>
+                    </div>
+                  )}
+                  {result?.state === 'refused' && <p className="state state-error" role="alert" data-testid="code-refused">{result.reason}</p>}
+                  {view.status === 'key_released' && (
+                    <div><button type="button" className="quiet" disabled={busy || !canDispute} onClick={() => void notify('disputed', 'other', null)}>Report to reputation (does not stop payment)</button></div>
+                  )}
+                  {view.source && (
+                    <details className="tech">
+                      <summary>Technical details</summary>
+                      <dl className="status-panel">
+                        <dt>Source</dt><dd><code>{view.source.kind}</code> <code>{view.source.ref}</code></dd>
+                      </dl>
+                    </details>
+                  )}
+                </div>
+              )
+            }}
+          </QueryState>
+        )}
+        {message && <p className="state" role="status">{message}</p>}
+        {error && <p className="state state-error" role="alert">{error}</p>}
+      </div>
     </section>
   )
 }
 
+type View = 'buy' | 'sell' | 'deliver'
+const VIEWS: ReadonlyArray<readonly [View, string]> = [['buy', 'Buy'], ['sell', 'Sell'], ['deliver', 'Deliver']]
+
 export function Codes() {
+  const { account } = useWallet()
   const [voucherKey, setVoucherKey] = useState('')
   const [prepared, setPrepared] = useState<PreparedCode | null>(null)
+  const [view, setView] = useState<View>('buy')
   return (
     <>
-      <h2>One-time codes</h2>
-      <p className="state">What is sold is a single code that can be used only once. The code is encrypted and hidden until purchased; the key is released to the buyer after they pay (voucher held), and disputes are open for one hour after that.</p>
-      <Seller voucherKey={voucherKey} onVoucherKey={setVoucherKey} onPrepared={setPrepared} />
-      <Serve voucherKey={voucherKey} onVoucherKey={setVoucherKey} prepared={prepared} />
-      <Buyer voucherKey={voucherKey} />
+      <div className="page-lead">
+        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+          <NavIcon name="/codes" size={22} />
+        </span>
+        <p>Buy or sell a single-use code. It stays hidden until you pay.</p>
+        <ol className="lead-steps" aria-label="How it works">
+          <li>Seller prepares</li>
+          <li>Buyer pays</li>
+          <li>Key released</li>
+          <li>Buyer checks</li>
+        </ol>
+      </div>
+      {!account && <SignInPrompt action="buy or sell codes" />}
+      <div className="views" data-view={view}>
+        <div className="segmented views-toggle" role="group" aria-label="Code view">
+          {VIEWS.map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} onClick={() => setView(key)}>{label}</button>)}
+        </div>
+        <div className="form" style={{ marginBottom: '1rem' }}>
+          <VoucherKeyField value={voucherKey} onChange={setVoucherKey} disabled={!account} />
+        </div>
+        <section className="views-pane" data-pane="buy" data-active={view === 'buy'} aria-label="Buy a code">
+          <Buyer voucherKey={voucherKey} />
+        </section>
+        <section className="views-pane" data-pane="sell" data-active={view === 'sell'} aria-label="Sell a code">
+          <Seller onPrepared={setPrepared} onDeliver={() => setView('deliver')} />
+        </section>
+        <section className="views-pane" data-pane="deliver" data-active={view === 'deliver'} aria-label="Deliver a sale">
+          <Serve voucherKey={voucherKey} onVoucherKey={setVoucherKey} prepared={prepared} />
+        </section>
+      </div>
     </>
   )
 }

@@ -1,6 +1,7 @@
 import { useDaoProposals, useParams, useParamsHistory, useRelayerFeeEvents } from '../api/queries'
 import type { DaoProposal, Params } from '../api/types'
 import { NEAR_NETWORK } from '../config'
+import { NavIcon } from '../components/icons'
 import { QueryState } from '../components/QueryState'
 import { formatCredit, formatNumber } from '../lib/format'
 
@@ -61,30 +62,51 @@ export function tally(votes: DaoProposal['votes']): { approve: number; reject: n
   return total
 }
 
+// FE-073: a change reads as "Payment window: 45 minutes", not as the contract field.
+const labelOf = (key: string) => rows.find((r) => r.key === key)?.label ?? key
 const describeParams = (params: DaoProposal['params']) =>
   params === null
     ? '-'
     : Object.entries(params)
-        .map(([key, value]) => `${key} = ${formatField(key, value)}`)
+        .map(([key, value]) => `${labelOf(key)}: ${formatField(key, value)}`)
         .join(', ')
+
+const PROPOSAL_TONE: Partial<Record<DaoProposal['status'], string>> = { InProgress: 'info', Approved: 'ok', Rejected: 'bad', Failed: 'bad' }
+
+// FE-073: the rules in four groups a member thinks in, instead of one long table of contract fields.
+const RULE_GROUPS: { title: string; keys: Key[] }[] = [
+  { title: 'Timing', keys: ['epoch_length', 'payment_window', 'proposal_window', 'prune_delay_epochs'] },
+  { title: 'Credit limits', keys: ['base_limit_ratio', 'limit_growth', 'limit_cap', 'limit_decay'] },
+  { title: 'Fees and bonds', keys: ['fees', 'bond_threshold', 'bond_bps', 'relayer_fee'] },
+  { title: 'Joining and search', keys: ['admission', 'max_search_share_bps'] },
+]
+
+// FE-073: the change the DAO already approved, before it starts; the first thing a member needs to know.
+function ComingUp() {
+  const params = useParams()
+  const next = params.data?.nextEpoch
+  if (!next || params.data?.nextEpochEffective == null) return null
+  const active = params.data.active
+  return (
+    <section className="rule-next" aria-label="Next epoch parameters">
+      <p className="rule-next-title">Effective from epoch {params.data.nextEpochEffective}</p>
+      <ul>
+        {Object.entries(next).map(([key, value]) => (
+          <li key={key}>
+            <strong>{labelOf(key)}</strong> {formatField(key, active[key as Key])} becomes {formatField(key, value)}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
 
 // FE-015: Sputnik DAO `set_params` proposals. Read only; votes are cast in the DAO, not on this page.
 function DaoProposals() {
   const proposals = useDaoProposals()
-  const params = useParams()
-  const next = params.data?.nextEpoch
   return (
     <>
       <h2>DAO proposals</h2>
-      {next && params.data?.nextEpochEffective != null && (
-        <p className="state" aria-label="Next epoch parameters">
-          Effective from epoch {params.data.nextEpochEffective}:{' '}
-          {Object.entries(next)
-            .map(([key, value]) => `${key} = ${formatField(key, value)}`)
-            .join(', ')}
-          .
-        </p>
-      )}
       <QueryState
         query={proposals}
         loadingLabel="Loading DAO proposals"
@@ -99,11 +121,11 @@ function DaoProposals() {
               <table aria-label={label}>
                 <thead>
                   <tr>
-                    <th scope="col" className="num">ID</th>
-                    <th scope="col">Status</th>
+                    <th scope="col" className="num">#</th>
                     <th scope="col">Change</th>
-                    <th scope="col">Proposer</th>
-                    <th scope="col" className="num">Votes (approve / reject / remove)</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Proposed by</th>
+                    <th scope="col" className="num">For / against / remove</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -116,11 +138,15 @@ function DaoProposals() {
                             {p.id}
                           </a>
                         </td>
-                        <td>{STATUS_LABEL[p.status] ?? p.status}</td>
                         <td>
-                          <code className="plain">set_params</code> {describeParams(p.params)}
+                          <strong>{describeParams(p.params)}</strong>
                           <br />
-                          <small>{p.description}</small>
+                          <small className="muted">{p.description}</small>
+                        </td>
+                        <td>
+                          <span className="pill" data-tone={PROPOSAL_TONE[p.status]}>
+                            {STATUS_LABEL[p.status] ?? p.status}
+                          </span>
                         </td>
                         <td>{p.proposer}</td>
                         <td className="num">{`${t.approve} / ${t.reject} / ${t.remove}`}</td>
@@ -133,8 +159,8 @@ function DaoProposals() {
           )
           return (
             <>
-              <p>
-                DAO: <a href={`${EXPLORER_ACCOUNT}${data.dao}`} target="_blank" rel="noreferrer">{data.dao}</a>. Votes are cast in the DAO by council members.
+              <p className="state">
+                The council votes in <a href={`${EXPLORER_ACCOUNT}${data.dao}`} target="_blank" rel="noreferrer">{data.dao}</a>, not on this page.
               </p>
               {open.length === 0 ? <p className="state">No open proposals.</p> : table(open, 'Open proposals')}
               {closed.length > 0 && (
@@ -156,9 +182,10 @@ const EXPLORER_TX = NEAR_NETWORK === 'mainnet' ? 'https://nearblocks.io/txns/' :
 // FE-043: contract 0.0.16 pays a relayer fee on `claim_evm` and `withdraw_stake_evm`; a transfer of the fee that fails is not paid and the member keeps it. Older circles have no such events.
 function RelayerFees() {
   const events = useRelayerFeeEvents()
+  // FE-073: only EVM members meet this fee; it folds away so the rules come first
   return (
-    <>
-      <h2>Relayer fees</h2>
+    <details className="tech">
+      <summary>Relayer fees</summary>
       <QueryState
         query={events}
         loadingLabel="Loading relayer fees"
@@ -205,7 +232,7 @@ function RelayerFees() {
           </>
         )}
       </QueryState>
-    </>
+    </details>
   )
 }
 
@@ -214,37 +241,44 @@ export function Governance() {
   const history = useParamsHistory()
   return (
     <>
+      <div className="page-lead">
+        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#8b6cf0' }}>
+          <NavIcon name="/governance" size={22} />
+        </span>
+        <p>The rules every member trades under. The DAO council changes them by vote, and a change starts at a later epoch, never mid-trade.</p>
+      </div>
+      <ComingUp />
+      <h2>Current rules</h2>
       <QueryState query={params} loadingLabel="Loading parameters">
         {(data) => (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Parameter</th>
-                  <th scope="col">Contract name</th>
-                  <th scope="col" className="num">Active value</th>
-                  <th scope="col">Pending change</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(({ key, label, format }) => {
-                  const next = data.nextEpoch?.[key]
-                  return (
-                    <tr key={key}>
-                      <td>{label}</td>
-                      <td>
-                        <code className="plain">{key}</code>
-                      </td>
-                      <td className="num">{formatField(key, data.active[key])}</td>
-                      <td>
-                        {next !== undefined &&
-                          `${format(next as never)}, effective from epoch ${data.nextEpochEffective}`}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <div className="rule-groups">
+            {RULE_GROUPS.map((group) => (
+              <div className="table-wrap" key={group.title}>
+                <table className="rules" aria-label={group.title}>
+                  <caption>{group.title}</caption>
+                  <tbody>
+                    {group.keys.map((key) => {
+                      const { label, format } = rows.find((r) => r.key === key)!
+                      const next = data.nextEpoch?.[key]
+                      return (
+                        <tr key={key}>
+                          <th scope="row">
+                            {label}
+                            <code className="plain muted">{key}</code>
+                          </th>
+                          <td className="num">
+                            {formatField(key, data.active[key])}
+                            {next !== undefined && (
+                              <span className="pill" data-tone="warn">{`${format(next as never)}, effective from epoch ${data.nextEpochEffective}`}</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ))}
           </div>
         )}
       </QueryState>
@@ -272,7 +306,8 @@ export function Governance() {
                 {data.items.map((item) => (
                   <tr key={`${item.blockHeight}-${item.field}`}>
                     <td>
-                      <code className="plain">{item.field}</code>
+                      {labelOf(item.field)}
+                      <code className="plain muted">{item.field}</code>
                     </td>
                     <td className="num">{formatField(item.field, item.oldValue)}</td>
                     <td className="num">{formatField(item.field, item.newValue)}</td>

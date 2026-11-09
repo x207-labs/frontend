@@ -8,8 +8,11 @@ const luminance = (hex: string): number => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 // FE-067 (dark theme): a token such as --accent-soft is translucent, rgb(r g b / a); blend it over a solid token to get the colour the eye sees.
+// FE-073: surfaces became solid hex colours; a solid token is already the colour the eye sees.
 const blend = (name: string, over: string): string => {
-  const m = new RegExp(`--${name}:\\s*rgb\\((\\d+) (\\d+) (\\d+) / ([0-9.]+)\\)`).exec(css)
+  const solid = new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`).exec(css)?.[1]
+  if (solid) return solid
+  const m =new RegExp(`--${name}:\\s*rgb\\((\\d+) (\\d+) (\\d+) / ([0-9.]+)\\)`).exec(css)
   if (!m) throw new Error(`translucent token ${name} not found`)
   const a = Number(m[4])
   const hex = (n: number): string => Math.round(n).toString(16).padStart(2, '0')

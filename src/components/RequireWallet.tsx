@@ -39,8 +39,6 @@ export function RequireWallet({ title, children }: { title: string; children: Re
   return (
     <section className="gate" aria-label={`${title}: sign in`}>
       <div className="gate-art" aria-hidden="true">
-        <span className="gate-ring" />
-        <span className="gate-ring gate-ring-2" />
         <span className="gate-tile">
           <NavIcon name={page?.path ?? 'account'} size={44} />
         </span>

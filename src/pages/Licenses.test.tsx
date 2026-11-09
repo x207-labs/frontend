@@ -82,7 +82,7 @@ describe('FE-028 content license', () => {
     const file = new File([data], 'data.csv', { type: 'text/csv' })
     fireEvent.change(within(form).getByLabelText(/^File/), { target: { files: [file] } })
     await user.type(within(form).getByLabelText(/^License text/), 'personal use only')
-    await user.click(within(form).getByRole('button', { name: 'Compute hash and encrypt' }))
+    await user.click(within(form).getByRole('button', { name: 'Encrypt and prepare' }))
     const out = await screen.findByTestId('license-prepared')
     expect(out).toHaveTextContent(contentHash(data))
     expect(JSON.parse(screen.getByTestId('license-detail').textContent!)).toMatchObject({ content_hash: contentHash(data), asset_type: 'data:dataset' })
@@ -188,7 +188,7 @@ describe('FE-028 content license', () => {
     expect(summary).toHaveTextContent(SELLER)
     expect(summary).toHaveTextContent('5 credit')
     expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/'))).toHaveLength(0) // nothing signed before the click on the button with the payee and the price
-    await user.click(within(summary).getByRole('button', { name: `Buy for 5 credit from ${SELLER} (voucher held by the backend)` }))
+    await user.click(within(summary).getByRole('button', { name: 'Buy for 5 credit' }))
     await waitFor(() => expect(requests().some((r) => r.method === 'POST' && r.path.endsWith('/purchases'))).toBe(true))
     const post = requests().find((r) => r.method === 'POST' && r.path.endsWith('/purchases'))!
     expect(post.body.voucher).toMatchObject({ payer: BUYER, payee: SELLER, epoch: 42, seq: 4, cumulativeAmount: '7000000', unit: 'credit', resource: `x207:license:${'d'.repeat(64)}` })
@@ -254,12 +254,12 @@ describe('FE-028 content license', () => {
     fireEvent.change(within(form).getByLabelText(/^File/), { target: { files: [new File([data], 'd.csv')] } })
     await user.type(within(form).getByLabelText(/^License text/), 'terms')
     await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
-    await user.click(within(form).getByRole('button', { name: 'Compute hash and encrypt' }))
+    await user.click(within(form).getByRole('button', { name: 'Encrypt and prepare' }))
     await screen.findByTestId('license-prepared')
     const serve = screen.getByRole('region', { name: 'Serve purchase' })
     await user.type(within(serve).getByLabelText('Purchase number'), 'p7')
     await user.click(within(serve).getByRole('button', { name: 'Open purchase' }))
-    await user.click(await within(serve).findByRole('button', { name: 'Check the buyer key in the contract' }))
+    await user.click(await within(serve).findByRole('button', { name: 'Check buyer key' }))
     expect(await within(serve).findByText(/is not an active member in the contract/)).toBeInTheDocument()
     expect(within(serve).queryByTestId('buyer-key')).not.toBeInTheDocument()
   })
@@ -295,7 +295,7 @@ describe('FE-028 content license', () => {
     await user.type(within(form).getByLabelText('Listing hash'), 'a'.repeat(64))
     await user.type(within(form).getByLabelText(/^Statement/), 'I own the rights')
     await user.type(within(form).getByLabelText(/^Proof of ownership/), 'https://registry.example/work/1')
-    await user.click(within(form).getByRole('button', { name: /file takedown/ }))
+    await user.click(within(form).getByRole('button', { name: /File takedown/ }))
     await within(form).findByText(/Takedown filed/)
     const post = requests().find((r) => r.method === 'POST')!
     expect(post.path).toContain(`/listings/${'a'.repeat(64)}/takedown`)
@@ -337,7 +337,7 @@ describe('FE-028 content license', () => {
     fireEvent.change(within(form).getByLabelText(/^File/), { target: { files: [new File([data], 'd.csv')] } })
     await user.type(within(form).getByLabelText(/^License text/), 'personal use only')
     await user.type(screen.getAllByLabelText(/Voucher key/)[0]!, KEY)
-    await user.click(within(form).getByRole('button', { name: 'Compute hash and encrypt' }))
+    await user.click(within(form).getByRole('button', { name: 'Encrypt and prepare' }))
     await screen.findByTestId('license-prepared')
     const serve = screen.getByRole('region', { name: 'Serve purchase' })
     await user.type(within(serve).getByLabelText('Purchase number'), 'p7')
@@ -345,15 +345,15 @@ describe('FE-028 content license', () => {
     await within(serve).findByTestId('serve')
     await user.type(within(serve).getByLabelText('Address or CID'), 'https://cdn.example.com/d.enc')
     status = 'cipher_posted' // what the book answers once the notice is in: the page reads it again
-    await user.click(within(serve).getByRole('button', { name: 'Record ciphertext' }))
-    await within(serve).findByText('Ciphertext recorded.')
+    await user.click(within(serve).getByRole('button', { name: 'Save location' }))
+    await within(serve).findByText('Location saved.')
     const posted = requests().find((r) => r.method === 'POST' && r.path.includes('/purchases/p7'))!
     expect(posted.body.notice).toMatchObject({ purchase_id: 'p7', actor: SELLER, action: 'cipher_posted', source: { kind: 'https', ref: 'https://cdn.example.com/d.enc' }, cipher_hash: expect.stringMatching(/^[0-9a-f]{64}$/) })
     expect(Object.keys(posted.body.notice)).toEqual(['circle', 'purchase_id', 'actor', 'action', 'at', 'source', 'cipher_hash'])
-    await user.click(await within(serve).findByRole('button', { name: 'Check the buyer key in the contract' }))
+    await user.click(await within(serve).findByRole('button', { name: 'Check buyer key' }))
     const fingerprint = (await within(serve).findByTestId('buyer-fingerprint')).textContent!
     expect(fingerprint).toMatch(/^[0-9a-f]{4}( [0-9a-f]{4}){3}$/)
-    await user.click(await within(serve).findByRole('button', { name: `Release key to ${BUYER} (fingerprint ${fingerprint})` }))
+    await user.click(await within(serve).findByRole('button', { name: 'Release key to buyer' }))
     await within(serve).findByText(/Key released to the buyer/)
     const released = requests().filter((r) => r.method === 'POST' && r.path.includes('/purchases/p7'))[1]!
     // the notice is a LicenseRelease: the buyer's SDK opens it, and nothing in the request holds the key of the file or the key of the voucher

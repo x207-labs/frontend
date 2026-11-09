@@ -6,7 +6,7 @@ import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { signMessageWithVoucher } from '../lib/barter'
 import { toAtomic, fromAtomic } from '../lib/amount'
-import { formatCredit } from '../lib/format'
+import { formatCredit, formatTime } from '../lib/format'
 import { describeMarketError } from '../lib/marketError'
 import { useWallet } from '../wallet/WalletContext'
 
@@ -38,6 +38,7 @@ export function granteeRefProblem(provider: string, ref: string): string | null 
   return null
 }
 const STATUS_LABEL: Record<string, string> = { active: 'Active', revoke_pending: 'Revocation pending', revoked: 'Revoked' }
+const STATUS_TONE: Record<string, { tone: 'ok' | 'warn' | 'bad'; hex: string }> = { active: { tone: 'ok', hex: '#2f9e5b' }, revoke_pending: { tone: 'warn', hex: '#c98a12' }, revoked: { tone: 'bad', hex: '#c4455a' } }
 const now = () => Math.floor(Date.now() / 1000)
 
 function Offer() {
@@ -75,9 +76,9 @@ function Offer() {
       </div>
       <div className="field-pair">
         <label><span>Price per day (credit)</span><input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" /></label>
-        <label><span>Daily spending cap{info.costly ? ' · required' : ' · optional'}</span><input value={cap} onChange={(e) => setCap(e.target.value)} inputMode="decimal" /></label>
+        <label><span>Daily spending cap {info.costly ? '(required)' : '(optional)'}</span><input value={cap} onChange={(e) => setCap(e.target.value)} inputMode="decimal" /></label>
       </div>
-      <label><span>Lessee reference · optional</span><input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={provider === 'ssh' ? 'ssh-ed25519 AAAA…' : provider === 'discord' ? '123456789012345678' : 'Empty: the lessee fills it in'} /></label>
+      <label><span>Lessee reference (optional)</span><input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={provider === 'ssh' ? 'ssh-ed25519 AAAA…' : provider === 'discord' ? '123456789012345678' : 'Empty: the lessee fills it in'} /></label>
       {problem && <p className="state state-error" role="alert" data-testid="rent-offer-error">{problem}</p>}
       {!problem && (
         <>
@@ -112,14 +113,15 @@ function ProofState({ proof, warnings }: { proof: string | null; warnings: strin
   const kind = proofKind(proof)
   const warned = warnings.includes('grantee_unproven')
   const text = {
-    verified: 'Reference proven: the broker has checked that you control it.',
-    unproven: `Reference not yet proven (${proof}). Access is opened with the grantee_unproven warning; anyone who knows that account name cannot be told apart from you.`,
-    not_applicable: 'This provider has no way to prove who owns the reference, so there is no proof statement. Access is opened with the grantee_unproven warning; this is not a proof failure.',
+    verified: 'Reference proven. The broker checked that you control it.',
+    unproven: `Reference not yet proven (${proof}). Access opens with the grantee_unproven warning, and anyone using that name looks like you.`,
+    not_applicable: 'This provider has no way to prove ownership. The grantee_unproven warning is expected; this is not a proof failure.',
     unknown: 'No proof statement from the broker yet.',
   }[kind]
+  const pill = { verified: ['ok', 'Proven'], unproven: ['bad', 'Not proven'], not_applicable: ['info', 'Not applicable'], unknown: ['info', 'No statement'] }[kind]
   return (
     <p role="status" data-testid="rent-proof-state" data-proof={kind} className={kind === 'unproven' ? 'state state-error' : 'state'}>
-      {text}{warned && kind === 'verified' ? ' (the broker still gives a warning.)' : ''}
+      <span className="pill" data-tone={pill[0]}>{pill[1]}</span> {text}{warned && kind === 'verified' ? ' The broker still shows a warning.' : ''}
     </p>
   )
 }
@@ -172,23 +174,32 @@ function GranteeProofPanel({ view, voucherKey, account }: { view: RentView; vouc
     }
   }
   return (
-    <div data-testid="rent-proof-panel">
-      <h4>Proof of reference ownership</h4>
+    <div className="actions" data-testid="rent-proof-panel">
+      <h3>Reference ownership</h3>
       <ProofState proof={view.proof ?? null} warnings={view.warnings ?? []} />
       {kind === null && <p className="state">This provider does not use proof from this page.</p>}
-      {kind === 'oauth' && <p className="state">Discord proof via OAuth is made on the provider side; this page does not store OAuth tokens.</p>}
+      {kind === 'oauth' && <p className="state">Discord proves ownership with OAuth on the provider side. This page stores no tokens.</p>}
       {(kind === 'near-gist' || kind === 'ssh-signature') && (
         <>
-          <div><button type="button" onClick={() => void fetchChallenge()}>Fetch challenge from broker</button></div>
-          {challenge && !challenge.required && <p className="state" data-testid="rent-challenge-none">The broker does not ask for proof for this grant.</p>}
+          <div><button type="button" className="quiet" onClick={() => void fetchChallenge()}>Fetch challenge from broker</button></div>
+          {challenge && !challenge.required && <p className="state" data-testid="rent-challenge-none">The broker asks for no proof for this grant.</p>}
           {challenge?.required && (
             <>
-              <pre data-testid="rent-challenge">{challenge.challenge}</pre>
-              <p className="state">Valid until {challenge.expiresAt}. The first proof checked uses up this challenge; a proof cannot be retried.</p>
+              <p className="state state-warn" role="note">Valid until {challenge.expiresAt}. One try only: the first proof checked uses up this challenge.</p>
+              <details className="tech">
+                <summary>Challenge text</summary>
+                <pre data-testid="rent-challenge">{challenge.challenge}</pre>
+              </details>
               {kind === 'near-gist' ? (
                 <>
                   <div><button type="button" disabled={voucherKey.trim() === ''} onClick={makeContent}>Sign for gist</button></div>
-                  {content && <><p>Content of the public gist owned by GitHub account <code>{view.granteeRef}</code> (one file):</p><pre data-testid="rent-gist-content">{content}</pre></>}
+                  {content && (
+                    <details className="tech" open>
+                      <summary>Gist content</summary>
+                      <p>Put this in one file of a public gist owned by GitHub account <code>{view.granteeRef}</code>.</p>
+                      <pre data-testid="rent-gist-content">{content}</pre>
+                    </details>
+                  )}
                   <label><span>Gist ID</span><input value={gist} onChange={(e) => setGist(e.target.value)} placeholder="0123abcd…" /></label>
                 </>
               ) : (
@@ -197,7 +208,13 @@ function GranteeProofPanel({ view, voucherKey, account }: { view: RentView; vouc
               <div><button type="button" disabled={kind === 'near-gist' ? gist.trim() === '' : signature.trim() === ''} onClick={makeProof}>Build proof</button></div>
             </>
           )}
-          {proof && <><p>Send this text as <code>proof</code> on <code>POST /grants/{view.grantId}/access</code> on the first day (your x402 client or agent):</p><pre data-testid="rent-proof">{proof}</pre></>}
+          {proof && (
+            <details className="tech" open>
+              <summary>Proof text</summary>
+              <p>Your x402 client or agent sends this as <code>proof</code> on <code>POST /grants/{view.grantId}/access</code> on the first day.</p>
+              <pre data-testid="rent-proof">{proof}</pre>
+            </details>
+          )}
           {error && <p className="state state-error" role="alert" data-testid="rent-proof-error">{error}</p>}
         </>
       )}
@@ -230,7 +247,7 @@ function Renter({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey
     if (!view) return
     try {
       await checkAccessBeforeNextDay({ grantId: view.grantId, view: { grantId: view.grantId, status: view.status, paidUntil: Date.parse(view.paidUntil) }, nowMs: Date.now() })
-      setCheck({ ok: true, text: `The broker reports access running until ${view.paidUntil}. That is the broker's statement, not proof from the provider (the broker may revoke earlier): try the access directly with the provider today, then pay for the next day only once a day through your x402 client or agent.` })
+      setCheck({ ok: true, text: `The broker reports access until ${formatTime(view.paidUntil)}. That is its word, not proof from the provider. Try the access with the provider today, then pay for the next day through your x402 client or agent.` })
     } catch (e) {
       setCheck({ ok: false, text: e instanceof RentError ? `${e.code}: the next day is not paid.` : String(e) })
     }
@@ -242,31 +259,49 @@ function Renter({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey
       const notice = { circle: CONTRACT_ID, grant_id: view.grantId, actor: account, action: 'stop', at: now() }
       const next = await api.stopRent(view.grantId, notice, await signMessageWithVoucher(JSON.stringify(notice), CONTRACT_ID, voucherKey))
       setView(next)
-      setMessage('Stop-rent sent: access is revoked at the end of today or now.')
+      setMessage('Stop-rent sent. Access ends today or sooner.')
     } catch (e) {
       setError(describeMarketError(e))
     }
   }
   return (
     <section className="form" aria-label="My access">
-      <h3>My access (lessee)</h3>
+      <h2 className="sr-only">My rentals</h2>
       <label><span>Grant number</span><input value={id} onChange={(e) => setId(e.target.value)} inputMode="numeric" /></label>
       <div><button type="button" disabled={!valid} onClick={() => void load()}>View access</button></div>
       {view && (
-        <div data-testid="rent-view">
-          <dl className="status-panel">
-            <dt>Provider</dt><dd>{view.provider} · <code>{view.granteeRef}</code></dd>
-            <dt>Status</dt><dd>{STATUS_LABEL[view.status] ?? view.status}{view.reason ? ` (${view.reason})` : ''}</dd>
-            <dt>Paid until</dt><dd>{view.paidUntil}</dd>
-            <dt>Real cost today</dt><dd data-testid="rent-today">{view.today?.cost == null ? 'no cost' : `${formatCredit(view.today.cost)} credit`}{view.today?.billed != null && ` · billed ${formatCredit(view.today.billed)}`}</dd>
+        <div className="actions" data-testid="rent-view">
+          <ul className="item-cards">
+            <li className="item-card">
+              <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: STATUS_TONE[view.status]?.hex ?? '#3d78d6' }}>{PROVIDERS[view.provider]?.glyph ?? '◎'}</span>
+              <p className="item-title">{PROVIDERS[view.provider]?.short ?? view.provider} <code>{view.granteeRef.length > 30 ? `${view.granteeRef.slice(0, 16)}…${view.granteeRef.slice(-10)}` : view.granteeRef}</code></p>
+              <span className="pill" data-tone={STATUS_TONE[view.status]?.tone ?? 'info'}>{STATUS_LABEL[view.status] ?? view.status}</span>
+              {view.reason && <p className="item-meta">Reason: {view.reason}</p>}
+            </li>
+          </ul>
+          <dl className="figures">
+            <div><dt>Paid until</dt><dd>{formatTime(view.paidUntil)}</dd></div>
+            <div><dt>Cost today</dt><dd data-testid="rent-today">{view.today?.cost == null ? 'no cost' : `${formatCredit(view.today.cost)} credit`}</dd></div>
+            {view.today?.billed != null && <div><dt>Billed</dt><dd>{formatCredit(view.today.billed)} credit</dd></div>}
           </dl>
           {view.revokePending && <p className="state state-error" role="status">Revocation pending: attempt {view.revokePending.attempts}{view.revokePending.lastError ? ` (${view.revokePending.lastError})` : ''}.</p>}
-          <div className="actions">
-            <button type="button" onClick={() => void checkNext()}>Check before paying the next day</button>
-            <button type="button" disabled={!account || voucherKey.trim() === '' || view.status === 'revoked'} onClick={() => void stop()}>Stop rent</button>
-          </div>
-          {check && <p className={check.ok ? 'state' : 'state state-error'} role="status" data-testid="rent-check">{check.text}</p>}
+          {check && (
+            <p className={check.ok ? 'state' : 'state state-error'} role="status" data-testid="rent-check">
+              <span className="pill" data-tone={check.ok ? 'ok' : 'bad'}>{check.ok ? 'Access running' : 'Not paid'}</span> {check.text}
+            </p>
+          )}
           <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
+          <button type="button" onClick={() => void checkNext()}>Check before paying</button>
+          <button type="button" className="quiet" disabled={!account || voucherKey.trim() === '' || view.status === 'revoked'} onClick={() => void stop()}>Stop rent</button>
+          <details className="tech">
+            <summary>Technical details</summary>
+            <dl className="status-panel">
+              <dt>Grant</dt><dd>{view.grantId}</dd>
+              <dt>Provider</dt><dd>{view.provider}</dd>
+              <dt>Reference</dt><dd><code>{view.granteeRef}</code></dd>
+              <dt>Paid until</dt><dd>{view.paidUntil}</dd>
+            </dl>
+          </details>
           <GranteeProofPanel view={view} voucherKey={voucherKey} account={account} />
         </div>
       )}

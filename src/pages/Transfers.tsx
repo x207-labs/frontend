@@ -5,6 +5,7 @@ import { viewContract } from '../api/chain'
 import { useTransfer } from '../api/queries'
 import type { ListingView } from '../api/types'
 import type { TransferView } from '../api/transferView'
+import { NavIcon } from '../components/icons'
 import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
@@ -25,16 +26,27 @@ import type { TransferPlatform } from '@x207/core'
 // FE-033: transfer through the official feature of a platform (P4, ADR-49): a domain, a game item or a ticket. x207 holds the voucher of the buyer until the platform shows that the
 // transfer happened. The seller lists with a document whose hash the buyer can check; for a domain the seller proves control with a DNS TXT record before the listing, and the buyer
 // proves the transfer with a second TXT record after it. The backend asks DNS, RDAP or Steam: the browser asks nothing of a platform. The limits are written on the page.
+// FE-073: one role at a time (Buy, Sell, Track); every pane stays in the page and only hides with CSS.
 const now = () => Math.floor(Date.now() / 1000)
-const STATUS_LABEL: Record<string, string> = { paid_held: 'Paid, voucher held', confirmed: 'Confirmed: the proof is met', cancelled: 'Cancelled: the voucher never moved' }
+type Tone = 'ok' | 'warn' | 'bad' | 'info'
+const TONE_HEX: Record<Tone, string> = { ok: '#2f9e5b', warn: '#c98a12', bad: '#c4455a', info: '#3d78d6' }
+const tone = (hex: string) => ({ ['--tone' as string]: hex })
+const STATUS: Record<string, { label: string; tone: Tone }> = {
+  paid_held: { label: 'Paid, on hold', tone: 'info' },
+  confirmed: { label: 'Confirmed', tone: 'ok' },
+  cancelled: { label: 'Cancelled', tone: 'bad' },
+}
+const PROOF_SHORT: Record<string, string> = { dns_txt: 'DNS TXT record', trade_api: 'Steam trade offer', buyer_confirm: 'Buyer confirmation' }
 const heldId = (id: string) => `t:${id}`
 const minutes = (seconds: number): string => (seconds >= 86_400 ? `${Math.floor(seconds / 86_400)} d ${Math.floor((seconds % 86_400) / 3_600)} h` : `${Math.floor(seconds / 3_600)} h ${Math.floor((seconds % 3_600) / 60)} min`)
-const TICKET_LEGAL = 'Reselling a ticket can be limited or forbidden by local law and by the terms of the ticket seller (a price cap, a ban on resale, a named ticket). x207 does not check this. Check it before you list or buy.'
+const TICKET_LEGAL = "Resale may be limited or banned by local law or by the ticket seller's terms. x207 does not check this, so check before you list or buy."
 const LIMITS: Record<TransferPlatform, string> = {
-  domain: 'The proof says that the buyer controlled the domain when it was checked. A registrar can take a transfer back for about 60 days; the window of x207 is 7 days. Transfer through the official feature of your registrar.',
-  game_item: 'The accepted trade offer proves that the item moved to the buyer account, not that the item is the genuine one. The seller tells the buyer the id of the trade offer; the check opens after the hold of the trade.',
-  ticket: 'A ticket is the word of the buyer: the buyer confirms that it arrived. A buyer who never confirms cancels the sale after one day and the seller is not paid.',
+  domain: 'A registrar can reverse a domain transfer for about 60 days. The x207 window is 7 days.',
+  game_item: 'An accepted trade offer shows the item moved, not that it is genuine. The check opens after the trade hold.',
+  ticket: 'The buyer confirms the ticket arrived. With no confirmation in one day, the sale cancels and the seller is not paid.',
 }
+const VIEWS = [['buy', 'Buy'], ['sell', 'Sell'], ['track', 'Track']] as const
+type View = (typeof VIEWS)[number][0]
 
 function Seller({ onPrepared }: { onPrepared: (p: PreparedTransfer) => void }) {
   const { account } = useWallet()
@@ -65,7 +77,6 @@ function Seller({ onPrepared }: { onPrepared: (p: PreparedTransfer) => void }) {
   const hashOk = /^[0-9a-f]{64}$/.test(listingHash.trim())
   return (
     <form className="form" aria-label="Prepare transfer listing" onSubmit={(e) => { e.preventDefault(); prepare() }}>
-      <h3>List a transfer (seller)</h3>
       {!account && <SignInPrompt action="prepare a transfer listing" />}
       <label>
         <span>Platform</span>
@@ -73,47 +84,65 @@ function Seller({ onPrepared }: { onPrepared: (p: PreparedTransfer) => void }) {
           {(Object.keys(PLATFORM_LABEL) as TransferPlatform[]).map((p) => <option key={p} value={p}>{PLATFORM_LABEL[p]}</option>)}
         </select>
       </label>
-      <label><span>{platform === 'domain' ? 'Domain name (lowercase)' : platform === 'game_item' ? 'Item (appid:assetid)' : 'Ticket (event, seat, any text up to 256 characters)'}</span><input value={ref} onChange={(e) => setRef(e.target.value)} autoComplete="off" /></label>
-      <label><span>Estimated time of the transfer (seconds, at most {TRANSFER_WINDOW_SECONDS[platform]})</span><input inputMode="numeric" value={estimate} onChange={(e) => setEstimate(e.target.value)} /></label>
-      <label><span>Price (credit)</span><input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="25" /></label>
-      {platform === 'ticket' && <p className="state state-warn" role="note" data-testid="ticket-legal">{TICKET_LEGAL} A ticket is limited to 100 credit.</p>}
+      <label>
+        <span>{platform === 'domain' ? 'Domain name (lowercase)' : platform === 'game_item' ? 'Item (appid:assetid)' : 'Ticket (event and seat)'}</span>
+        <input value={ref} onChange={(e) => setRef(e.target.value)} autoComplete="off" placeholder={platform === 'domain' ? 'example.com' : platform === 'game_item' ? '730:1234567890' : 'Concert A, row 4'} />
+      </label>
+      <div className="field-pair">
+        <label><span>Estimated time (seconds)</span><input inputMode="numeric" value={estimate} onChange={(e) => setEstimate(e.target.value)} placeholder={`up to ${TRANSFER_WINDOW_SECONDS[platform]}`} /></label>
+        <label><span>Price (credit)</span><input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="25" /></label>
+      </div>
+      {platform === 'ticket' && <p className="state state-warn" role="note" data-testid="ticket-legal">{TICKET_LEGAL} Tickets are limited to 100 credit.</p>}
       <p className="state" data-testid="platform-limits">{LIMITS[platform]}</p>
       <div><button type="submit" disabled={!account || ref.trim() === '' || atomic === null || !Number.isInteger(seconds) || seconds < 1}>Prepare listing</button></div>
       {error && <p className="state state-error" role="alert">{error}</p>}
       {done && (
-        <div data-testid="transfer-prepared">
+        <>
           {done.needsBond && (
             <p className="state state-error" role="alert" data-testid="bond-needed">
-              A price of 100 credit or more needs a bond: a bundle of two legs with an arbiter, which this page does not build. List it with the bundle flow, or lower the price.
+              A price of 100 credit or more needs a bond (a two-leg bundle with an arbiter). This page cannot build one: lower the price or use the bundle flow.
             </p>
           )}
-          <dl className="status-panel">
-            <dt>transfer_doc</dt><dd><code>{done.documentHash}</code></dd>
-            <dt>Asset type</dt><dd><code>{done.assetType}</code></dd>
-            <dt>Resource</dt><dd><code>{done.resource}</code></dd>
-          </dl>
-          <p>Listing detail (copy it into the Detail field of the listing form of the Marketplace, with asset type <code>{done.assetType}</code>, class B, quantity 1 and the price above):</p>
-          <pre data-testid="transfer-detail">{done.detail}</pre>
+          {!done.needsBond && (
+            <ul className="item-cards">
+              <li className="item-card">
+                <span className="tone-tile" aria-hidden="true" style={tone(TONE_HEX.ok)}><NavIcon name="/marketplace" size={18} /></span>
+                <p className="item-title"><code>{done.document.transfer_ref}</code></p>
+                <span className="pill" data-tone="ok">Ready to list</span>
+                <p className="item-meta">Paste the listing detail into the Marketplace listing form.</p>
+              </li>
+            </ul>
+          )}
+          <details className="tech" data-testid="transfer-prepared">
+            <summary>Listing detail to copy</summary>
+            <p>Use asset type <code>{done.assetType}</code>, class B, quantity 1 and your price.</p>
+            <pre data-testid="transfer-detail">{done.detail}</pre>
+            <dl className="status-panel">
+              <dt>transfer_doc</dt><dd><code>{done.documentHash}</code></dd>
+              <dt>Asset type</dt><dd><code>{done.assetType}</code></dd>
+              <dt>Resource</dt><dd><code>{done.resource}</code></dd>
+            </dl>
+          </details>
           {platform === 'domain' && (
             <div data-testid="seller-txt-steps">
-              <h4>Prove that you control the domain, before the listing</h4>
+              <h3>Prove you control the domain</h3>
               <ol>
-                <li>Check the listing in the Marketplace form (the dry run); it answers the listing hash.</li>
-                <li>Paste the listing hash here.
+                <li>Check the listing in the Marketplace form (dry run) to get its hash.</li>
+                <li>Paste the hash.
                   <label><span>Listing hash</span><input value={listingHash} onChange={(e) => setListingHash(e.target.value)} placeholder="64 hex" /></label>
                 </li>
                 <li>Add this TXT record on <code>{done.document.transfer_ref}</code>: <code data-testid="sell-txt">{hashOk ? sellTxt(listingHash.trim()) : 'x207-sell=<listing hash>'}</code></li>
-                <li>Post the listing. The backend refuses it while the TXT record is not there (<code>transfer_seller_unproven</code>).</li>
+                <li>Post the listing. It is refused until the TXT record exists.</li>
               </ol>
             </div>
           )}
-        </div>
+        </>
       )}
     </form>
   )
 }
 
-function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: string) => void }) {
+function BuyForm({ voucherKey, onVoucherKey, onBought }: { voucherKey: string; onVoucherKey: (v: string) => void; onBought: (id: string) => void }) {
   const { account } = useWallet()
   const [hash, setHash] = useState('')
   const [buyerRef, setBuyerRef] = useState('')
@@ -176,34 +205,48 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
   }
   const needsRef = checked?.listing.doc.platform === 'game_item'
   return (
-    <div>
+    <div className="form">
+      {!account && <SignInPrompt action="buy a transfer" />}
       <label><span>Transfer listing hash</span><input value={hash} onChange={(e) => { setHash(e.target.value); setChecked(null) }} placeholder="64 hex" /></label>
-      <button type="button" disabled={!account || busy || !/^[0-9a-f]{64}$/.test(hash.trim())} onClick={() => void check()}>Check listing</button>
+      <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
+      <div><button type="button" disabled={!account || busy || !/^[0-9a-f]{64}$/.test(hash.trim())} onClick={() => void check()}>Check listing</button></div>
       {checked && (
-        <div data-testid="transfer-summary">
-          <dl className="status-panel">
-            <dt>Platform</dt><dd>{PLATFORM_LABEL[checked.listing.doc.platform]}</dd>
-            <dt>What is transferred</dt><dd><code>{checked.listing.doc.transfer_ref}</code></dd>
-            <dt>Proof</dt><dd>{PROOF_LABEL[checked.listing.doc.proof_method]}</dd>
-            <dt>Seller estimate</dt><dd>{minutes(checked.listing.doc.estimate_seconds)}</dd>
-            <dt>Window</dt><dd>{minutes(checked.listing.windowSeconds)}; without the proof inside it the purchase is cancelled and the voucher never moves</dd>
-            <dt>Paid to</dt><dd><code>{checked.view.account}</code> · seller key fingerprint <code>{checked.fingerprint}</code></dd>
-            <dt>Price</dt><dd>{formatCredit(checked.listing.doc.value)} credit</dd>
+        <div className="actions" data-testid="transfer-summary">
+          <ul className="item-cards">
+            <li className="item-card">
+              <span className="tone-tile" aria-hidden="true" style={tone('#e2801f')}><NavIcon name="/transfers" size={18} /></span>
+              <p className="item-title"><code>{checked.listing.doc.transfer_ref}</code></p>
+              <span className="pill" data-tone="info">{PLATFORM_LABEL[checked.listing.doc.platform]}</span>
+              <p className="item-meta">Proof: {PROOF_SHORT[checked.listing.doc.proof_method] ?? PROOF_LABEL[checked.listing.doc.proof_method] ?? checked.listing.doc.proof_method}</p>
+              <p className="item-meta">Seller <code>{checked.view.account}</code></p>
+            </li>
+          </ul>
+          <dl className="figures">
+            <div><dt>Price</dt><dd>{formatCredit(checked.listing.doc.value)} credit</dd></div>
+            <div><dt>Time allowed</dt><dd>{minutes(checked.listing.windowSeconds)}</dd></div>
+            <div><dt>Seller estimate</dt><dd>{minutes(checked.listing.doc.estimate_seconds)}</dd></div>
           </dl>
+          <p className="state">x207 holds your voucher until the platform shows the transfer. Without proof in time, the voucher never moves.</p>
           <p className="state state-warn" role="note" data-testid="buyer-limits">{LIMITS[checked.listing.doc.platform]}</p>
           {checked.listing.doc.platform === 'ticket' && <p className="state state-warn" role="note" data-testid="ticket-legal-buyer">{TICKET_LEGAL}</p>}
           {checked.listing.needsBond && (
-            <p className="state state-error" role="alert" data-testid="bond-needed-buyer">This price needs a bond: a bundle of two legs with an arbiter. This page does not build it, so do not buy here.</p>
+            <p className="state state-error" role="alert" data-testid="bond-needed-buyer">This price needs a bond (a two-leg bundle with an arbiter). This page cannot build one, so do not buy here.</p>
           )}
           {needsRef && (
-            <label><span>Your Steam account id (the trade offer must go to it)</span><input inputMode="numeric" value={buyerRef} onChange={(e) => setBuyerRef(e.target.value)} /></label>
+            <label><span>Your Steam account id (receives the trade offer)</span><input inputMode="numeric" value={buyerRef} onChange={(e) => setBuyerRef(e.target.value)} /></label>
           )}
           <button type="button" disabled={busy || voucherKey.trim() === '' || checked.listing.needsBond || (needsRef && !/^\d{1,20}$/.test(buyerRef.trim()))} onClick={() => void buy()}>
-            Buy for {formatCredit(checked.listing.doc.value)} credit from {checked.view.account} (voucher held by the backend)
+            Buy for {formatCredit(checked.listing.doc.value)} credit
           </button>
+          <details className="tech">
+            <summary>Technical details</summary>
+            <dl className="status-panel">
+              <dt>How it is proven</dt><dd>{PROOF_LABEL[checked.listing.doc.proof_method] ?? checked.listing.doc.proof_method}</dd>
+              <dt>Seller key fingerprint</dt><dd><code>{checked.fingerprint}</code></dd>
+            </dl>
+          </details>
         </div>
       )}
-      <small>The voucher is not given to the seller: the backend registers it only after the platform shows the transfer.</small>
       {error && <p className="state state-error" role="alert">{error}</p>}
     </div>
   )
@@ -257,45 +300,70 @@ function Proof({ view, voucherKey, onVoucherKey }: { view: TransferView; voucher
 
   const isBuyer = account === view.buyer
   const isParty = isBuyer || account === view.seller
+  const ticketBuyer = held && view.platform === 'ticket' && isBuyer
+  const state = STATUS[view.status] ?? { label: view.status, tone: 'info' as Tone }
   return (
-    <div data-testid="transfer">
-      <p>Status: <strong>{STATUS_LABEL[view.status] ?? view.status}</strong> · {PLATFORM_LABEL[view.platform]} <code>{view.transferRef}</code> · buyer <code>{view.buyer}</code> · seller <code>{view.seller}</code></p>
-      {held && <p data-testid="window-left" role="status">{left > 0 ? `The window closes in ${minutes(left)}.` : 'The window has passed: the purchase is cancelled when it is read again.'}</p>}
-      {view.cancelReason && <p className="state" data-testid="cancel-reason">Cancelled: <code>{view.cancelReason}</code></p>}
-      {view.status === 'confirmed' && <p className="state" role="status">The proof is met. The voucher is shown to the seller to register.</p>}
+    <div className="actions" data-testid="transfer">
+      <ul className="item-cards">
+        <li className="item-card">
+          <span className="tone-tile" aria-hidden="true" style={tone(TONE_HEX[state.tone])}><NavIcon name="/transfers" size={18} /></span>
+          <p className="item-title">{PLATFORM_LABEL[view.platform]} <code>{view.transferRef}</code></p>
+          <span className="pill" data-tone={state.tone}>{state.label}</span>
+          {held && <p className="item-meta" data-testid="window-left" role="status">{left > 0 ? `Closes in ${minutes(left)}` : 'Time is up: the sale cancels on the next read.'}</p>}
+          {view.status === 'confirmed' && <p className="item-meta">Proof met. The seller can now register the voucher.</p>}
+          {view.status === 'cancelled' && <p className="item-meta">The voucher never moved.</p>}
+        </li>
+      </ul>
+      {message && <p className="state" role="status">{message}</p>}
+      {error && <p className="state state-error" role="alert">{error}</p>}
+      {view.cancelReason && <p className="state" data-testid="cancel-reason">Reason: <code>{view.cancelReason}</code></p>}
       {held && view.platform === 'domain' && (
         <div data-testid="buyer-txt-steps">
-          <h4>Prove the transfer (buyer)</h4>
+          <h3>Buyer: prove the transfer</h3>
           <ol>
-            <li>Transfer the domain <code>{view.transferRef}</code> to your account at the registrar, through its official transfer feature.</li>
-            <li>Add this TXT record on the domain: <code data-testid="own-txt">{ownTxt(view.transferId)}</code></li>
-            <li>Press the button. The backend reads the TXT record and checks the registry (RDAP) that the domain is live and not in a pending state.</li>
+            <li>Move <code>{view.transferRef}</code> to your registrar account with its official transfer.</li>
+            <li>Add this TXT record to the domain: <code data-testid="own-txt">{ownTxt(view.transferId)}</code></li>
+            <li>Check the proof. x207 reads the TXT record and the registry.</li>
           </ol>
           <button type="button" disabled={busy} onClick={() => void askProof()}>Check the proof</button>
         </div>
       )}
       {held && view.platform === 'game_item' && (
         <div data-testid="trade-steps">
-          <h4>Prove the trade (buyer or seller)</h4>
-          <p>The seller sends a trade offer of the item to the Steam account of the buyer. The proof is met when the offer is accepted and its hold is over.</p>
+          <h3>Prove the trade</h3>
+          <p className="state">The seller sends a Steam trade offer and shares its id. Proof is met when it is accepted and its hold ends.</p>
           {view.tradeOfferId === null && <label><span>Trade offer id (digits)</span><input inputMode="numeric" value={tradeOffer} onChange={(e) => setTradeOffer(e.target.value)} /></label>}
           {view.tradeOfferId !== null && <p>Trade offer <code>{view.tradeOfferId}</code></p>}
           <button type="button" disabled={busy || (view.tradeOfferId === null && !/^\d{1,20}$/.test(tradeOffer.trim()))} onClick={() => void askProof()}>Check the trade</button>
         </div>
       )}
-      {held && view.platform === 'ticket' && isBuyer && (
-        <div data-testid="ticket-steps">
-          <h4>Confirm the ticket (buyer)</h4>
+      {ticketBuyer && (
+        <div className="actions" data-testid="ticket-steps">
+          <h3>Confirm the ticket</h3>
           <p className="state state-warn" role="note">{TICKET_LEGAL}</p>
+          <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
           <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void signed('confirmed')}>Confirm that I received the ticket</button>
         </div>
       )}
-      {held && isParty && <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void signed('cancelled')}>Cancel this transfer (the voucher never moves)</button>}
-      {held && view.platform !== 'ticket' && <p className="state" data-testid="proof-note">Asking for the proof needs no signature and is limited to one check each 30 seconds.</p>}
+      {held && view.platform !== 'ticket' && <p className="state" data-testid="proof-note">No signature needed. One check every 30 seconds.</p>}
       <p className="state" data-testid="transfer-limits">{LIMITS[view.platform]}</p>
-      {view.proof && <details><summary>Last answer of the platform</summary><pre>{JSON.stringify(view.proof, null, 2)}</pre></details>}
-      {message && <p className="state" role="status">{message}</p>}
-      {error && <p className="state state-error" role="alert">{error}</p>}
+      {held && isParty && (
+        <details className="tech">
+          <summary>Cancel this transfer</summary>
+          <p>Cancelling is final. The voucher never moves.</p>
+          {!ticketBuyer && <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />}
+          <div><button type="button" className="quiet" disabled={busy || voucherKey.trim() === ''} onClick={() => void signed('cancelled')}>Cancel transfer</button></div>
+        </details>
+      )}
+      <details className="tech">
+        <summary>Technical details</summary>
+        <dl className="status-panel">
+          <dt>Transfer</dt><dd>{view.transferId}</dd>
+          <dt>Buyer</dt><dd><code>{view.buyer}</code></dd>
+          <dt>Seller</dt><dd><code>{view.seller}</code></dd>
+        </dl>
+        {view.proof && <><p>Last answer of the platform</p><pre>{JSON.stringify(view.proof, null, 2)}</pre></>}
+      </details>
     </div>
   )
 }
@@ -304,12 +372,11 @@ function Status({ voucherKey, onVoucherKey, openId, onOpen }: { voucherKey: stri
   const [id, setId] = useState('')
   const query = useTransfer(openId)
   return (
-    <section className="form" aria-label="Transfer status">
-      <h3>Status and proof</h3>
-      <label><span>Transfer number</span><input value={id} onChange={(e) => setId(e.target.value)} /></label>
+    <div className="form">
+      <label><span>Transfer number</span><input value={id} onChange={(e) => setId(e.target.value)} inputMode="numeric" /></label>
       <div><button type="button" disabled={id.trim() === ''} onClick={() => onOpen(id.trim())}>Open transfer</button></div>
       {openId && <QueryState query={query} loadingLabel="Loading transfer">{(view) => <Proof key={view.transferId + view.status} view={view} voucherKey={voucherKey} onVoucherKey={onVoucherKey} />}</QueryState>}
-    </section>
+    </div>
   )
 }
 
@@ -317,18 +384,40 @@ export function Transfers() {
   const [voucherKey, setVoucherKey] = useState('')
   const [, setPrepared] = useState<PreparedTransfer | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
-  const { account } = useWallet()
+  const [view, setView] = useState<View>('buy')
   return (
     <>
-      <h2>Platform transfers</h2>
-      <p className="state">A domain, a game item or a ticket changes hands through the official feature of its platform. x207 holds the voucher of the buyer until the platform shows that the transfer happened; if it does not happen inside the window, the voucher never moves.</p>
-      <Seller onPrepared={setPrepared} />
-      <section className="form" aria-label="Buy a transfer">
-        <h3>Buy a transfer (buyer)</h3>
-        <BuyForm voucherKey={voucherKey} onBought={(id) => setOpenId(id)} />
-        <VoucherKeyField value={voucherKey} onChange={setVoucherKey} disabled={!account} />
-      </section>
-      <Status voucherKey={voucherKey} onVoucherKey={setVoucherKey} openId={openId} onOpen={setOpenId} />
+      <div className="page-lead">
+        <span className="tone-tile" aria-hidden="true" style={tone('#e2801f')}><NavIcon name="/transfers" size={22} /></span>
+        <p>The item moves on its own platform; x207 never touches it.</p>
+        <ol className="lead-steps" aria-label="How it works">
+          <li>Seller lists</li>
+          <li>Buyer pays</li>
+          <li>Platform confirms</li>
+          <li>Seller is paid</li>
+        </ol>
+      </div>
+      <div className="views" data-view={view}>
+        <div className="market-top">
+          <div className="segmented market-views" role="group" aria-label="Transfer view">
+            {VIEWS.map(([k, label]) => (
+              <button key={k} type="button" aria-pressed={view === k} onClick={() => setView(k)}>{label}</button>
+            ))}
+          </div>
+        </div>
+        <section className="views-pane" data-pane="buy" data-active={view === 'buy'} aria-label="Buy a transfer">
+          <h2 className="sr-only">Buy a transfer</h2>
+          <BuyForm voucherKey={voucherKey} onVoucherKey={setVoucherKey} onBought={(id) => { setOpenId(id); setView('track') }} />
+        </section>
+        <section className="views-pane" data-pane="sell" data-active={view === 'sell'} aria-label="Sell a transfer">
+          <h2 className="sr-only">Sell a transfer</h2>
+          <Seller onPrepared={setPrepared} />
+        </section>
+        <section className="views-pane" data-pane="track" data-active={view === 'track'} aria-label="Transfer status">
+          <h2 className="sr-only">Transfer status</h2>
+          <Status voucherKey={voucherKey} onVoucherKey={setVoucherKey} openId={openId} onOpen={setOpenId} />
+        </section>
+      </div>
     </>
   )
 }

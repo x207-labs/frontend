@@ -1,21 +1,31 @@
 import { useState } from 'react'
 import { useGrants, useMembers } from '../api/queries'
 import type { Grant, GrantEscrow, GrantStatus } from '../api/types'
+import { NavIcon } from '../components/icons'
 import { QueryState } from '../components/QueryState'
 import { formatCredit, formatExpiry, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
 import { AccountSales } from './AccountSales'
 
 // FE-017 (F8): per-member access grants from D9 `grants` (BE-038). Read only. Classes A to D as in the D10 registry; secrets are not in D9.
+// FE-073: written for the member, not the contract. The page opens on your own grants; looking up another member is a choice (grants are public).
+// Plain words for roles, classes and reasons, a status pill, three numbers on top, and the token-escrow rules folded away.
 const STATUS_LABEL: Record<GrantStatus, string> = { offered: 'Offered', active: 'Active', revoked: 'Revoked', expired: 'Expired' }
+const STATUS_TONE: Record<GrantStatus, string | undefined> = { offered: 'info', active: 'ok', revoked: 'bad', expired: undefined }
 const REASON_LABEL: Record<string, string> = {
-  grantor: 'revoked by grantor',
-  grantee: 'revoked by grantee',
-  operator: 'revoked by operator',
-  expired: 'validity ended',
-  defaulted: 'grantee defaulted (defaulted)',
+  grantor: 'ended by the owner',
+  grantee: 'ended by the renter',
+  operator: 'ended by the operator',
+  expired: 'time ran out',
+  defaulted: 'renter did not pay',
 }
-const CLASS_LABEL: Record<string, string> = { A: 'A: transferred', B: 'B: derived credential', C: 'C: TEE broker', D: 'D: x402 endpoint', X: 'X: rejected' }
+const CLASS_LABEL: Record<string, string> = {
+  A: 'Handed over in escrow',
+  B: 'Own login for the renter',
+  C: 'Through a secure broker',
+  D: 'Paid endpoint (x402)',
+  X: 'Rejected',
+}
 
 const ESCROW_STATE_LABEL: Record<string, string> = {
   held: 'held by contract',
@@ -52,58 +62,95 @@ export function EscrowCell({ escrow }: { escrow: GrantEscrow | null | undefined 
 
 type Row = Grant & { role: 'grantor' | 'grantee' }
 
+function Counterparty({ g }: { g: Row }) {
+  if (g.role === 'grantee') return <>Rents from <strong>{shortAccount(g.grantor)}</strong></>
+  return g.grantee ? <>Lends to <strong>{shortAccount(g.grantee)}</strong></> : <>Open offer</>
+}
+
 function GrantTable({ rows }: { rows: Row[] }) {
   const hasToken = rows.some((g) => g.escrow?.kind === 'ft' || g.escrow?.kind === 'mt')
+  const hasEscrow = rows.some((g) => g.escrow)
   return (
-    <div className="table-wrap">
-      {hasToken && (
-        <p className="state" role="note" data-testid="ft-escrow-warning">
-          Token or multi-token escrow (class A): the contract holds the <strong>exact amount</strong> written in the grant. Tokens with a transfer fee are not supported: the amount that
-          arrives is smaller, so the escrow is rejected and the token returns to the grantor. Restricted tokens (whitelist, freezing) can refuse delivery to the buyer;
-          the buyer's payment is then cancelled and the grant stays offered. The buyer must be registered on the token contract (<code className="plain">storage_deposit</code>). A rejected multi-token escrow is returned by the multi-token contract itself; only the contract written in the grant may escrow.
-        </p>
-      )}
-      <table aria-label="Grant list">
-        <thead>
-          <tr>
-            <th scope="col" className="num">ID</th>
-            <th scope="col">Role</th>
-            <th scope="col">Asset type</th>
-            <th scope="col">Class</th>
-            <th scope="col">Grantor</th>
-            <th scope="col">Grantee</th>
-            <th scope="col" className="num">Price</th>
-            <th scope="col">Status</th>
-            <th scope="col">Valid until</th>
-            <th scope="col">Revocation reason</th>
-            <th scope="col">Escrow</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((g) => (
-            <tr key={g.grantId}>
-              <td className="num">{g.grantId}</td>
-              <td>{g.role}</td>
-              <td>
-                <code className="plain">{g.assetType}</code>
-              </td>
-              <td>{CLASS_LABEL[g.class] ?? g.class}</td>
-              <td>{shortAccount(g.grantor)}</td>
-              <td>{g.grantee ? shortAccount(g.grantee) : '-'}</td>
-              <td className="num">{`${formatCredit(g.unitPrice)} per ${g.unit}`}</td>
-              <td>
-                <span className={g.status === 'revoked' ? 'member-suspended' : undefined}>{STATUS_LABEL[g.status] ?? g.status}</span>
-              </td>
-              <td>{formatExpiry(g.expiresAt)}</td>
-              <td>{g.revokeReason ? (REASON_LABEL[g.revokeReason] ?? g.revokeReason) : '-'}</td>
-              <td>
-                <EscrowCell escrow={g.escrow} />
-              </td>
+    <>
+      <div className="table-wrap">
+        <table aria-label="Grant list">
+          <thead>
+            <tr>
+              <th scope="col" className="num">#</th>
+              <th scope="col">Access</th>
+              <th scope="col">With</th>
+              <th scope="col" className="num">Price</th>
+              <th scope="col">Status</th>
+              <th scope="col">Until</th>
+              {hasEscrow && <th scope="col">Held item</th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((g) => (
+              <tr key={g.grantId}>
+                <td className="num">{g.grantId}</td>
+                <td>
+                  <code className="plain">{g.assetType}</code>
+                  <br />
+                  <small className="muted">{CLASS_LABEL[g.class] ?? g.class}</small>
+                </td>
+                <td>
+                  <Counterparty g={g} />
+                </td>
+                <td className="num">{`${formatCredit(g.unitPrice)} per ${g.unit}`}</td>
+                <td>
+                  <span className="pill" data-tone={STATUS_TONE[g.status]}>
+                    {STATUS_LABEL[g.status] ?? g.status}
+                  </span>
+                  {g.revokeReason && (
+                    <>
+                      <br />
+                      <small className="muted">{REASON_LABEL[g.revokeReason] ?? g.revokeReason}</small>
+                    </>
+                  )}
+                </td>
+                <td>{formatExpiry(g.expiresAt)}</td>
+                {hasEscrow && (
+                  <td>
+                    <EscrowCell escrow={g.escrow} />
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {hasToken && (
+        <details className="tech">
+          <summary>Rules for tokens held in escrow</summary>
+          <p className="state" role="note" data-testid="ft-escrow-warning">
+            Token or multi-token escrow (class A): the contract holds the <strong>exact amount</strong> written in the grant. Tokens with a transfer fee are not supported: the amount that
+            arrives is smaller, so the escrow is rejected and the token returns to the grantor. Restricted tokens (whitelist, freezing) can refuse delivery to the buyer;
+            the buyer's payment is then cancelled and the grant stays offered. The buyer must be registered on the token contract (<code className="plain">storage_deposit</code>). A rejected multi-token escrow is returned by the multi-token contract itself; only the contract written in the grant may escrow.
+          </p>
+        </details>
+      )}
+    </>
+  )
+}
+
+function Figures({ rows }: { rows: Row[] }) {
+  const count = (pick: (g: Row) => boolean) => rows.filter(pick).length
+  return (
+    <dl className="figures" aria-label="Grant summary">
+      <div>
+        <dt>Active</dt>
+        <dd>{count((g) => g.status === 'active')}</dd>
+      </div>
+      <div>
+        <dt>Waiting for a renter</dt>
+        <dd>{count((g) => g.status === 'offered')}</dd>
+      </div>
+      <div>
+        <dt>Ended</dt>
+        <dd>{count((g) => g.status === 'revoked' || g.status === 'expired')}</dd>
+      </div>
+    </dl>
   )
 }
 
@@ -126,39 +173,56 @@ export function Grants() {
       : []
   // one shared query for loading and error status
   const query = asGrantee.isError ? asGrantee : asGrantor.isError ? asGrantor : asGrantee.data && asGrantor.data ? { ...asGrantee, data: { items: rows } } : asGrantee
+  const mine = wallet !== null && account === wallet
 
   return (
     <>
-      <p>Access grants (F8): members rent out access without handing over their secrets. Data comes from the read API; secrets are never there.</p>
-      <label>
-        <span>Member</span>
-        <select value={account ?? ''} onChange={(e) => setChosen(e.target.value)}>
-          {members.data?.items.map((m) => (
-            <option key={m.account} value={m.account}>
-              {m.account}
-            </option>
-          ))}
-          {account && !members.data?.items.some((m) => m.account === account) && <option value={account}>{account}</option>}
-        </select>
-      </label>
-      <label>
-        <span>Status</span>
-        <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">All</option>
-          {(Object.keys(STATUS_LABEL) as GrantStatus[]).map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABEL[s]}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="page-lead">
+        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+          <NavIcon name="/access" size={22} />
+        </span>
+        <p>Who may use what, and until when. The owner keeps the password; the contract keeps the record.</p>
+      </div>
+      <div className="field-pair grants-filter">
+        <label>
+          <span>Member</span>
+          <select value={account ?? ''} onChange={(e) => setChosen(e.target.value)}>
+            {wallet && <option value={wallet}>You ({shortAccount(wallet)})</option>}
+            {members.data?.items
+              .filter((m) => m.account !== wallet)
+              .map((m) => (
+                <option key={m.account} value={m.account}>
+                  {m.account}
+                </option>
+              ))}
+            {account && account !== wallet && !members.data?.items.some((m) => m.account === account) && <option value={account}>{account}</option>}
+          </select>
+        </label>
+        <label>
+          <span>Status</span>
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="">All</option>
+            {(Object.keys(STATUS_LABEL) as GrantStatus[]).map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABEL[s]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <p className="state">{mine ? 'Your grants. Grants are public, so you can also look up any other member.' : 'Grants are public, so anyone can look up any member. Sign in to open on your own.'}</p>
       <QueryState
         query={query as never}
         loadingLabel="Loading grants"
         isEmpty={(d: { items: Row[] }) => d.items.length === 0}
         empty="This member has no grants yet."
       >
-        {(data: { items: Row[] }) => <GrantTable rows={data.items} />}
+        {(data: { items: Row[] }) => (
+          <>
+            <Figures rows={data.items} />
+            <GrantTable rows={data.items} />
+          </>
+        )}
       </QueryState>
       <AccountSales />
     </>

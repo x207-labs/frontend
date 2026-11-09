@@ -5,7 +5,8 @@ import { apiError, renderApp } from '../test/render'
 import { formatField } from './Governance'
 
 const HISTORY = '/params/history'
-const row = (name: string) => screen.getAllByText(name, { selector: 'td > code' })[0].closest('tr')!
+// FE-073: the rules are grouped tables; the contract name sits under the label in the row header
+const row = (name: string) => screen.getAllByText(name, { selector: 'th > code' })[0].closest('tr')!
 
 describe('formatField', () => {
   it('FE-035 the first history row has no old value: a dash, for fees too (it crashed the page)', () => {
@@ -55,7 +56,7 @@ describe('governance', () => {
     const { relayer_fee, ...old } = params.active
     void relayer_fee
     renderApp('/governance', (p) => (p.endsWith('/params') ? { status: 200, body: { ...params, active: old, nextEpoch: null, nextEpochEffective: null } } : undefined))
-    await waitFor(() => expect(screen.getAllByText('relayer_fee', { selector: 'td > code' }).at(-1)!.closest('tr')).toHaveTextContent('—'))
+    await waitFor(() => expect(screen.getAllByText('relayer_fee', { selector: 'th > code' }).at(-1)!.closest('tr')).toHaveTextContent('—'))
   })
 
   it('TC-FE-043-02 relayer_fee_paid and relayer_fee_failed are listed newest first, a failed fee says it was not paid', async () => {

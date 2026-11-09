@@ -85,14 +85,8 @@ function Compression({ vouchers, transfers }: { vouchers: number; transfers: num
   return (
     <figure className="compress">
       <svg viewBox="0 0 640 200" role="img" aria-label={`${formatNumber(vouchers, 0)} vouchers settled as ${formatNumber(transfers, 0)} transfers`}>
-        <defs>
-          <linearGradient id="compress-flow" x1="0" x2="1">
-            <stop offset="0" stopColor="#8fc0ff" stopOpacity="0.05" />
-            <stop offset="1" stopColor="#3d8bff" stopOpacity="0.7" />
-          </linearGradient>
-        </defs>
         {Array.from({ length: big }, (_, i) => (
-          <path key={`f${i}`} className="compress-flow" d={`M${left.x + (COLS - 1) * gap + 14} ${100} C 420 100, 440 ${ty(i)}, ${rightX - 18} ${ty(i)}`} stroke="url(#compress-flow)" />
+          <path key={`f${i}`} className="compress-flow" d={`M${left.x + (COLS - 1) * gap + 14} ${100} C 420 100, 440 ${ty(i)}, ${rightX - 18} ${ty(i)}`} stroke="var(--accent)" strokeOpacity="0.4" />
         ))}
         {Array.from({ length: dots }, (_, i) => (
           <circle key={i} className="compress-dot" cx={left.x + (i % COLS) * gap} cy={left.y + Math.floor(i / COLS) * gap} r={4} style={{ animationDelay: `${(i % COLS) * 30 + Math.floor(i / COLS) * 20}ms` }} />

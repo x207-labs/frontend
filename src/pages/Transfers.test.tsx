@@ -125,15 +125,16 @@ describe('FE-033 transfers through the official feature of a platform', () => {
     expect(summary).toHaveTextContent('7 d 0 h')
     expect(summary).toHaveTextContent('30 credit')
     expect(summary).toHaveTextContent('never moves')
+    expect(summary).toHaveTextContent(SELLER) // the seller moved from the button name into the summary card
     expect(requests().filter((r) => r.method === 'POST' && r.path.includes('/x207/'))).toHaveLength(0) // nothing is signed before the click
-    await user.click(within(summary).getByRole('button', { name: `Buy for 30 credit from ${SELLER} (voucher held by the backend)` }))
+    await user.click(within(summary).getByRole('button', { name: 'Buy for 30 credit' }))
     await waitFor(() => expect(requests().some((r) => r.method === 'POST' && r.path.endsWith('/transfers'))).toBe(true))
     const post = requests().find((r) => r.method === 'POST' && r.path.endsWith('/transfers'))!
     expect(post.body.voucher).toMatchObject({ payer: BUYER, payee: SELLER, epoch: 42, seq: 4, cumulativeAmount: '32000000', unit: 'credit', resource: transferResource(transferDocumentHash(docOf())) })
     expect(verifyVoucher({ ...post.body.voucher, signature: post.body.signature }, voucherPublicKey(SEED))).toBe(true)
     expect(post.body.buyer_ref).toBeUndefined()
     expect(JSON.stringify(post.body)).not.toContain(KEY)
-    expect(await screen.findByTestId('transfer')).toHaveTextContent('Paid, voucher held')
+    expect(await screen.findByTestId('transfer')).toHaveTextContent('Paid, on hold')
     forgetHeld()
   })
 
@@ -216,7 +217,7 @@ describe('FE-033 transfers through the official feature of a platform', () => {
       return undefined
     })
     expect(within(section).getByTestId('own-txt')).toHaveTextContent('x207-own=7')
-    expect(within(section).getByTestId('window-left')).toHaveTextContent(/The window closes in [23] d/)
+    expect(within(section).getByTestId('window-left')).toHaveTextContent(/Closes in [23] d/)
     expect(within(section).getByTestId('transfer-limits')).toHaveTextContent('60 days')
     await user.click(within(section).getByRole('button', { name: 'Check the proof' }))
     await within(section).findByText(/does not show the transfer yet; the voucher is still held. Ask again in 30 seconds/)
@@ -271,7 +272,7 @@ describe('FE-033 transfers through the official feature of a platform', () => {
     const { section } = await openTransfer(user, (p, init) => (!init?.method && p.endsWith('/transfers/7') ? { status: 200, body: transferBody({ status: 'cancelled', cancelReason: 'transfer_window_passed' }) } : undefined))
     expect(within(section).getByTestId('cancel-reason')).toHaveTextContent('transfer_window_passed')
     expect(within(section).queryByTestId('buyer-txt-steps')).not.toBeInTheDocument()
-    expect(within(section).getByText(/Cancelled: the voucher never moved/)).toBeInTheDocument()
+    expect(within(section).getByText(/The voucher never moved/)).toBeInTheDocument()
     expect(windowSecondsLeft(1000, 400)).toBe(600)
     expect(windowSecondsLeft(1000, 2000)).toBe(0)
   })
