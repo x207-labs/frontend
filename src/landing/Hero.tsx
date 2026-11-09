@@ -2,6 +2,7 @@ import { animate, m, useMotionValue, useReducedMotion, useScroll, useSpring, use
 import { useEffect, useRef, type PointerEvent } from 'react'
 import { EPOCH8, LIVE } from './facts'
 import { EASE_OUT, SPRING } from './tokens'
+import { BrainStage } from './BrainStage'
 import { Ring } from './Ring'
 
 const HERO_STAGE = 0.46 // members and vouchers drawn, before netting
@@ -34,8 +35,6 @@ export function Hero() {
   const tiltX = useTransform(() => (reduced ? 0 : 52 - scrollYProgress.get() * 46 - sy.get() * 6))
   const tiltY = useTransform(() => (reduced ? 0 : sx.get() * 8))
   const ringY = useTransform(scrollYProgress, [0, 1], [0, reduced ? 0 : 140])
-  const nearX = useTransform(sx, (v) => v * -26)
-  const nearY = useTransform(sy, (v) => v * -18)
   const farX = useTransform(sx, (v) => v * 12)
   const farY = useTransform(sy, (v) => v * 10)
   const copyY = useTransform(scrollYProgress, [0, 1], [0, reduced ? 0 : -90])
@@ -80,22 +79,19 @@ export function Hero() {
       <div className="hero-visual">
         <m.div className="hero-glow" style={{ x: farX, y: farY }} aria-hidden="true" />
         <m.div className="hero-stage" style={{ y: ringY }}>
-          <m.div className="hero-tilt" style={{ rotateX: tiltX, rotateY: tiltY }}>
-            <div className={reduced ? 'hero-spin' : 'hero-spin is-spinning'}>
-              <Ring progress={intro} label={`The circle of ${EPOCH8.tag}: ${EPOCH8.members} members and the ${EPOCH8.vouchers} vouchers they registered`} />
-            </div>
-          </m.div>
-        </m.div>
-        <m.div className="hero-chips" style={{ x: nearX, y: nearY }} aria-hidden="true">
-          <m.span className="glass-chip is-a" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...SPRING, delay: 1.1 }}>
-            <b>{EPOCH8.vouchers}</b> vouchers
-          </m.span>
-          <m.span className="glass-chip is-b" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...SPRING, delay: 1.3 }}>
-            <b>{EPOCH8.gross}</b> credit <span className="arrow">→</span> <b className="is-accent">{EPOCH8.moved}</b> USDT
-          </m.span>
-          <m.span className="glass-chip is-c" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...SPRING, delay: 1.5 }}>
-            epoch 8 · <b>x207-v013</b>
-          </m.span>
+          <BrainStage
+            reduced={!!reduced}
+            px={sx}
+            py={sy}
+            scroll={scrollYProgress}
+            fallback={
+              <m.div className="hero-tilt" style={{ rotateX: tiltX, rotateY: tiltY }}>
+                <div className={reduced ? 'hero-spin' : 'hero-spin is-spinning'}>
+                  <Ring progress={intro} label={`The circle of ${EPOCH8.tag}: ${EPOCH8.members} members and the ${EPOCH8.vouchers} vouchers they registered`} />
+                </div>
+              </m.div>
+            }
+          />
         </m.div>
       </div>
 

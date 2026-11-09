@@ -6,6 +6,7 @@ import { Epoch8 } from './Epoch8'
 import { LIVE } from './facts'
 import { Hero } from './Hero'
 import { Limits } from './Limits'
+import { Logo } from './Logo'
 import { Nav } from './Nav'
 import { Reveal } from './motion'
 import { Story } from './Story'
@@ -74,7 +75,8 @@ export default function Landing() {
           </main>
           <footer className="footer">
             <p>
-              <b>x207</b> · mutual-credit settlement for x402 agent payments on NEAR. Testnet only, with a mock USDT.
+              <Logo className="footer-logo" title="x207" />
+              Mutual-credit settlement for x402 agent payments on NEAR. Testnet only, with a mock USDT.
             </p>
             <p>
               <a href={LIVE.github} target="_blank" rel="noreferrer">GitHub</a> · <a href={LIVE.claims} target="_blank" rel="noreferrer">Claims</a> · <a href="/stats">Dashboard</a>

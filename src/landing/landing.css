@@ -16,6 +16,8 @@ html.is-landing,
   --lp-green: #1f9d55;
   --lp-orange: #e07a00;
   --lp-on-accent: #fff;
+  --lp-logo-ink: #2c2c2a; /* brand/README: ink and teal of the logo, light and dark */
+  --lp-logo-teal: #0f6e56;
   --lp-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Schibsted Grotesk Variable', system-ui, sans-serif;
   --lp-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
   --lp-ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -41,6 +43,8 @@ html.is-landing,
     --lp-accent-fill: #1f6feb;
     --lp-green: #34c46e;
     --lp-orange: #ff9f0a;
+    --lp-logo-ink: #f1efe8;
+    --lp-logo-teal: #5dcaa5;
     color-scheme: dark;
   }
 }
@@ -113,8 +117,11 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 }
 .lp .nav.is-tight { max-width: 820px; padding: 6px 6px 6px 16px; --lp-glass: color-mix(in srgb, var(--lp-bg) 78%, transparent); }
 .lp .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; letter-spacing: -0.03em; text-decoration: none; margin-right: auto; }
-.lp .brand-mark { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--lp-ink); position: relative; }
-.lp .brand-mark::after { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: var(--lp-accent); }
+.lp .brand-logo { display: block; height: 26px; width: auto; }
+.lp .footer-logo { display: block; height: 28px; width: auto; margin-bottom: 12px; }
+.lp .logo-ink { fill: var(--lp-logo-ink); }
+.lp .logo-ink-line { stroke: var(--lp-logo-ink); }
+.lp .logo-teal-line { stroke: var(--lp-logo-teal); }
 .lp .nav-links { display: flex; gap: 2px; margin-right: 8px; }
 .lp .nav-links a, .lp .nav-git { display: block; padding: 8px 12px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--lp-ink-2); text-decoration: none; transition: color 0.2s, background-color 0.2s; }
 .lp .nav-links a:hover, .lp .nav-git:hover { color: var(--lp-ink); background: var(--lp-hair); }
@@ -137,18 +144,27 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .hero-spin { width: 100%; height: 100%; }
 .lp .hero-spin.is-spinning { animation: lp-spin 140s linear infinite; }
 @keyframes lp-spin { to { transform: rotate(360deg); } }
-.lp .hero-chips { position: absolute; inset: 0; pointer-events: none; }
-.lp .glass-chip {
-  position: absolute; display: inline-flex; align-items: baseline; gap: 6px; padding: 10px 16px; border-radius: 16px; font-size: 14px; color: var(--lp-ink-2); white-space: nowrap;
-  background: var(--lp-glass); border: 1px solid var(--lp-hair); box-shadow: var(--lp-shadow), inset 0 1px 0 var(--lp-glass-line);
-  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); font-variant-numeric: tabular-nums;
+/* The 3D brain: the canvas sits between the labels behind it (z-index 0) and the labels in front (z-index 3), so the brain hides what passes behind it. */
+.lp .brain { position: absolute; inset: 0; }
+.lp .brain-stage { position: absolute; inset: -8%; isolation: isolate; pointer-events: none; }
+.lp .brain-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; -webkit-mask-image: radial-gradient(closest-side, #000 80%, transparent); mask-image: radial-gradient(closest-side, #000 80%, transparent); opacity: 0; transform: scale(0.96); transition: opacity 1.2s var(--lp-ease), transform 1.6s var(--lp-ease); }
+.lp .brain.is-ready .brain-canvas { opacity: 1; transform: none; }
+.lp .orbit-card, .lp .orbit-tag { position: absolute; left: 0; top: 0; white-space: nowrap; will-change: transform, opacity; opacity: 0; font-variant-numeric: tabular-nums; }
+.lp .orbit-card {
+  display: grid; gap: 2px; padding: 12px 18px 13px; border-radius: 20px; color: var(--lp-ink-2); font-size: 12px; line-height: 1.25;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--lp-glass) 100%, white 30%), var(--lp-glass) 55%, color-mix(in srgb, var(--lp-glass) 70%, transparent));
+  border: 1px solid var(--lp-glass-line);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), inset 0 -1px 0 rgb(0 0 0 / 0.05), 0 1px 2px rgb(0 0 0 / 0.06), 0 18px 36px -14px rgb(20 30 60 / 0.35), 0 40px 60px -40px rgb(20 30 60 / 0.4);
+  -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px);
 }
-.lp .glass-chip b { color: var(--lp-ink); font-weight: 650; font-size: 17px; }
-.lp .glass-chip b.is-accent { color: var(--lp-accent); }
-.lp .glass-chip .arrow { color: var(--lp-ink-2); }
-.lp .glass-chip.is-a { top: 12%; left: 0; }
-.lp .glass-chip.is-b { bottom: 14%; right: 0; }
-.lp .glass-chip.is-c { top: 4%; right: 12%; }
+.lp .orbit-card b { font-size: 22px; font-weight: 680; letter-spacing: -0.03em; color: var(--lp-ink); }
+.lp .orbit-card small { font-size: 12px; }
+.lp .orbit-tag {
+  padding: 5px 10px 5px 8px; border-radius: 999px; font-family: var(--lp-mono); font-size: 11px; color: var(--lp-ink);
+  background: color-mix(in srgb, var(--lp-glass) 90%, transparent); border: 1px solid var(--lp-hair); box-shadow: 0 8px 18px -10px rgb(20 30 60 / 0.35);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.lp .orbit-tag::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--lp-accent); vertical-align: 1px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--lp-accent) 22%, transparent); }
 .lp .scroll-cue { position: absolute; left: 50%; bottom: 24px; width: 26px; height: 42px; margin-left: -13px; border-radius: 999px; border: 1.5px solid var(--lp-gross); }
 .lp .scroll-cue span { position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px; border-radius: 2px; background: var(--lp-ink-2); animation: lp-cue 2s var(--lp-ease) infinite; }
 @keyframes lp-cue { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(14px); opacity: 0; } 100% { opacity: 0; } }
@@ -310,9 +326,10 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
   .lp { font-size: 16px; }
   .lp .nav-git { display: none; }
   .lp .ring-label { display: none; }
-  .lp .glass-chip { font-size: 12.5px; padding: 8px 12px; }
-  .lp .glass-chip b { font-size: 15px; }
-  .lp .glass-chip.is-c { display: none; }
+  .lp .orbit-card { padding: 9px 13px 10px; border-radius: 16px; }
+  .lp .orbit-card b { font-size: 16px; }
+  .lp .orbit-card small, .lp .orbit-tag { font-size: 10px; }
+  .lp .orbit-tag.is-extra { display: none; }
   .lp .story-readout { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; padding: 12px 16px; }
   .lp .story-readout dd { font-size: 19px; }
   .lp .story-step p { font-size: 15px; }
