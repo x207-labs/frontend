@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { LEGACY_ROUTES } from './legacyRoutes'
 import { RequireWallet } from './components/RequireWallet'
 import { pages } from './routes'
+import { rootOpensDashboard } from './rootPath'
 
 const Landing = lazy(() => import('./landing/Landing'))
 
@@ -11,6 +12,13 @@ const Landing = lazy(() => import('./landing/Landing'))
 function Redirect({ to }: { to: string }) {
   const { search, hash } = useLocation()
   return <Navigate to={{ pathname: to, search, hash }} replace />
+}
+
+// FE-044: "/" is the landing page, except an old dashboard link (?circle= or ?epoch=), which goes to /stats with its query.
+function Root() {
+  const { search } = useLocation()
+  if (rootOpensDashboard(search)) return <Redirect to="/stats" />
+  return <Suspense fallback={null}><Landing /></Suspense>
 }
 
 // A path that no page owns (a mistyped link) used to leave the page blank.
@@ -27,7 +35,7 @@ export function App() {
   return (
     <Routes>
       {/* FE-037: outside the layout, so the first paint of "/" is not the layout with "Page not found". FE-044: "/" is the landing page; a full load of "/" gets it from main.tsx without the wallet, this route covers a link inside the dashboard. */}
-      <Route path="/" element={<Suspense fallback={null}><Landing /></Suspense>} />
+      <Route path="/" element={<Root />} />
       <Route element={<Layout />}>
         {pages.map(({ path, title, needsWallet, Page }) => (
           <Route key={path} path={path} element={needsWallet ? <RequireWallet title={title}><Page /></RequireWallet> : <Page />} />

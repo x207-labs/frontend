@@ -6,12 +6,12 @@ const ROWS = [
   {
     title: 'It does not save gas on NEAR.',
     figure: `${EPOCH8.gasEpoch} vs ${EPOCH8.gasTransfers} Tgas`,
-    body: `Epoch 8 burnt ${EPOCH8.gasEpoch} Tgas against ${EPOCH8.gasTransfers} Tgas for ${EPOCH8.vouchers} plain transfers. By a model of the measured gas it burns less only when a pair trades about 3 to 4 times or more in an epoch.`,
+    body: `Epoch 8 on ${EPOCH8.contract} burnt ${EPOCH8.gasEpoch} Tgas against ${EPOCH8.gasTransfers} Tgas for ${EPOCH8.vouchers} plain transfers. By a model of the measured gas it burns less only when a pair trades about 3 to 4 times or more in an epoch.`,
   },
   {
     title: 'It is not credit without cash.',
     figure: '≥ 125% locked',
-    body: `A member locks capital of at least 125% of the debt it can run up. In epoch 8 the members had ${EPOCH8.staked} staked against ${EPOCH8.gross} of obligations.`,
+    body: `A member locks capital of at least 125% of the debt it can run up. In epoch 8 on ${EPOCH8.contract} the members had ${EPOCH8.staked} staked against ${EPOCH8.gross} of obligations.`,
   },
   {
     title: 'It does not help every graph.',

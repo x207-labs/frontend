@@ -82,7 +82,7 @@ export function Hero() {
         <m.div className="hero-stage" style={{ y: ringY }}>
           <m.div className="hero-tilt" style={{ rotateX: tiltX, rotateY: tiltY }}>
             <div className={reduced ? 'hero-spin' : 'hero-spin is-spinning'}>
-              <Ring progress={intro} label={`The circle of epoch 8: ${EPOCH8.members} members and the ${EPOCH8.vouchers} vouchers they registered`} />
+              <Ring progress={intro} label={`The circle of ${EPOCH8.tag}: ${EPOCH8.members} members and the ${EPOCH8.vouchers} vouchers they registered`} />
             </div>
           </m.div>
         </m.div>
@@ -94,7 +94,7 @@ export function Hero() {
             <b>{EPOCH8.gross}</b> credit <span className="arrow">→</span> <b className="is-accent">{EPOCH8.moved}</b> USDT
           </m.span>
           <m.span className="glass-chip is-c" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...SPRING, delay: 1.5 }}>
-            contract <b>{LIVE.version}</b>
+            epoch 8 · <b>x207-v013</b>
           </m.span>
         </m.div>
       </div>

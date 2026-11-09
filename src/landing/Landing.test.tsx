@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import axe from 'axe-core'
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
@@ -29,9 +31,17 @@ describe('FE-044 landing page facts', () => {
     expect(Math.round((EPOCH8.cleared / EPOCH8.gross) * 1000) / 10).toBe(EPOCH8.clearedShare)
   })
 
-  it('the barter catalog has 94 entries, 9 of them refused', () => {
-    expect(BARTER_TOTAL).toBe(94)
-    expect(BARTER.find((r) => r.key === 'refused')?.count).toBe(9)
+  // The counts come from one source, docs/barter-evidence.md "The counts" of the umbrella repository. When the frontend is checked out inside the
+  // umbrella, the table is read and every row must match; a standalone checkout of this repository skips the comparison.
+  const evidence = resolve(process.cwd(), '..', 'docs', 'barter-evidence.md')
+  it.skipIf(!existsSync(evidence))('the barter counts match the table "The counts" of docs/barter-evidence.md', () => {
+    const table = readFileSync(evidence, 'utf8').split('## The counts')[1].split('\n\n')[1]
+    const rows = Object.fromEntries([...table.matchAll(/^\| (?:`([^`]+)`|\*\*All\*\*) \| (?:\*\*)?(\d+)/gm)].map(([, status, n]) => [status ?? 'All', Number(n)]))
+    const statusOf: Record<(typeof BARTER)[number]['key'], string> = {
+      testnet: 'testnet', sandbox: 'sandbox', mock: 'mock', unit: 'unit', generic: 'generic', p1: 'P1 in progress', roadmap: 'roadmap', refused: 'X',
+    }
+    expect(Object.fromEntries(BARTER.map((r) => [statusOf[r.key], r.count]))).toEqual(Object.fromEntries(Object.entries(rows).filter(([k]) => k !== 'All')))
+    expect(BARTER_TOTAL).toBe(rows.All)
   })
 })
 

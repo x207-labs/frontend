@@ -19,7 +19,14 @@ export const LIVE = {
 } as const
 
 /** Epoch 8 of `x207-v013.testnet`, mock USDT. */
+// Epoch 8 ran on the older circle x207-v013.testnet (contract 0.0.13, docs/testnet-0.0.13-realistic.json "contract"), not on the live x207-v018:
+// every place that shows these numbers names that circle. CLAIMS.md row "A realistic epoch clears on a real network": five debtors paid, one
+// default was cut from the stake, three of the eight creditors claimed. The 14 movements are README's metric residualTransfers (one per member with a net position).
 export const EPOCH8 = {
+  contract: 'x207-v013.testnet',
+  tag: 'testnet epoch 8, x207-v013',
+  paid: 5,
+  claimed: 3,
   vouchers: 24,
   members: 15,
   gross: 41.35,
@@ -48,7 +55,8 @@ export const NET: readonly number[] = [0.65, -0.55, 1.8, -0.1, -0.2, 2.25, 0.55,
 /** m06 missed its due; it was covered from its stake by finalize_epoch. */
 export const DEFAULTER = 6
 
-/** docs/barter-evidence.md, "The counts": 94 catalog entries, 85 that can be offered and 9 refused. */
+/** Source: docs/barter-evidence.md of the umbrella repository, table "The counts" (read at umbrella main 37a464b, after CT-127 and CT-131 moved #11 and #14 to testnet).
+ * Landing.test.tsx reads that table and fails when a count here differs, so a change there cannot slip past this copy. */
 export const BARTER = [
   { key: 'testnet', count: 13, label: 'Ran on NEAR testnet', note: 'with transaction hashes in the repository' },
   { key: 'sandbox', count: 13, label: 'Run in near-sandbox', note: 'against the real contract and backend' },

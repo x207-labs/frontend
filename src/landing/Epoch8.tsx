@@ -7,7 +7,7 @@ import { EASE_OUT } from './tokens'
 const FIGURES = [
   { value: String(EPOCH8.vouchers), unit: '', label: 'vouchers registered' },
   { value: String(EPOCH8.members), unit: '', label: 'members in the circle' },
-  { value: String(EPOCH8.movements), unit: '', label: 'settlement movements' },
+  { value: String(EPOCH8.movements), unit: '', label: 'net positions to settle' },
   { value: String(EPOCH8.cleared), unit: `${EPOCH8.clearedShare}%`, label: 'credit cleared in cycles' },
   { value: '1', unit: '', label: `default, ${EPOCH8.defaultDue} covered from the stake` },
 ]
@@ -16,13 +16,14 @@ export function Epoch8() {
   return (
     <section id="epoch-8" className="section epoch" aria-labelledby="epoch-title">
       <Reveal>
-        <p className="eyebrow">Measured, not projected</p>
+        <p className="eyebrow">Measured on testnet · circle {EPOCH8.contract}</p>
         <h2 id="epoch-title" className="section-title">
           Epoch 8: {EPOCH8.gross} of credit settled with <span className="is-accent">{EPOCH8.moved} USDT</span>.
         </h2>
         <p className="section-lead">
-          Fifteen agents on <code>x207-v013.testnet</code> registered {EPOCH8.vouchers} vouchers between them. At the end of the epoch {EPOCH8.debtors} of them paid in and {EPOCH8.creditors} claimed out; the rest
-          netted to zero. The token is a mock USDT.
+          Fifteen agents on <code>{EPOCH8.contract}</code> (contract 0.0.13, an earlier circle than the live <code>{LIVE.contract}</code>) registered {EPOCH8.vouchers} vouchers between them. At the end
+          of the epoch {EPOCH8.debtors} owed a net amount, {EPOCH8.creditors} were owed one and the rest netted to zero. {EPOCH8.paid} debtors paid, one default was covered from its stake, and{' '}
+          {EPOCH8.claimed} of the {EPOCH8.creditors} creditors claimed in the run. The token is a mock USDT.
         </p>
       </Reveal>
 

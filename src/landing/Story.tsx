@@ -17,7 +17,7 @@ const STEPS = [
   {
     kicker: '02 · Pay with vouchers',
     title: 'Payments are signed, not sent.',
-    body: `Inside an epoch each x402 payment is a signed, cumulative voucher. The request is served at once and no token moves yet. Epoch 8 registered ${EPOCH8.vouchers} vouchers worth ${EPOCH8.gross} in credit.`,
+    body: `Inside an epoch each x402 payment is a signed, cumulative voucher. The request is served at once and no token moves yet. Epoch 8 of the testnet circle x207-v013 registered ${EPOCH8.vouchers} vouchers worth ${EPOCH8.gross} in credit.`,
     code: 'register_cumulative',
   },
   {
@@ -29,7 +29,7 @@ const STEPS = [
   {
     kicker: '04 · Settle',
     title: 'Only the net moves.',
-    body: `Debtors pay their net in and creditors claim theirs out: ${EPOCH8.moved} USDT in ${EPOCH8.movements} movements, ${EPOCH8.movedShare}% of the gross. One member missed its ${EPOCH8.defaultDue} due; finalize_epoch covered it from its stake.`,
+    body: `Debtors pay their net in and creditors claim theirs out: ${EPOCH8.moved} USDT over ${EPOCH8.movements} net positions, ${EPOCH8.movedShare}% of the gross. In epoch 8 ${EPOCH8.paid} debtors paid; one missed its ${EPOCH8.defaultDue} due and finalize_epoch covered it from its stake.`,
     code: 'finalize_epoch',
   },
 ] as const
@@ -84,13 +84,14 @@ export function Story() {
           </div>
         </div>
         <div className="story-visual">
-          <Ring progress={ring} label={`Epoch 8, step ${step + 1} of 4: ${STEPS[step].title}`} />
+          <Ring progress={ring} label={`Testnet epoch 8 on ${EPOCH8.contract}, step ${step + 1} of 4: ${STEPS[step].title}`} />
           <dl className="story-readout glass">
             <div><dt>Vouchers</dt><dd><m.span>{vouchers}</m.span><small>/ {EPOCH8.vouchers}</small></dd></div>
             <div><dt>Credit</dt><dd><m.span>{gross}</m.span></dd></div>
             <div><dt>Movements</dt><dd><m.span>{moves}</m.span><small>/ {EPOCH8.movements}</small></dd></div>
             <div className="is-accent"><dt>USDT moved</dt><dd><m.span>{moved}</m.span></dd></div>
           </dl>
+          <p className="story-source">{EPOCH8.tag}, mock USDT</p>
         </div>
       </div>
     </section>

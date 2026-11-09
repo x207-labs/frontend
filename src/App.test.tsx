@@ -40,6 +40,12 @@ describe('dashboard shell', () => {
     expect(calls()).toEqual([])
   })
 
+  it.each(['/?circle=v014', '/?epoch=8'])('FE-044 an old dashboard link %s on "/" opens the stats page, not the landing', async (path) => {
+    renderApp(path)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Clearing stats' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Pages' })).toBeInTheDocument()
+  })
+
   it('FE-035 a path that no page owns shows a not-found page with a link, not a blank page', async () => {
     renderApp('/nope')
     expect(await screen.findByRole('heading', { level: 1, name: 'Page not found' })).toBeInTheDocument()
