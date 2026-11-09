@@ -36,7 +36,9 @@ describe('NEAR Connect', () => {
   it('TC-FE-003-05 sign out: the account is gone and the form gives way to the sign-in prompt', async () => {
     const user = userEvent.setup()
     renderApp('/onboarding', undefined, noPoll, createMockWallet('a.testnet', 'a.testnet'))
-    await user.click(await screen.findByRole('button', { name: 'Sign out' }))
+    // FE-055: the sign-out control moved into the account menu, so open it first.
+    await user.click(await screen.findByRole('button', { name: /Account menu/ }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Disconnect' }))
     expect(screen.queryByText('a.testnet')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Sign join and stake' })).toBeNull()
     expect(screen.getByText(/Onboarding works on your own account/)).toBeInTheDocument()

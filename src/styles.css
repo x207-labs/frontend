@@ -152,6 +152,17 @@ code.plain { font-weight: 400; color: var(--ink-soft); }
 .wallet { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
 .wallet-account { font-weight: 600; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wallet-error { color: var(--s409); font-size: 0.875rem; }
+.account { position: relative; display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.net-badge { flex: none; padding: 0.125rem 0.5rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font-size: 0.75rem; font-weight: 600; line-height: 1.4; }
+.account-trigger { display: flex; align-items: center; gap: 0.5rem; min-width: 0; max-width: 100%; padding: 0.25rem 0.75rem 0.25rem 0.25rem; border-radius: 999px; background: var(--sheet); color: var(--ink); border: 1px solid var(--line); }
+.account-trigger:hover:not(:disabled) { background: var(--accent-soft); color: var(--ink); }
+.account-trigger .wallet-account { max-width: 14rem; }
+.avatar { flex: none; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.8125rem; font-weight: 700; }
+.account-menu { position: absolute; z-index: 30; top: calc(100% + 0.5rem); right: 0; min-width: 12rem; padding: 0.375rem; border-radius: 14px; background: var(--sheet); border: 1px solid var(--line); box-shadow: 0 12px 32px rgb(21 74 143 / 0.16); }
+.account-menu .item { display: flex; align-items: center; gap: 0.625rem; width: 100%; min-height: 2.5rem; padding: 0.375rem 0.625rem; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font-weight: 500; text-align: left; }
+.account-menu .item:hover:not(:disabled), .account-menu .item:focus-visible { background: var(--accent-soft); color: var(--accent-ink); }
+.vh-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 420px) { .account-trigger .wallet-account { display: none; } .account-trigger { padding: 0.25rem; } }
 button.quiet { color: var(--ink); background: transparent; border-color: var(--ink-soft); }
 button.quiet:hover:not(:disabled) { color: #fff; }
 

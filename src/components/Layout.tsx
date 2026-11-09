@@ -9,7 +9,7 @@ import { DetailSlot, DetailSlotProvider } from './detail'
 import { EpochPicker } from './EpochPicker'
 import { LateEpochNotice } from './LateEpochNotice'
 import { PhaseStrip } from './PhaseStrip'
-import { WalletButton } from './WalletButton'
+import { AccountMenu } from './AccountMenu'
 
 function Header() {
   const { pathname } = useLocation()
@@ -52,7 +52,7 @@ export function Layout() {
               <p className="brand-compact">
                 x207 <span>{CIRCLE}</span>
               </p>
-              <WalletButton />
+              <AccountMenu />
             </div>
             <main id="content" ref={main} tabIndex={-1}>
               <Header />
