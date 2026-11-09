@@ -40,6 +40,16 @@ describe('FE-044 landing page facts', () => {
     expect(document.body.textContent).not.toContain('never had to move')
   })
 
+  // jsdom applies no media query, so the reduced-motion block of landing.css is read as text: it must stop every loop, the shelf marquee included.
+  it('FE-052: reduced motion stops every animation; the marquee wraps in place and its copy goes', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src', 'landing', 'landing.css'), 'utf8')
+    const block = css.split('@media (prefers-reduced-motion: reduce)')[1].split('\n}')[0]
+    expect(block).toContain('.lp *, .lp *::before, .lp *::after { animation: none !important;')
+    expect(block).toContain('.lp .shelf-track { width: auto; }')
+    expect(block).toContain('.lp .kinds { flex-wrap: wrap;')
+    expect(block).toContain('.lp .kinds.is-copy { display: none; }')
+  })
+
   // The counts come from one source, docs/barter-evidence.md "The counts" of the umbrella repository. When the frontend is checked out inside the
   // umbrella, the table is read and every row must match; a standalone checkout of this repository skips the comparison.
   const evidence = resolve(process.cwd(), '..', 'docs', 'barter-evidence.md')
