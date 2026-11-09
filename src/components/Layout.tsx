@@ -22,7 +22,8 @@ function Header() {
         <h1>{page?.title ?? 'Page not found'}</h1>
         <div className="page-tools">
           <CirclePicker />
-          <EpochPicker />
+          {/* FE-063: only a page that reads one epoch gets the picker. On the others it chose the newest cleared epoch (41) while Home spoke of the live one (42). */}
+          {page?.perEpoch && <EpochPicker />}
         </div>
       </div>
       {page?.perEpoch && <LateEpochNotice />}

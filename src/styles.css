@@ -258,4 +258,11 @@ tr[aria-selected='true'] { outline: 2px solid var(--focus); outline-offset: -2px
 /* FE-035: a label above each group of the navigation (FE-054 moved the rules to the app frame block above). */
 .rail div[role='group'], .sheet div[role='group'] { display: flex; flex-direction: column; }
 
+/* FE-063: on a touch screen every button, field and navigation link is at least 44 px tall (the tab bar is 56 px). Placed after the size rules above so it wins at equal weight. */
+@media (pointer: coarse) {
+  button, select, input, .rail a, .sheet a, .account-menu .item, .palette li, .palette-trigger, .account-trigger { min-height: 2.75rem; }
+  button.th-sort { min-height: 2.75rem; }
+  .palette-trigger, .account-trigger { min-width: 2.75rem; }
+}
+
 .evm-badge { display: inline-block; margin-left: 0.4em; padding: 0 0.45em; border: 1px solid currentColor; border-radius: 3px; font-size: 0.75em; font-weight: 700; text-decoration: none; vertical-align: middle; }

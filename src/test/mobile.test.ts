@@ -74,6 +74,17 @@ describe('FE-058 mobile platform fixes', () => {
     expect(landing).toContain('height: 640vh')
   })
 
+  it('TC-FE-063-03 on a touch screen (pointer: coarse) buttons, fields and navigation links are at least 44 px tall', () => {
+    const block = css.match(/@media \(pointer: coarse\) \{[\s\S]*?\n\}/)
+    expect(block, 'the coarse-pointer block exists').not.toBeNull()
+    const body = block![0]
+    for (const s of ['button,', 'select,', 'input,', '.rail a,', '.sheet a,', '.account-menu .item,', '.palette li,', '.palette-trigger,', '.account-trigger', 'button.th-sort']) expect(body).toContain(s)
+    expect(body.match(/min-height: 2\.75rem/g)!.length).toBeGreaterThanOrEqual(2) // 2.75rem is 44 px
+    // The block sits after every other rule that sets a min-height on these selectors, so it wins at equal weight.
+    const after = css.slice(css.indexOf(block![0]) + block![0].length)
+    expect(after).not.toMatch(/(?:\.rail a|\.sheet a|\.account-menu \.item|\.palette li|\.palette-trigger|\.account-trigger|button\.th-sort)[^{}\n]*\{[^}]*min-height/)
+  })
+
   it('TC-FE-058-06 theme-color matches the page background and the page does not scale on rotation', () => {
     const paper = css.match(/--paper:\s*(#[0-9a-f]{6});/i)![1].toLowerCase()
     expect(html).toContain(`<meta name="theme-color" content="${paper}" />`)

@@ -96,7 +96,8 @@ describe('dashboard shell', () => {
   it('TC-FE-002-04 the error names the code and try again works', async () => {
     const user = userEvent.setup()
     let down = true
-    renderApp('/onboarding', (p) =>
+    // FE-063: the epoch picker, and so its error notice, exists only on a page that reads one epoch.
+    renderApp('/stats', (p) =>
       p.endsWith('/epochs') && down ? apiError(503, 'indexer_unavailable', 'Indexer not ready') : undefined,
     )
     const alert = await screen.findByRole('alert')

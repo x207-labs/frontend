@@ -65,6 +65,23 @@ describe('FE-056 home page', () => {
     expect(epochBlock).toHaveTextContent('Nov 9, 2026')
   })
 
+  it('TC-FE-063-01 Home names one epoch, the live one (42), and has no epoch picker that points at another (41)', async () => {
+    renderApp('/app', reply('/settlements', [settlement('due')]), false, createMockWallet(SCRAPER, SCRAPER))
+    const actions = await screen.findByRole('region', { name: 'Actions to take' })
+    expect(await within(actions).findByText(/Epoch 42: pay 35 credit/)).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'This epoch' })).toHaveTextContent('Position in epoch 42')
+    expect(screen.queryByRole('combobox', { name: 'Epoch' })).toBeNull()
+  })
+
+  it('TC-FE-063-02 pages that read one epoch keep the picker; the pages that do not have none', async () => {
+    const withPicker = renderApp('/stats')
+    expect(await screen.findByRole('combobox', { name: 'Epoch' })).toBeInTheDocument()
+    withPicker.unmount()
+    renderApp('/marketplace')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Marketplace' })).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Epoch' })).toBeNull()
+  })
+
   it('an account the read API does not know is offered onboarding, not an error', async () => {
     renderApp('/app', (p) => (p.includes('/members/new.testnet') && !p.includes('settlements') ? apiError(404, 'not_found', 'no such member') : undefined), false, createMockWallet('new.testnet', 'new.testnet'))
     expect(await screen.findByText(/not a member of the circle yet/)).toBeInTheDocument()
