@@ -55,7 +55,8 @@ describe('TC-FE-060-02 the wizard on the Onboarding page', () => {
     await open()
     expect(document.querySelectorAll('li.onboarding-step')).toHaveLength(4)
     expect(await within(step('funds')).findByText('Current step')).toBeInTheDocument()
-    expect(within(step('funds')).getByRole('link', { name: 'testnet faucet' })).toHaveAttribute('href', FAUCET_URL)
+    // no backend faucet in the fixtures (404): the manual steps show once the check ends
+    expect(await within(step('funds')).findByRole('link', { name: 'testnet faucet' })).toHaveAttribute('href', FAUCET_URL)
     const command = within(step('funds')).getByText(/near call/)
     expect(command).toHaveTextContent(MOCK_USDT_ID)
     expect(command).toHaveTextContent(`"account_id":"${ACCOUNT}"`)

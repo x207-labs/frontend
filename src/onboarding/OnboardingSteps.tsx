@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { JOIN_GUIDE_URL, NEAR_NETWORK } from '../config'
 import './onboarding.css'
+import { FaucetPanel } from './FaucetPanel'
 import { useProgress } from './progress'
 import { computeSteps, type MemberState, type StepId, type StepStatus } from './steps'
 
@@ -19,7 +20,12 @@ const TITLES: Record<StepId, string> = {
 }
 const BADGE: Record<StepStatus, string> = { done: 'Done', current: 'Current step', upcoming: 'Up next' }
 
+// FE-064: the faucet of the backend when it is on; otherwise (404, disabled, unreachable) the manual steps.
 function FundsBody({ account, onDone, done }: { account: string; onDone: () => void; done: boolean }) {
+  return <FaucetPanel account={account} onFunded={onDone} fallback={<ManualFunds account={account} onDone={onDone} done={done} />} />
+}
+
+function ManualFunds({ account, onDone, done }: { account: string; onDone: () => void; done: boolean }) {
   const mint = `near call ${MOCK_USDT_ID} mint '{"account_id":"${account}","amount":"100000000"}' --accountId ${account} --networkId testnet`
   return (
     <>
@@ -32,7 +38,7 @@ function FundsBody({ account, onDone, done }: { account: string; onDone: () => v
         <li>
           Get mock USDT. The testnet circle uses the mock token <code className="plain">{MOCK_USDT_ID}</code>, which lets anyone mint. 100 USDT with the NEAR CLI:
           <pre className="cmd"><code>{mint}</code></pre>
-          An automatic faucet for mock USDT is being added; until then this command is the way.
+          This is the manual way, used when the automatic faucet is not available.
         </li>
       </ol>
       {!done && (

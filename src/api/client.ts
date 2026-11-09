@@ -120,6 +120,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 const circle = `/x207/circles/${encodeURIComponent(CIRCLE)}`
 
 export const api = {
+  // FE-064: the test-funds faucet (BE-114). GET doubles as the "is it on" check: a backend without it answers 404.
+  faucetInfo: () => get<import('../onboarding/faucet').FaucetInfo>('/x207/faucet'),
+  faucetClaim: (accountId: string) => post<import('../onboarding/faucet').FaucetGrant>('/x207/faucet', { account_id: accountId }),
   epochs: () => get<Paged<EpochItem>>(`${circle}/epochs`),
   members: () => get<Paged<Member>>(`${circle}/members`),
   member: (account: string) =>
