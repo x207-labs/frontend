@@ -9,7 +9,8 @@ export const LIVE = {
   api: 'https://v018.x207.boxd.sh',
   apiEpochs: 'https://v018.x207.boxd.sh/x207/circles/agents-main/epochs',
   // FE-045: every "open the dashboard" link opens the live circle v018 (the picker still offers v013 for the epoch 8 history).
-  dashboard: '/stats?circle=v018',
+  // FE-056: the entry is the member's Home page; the public clearing stats are one click away in the same sidebar.
+  dashboard: '/app?circle=v018',
   github: 'https://github.com/x207-labs',
   repo: 'https://github.com/x207-labs/x207',
   claims: 'https://github.com/x207-labs/x207/blob/main/CLAIMS.md',

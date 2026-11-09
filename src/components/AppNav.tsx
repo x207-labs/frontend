@@ -39,7 +39,7 @@ export function Sidebar() {
 
 type Tab = { label: string; group: PageGroup; icon: string }
 const TABS: Tab[] = [
-  { label: 'Overview', group: 'Overview', icon: '/stats' },
+  { label: 'Home', group: 'Overview', icon: '/app' },
   { label: 'Account', group: 'My account', icon: 'account' },
   { label: 'Market', group: 'Marketplace', icon: '/marketplace' },
   { label: 'Govern', group: 'Governance', icon: '/governance' },

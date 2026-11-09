@@ -13,11 +13,11 @@ describe('dashboard shell', () => {
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
   })
 
-  it('TC-FE-002-01 fifteen pages (F1-F4, governance, marketplace F9, access F8, invoices P8, orders P6, licenses P7, codes P3, transfers P4 and access rent P2) open from one navigation', async () => {
+  it('TC-FE-002-01 sixteen pages (Home, F1-F4, governance, marketplace F9, access F8, invoices P8, orders P6, licenses P7, codes P3, transfers P4 and access rent P2) open from one navigation', async () => {
     const user = userEvent.setup()
     renderApp('/stats')
     const nav = screen.getByRole('navigation', { name: 'Pages' })
-    expect(within(nav).getAllByRole('link')).toHaveLength(15)
+    expect(within(nav).getAllByRole('link')).toHaveLength(16)
     for (const { title } of pages) {
       await user.click(within(nav).getByRole('link', { name: title }))
       expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument()
@@ -34,7 +34,7 @@ describe('dashboard shell', () => {
     // The landing is a lazy chunk; its first import in a test run takes longer than the default second.
     expect(await screen.findByRole('heading', { level: 1 }, { timeout: 8000 })).toHaveTextContent('x207 settles the net.')
     expect(screen.queryByRole('navigation', { name: 'Pages' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: /dashboard/i })[0]).toHaveAttribute('href', '/stats?circle=v018') // FE-045: the live circle
+    expect(screen.getAllByRole('link', { name: /dashboard/i })[0]).toHaveAttribute('href', '/app?circle=v018') // FE-045: the live circle; FE-056: opens on Home
     watch.disconnect()
     expect(seen).toBe(false)
     expect(calls()).toEqual([])

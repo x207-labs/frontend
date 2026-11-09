@@ -3,6 +3,7 @@ import { ClearingStats } from './pages/ClearingStats'
 import { Governance } from './pages/Governance'
 import { Codes } from './pages/Codes'
 import { Grants } from './pages/Grants'
+import { Home } from './pages/Home'
 import { Invoices } from './pages/Invoices'
 import { Licenses } from './pages/Licenses'
 import { Marketplace } from './pages/Marketplace'
@@ -22,6 +23,7 @@ export type PageGroup = (typeof GROUPS)[number]
 export type PageRoute = { path: string; title: string; perEpoch: boolean; group: PageGroup; needsWallet?: boolean; Page: ComponentType }
 
 export const pages: PageRoute[] = [
+  { path: '/app', title: 'Home', perEpoch: false, group: 'Overview', Page: Home },
   { path: '/stats', title: 'Clearing stats', perEpoch: true, group: 'Overview', Page: ClearingStats },
   { path: '/reports', title: '207 report', perEpoch: true, group: 'Overview', Page: Report207 },
   { path: '/charts', title: 'Obligation graph', perEpoch: true, group: 'Overview', Page: ObligationGraph },

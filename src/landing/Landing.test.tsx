@@ -107,8 +107,8 @@ describe('FE-044 landing page', () => {
       expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
     }
     // FE-045: every dashboard link opens the live circle v018
-    expect(screen.getByRole('link', { name: 'Open dashboard' })).toHaveAttribute('href', '/stats?circle=v018')
-    for (const link of screen.getAllByRole('link', { name: /^(Open the dashboard|Dashboard)$/ })) expect(link).toHaveAttribute('href', '/stats?circle=v018')
+    expect(screen.getByRole('link', { name: 'Open dashboard' })).toHaveAttribute('href', '/app?circle=v018')
+    for (const link of screen.getAllByRole('link', { name: /^(Open the dashboard|Dashboard)$/ })) expect(link).toHaveAttribute('href', '/app?circle=v018')
     // FE-051: one bar and one shelf tile per catalog entry (the marquee copy of each row is hidden from screen readers and not counted).
     expect(container.querySelectorAll('.strip .bar')).toHaveLength(BARTER_TOTAL)
     expect(container.querySelectorAll('.kinds:not(.is-copy) .kind')).toHaveLength(BARTER_TOTAL)

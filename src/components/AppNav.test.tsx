@@ -10,10 +10,10 @@ describe('FE-054 app frame', () => {
   it('the tab bar has one tab per group and More; the tab of the current group is marked', async () => {
     renderApp('/marketplace')
     const bar = screen.getByRole('navigation', { name: 'Main' })
-    expect(within(bar).getAllByRole('link').map((a) => a.textContent)).toEqual(['Overview', 'Account', 'Market', 'Govern'])
+    expect(within(bar).getAllByRole('link').map((a) => a.textContent)).toEqual(['Home', 'Account', 'Market', 'Govern'])
     expect(within(bar).getByRole('button', { name: 'More' })).toBeInTheDocument()
     expect(within(bar).getByRole('link', { name: 'Market' })).toHaveAttribute('aria-current', 'page')
-    expect(within(bar).getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current')
+    expect(within(bar).getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current')
   })
 
   it('a tab opens the first page of its group and keeps the query (the epoch and circle)', async () => {
