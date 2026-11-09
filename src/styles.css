@@ -197,6 +197,8 @@ button.th-sort { padding: 0; min-height: 0; border: 0; background: transparent; 
 .stat dd.stat-note { margin: 0.375rem 0 0; font-size: 0.8125rem; color: var(--ink-soft); }
 .vh-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 420px) { .account-trigger .wallet-account { display: none; } .account-trigger { padding: 0.25rem; } }
+/* FE-062: at 320 px the top bar fits on one line: the sign-in label does not wrap and the circle name under the brand makes way. */
+@media (max-width: 359px) { .brand-compact span { display: none; } .topbar .wallet button { white-space: nowrap; padding-inline: 0.625rem; } }
 button.quiet { color: var(--ink); background: transparent; border-color: var(--ink-soft); }
 
 /* FE-058: phone and tablet fixes.

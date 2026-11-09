@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import css from '../styles.css?raw'
 import html from '../../index.html?raw'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+// vitest only passes styles.css through as text (vite.config.ts), so the landing sheet is read from disk.
+const landing = readFileSync(resolve(process.cwd(), 'src', 'landing', 'landing.css'), 'utf8')
 
 // FE-058: the phone fixes live in CSS and in index.html, which jsdom does not run. These tests read the sources, so a later edit cannot quietly undo them.
 // What they cannot show is how a real iPhone or Android phone behaves; that needs a device.
@@ -49,6 +54,24 @@ describe('FE-058 mobile platform fixes', () => {
     const rule = css.split('\n').find((l) => l.includes('touch-action: manipulation'))!
     for (const s of ['a,', 'button,', 'select,', 'input,', 'textarea,', "[role='option']", "[role='menuitem']"]) expect(rule).toContain(s)
     expect(rule).toContain('-webkit-tap-highlight-color: transparent')
+  })
+
+  it('TC-FE-062-01 landing.css: every :hover rule is inside (hover: hover) and (pointer: fine), except the reset that cancels the global button hover', () => {
+    const bare = landing.replace(/\/\*[\s\S]*?\*\//g, '')
+    const stray = bare
+      .split('\n')
+      .filter((l) => l.includes(':hover') && !/^@media \(hover: hover\) and \(pointer: fine\) \{.*\}\s*$/.test(l))
+      .map((l) => l.split('{')[0].trim())
+    expect(stray).toEqual(['.lp button:hover:not(:disabled)'])
+    // Pausing the marquee on hover must not stick on a touch screen; focus and the active barter still pause it.
+    expect(bare).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{ \.lp \.shelf-row:hover \.shelf-track \{ animation-play-state: paused; \} \}/)
+    expect(bare).toContain('.lp .shelf-row:focus-within .shelf-track')
+  })
+
+  it('TC-FE-062-02 landing.css: the page box has a dvh height; the story stage uses svh; the 640vh and 560vh story length is scroll distance, not a visible box', () => {
+    expect(landing).toMatch(/min-height: 100vh;\s*min-height: 100dvh;/)
+    expect(landing).toContain('height: 100svh')
+    expect(landing).toContain('height: 640vh')
   })
 
   it('TC-FE-058-06 theme-color matches the page background and the page does not scale on rotation', () => {

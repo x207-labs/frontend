@@ -41,6 +41,7 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: clip;
   background: var(--lp-bg);
   color: var(--lp-ink);
@@ -82,10 +83,10 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
   background: var(--lp-glass); border: 1px solid var(--lp-gross);
   transition: transform 0.5s var(--lp-spring), background-color 0.2s, border-color 0.2s;
 }
-.lp .btn:hover { transform: translateY(-1px); border-color: var(--lp-line); }
+@media (hover: hover) and (pointer: fine) { .lp .btn:hover { transform: translateY(-1px); border-color: var(--lp-line); } }
 .lp .btn:active { transform: scale(0.97); transition-duration: 0.12s; }
 .lp .btn.is-primary { background: var(--lp-accent-fill); border-color: transparent; color: var(--lp-on-accent); }
-.lp .btn.is-primary:hover { background: #2470e6; }
+@media (hover: hover) and (pointer: fine) { .lp .btn.is-primary:hover { background: #2470e6; } }
 .lp .btn.is-small { height: 36px; padding: 0 16px; font-size: 14px; }
 
 /* Nav */
@@ -102,9 +103,9 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .logo-teal-line { stroke: var(--lp-logo-teal); }
 .lp .nav-links { display: flex; gap: 2px; margin-right: 8px; }
 .lp .nav-links a, .lp .nav-git { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--lp-ink-2); text-decoration: none; transition: color 0.2s, background-color 0.2s; }
-.lp .nav-links a:hover, .lp .nav-git:hover { color: var(--lp-ink); background: var(--lp-hair); }
+@media (hover: hover) and (pointer: fine) { .lp .nav-links a:hover, .lp .nav-git:hover { color: var(--lp-ink); background: var(--lp-hair); } }
 .lp .nav-links .icon, .lp .nav-git .icon { width: 16px; height: 16px; opacity: 0.7; transition: opacity 0.2s, color 0.2s; }
-.lp .nav-links a:hover .icon, .lp .nav-git:hover .icon { opacity: 1; color: var(--lp-accent); }
+@media (hover: hover) and (pointer: fine) { .lp .nav-links a:hover .icon, .lp .nav-git:hover .icon { opacity: 1; color: var(--lp-accent); } }
 
 /* FE-051: object icons. One line weight (1.5 on a 24 grid), the colour of the text; every shape has pathLength 1, so the shelf can draw them in. */
 .lp .icon { display: block; flex: none; width: 20px; height: 20px; overflow: visible; }
@@ -203,9 +204,9 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .hud-ticks li.is-on { opacity: 1; color: var(--lp-ink); transform: translateX(-4px); }
 .lp .hud-source { position: absolute; z-index: 5; left: var(--lp-side); bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--lp-ink-2); }
 .lp .hud-source a { color: var(--lp-accent); text-decoration: none; }
-.lp .hud-source a:hover { text-decoration: underline; }
+@media (hover: hover) and (pointer: fine) { .lp .hud-source a:hover { text-decoration: underline; } }
 .lp .skip-story { position: absolute; z-index: 5; right: var(--lp-side); bottom: 14px; padding: 8px 14px; border-radius: 999px; font-size: 13px; color: var(--lp-ink-2); text-decoration: none; border: 1px solid var(--lp-hair); background: var(--lp-glass); transition: color 0.2s, border-color 0.2s; }
-.lp .skip-story:hover { color: var(--lp-ink); border-color: var(--lp-gross); }
+@media (hover: hover) and (pointer: fine) { .lp .skip-story:hover { color: var(--lp-ink); border-color: var(--lp-gross); } }
 .lp .dive-flash { position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 46%, rgb(160 196 255 / 0.4), rgb(61 139 255 / 0.16) 32%, var(--lp-bg) 72%); }
 
 /* The ring (fallback for the brain) */
@@ -233,7 +234,7 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .section { position: relative; max-width: 1120px; margin: 0 auto; padding: var(--lp-pad) var(--lp-gutter) 0; }
 .lp .section-title { font-size: clamp(34px, 5vw, 64px); line-height: 1.04; font-weight: 700; letter-spacing: -0.04em; max-width: 20ch; }
 .lp .spec-text a, .lp .spotlight a { color: var(--lp-accent); text-decoration: none; }
-.lp .spec-text a:hover, .lp .spotlight a:hover { text-decoration: underline; }
+@media (hover: hover) and (pointer: fine) { .lp .spec-text a:hover, .lp .spotlight a:hover { text-decoration: underline; } }
 
 /* Barter (FE-051): a strip of 94 bars, the tiers under it, then a shelf of every kind with its object and code. Tier colours are scoped to the bar, the
    swatch and the tick, so the kind tiles keep their own surface. */
@@ -258,7 +259,8 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
   display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 10px; border-radius: 999px; font-size: 13.5px; color: var(--lp-ink-2);
   transition: background-color 0.25s var(--lp-ease), color 0.25s;
 }
-.lp .tier:hover:not(:disabled), .lp .tier.is-lit { background: var(--lp-hair); color: var(--lp-ink); }
+.lp .tier.is-lit { background: var(--lp-hair); color: var(--lp-ink); }
+@media (hover: hover) and (pointer: fine) { .lp .tier:hover:not(:disabled) { background: var(--lp-hair); color: var(--lp-ink); } }
 .lp .tier-swatch { width: 10px; height: 10px; border-radius: 2px; }
 .lp .tier-count { font-weight: 650; color: var(--lp-ink); font-variant-numeric: tabular-nums; }
 
@@ -276,7 +278,8 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 }
 .lp .shelf-track { display: flex; width: max-content; animation: lp-shelf var(--run, 40s) linear infinite; }
 .lp .shelf-track.is-reverse { animation-direction: reverse; }
-.lp .shelf-row:hover .shelf-track, .lp .shelf-row:focus-within .shelf-track, .lp .barter[data-active] .shelf-track { animation-play-state: paused; }
+.lp .shelf-row:focus-within .shelf-track, .lp .barter[data-active] .shelf-track { animation-play-state: paused; }
+@media (hover: hover) and (pointer: fine) { .lp .shelf-row:hover .shelf-track { animation-play-state: paused; } }
 @keyframes lp-shelf { to { transform: translateX(-50%); } }
 .lp .kinds { display: flex; gap: 8px; padding-right: 8px; }
 .lp .kind {
@@ -290,7 +293,7 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .kind.is-refused { color: var(--lp-orange); }
 .lp .kind.is-refused code { color: var(--lp-ink-2); text-decoration: line-through; text-decoration-color: rgb(245 165 36 / 0.6); }
 .lp .kind-tick { width: 6px; height: 6px; border-radius: 50%; margin-left: 2px; }
-.lp .kind:hover { border-color: var(--lp-gross); }
+@media (hover: hover) and (pointer: fine) { .lp .kind:hover { border-color: var(--lp-gross); } }
 .lp .barter[data-active] .kind:not(.is-lit) { opacity: 0.22; }
 .lp .barter[data-active] .kind.is-lit { border-color: var(--lp-line); }
 .lp .shelf .kind .icon * { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.2s var(--lp-ease) 0.2s; }
@@ -325,19 +328,19 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
   flex: none; min-width: 76px; height: 34px; padding: 0 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
   background: var(--lp-hair); color: var(--lp-ink); display: inline-flex; align-items: center; justify-content: center;
 }
-.lp .copy:hover:not(:disabled) { background: var(--lp-gross); }
+@media (hover: hover) and (pointer: fine) { .lp .copy:hover:not(:disabled) { background: var(--lp-gross); } }
 
 /* Live (FE-051): a directory of the running parts, each with its object. */
 .lp .live-list { margin-top: 40px; border-top: 1px solid var(--lp-hair); }
 .lp .live-list li { border-bottom: 1px solid var(--lp-hair); }
 .lp .live-list a { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 18px; gap: 18px; align-items: center; padding: 16px 8px 16px 0; text-decoration: none; transition: background-color 0.2s, padding 0.4s var(--lp-ease); }
-.lp .live-list a:hover { background: linear-gradient(90deg, transparent, rgb(61 139 255 / 0.06)); padding-left: 6px; }
+@media (hover: hover) and (pointer: fine) { .lp .live-list a:hover { background: linear-gradient(90deg, transparent, rgb(61 139 255 / 0.06)); padding-left: 6px; } }
 .lp .live-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--lp-hair); color: var(--lp-ink-2); transition: color 0.2s, border-color 0.2s; }
-.lp .live-list a:hover .live-icon { color: var(--lp-accent); border-color: var(--lp-gross); }
+@media (hover: hover) and (pointer: fine) { .lp .live-list a:hover .live-icon { color: var(--lp-accent); border-color: var(--lp-gross); } }
 .lp .live-label { font-weight: 550; }
 .lp .live-value { font-family: var(--lp-mono); font-size: 14px; color: var(--lp-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lp .live-arrow { width: 18px; height: 18px; color: var(--lp-ink-2); transition: transform 0.4s var(--lp-spring), color 0.2s; }
-.lp .live-list a:hover .live-arrow { transform: translate(2px, -2px); color: var(--lp-accent); }
+@media (hover: hover) and (pointer: fine) { .lp .live-list a:hover .live-arrow { transform: translate(2px, -2px); color: var(--lp-accent); } }
 .lp .live-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 
 /* Footer (FE-051): the circle of epoch 8 as faded line art behind the brand, the status and three columns of links; a bottom bar under them. */
@@ -346,7 +349,7 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
   border-top: 1px solid var(--lp-hair); font-size: 14px; color: var(--lp-ink-2);
 }
 .lp .footer a { text-decoration: none; transition: color 0.2s; }
-.lp .footer a:hover { color: var(--lp-ink); }
+@media (hover: hover) and (pointer: fine) { .lp .footer a:hover { color: var(--lp-ink); } }
 .lp .footer-horizon {
   position: relative; height: clamp(150px, 22vw, 270px); overflow: hidden; pointer-events: none;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
@@ -374,7 +377,7 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 0 28px; border-top: 1px solid var(--lp-hair); font-size: 13px; }
 .lp .to-top { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--lp-hair); }
 .lp .to-top .icon { width: 14px; height: 14px; }
-.lp .to-top:hover { border-color: var(--lp-gross); }
+@media (hover: hover) and (pointer: fine) { .lp .to-top:hover { border-color: var(--lp-gross); } }
 
 /* Portrait screens (the same switch as scene.ts: aspect 1.15): the brain stays on top, the captions sit at the bottom over a scrim. */
 @media (max-aspect-ratio: 23/20) {

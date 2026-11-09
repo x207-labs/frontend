@@ -310,7 +310,8 @@ describe('FE-027 service orders', () => {
     expect(Object.keys(post.body.order).slice(-3)).toEqual(['proof', 'mandate_hash', 'nonce'])
     expect(post.body.signatures[0].signature).toBe(await signMessageWithVoucher(JSON.stringify(post.body.order), CONTRACT_ID, KEY))
     expect(JSON.stringify(post.body)).not.toContain(KEY)
-  })
+    // This test types about 150 characters through userEvent. It takes under a second on an idle machine, but past the 5 s default when other test runs share the CPU.
+  }, 20_000)
 
   it('TC-FE-030-02 a bad mandate is refused before anything is signed: no kinds, a kind that is not snake_case, and no rules text', async () => {
     const user = userEvent.setup()
