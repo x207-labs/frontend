@@ -83,9 +83,10 @@ describe('FE-054 app frame', () => {
     const rail = block('(min-width: 840px)')
     expect(rail).toMatch(/\.rail \{ display: block; \}/)
     expect(rail).toMatch(/\.tabbar \{ display: none; \}/)
-    expect(rail).toMatch(/grid-template-columns: 4\.5rem/)
+    // FE-067: the rail floats as a glass card with a margin, so the first column is 5.25rem (rail 4.5rem + gutter) and the sidebar 15.5rem
+    expect(rail).toMatch(/grid-template-columns: 5\.25rem/)
     const wide = block('(min-width: 1200px)')
-    expect(wide).toMatch(/grid-template-columns: 15rem/)
+    expect(wide).toMatch(/grid-template-columns: 15\.5rem/)
     expect(wide).toMatch(/\.nav-label \{ position: static;/)
   })
 })

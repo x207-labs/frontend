@@ -1,10 +1,14 @@
-/* FE-060: stepper of the Onboarding page. Own file so the shared app styles stay untouched. */
-.onboarding-steps { list-style: none; margin: 1rem 0; padding: 0; display: grid; gap: 0.75rem; }
-.onboarding-step { border: 1px solid var(--border, #d0d7de); border-radius: 8px; padding: 0.75rem 1rem; }
-.onboarding-step[data-status='current'] { border-color: var(--accent, #2563eb); box-shadow: 0 0 0 1px var(--accent, #2563eb); }
-.onboarding-step[data-status='done'] { opacity: 0.85; }
-.onboarding-step h3 { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.25rem; font-size: 1rem; }
-.step-number { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 1px solid currentColor; font-size: 0.8rem; }
-.step-badge { margin-left: auto; font-size: 0.75rem; font-weight: 500; opacity: 0.8; }
+/* FE-060: stepper of the Onboarding page. Own file so the shared app styles stay untouched.
+   FE-067: glass steps on the dark theme; the current step glows in the accent. minmax(0, 1fr) keeps a long command from widening the page (the grid item may shrink below its content). */
+.onboarding-steps { list-style: none; margin: 1rem 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+.onboarding-step { min-width: 0; border: 1px solid var(--line); border-radius: 20px; padding: 1rem 1.25rem; background: var(--glass); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); transition: border-color 0.3s var(--ease), box-shadow 0.4s var(--ease); }
+.onboarding-step[data-status='current'] { border-color: rgb(61 139 255 / 0.55); box-shadow: 0 0 0 1px rgb(61 139 255 / 0.25), 0 0 40px -10px rgb(61 139 255 / 0.6); }
+.onboarding-step[data-status='done'] { opacity: 0.8; }
+.onboarding-step h3 { display: flex; align-items: center; gap: 0.625rem; margin: 0 0 0.25rem; font-size: 1.0625rem; }
+.step-number { display: inline-grid; place-items: center; width: 1.625rem; height: 1.625rem; border-radius: 50%; border: 1px solid var(--line); background: var(--tile); font-size: 0.8rem; }
+.onboarding-step[data-status='current'] .step-number { background: var(--accent-fill); border-color: transparent; color: #fff; }
+.onboarding-step[data-status='done'] .step-number { background: rgb(79 216 138 / 0.16); border-color: rgb(79 216 138 / 0.4); color: var(--s200); }
+.step-badge { margin-left: auto; font-size: 0.75rem; font-weight: 500; color: var(--ink-soft); }
 .steps-sub { padding-left: 1.25rem; }
-.cmd { overflow-x: auto; padding: 0.5rem; border-radius: 6px; background: var(--surface, rgba(127, 127, 127, 0.12)); }
+.cmd { max-width: 100%; overflow-x: auto; padding: 0.75rem 1rem; border-radius: 14px; background: rgb(0 0 0 / 0.35); border: 1px solid var(--line); }
+.cmd code { padding: 0; background: transparent; }

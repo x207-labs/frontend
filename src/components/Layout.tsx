@@ -61,7 +61,10 @@ export function Layout() {
             </div>
             <main id="content" ref={main} tabIndex={-1}>
               <Header />
-              <Outlet />
+              {/* FE-067: a new key per page, so each page eases in (the CSS animates the blocks of .route one after the other) */}
+              <div className="route" key={pathname}>
+                <Outlet />
+              </div>
             </main>
             <DetailSlot />
           </div>

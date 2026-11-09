@@ -3,7 +3,7 @@
   position: fixed;
   z-index: 40;
   right: 1rem;
-  bottom: calc(var(--tabbar-h, 0px) + 1rem);
+  bottom: calc(var(--tabbar-h, 0px) + 1.5rem + env(safe-area-inset-bottom));
   left: 1rem;
   display: flex;
   flex-direction: column;
@@ -20,12 +20,14 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: var(--sheet);
+  background: var(--glass-strong, var(--sheet));
   color: var(--ink);
   border: 1px solid var(--line);
   border-left-width: 4px;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(23, 48, 92, 0.12);
+  border-radius: 16px;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 18px 48px -18px rgba(0, 0, 0, 0.8);
 }
 .tx-toast-pending { border-left-color: var(--s202); }
 .tx-toast-confirmed { border-left-color: var(--s200); }
