@@ -6,6 +6,8 @@ import { ACCOUNT_RECIPIENT, accountErrorMessage, callAccount, makeNonce, toBase6
 
 export class SigningCancelled extends Error {}
 export class SigningUnsupported extends Error {}
+/** FE-101: the wallet failed to sign (popup blocked or closed, no answer, an answer without a signature). Before, this read as "the account service could not be reached". */
+export class SigningFailed extends Error {}
 
 // Whether the connected wallet can sign messages. Unknown until the first attempt: a wallet that cannot sign answers with an error that says so, and from then on the
 // account features that need a signature explain that instead of asking again. A rejection by the person says nothing about the wallet.
@@ -32,6 +34,7 @@ export const UNSUPPORTED_MESSAGE = 'This wallet cannot sign messages, so account
 export function describeAccountFailure(error: unknown): string {
   if (error instanceof SigningCancelled) return 'Cancelled in the wallet. Nothing was saved.'
   if (error instanceof SigningUnsupported) return UNSUPPORTED_MESSAGE
+  if (error instanceof SigningFailed) return 'The wallet did not return a signature. Nothing was saved. Try again, or use another wallet.'
   return accountErrorMessage(error)
 }
 
@@ -59,8 +62,10 @@ export function useAccountActions() {
           setSigning('no')
           throw new SigningUnsupported()
         }
-        throw e
+        throw new SigningFailed(e instanceof Error ? e.message : String(e))
       }
+      const field = (v: unknown) => typeof v === 'string' && v !== ''
+      if (!signed || !field(signed.accountId) || !field(signed.publicKey) || !field(signed.signature)) throw new SigningFailed('The wallet answered without a signature')
       setSigning('yes')
       const result = await callAccount(action, data, { accountId: signed.accountId, publicKey: signed.publicKey, signature: signed.signature, message, nonce: toBase64(nonce), recipient: ACCOUNT_RECIPIENT })
       applyAccountData(result)

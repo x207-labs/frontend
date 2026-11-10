@@ -9,7 +9,10 @@ import { UNSUPPORTED_MESSAGE, applyAccountData, describeAccountFailure, useAccou
 import type { AccountAction } from '../account/client'
 import { displayAccount, initial } from '../lib/account'
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// FE-101: the same rules as the account service (backend/supabase/functions/x207-account/handler.ts `EMAIL`, `CONTROL`), so a value the form accepts is never
+// refused after the wallet has signed: at most 64 characters before the @, 190 between it and the last dot, and a domain end of 2 or more.
+const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/
+const hasControl = (text: string) => [...text].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) === 0x7f)
 
 type Note = { at: AccountAction | 'photo'; kind: 'ok' | 'error'; text: string }
 
@@ -33,7 +36,7 @@ export function Settings() {
   const [note, setNote] = useState<Note | null>(null)
 
   const trimmed = name.trim()
-  const nameOk = trimmed.length >= 1 && trimmed.length <= 40
+  const nameOk = trimmed.length >= 1 && trimmed.length <= 40 && !hasControl(trimmed)
   const emailOk = email.trim() === '' || (email.trim().length <= 254 && EMAIL.test(email.trim()))
   const who = account ?? ''
 
@@ -120,7 +123,7 @@ export function Settings() {
           <label>
             <span>Display name</span>
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} autoComplete="nickname" placeholder="Ana" />
-            {name !== '' && !nameOk && <small className="state-error" role="alert">Use 1 to 40 characters.</small>}
+            {name !== '' && !nameOk && <small className="state-error" role="alert">Use 1 to 40 characters, with no tabs or line breaks.</small>}
           </label>
           <div className="settings-actions">
             <button type="submit" disabled={!nameOk || busy !== null || trimmed === (cached.displayName ?? '')}>

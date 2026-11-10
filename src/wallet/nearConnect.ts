@@ -97,6 +97,9 @@ export const nearConnectPort: WalletPort = {
   async signMessage(signerId, input) {
     const c = await getConnector()
     const wallet = await c.wallet()
+    // FE-101: NEAR Connect passes the call to the wallet whatever its manifest says, and each wallet words its refusal its own way. A wallet whose manifest says it
+    // cannot sign messages is told apart here, in words the account features recognise (useAccount.ts `UNSUPPORTED`).
+    if (wallet.manifest?.features?.signMessage === false) throw new Error(`${wallet.manifest.name ?? 'This wallet'} does not support signing messages`)
     return wallet.signMessage({
       message: input.message,
       recipient: input.recipient,

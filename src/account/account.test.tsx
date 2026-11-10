@@ -58,8 +58,12 @@ describe('TC-FE-068-01 helpers', () => {
     expect(accountErrorMessage(new TypeError('Failed to fetch'))).toContain('could not be reached')
   })
   it('the onboarding payload uses the field names of the service', () => {
-    expect(onboardingPayload({ funds: true, payment: false }, { kind: 'none' })).toEqual({ wallet_created: true, funds_received: true, joined: false, staked: false, tour_done: false })
-    expect(onboardingPayload({ funds: false, payment: true }, { kind: 'member', member: { stake: '5', outstandingDebt: '0', settledHistory: '0' } })).toMatchObject({ joined: true, staked: true, tour_done: true })
+    expect(onboardingPayload({ funds: true, payment: false }, { kind: 'none' })).toEqual({ wallet_created: true, funds_received: true, joined: false, staked: false })
+    expect(onboardingPayload({ funds: false, payment: true }, { kind: 'member', member: { stake: '5', outstandingDebt: '0', settledHistory: '0' } })).toEqual({ wallet_created: true, joined: true, staked: true, tour_done: true })
+  })
+  it('TC-FE-101-01 a false answer and an unknown membership are left out, so the stored steps are not reset', () => {
+    expect(onboardingPayload({ funds: false, payment: false }, { kind: 'loading' })).toEqual({ wallet_created: true })
+    expect(onboardingPayload({ funds: true, payment: true }, { kind: 'loading' })).toEqual({ wallet_created: true, funds_received: true, tour_done: true })
   })
   it('the CSP lets the page connect to the account service', () => {
     expect(buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh' })).toContain('https://vldhsabgpfxccsljdtye.supabase.co')
@@ -146,6 +150,28 @@ describe('TC-FE-068-02 Settings', () => {
   })
 
   it.each([
+    ['the popup is blocked', async () => { throw new Error('Popup was blocked') }],
+    ['the answer has no signature', async () => undefined as never],
+  ])('TC-FE-101-02 %s: a wallet sentence, no call to the service', async (_, sign) => {
+    const svc = service()
+    const wallet = createMockWallet(ACCOUNT, ACCOUNT)
+    wallet.signMessage = sign
+    const { user } = await open('/settings', svc, wallet)
+    await user.type(await screen.findByLabelText('Display name'), 'Ana')
+    await user.click(screen.getByRole('button', { name: 'Save name' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('The wallet did not return a signature')
+    expect(svc.sent).toHaveLength(0)
+  })
+
+  it('TC-FE-101-03 the email check is the service one: a one-letter domain end blocks the button', async () => {
+    const svc = service()
+    const { user } = await open('/settings', svc)
+    await user.type(await screen.findByLabelText(/Email/), 'a@b.c')
+    expect(screen.getByRole('alert')).toHaveTextContent('does not look like an email')
+    expect(screen.getByRole('button', { name: 'Save preferences' })).toBeDisabled()
+  })
+
+  it.each([
     [403, 'key_not_owned', 'not a full access key'],
     [401, 'nonce_used', 'too old or already used'],
     [503, 'rpc_unavailable', 'NEAR network did not answer'],
@@ -166,7 +192,8 @@ describe('TC-FE-068-03 onboarding progress is saved to the account', () => {
     expect(await screen.findByText('Progress saved to your account.')).toBeInTheDocument()
     expect(readProgress(ACCOUNT).payment).toBe(true)
     expect(wallet.messages.map((m) => m.message)).toEqual(['x207:upsert_onboarding'])
-    expect(svc.sent[0]).toMatchObject({ action: 'upsert_onboarding', data: { wallet_created: true, funds_received: false, joined: false, staked: false, tour_done: true } })
+    expect(svc.sent[0]).toMatchObject({ action: 'upsert_onboarding', data: { wallet_created: true, joined: false, staked: false, tour_done: true } })
+    expect(svc.sent[0].data).not.toHaveProperty('funds_received')
   })
 
   it('a declined signature keeps the local progress and says it is on this device only', async () => {
