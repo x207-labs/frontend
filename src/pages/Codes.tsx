@@ -521,10 +521,12 @@ export function Codes() {
       </div>
       {!account && <SignInPrompt action="buy or sell codes" />}
       <div className="views" data-view={view}>
-        <div className="segmented views-toggle" role="group" aria-label="Code view">
-          {VIEWS.map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} onClick={() => setView(key)}>{label}</button>)}
+        <div className="view-tabs">
+          <div className="segmented views-toggle" role="group" aria-label="Code view">
+            {VIEWS.map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} onClick={() => setView(key)}>{label}</button>)}
+          </div>
         </div>
-        <div className="form" style={{ marginBottom: '1rem' }}>
+        <div className="form key-strip">
           <VoucherKeyField value={voucherKey} onChange={setVoucherKey} disabled={!account} />
         </div>
         <section className="views-pane" data-pane="buy" data-active={view === 'buy'} aria-label="Buy a code">

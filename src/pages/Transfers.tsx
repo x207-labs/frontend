@@ -398,7 +398,7 @@ export function Transfers() {
         </ol>
       </div>
       <div className="views" data-view={view}>
-        <div className="market-top">
+        <div className="view-tabs">
           <div className="segmented market-views" role="group" aria-label="Transfer view">
             {VIEWS.map(([k, label]) => (
               <button key={k} type="button" aria-pressed={view === k} onClick={() => setView(k)}>{label}</button>

@@ -465,6 +465,8 @@ export function Marketplace() {
     <div className="market" data-view={view}>
       <div className="market-top">
         <Stats />
+      </div>
+      <div className="view-tabs">
         <div className="segmented market-views" role="group" aria-label="Marketplace view">
           {VIEWS.map(([v, label]) => (
             <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}>

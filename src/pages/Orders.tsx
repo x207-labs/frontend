@@ -433,7 +433,7 @@ export function Orders() {
       </div>
       {!account && <SignInPrompt action="see and create orders" />}
       <div className="views" data-view={shown}>
-        <div className="filters">
+        <div className="view-tabs">
           <div className="segmented" role="group" aria-label="Order view">
             <button type="button" aria-pressed={shown !== 'new'} onClick={() => setPicked('list')}>Your orders</button>
             <button type="button" aria-pressed={shown === 'new'} onClick={() => setPicked('new')}>New order</button>

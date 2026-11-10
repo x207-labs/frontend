@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { api } from '../api/client'
 import type { RentChallenge, RentView } from '../api/types'
 import { VoucherKeyField } from '../components/VoucherKeyField'
+import { NavIcon } from '../components/icons'
 import { CONTRACT_ID } from '../config'
 import { signMessageWithVoucher } from '../lib/barter'
 import { toAtomic, fromAtomic } from '../lib/amount'
@@ -320,14 +321,22 @@ export function Rent() {
   const [voucherKey, setVoucherKey] = useState('')
   const [tab, setTab] = useState<'offer' | 'mine'>('offer')
   return (
+    <>
+    {/* FE-080: the same lead as the other trade pages (a side rail on a wide screen); the marks say what each day does instead of a number. */}
+    <div className="page-lead">
+      <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+        <NavIcon name="/rent" size={22} />
+      </span>
+      <p>Lend access to an account by the day, or use access you rent. Either side can stop any day.</p>
+      <ol className="lead-steps rent-days" aria-label="How a rent runs">
+        <li data-mark="1">Pay one day</li>
+        <li data-mark="✓">Access works</li>
+        <li data-mark="↻">Pay the next day</li>
+        <li data-mark="✕" data-tone="stop">Stop any day</li>
+      </ol>
+    </div>
     <div className="market rent" data-view={tab}>
-      <div className="rent-hero">
-        <ol className="rent-days" aria-label="How a rent runs">
-          <li><span aria-hidden="true">1</span>Pay one day</li>
-          <li><span aria-hidden="true">✓</span>Access works</li>
-          <li><span aria-hidden="true">↻</span>Pay the next day</li>
-          <li><span aria-hidden="true">✕</span>Stop any day</li>
-        </ol>
+      <div className="view-tabs">
         <div className="segmented market-views" role="group" aria-label="Rent view">
           {RENT_VIEWS.map(([v, label]) => (
             <button key={v} type="button" aria-pressed={tab === v} onClick={() => setTab(v)}>
@@ -343,5 +352,6 @@ export function Rent() {
         <Renter voucherKey={voucherKey} onVoucherKey={setVoucherKey} />
       </div>
     </div>
+    </>
   )
 }

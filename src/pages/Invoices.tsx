@@ -294,7 +294,7 @@ export function Invoices() {
       </div>
       {!account && <SignInPrompt action="see your invoices" />}
       <div className="views" data-view={shown}>
-        <div className="filters">
+        <div className="view-tabs">
           <div className="segmented" role="group" aria-label="Invoice view">
             <button type="button" aria-pressed={shown !== 'request'} onClick={() => setPicked('list')}>Your invoices</button>
             <button type="button" aria-pressed={shown === 'request'} onClick={() => setPicked('request')}>Request</button>
