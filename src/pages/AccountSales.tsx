@@ -44,13 +44,14 @@ function DetailCells({ item, withDetail, finalizedHead, epochsRead }: { item: Ac
   if (detail.isError || !detail.data) return <><td colSpan={3} data-label="Details">not available</td></>
   const d = detail.data
   const kind = d.member ? 'member account' : 'account'
-  const epoch = d.lockedEpoch === null ? '-' : `${d.lockedEpoch}${d.lockedEpochFinalized ? ' (finalized)' : ''}`
-  const delivery = d.state !== 'held' ? '-' : d.ready ? 'can be delivered now' : 'waits until the lock epoch is finalized'
+  // FE-090: an empty cell says why in words, not with a dash
+  const epoch = d.lockedEpoch === null ? <span className="muted">Not locked</span> : `${d.lockedEpoch}${d.lockedEpochFinalized ? ' (finalized)' : ''}`
+  const delivery = d.ready ? 'can be delivered now' : 'waits until the lock epoch is finalized'
   return (
     <>
       <td data-label="Kind">{kind}</td>
       <td className="num" data-label="Lock epoch">{epoch}</td>
-      <td data-label="Delivery">{d.state === 'held' ? <span className="state-line" data-tone={d.ready ? 'ok' : 'warn'}>{delivery}</span> : <span className="muted">-</span>}</td>
+      <td data-label="Delivery">{d.state === 'held' ? <span className="state-line" data-tone={d.ready ? 'ok' : 'warn'}>{delivery}</span> : <span className="muted">{d.state === 'delivered' ? 'Done' : 'Not delivered'}</span>}</td>
     </>
   )
 }

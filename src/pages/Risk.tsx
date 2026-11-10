@@ -39,9 +39,12 @@ function LimitHistory() {
   const history = useMemberLimits(account)
   if (list.length === 0) return null
   return (
-    <>
-      <h2>Limit history</h2>
-      <label>
+    <section className="risk-block" aria-labelledby="risk-limits">
+      <div className="risk-head">
+        <h2 id="risk-limits">Limit history</h2>
+        <p>Every change to one member's credit limit, newest first.</p>
+      </div>
+      <label className="risk-pick">
         <span>Member</span>
         <select value={account ?? ''} onChange={(e) => setChosen(e.target.value)}>
           {list.map((m) => (
@@ -73,10 +76,12 @@ function LimitHistory() {
               <tbody>
                 {data.items.map((item) => (
                   <tr key={`${item.blockHeight}-${item.epoch}`}>
-                    <td>{item.epoch ?? '-'}</td>
+                    <td>{item.epoch ?? <span className="soft">No epoch</span>}</td>
                     <td className="num">{formatCredit(item.oldLimit)}</td>
                     <td className="num">{formatCredit(item.newLimit)}</td>
-                    <td>{item.status}</td>
+                    <td>
+                      <span className="pill" data-tone={MEMBER_TONE[item.status] ?? 'info'}>{item.status}</span>
+                    </td>
                     <td>
                       <code className="plain">{item.reason}</code>
                     </td>
@@ -88,18 +93,38 @@ function LimitHistory() {
           </div>
         )}
       </QueryState>
-    </>
+    </section>
   )
 }
+
+// FE-090: the loss order as the three steps it is, in the order a loss is absorbed.
+const LOSS_ORDER: Array<[string, string]> = [
+  ['Debtor stake', 'The member who did not pay loses stake first.'],
+  ['Reserve fund', 'Covers what is left: owed minus payments, stake, and haircut.'],
+  ['Haircut to direct creditors', 'Only the members owed by the debtor, with no cascade.'],
+]
 
 function Defaults() {
   const epoch = useSelectedEpoch()
   const defaults = useEpochSettlements(epoch, 'defaulted')
   if (epoch === null) return null
   return (
-    <>
-      <h2>Defaults in epoch {epoch}</h2>
-      <p className="state">Loss order: debtor stake, then reserve fund, then haircut to direct creditors with no cascade. The reserve fund is the amount owed minus payments, stake, and haircut.</p>
+    <section className="risk-block" aria-labelledby="risk-defaults">
+      <div className="risk-head">
+        <h2 id="risk-defaults">Defaults in epoch {epoch}</h2>
+        <p>Who did not pay, and who covered the loss. A loss is covered in this order:</p>
+      </div>
+      <ol className="loss-order" aria-label="Loss order">
+        {LOSS_ORDER.map(([name, note], i) => (
+          <li key={name}>
+            <span className="loss-n" aria-hidden="true">{i + 1}</span>
+            <span className="loss-text">
+              <strong>{name}</strong>
+              <span>{note}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
       <QueryState
         query={defaults}
         loadingLabel="Loading defaults"
@@ -136,47 +161,72 @@ function Defaults() {
           </div>
         )}
       </QueryState>
-    </>
+    </section>
+  )
+}
+
+const MEMBER_TONE: Record<string, 'ok' | 'warn' | 'bad' | 'info'> = { active: 'ok', suspended: 'bad', exited: 'warn' }
+
+/** Headroom as a share of the limit: a thin bar beside the number, so a member close to the limit stands out. */
+function Headroom({ m }: { m: Member }) {
+  const limit = BigInt(m.limit)
+  const pct = limit > 0n ? Number((BigInt(m.headroom) * 100n) / limit) : 0
+  return (
+    <span className="risk-room">
+      <span className="risk-meter" aria-hidden="true">
+        <span style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} data-low={pct < 25 ? '' : undefined} />
+      </span>
+      {formatCredit(m.headroom)}
+    </span>
   )
 }
 
 export function Risk() {
   const members = useMembers()
+  // FE-090: three blocks with room between them: the members, one member's limit history, and the defaults of the epoch.
   return (
-    <>
-      <QueryState
-        query={members}
-        loadingLabel="Loading members"
-        isEmpty={(d) => admitted(d.items).length === 0}
-        empty="No admitted members in this circle yet."
-      >
-        {(data) => (
-          <SortableTable
-            label="Members"
-            filterLabel="Filter the members shown"
-            rows={admitted(data.items)}
-            columns={MEMBER_COLUMNS}
-            searchText={memberText}
-            renderRow={(m) => (
-              <tr key={m.account}>
-                <td>
-                  <span title={m.account}>{shortAccount(m.account)}</span>
-                  <EvmBadge account={m.account} />
-                </td>
-                <td>
-                  <span className={m.status === 'suspended' ? 'member-suspended' : undefined}>{m.status}</span>
-                </td>
-                <td className="num">{formatCredit(m.stake)}</td>
-                <td className="num">{formatCredit(m.limit)}</td>
-                <td className="num">{formatCredit(m.headroom)}</td>
-                <td className="num">{formatCredit(m.settledHistory)}</td>
-              </tr>
-            )}
-          />
-        )}
-      </QueryState>
+    <div className="risk">
+      <section className="risk-block" aria-labelledby="risk-members">
+        <div className="risk-head">
+          <h2 id="risk-members">Members</h2>
+          <p>Stake backs each member's credit. Headroom is what the member can still owe.</p>
+        </div>
+        <QueryState
+          query={members}
+          loadingLabel="Loading members"
+          isEmpty={(d) => admitted(d.items).length === 0}
+          empty="No admitted members in this circle yet."
+        >
+          {(data) => (
+            <SortableTable
+              label="Members"
+              filterLabel="Filter the members shown"
+              rows={admitted(data.items)}
+              columns={MEMBER_COLUMNS}
+              searchText={memberText}
+              renderRow={(m) => (
+                <tr key={m.account}>
+                  <td>
+                    <span title={m.account}>{shortAccount(m.account)}</span>
+                    <EvmBadge account={m.account} />
+                  </td>
+                  <td>
+                    <span className="pill" data-tone={MEMBER_TONE[m.status] ?? 'info'}>{m.status}</span>
+                  </td>
+                  <td className="num">{formatCredit(m.stake)}</td>
+                  <td className="num">{formatCredit(m.limit)}</td>
+                  <td className="num">
+                    <Headroom m={m} />
+                  </td>
+                  <td className="num">{formatCredit(m.settledHistory)}</td>
+                </tr>
+              )}
+            />
+          )}
+        </QueryState>
+      </section>
       <LimitHistory />
       <Defaults />
-    </>
+    </div>
   )
 }

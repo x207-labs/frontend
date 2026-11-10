@@ -22,7 +22,8 @@ describe('FE-013 limit history and loss allocation', () => {
     expect(rows[1]).toHaveTextContent('40')
     expect(rows[1]).toHaveTextContent('50')
     expect(rows[2]).toHaveTextContent('stake')
-    expect(rows[2]).toHaveTextContent('-')
+    // FE-090: a change outside any epoch (the first stake) says so in words, not with a dash
+    expect(rows[2]).toHaveTextContent('No epoch')
   })
 
   it('TC-FE-013-02 choosing another member loads the history of that member', async () => {
@@ -52,7 +53,9 @@ describe('FE-013 limit history and loss allocation', () => {
     const cells = within(row).getAllByRole('cell').map((c) => c.textContent)
     // owed 35, paid 5, stake 20, haircut 4: reserve 35 - 5 - 20 - 4 = 6
     expect(cells.slice(1)).toEqual(['35', '20', '6', '4'])
-    expect(screen.getByText(/Loss order: debtor stake, then reserve fund/)).toBeInTheDocument()
+    // FE-090: the loss order is a list of its three steps, in order
+    const order = within(screen.getByRole('list', { name: 'Loss order' })).getAllByRole('listitem').map((li) => li.querySelector('strong')?.textContent)
+    expect(order).toEqual(['Debtor stake', 'Reserve fund', 'Haircut to direct creditors'])
   })
 
   it('TC-FE-013-06 lossAllocation: stake first, then reserve, then haircut', () => {

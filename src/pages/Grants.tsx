@@ -205,7 +205,7 @@ function GrantTable({ rows }: { rows: Row[] }) {
 function Figures({ rows }: { rows: Row[] }) {
   const count = (pick: (g: Row) => boolean) => rows.filter(pick).length
   return (
-    <dl className="figures" aria-label="Grant summary">
+    <dl className="figures figures-open" aria-label="Grant summary">
       <div>
         <dt>Active</dt>
         <dd>{count((g) => g.status === 'active')}</dd>
@@ -250,50 +250,59 @@ export function Grants() {
           <NavIcon name="/access" size={22} />
         </span>
         <p>Who may use what, and until when. The owner keeps the password; the contract keeps the record.</p>
+        {/* FE-090: the same side panel as the other Marketplace pages, with the life of a grant as its steps */}
+        <ol className="lead-steps" aria-label="How it works">
+          <li>Owner offers access</li>
+          <li>Renter pays per day</li>
+          <li>Ends on its date</li>
+        </ol>
       </div>
-      <div className="field-pair grants-filter">
-        <label>
-          <span>Member</span>
-          <select value={account ?? ''} onChange={(e) => setChosen(e.target.value)}>
-            {wallet && <option value={wallet}>You ({shortAccount(wallet)})</option>}
-            {members.data?.items
-              .filter((m) => m.account !== wallet)
-              .map((m) => (
-                <option key={m.account} value={m.account}>
-                  {m.account}
+      {/* FE-090: everything right of the side panel, in one column with even room between the parts */}
+      <div className="grants-main">
+        <div className="field-pair grants-filter">
+          <label>
+            <span>Member</span>
+            <select value={account ?? ''} onChange={(e) => setChosen(e.target.value)}>
+              {wallet && <option value={wallet}>You ({shortAccount(wallet)})</option>}
+              {members.data?.items
+                .filter((m) => m.account !== wallet)
+                .map((m) => (
+                  <option key={m.account} value={m.account}>
+                    {m.account}
+                  </option>
+                ))}
+              {account && account !== wallet && !members.data?.items.some((m) => m.account === account) && <option value={account}>{account}</option>}
+            </select>
+          </label>
+          <label>
+            <span>Status</span>
+            <select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All</option>
+              {(Object.keys(STATUS_LABEL) as GrantStatus[]).map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
                 </option>
               ))}
-            {account && account !== wallet && !members.data?.items.some((m) => m.account === account) && <option value={account}>{account}</option>}
-          </select>
-        </label>
-        <label>
-          <span>Status</span>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All</option>
-            {(Object.keys(STATUS_LABEL) as GrantStatus[]).map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-        </label>
+            </select>
+          </label>
+        </div>
+        <p className="grants-note">{mine ? 'Your grants. Grants are public, so you can also look up any other member.' : 'Grants are public, so anyone can look up any member. Sign in to open on your own.'}</p>
+        <QueryState
+          query={query as never}
+          loadingLabel="Loading grants"
+          isEmpty={(d: { items: Row[] }) => d.items.length === 0}
+          empty="This member has no grants yet."
+        >
+          {(data: { items: Row[] }) => (
+            <>
+              <Figures rows={data.items} />
+              <AccessTimeline rows={data.items} />
+              <GrantTable rows={data.items} />
+            </>
+          )}
+        </QueryState>
+        <AccountSales />
       </div>
-      <p className="state">{mine ? 'Your grants. Grants are public, so you can also look up any other member.' : 'Grants are public, so anyone can look up any member. Sign in to open on your own.'}</p>
-      <QueryState
-        query={query as never}
-        loadingLabel="Loading grants"
-        isEmpty={(d: { items: Row[] }) => d.items.length === 0}
-        empty="This member has no grants yet."
-      >
-        {(data: { items: Row[] }) => (
-          <>
-            <Figures rows={data.items} />
-            <AccessTimeline rows={data.items} />
-            <GrantTable rows={data.items} />
-          </>
-        )}
-      </QueryState>
-      <AccountSales />
     </>
   )
 }

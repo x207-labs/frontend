@@ -133,7 +133,7 @@ input::placeholder, textarea::placeholder { color: var(--ink-soft); opacity: 0.7
 input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); }
 
 /* The epoch strip: a row of steps, the live one lit in the accent. */
-.phases { display: flex; flex-wrap: wrap; gap: 0.375rem; list-style: none; margin: 1.25rem 0 0; padding: 0; font-size: 0.8125rem; }
+.phases { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 1.25rem 0 0; padding: 0; font-size: 0.8125rem; }
 .phases li { position: relative; padding: 0.25rem 0.75rem 0.25rem 1.5rem; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); background: var(--tile); }
 .phases li::before { content: ''; position: absolute; left: 0.625rem; top: 50%; width: 0.4375rem; height: 0.4375rem; margin-top: -0.21875rem; border-radius: 50%; background: var(--line); }
 .phases li.past { color: var(--ink); }
@@ -451,6 +451,18 @@ a, button, select, input, textarea, summary, label, [role='option'], [role='menu
 .figures > div { padding: 0.875rem 1rem; border-radius: 16px; background: var(--tile); border: 1px solid var(--line); }
 .figures dt { font-size: 0.8125rem; color: var(--ink-soft); }
 .figures dd { margin: 0.25rem 0 0; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+/* FE-090: counts read as large numerals with a small label over each, not as boxes */
+.figures-open { grid-template-columns: repeat(auto-fit, minmax(7rem, max-content)); gap: 1rem 3rem; margin: 0; }
+.figures-open > div { padding: 0; border: 0; border-radius: 0; background: none; }
+.figures-open dd { font-size: 1.875rem; line-height: 1.1; }
+/* the hint under the grant filters reads from the left, like the filters themselves */
+.grants-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; min-width: 0; }
+.grants-main .access-timeline { margin: 0; }
+.grants-main > .grants-note { margin-top: -0.5rem; }
+/* label above its select, as on every other form */
+.grants-filter label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.375rem; font-weight: 600; color: var(--ink-soft); }
+.grants-filter select { min-height: 2.75rem; font-size: 1rem; }
+.grants-note { margin: 0; max-width: 65ch; color: var(--ink-soft); font-size: 0.9375rem; }
 .item-cards { display: grid; gap: 0.625rem; margin: 0; padding: 0; list-style: none; }
 .item-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.25rem 1rem; padding: 0.875rem 1rem; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); }
 .item-card > .tone-tile { grid-row: span 2; width: 2.25rem; height: 2.25rem; border-radius: 11px; }
@@ -750,7 +762,30 @@ fieldset:not([class]) > button { justify-self: start; }
 fieldset:not([class]) > legend { margin-bottom: 0.5rem; padding: 0; font-weight: 600; color: var(--ink-soft); }
 .listing-form textarea, .negotiation textarea { width: 100%; font: inherit; }
 a { color: var(--accent-ink); text-decoration-color: rgb(143 192 255 / 0.4); overflow-wrap: anywhere; }
-.member-suspended { color: var(--s409); font-weight: 700; }
+
+/* FE-090: the Risk page as three blocks with room between them. Each block: a heading with one line under it, then its content. */
+.risk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3rem; margin-top: 2rem; min-width: 0; }
+.risk-block { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; min-width: 0; }
+.risk-head { display: grid; gap: 0.25rem; }
+.risk-head h2 { margin: 0; }
+.risk-head p { margin: 0; max-width: 65ch; color: var(--ink-soft); }
+.risk-block .table-tools { margin-bottom: 0; }
+.risk-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; justify-self: start; max-width: 100%; font-weight: 600; color: var(--ink-soft); }
+.risk-pick select { min-height: 2.75rem; font-size: 1rem; }
+.risk .soft { color: var(--ink-soft); white-space: nowrap; }
+/* headroom: the number with a thin bar of its share of the limit; under a quarter turns red */
+.risk-room { display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.625rem; }
+.risk-meter { display: inline-block; width: 3.5rem; height: 0.375rem; border-radius: 999px; background: var(--line); overflow: hidden; }
+.risk-meter > span { display: block; height: 100%; border-radius: inherit; background: var(--s200); }
+.risk-meter > [data-low] { background: var(--s409); }
+/* the loss order: three numbered steps, side by side on a wide screen */
+.loss-order { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.loss-order li { display: flex; align-items: flex-start; gap: 0.75rem; min-width: 0; }
+.loss-n { flex: none; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 1px solid var(--line); background: var(--tile); color: var(--ink-soft); font-size: 0.8125rem; font-weight: 700; }
+.loss-text { display: grid; gap: 0.2rem; min-width: 0; padding-top: 0.15rem; }
+.loss-text strong { font-weight: 650; color: var(--ink); }
+.loss-text span { font-size: 0.9375rem; color: var(--ink-soft); }
+@media (min-width: 760px) { .loss-order { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; } }
 
 /* Facts of one record: a grouped list of label and value, as in iOS Settings. */
 .status-panel, main dl:not(.stats):not(.facts):not(.glossary):not(.figures):not(.pulse):not(.settle-sum):not(.onboard-sum), .detail dl { display: grid; grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr); margin: 0.5rem 0 1rem; background: var(--glass); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
