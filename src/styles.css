@@ -353,7 +353,8 @@ a, button, select, input, textarea, summary, label, [role='option'], [role='menu
 .switches { display: grid; border-radius: 16px; background: var(--tile); border: 1px solid var(--line); overflow: hidden; }
 .form label.check { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3rem; padding: 0.5rem 0.875rem; color: var(--ink); font-weight: 550; cursor: pointer; }
 .switches label.check + label.check { border-top: 1px solid var(--line); }
-.form label.check input { order: 2; flex: none; position: relative; width: 3.1rem; height: 1.9rem; margin: 0; padding: 0; border: 0; border-radius: 999px; background: rgb(120 128 150 / 0.35); appearance: none; -webkit-appearance: none; cursor: pointer; transition: background 240ms var(--ease); }
+/* FE-093: min-height 0, or the global input min-height (2.5rem) stretches the track past its 1.9rem and the knob sits off-centre; the whole row (3rem) is the touch target */
+.form label.check input { order: 2; flex: none; position: relative; width: 3.1rem; height: 1.9rem; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 999px; background: rgb(120 128 150 / 0.35); appearance: none; -webkit-appearance: none; cursor: pointer; transition: background 240ms var(--ease); }
 .form label.check input::before { content: ''; position: absolute; top: 2px; left: 2px; width: calc(1.9rem - 4px); height: calc(1.9rem - 4px); border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / 0.3); transition: transform 280ms var(--spring); }
 .form label.check input:checked { background: #34c759; }
 .form label.check input:checked::before { transform: translateX(1.2rem); }
