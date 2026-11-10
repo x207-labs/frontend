@@ -1,5 +1,5 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
-import { api } from './client'
+import { api, ApiError } from './client'
 import { viewContract } from './chain'
 import type { ObligationStage } from './types'
 import { FINAL } from '../queryClient'
@@ -8,7 +8,16 @@ export const useEpochs = () => useQuery({ queryKey: ['epochs'], queryFn: api.epo
 export const useMember = (account: string | null) =>
   useQuery({
     queryKey: ['member', account],
-    queryFn: () => api.member(account!),
+    // FE-079: "not a member" (404 / member_not_found) is an answer, not an error, so it is kept as `null` data.
+    // As an error it was cleared on every poll (a query without data goes back to pending), and Home flashed "Loading" every few seconds.
+    queryFn: async () => {
+      try {
+        return await api.member(account!)
+      } catch (error) {
+        if (error instanceof ApiError && (error.status === 404 || error.code === 'member_not_found')) return null
+        throw error
+      }
+    },
     enabled: account !== null,
     retry: false,
   })

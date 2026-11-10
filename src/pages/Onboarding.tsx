@@ -7,7 +7,6 @@ import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { TxResult } from '../components/TxResult'
 import { CIRCLE } from '../config'
-import { ApiError } from '../api/client'
 import { toAtomic } from '../lib/amount'
 import { formatCredit } from '../lib/format'
 import { OnboardingSteps } from '../onboarding/OnboardingSteps'
@@ -127,16 +126,14 @@ function JoinForm({ registered }: { registered: boolean }) {
 // FE-005: onboarding status from the read API; updated by QueryClient polling without a manual reload.
 function StatusPanel({ account }: { account: string }) {
   const member = useMember(account)
-  if (member.data === undefined) {
-    if (member.error instanceof ApiError && member.error.code === 'member_not_found') {
-      return (
-        <p className="state">
-          Account {account} is not registered yet. <a href="#join">Fill in the join form below</a>.
-        </p>
-      )
-    }
-    if (member.isError) return <ErrorNotice error={member.error} onRetry={() => member.refetch()} />
+  if (member.data === null) {
+    return (
+      <p className="state">
+        Account {account} is not registered yet. <a href="#join">Fill in the join form below</a>.
+      </p>
+    )
   }
+  if (member.data === undefined && member.isError) return <ErrorNotice error={member.error} onRetry={() => member.refetch()} />
   const m = member.data
   const cell = (value: string | undefined) => (m ? formatCredit(value) : <Loading label="Loading" />)
   return (
@@ -161,7 +158,7 @@ export function Onboarding() {
   // FE-060: what the read API says about this account feeds the wizard (member_not_found = not a member yet; any other error = unknown, treated as loading).
   const memberState: MemberState = memberQuery.data
     ? { kind: 'member', member: memberQuery.data }
-    : memberQuery.error instanceof ApiError && memberQuery.error.code === 'member_not_found'
+    : memberQuery.data === null
       ? { kind: 'none' }
       : { kind: 'loading' }
   return (

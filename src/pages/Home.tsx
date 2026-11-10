@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { api, ApiError } from '../api/client'
+import { api } from '../api/client'
 import { useEpochs, useMember } from '../api/queries'
 import type { EpochItem, SettlementItem } from '../api/types'
 import { ExploreGrid } from '../components/ExploreGrid'
@@ -187,8 +187,8 @@ function Dashboard({ account }: { account: string }) {
   })
 
   // FE-069: the read API says member_not_found (status 404) for an account that has not joined; both are read, as on Join the circle.
-  const notMember = member.error instanceof ApiError && (member.error.status === 404 || member.error.code === 'member_not_found')
-  if (member.data === undefined && !notMember) {
+  const notMember = member.data === null
+  if (member.data === undefined) {
     if (member.isError) return <ErrorNotice error={member.error} onRetry={() => member.refetch()} />
     return <Loading label="Loading your account" />
   }
@@ -197,7 +197,7 @@ function Dashboard({ account }: { account: string }) {
   const dues = rows.filter((s) => s.status === 'due')
   const next = dues.map((s) => s.due).filter((d): d is string => Boolean(d)).sort()[0] ?? current?.paymentDeadline ?? null
   const claimable = sumAmounts(rows.filter((s) => s.status === 'claimable'))
-  const actions = homeActions(notMember ? null : (member.data ?? null), rows)
+  const actions = homeActions(member.data, rows)
   const memberState: MemberState = member.data ? { kind: 'member', member: member.data } : { kind: 'none' }
 
   const used = member.data ? usedPercent(member.data.outstandingDebt, member.data.limit) : 0
