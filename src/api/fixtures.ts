@@ -403,10 +403,17 @@ export function fixtureFetch(overrides: (path: string, init?: RequestInit) => Fi
 export const invoiceDocs = [
   { id: 'INV-2026-001', issuer: near('supplier'), debtor: near('maker'), amount: '100000000', memo: 'components, October batch' },
   { id: 'INV-2026-002', issuer: near('retailer'), debtor: near('supplier'), amount: '90000000', memo: 'storefront ads, three installments' },
+  // FE-081: invoices of the fixture demo account (scraper), so the list is filled when the fixtures sign in as it
+  { id: 'INV-2026-003', issuer: near('scraper'), debtor: near('summarizer'), amount: '25000000', memo: 'web crawl, November' },
+  { id: 'INV-2026-004', issuer: near('translator'), debtor: near('scraper'), amount: '60000000', memo: 'translation, two installments' },
+  { id: 'INV-2026-005', issuer: near('scraper'), debtor: near('image'), amount: '12000000', memo: 'product photos crawl' },
 ]
 export const invoiceHashes = [
   '79639b91e4fdc4abe16d4e378cf0b7b6022a299bf01d68b7382b1d72ccf50230',
   '45c165d8f55a5750f5f43ee2bda473ca13102479bc8d2e42a1628417b4f1ccc7',
+  'd1e01125548b82c92b4a779e19d09d20aee75c89549467b6474be68b6f9fc779',
+  'c0c689565e5b7b0ef947061caaf4ccbf098abcd5a8bfe1087f2d55b49f9cbab6',
+  'c014f606d533bcae7d777db6f7324c925321b0d0c07b5e811deedfa796189e6c',
 ]
 export const invoices = [
   { invoice_hash: invoiceHashes[0], document: invoiceDocs[0], status: 'requested', needs_bond: false, installments: [{ index: 1, epoch: 44, amount: '100000000', status: 'scheduled', reason: null, voucherEpoch: 44, shifted: false }] },
@@ -418,6 +425,15 @@ export const invoices = [
       { index: 3, epoch: 46, amount: '30000000', status: 'scheduled', reason: null, voucherEpoch: 46, shifted: false },
     ],
   },
+  { invoice_hash: invoiceHashes[2], document: invoiceDocs[2], status: 'registered', needs_bond: false, installments: [{ index: 1, epoch: 42, amount: '25000000', status: 'registered', reason: null, voucherEpoch: 42, shifted: false }] },
+  {
+    invoice_hash: invoiceHashes[3], document: invoiceDocs[3], status: 'approved', needs_bond: false,
+    installments: [
+      { index: 1, epoch: 43, amount: '30000000', status: 'registered', reason: null, voucherEpoch: 43, shifted: false },
+      { index: 2, epoch: 44, amount: '30000000', status: 'scheduled', reason: null, voucherEpoch: 44, shifted: false },
+    ],
+  },
+  { invoice_hash: invoiceHashes[4], document: invoiceDocs[4], status: 'requested', needs_bond: false, installments: [{ index: 1, epoch: 44, amount: '12000000', status: 'scheduled', reason: null, voucherEpoch: 44, shifted: false }] },
 ]
 
 // Service order (FE-027): shape from Backend API Spec 5f, snake_case as in the spec. The hash is computed from its document (canonical JSON sha256 SD-069).
@@ -429,12 +445,18 @@ export const orderDocs = {
   prompt: { ...orderBase, kind: 'prompt', seller: near('audit'), spec_hash: H('b'), sample_hash: H('c'), target: null, proof: null, nonce: 'o2', milestones: [{ amount: '20000000', due_at: 1793100000 }] },
   keeper: { ...orderBase, kind: 'keeper', seller: near('keeper'), spec_hash: H('d'), sample_hash: null, target: null, proof: { method: 'close_epoch', amount_per_tx: '250000' }, nonce: 'o3', milestones: [{ amount: '1000000', due_at: 1793100000 }] },
   loadtest: { ...orderBase, kind: 'loadtest', seller: near('audit'), spec_hash: H('e'), sample_hash: null, target: 'shop.example.com', proof: null, nonce: 'o4', milestones: [{ amount: '150000000', due_at: 1793100000 }] },
+  // FE-081: orders of the fixture demo account (scraper), one as buyer and one as seller
+  crawl: { circle: 'x207-circle.testnet', buyer: near('scraper'), nonce: 'o5', kind: 'research', seller: near('gpu'), spec_hash: H('1'), sample_hash: null, target: null, proof: null,
+    milestones: [{ amount: '30000000', due_at: 1793100000 }, { amount: '30000000', due_at: 1793186400 }, { amount: '40000000', due_at: 1793272800 }] },
+  summary: { circle: 'x207-circle.testnet', buyer: near('cleaner'), kind: 'prompt', seller: near('scraper'), spec_hash: H('2'), sample_hash: H('3'), target: null, proof: null, nonce: 'o6', milestones: [{ amount: '15000000', due_at: 1793100000 }] },
 }
 export const orderHashes = {
   research: 'e64978825412efbc22176af4b1e6b7f1f3f3f936814706b1ecb596be61c6c387',
   prompt: '204dd9cb3cf7bd5b0dabc428327d6baac417c971787a975bb5417df908312373',
   keeper: 'f7fa1558eb171491c01d277adac2f19019056d14759adfa200581893ca83ff69',
   loadtest: '225863819e31a47e24d72a1cc5de4ac91343ba15897418d541c29d35fc6bca27',
+  crawl: '9a4581c90d02c7501cc1941999633d782827496d4ce3292cfdaa46c37f44aaa4',
+  summary: 'b741e9593d863c6e9b8b664d19768096c37cd539823608a11388bca1be78b0b7',
 }
 export const orders = [
   { order_hash: orderHashes.research, order: orderDocs.research, status: 'active', needs_bond: false, target_verified: null,
@@ -445,4 +467,11 @@ export const orders = [
   { order_hash: orderHashes.prompt, order: orderDocs.prompt, status: 'active', needs_bond: false, target_verified: null, milestones: [{ index: 1, amount: '20000000', due_at: 1793100000, status: 'open', deliverable_hash: null, at: null }] },
   { order_hash: orderHashes.keeper, order: orderDocs.keeper, status: 'active', needs_bond: false, target_verified: null, milestones: [{ index: 1, amount: '1000000', due_at: 1793100000, status: 'open', deliverable_hash: null, at: null }] },
   { order_hash: orderHashes.loadtest, order: orderDocs.loadtest, status: 'pending', needs_bond: true, target_verified: false, milestones: [{ index: 1, amount: '150000000', due_at: 1793100000, status: 'open', deliverable_hash: null, at: null }] },
+  { order_hash: orderHashes.crawl, order: orderDocs.crawl, status: 'active', needs_bond: false, target_verified: null,
+    milestones: [
+      { index: 1, amount: '30000000', due_at: 1793100000, status: 'paid', deliverable_hash: H('4'), at: 1793050000 },
+      { index: 2, amount: '30000000', due_at: 1793186400, status: 'delivered', deliverable_hash: H('5'), at: 1793150000 },
+      { index: 3, amount: '40000000', due_at: 1793272800, status: 'open', deliverable_hash: null, at: null },
+    ] },
+  { order_hash: orderHashes.summary, order: orderDocs.summary, status: 'active', needs_bond: false, target_verified: null, milestones: [{ index: 1, amount: '15000000', due_at: 1793100000, status: 'open', deliverable_hash: null, at: null }] },
 ]

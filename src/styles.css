@@ -266,6 +266,9 @@ button.th-sort { padding: 0; min-height: 0; border: 0; border-radius: 0; backgro
   .word-chips button:hover:not([aria-pressed='true']) { background: rgb(255 255 255 / 0.1); box-shadow: none; }
   .explore a:hover { border-color: var(--line); background: var(--tile); }
   .explore a:hover .explore-icon { transform: translateY(-3px) scale(1.05); }
+  .cm-nodes a:hover { transform: translateY(-2px); border-color: var(--tone); background: color-mix(in srgb, var(--tone) 12%, var(--sheet)); }
+  .cm-nodes a:hover .cm-tile { transform: rotate(-8deg) scale(1.06); }
+  .cm-more a:hover { border-color: var(--tone); }
   .gate-explore a:hover { border-color: rgb(61 139 255 / 0.5); background: var(--accent-soft); text-decoration: none; }
   button.copy:hover:not(:disabled) { background: var(--accent-soft); box-shadow: none; }
   .see-all:hover { background: rgb(61 139 255 / 0.28); text-decoration: none; }
@@ -349,6 +352,49 @@ a, button, select, input, textarea, summary, label, [role='option'], [role='menu
 .pill[data-tone='bad'] { --tone: var(--s409); }
 .pill[data-tone='info'] { --tone: var(--s202); }
 .muted { color: var(--ink-soft); font-size: 0.8125rem; }
+/* FE-081: list rows. Left to right: what it is (tinted page tile, bold name, muted line), who (avatars on the member's own hue), how far (one bar segment
+   per step), where it stands (pill with a dot). Every colour encodes a member, a page or a state. */
+.list-table td { vertical-align: middle; }
+.list-table :is(th, td) { padding-inline: 0.75rem; }
+.list-table :is(th, td):first-child { padding-left: 1rem; }
+.list-table tbody td { padding-block: 0.875rem; }
+.list-table td > button.quiet { padding: 0.375rem 0.875rem; }
+.row-title { display: flex; align-items: center; gap: 0.75rem; }
+.row-text { display: flex; flex-direction: column; min-width: 0; }
+.row-text strong { font-weight: 650; }
+.row-sub { max-width: 12rem; overflow: hidden; font-size: 0.8125rem; color: var(--ink-soft); white-space: nowrap; text-overflow: ellipsis; }
+.tone-tile.sm { width: 2.25rem; height: 2.25rem; border-radius: 11px; }
+.party { display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
+.avatar { display: inline-grid; place-items: center; flex: none; width: 1.875rem; height: 1.875rem; border-radius: 50%; font-size: 0.6875rem; font-weight: 750; color: color-mix(in srgb, var(--hue) 45%, white); background: color-mix(in srgb, var(--hue) 26%, var(--tile)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hue) 45%, transparent); }
+.party-name { font-weight: 600; }
+.party-pair { position: relative; display: inline-grid; gap: 0.375rem; }
+.party-pair .avatar { position: relative; width: 1.5rem; height: 1.5rem; font-size: 0.625rem; }
+.party-pair .party-name { font-size: 0.875rem; }
+/* the line from the first member down to the second: who starts the deal, who answers it */
+.party-pair::before { content: ''; position: absolute; left: calc(0.75rem - 1px); top: 1.5rem; height: 0.375rem; width: 2px; background: var(--line); }
+.you-tag { padding: 0.05rem 0.45rem; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; color: var(--accent-ink); background: var(--accent-soft); }
+.amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+.step-bar { display: inline-flex; align-items: center; gap: 0.625rem; }
+.step-track { display: inline-flex; gap: 3px; width: 4.5rem; }
+.step-track > span { flex: 1; height: 6px; border-radius: 3px; background: var(--line); }
+.step-track > span[data-step='done'] { background: var(--s200); }
+.step-track > span[data-step='active'] { background: var(--s202); }
+.step-track > span[data-step='bad'] { background: var(--s409); }
+.step-count { font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.pill[data-tone]::before { content: ''; flex: none; width: 6px; height: 6px; margin-right: 0.4rem; border-radius: 50%; background: currentColor; }
+/* On a phone a list row becomes a card instead of a table row that scrolls sideways: the title across the top, then who and how far, then the state and
+   the open button. Each cell already says what it is (the tile, the avatars, the bar with its count, the pill), so the column heads are not shown. */
+@media (max-width: 759px) {
+  .list-table:has(.row-title) thead { display: none; }
+  .list-table:has(.row-title) tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.75rem 1rem; padding: 1rem; border-bottom: 1px solid var(--line); }
+  .list-table:has(.row-title) tbody tr:last-child { border-bottom: 0; }
+  .list-table:has(.row-title) tbody td { display: block; padding: 0; border: 0; }
+  .list-table:has(.row-title) tbody td:first-child { grid-column: 1 / -1; }
+  .list-table:has(.row-title) tbody td:last-child { justify-self: end; }
+  /* the title takes the first row, so an open button in an even cell would sit alone on the left: give it the row, on the right */
+  .list-table:has(.row-title) tbody td:last-child:nth-child(even) { grid-column: 1 / -1; }
+  .list-table:has(.row-title) .row-sub { max-width: none; }
+}
 /* FE-073: governance. The rules in four grouped tables side by side, the approved next change as one solid violet note. */
 .rule-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: 1rem; }
 table.rules caption { padding: 1rem 1.125rem 0.5rem; text-align: left; font-size: 1rem; font-weight: 650; color: var(--ink); }
@@ -651,6 +697,46 @@ a.btn:active { transform: scale(0.97); }
 .explore-icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 15px; color: #fff; background: color-mix(in srgb, var(--tone) 82%, black); transition: transform 0.35s var(--spring); }
 .explore a strong { font-size: 0.875rem; font-weight: 600; line-height: 1.25; }
 .explore a:active { transform: scale(0.96); }
+
+/* FE-082: Home's trade map. The ring of trade pages around "Your circle", each with a line into the centre (the epoch nets every trade there).
+   Tracks and lines are drawn in a 100x100 box stretched to the map, so strokes keep their width with vector-effect. A lit line wears its page's hue and
+   a dash runs along it towards the centre. Under 760 px: a two-column grid of the same tiles, no lines. */
+.circle-map { position: relative; height: 30rem; margin: 0.25rem 0 0; }
+.cm-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.cm-track { fill: none; stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.cm-track:nth-child(2) { stroke-dasharray: 2 6; }
+.cm-path { fill: none; stroke: color-mix(in srgb, var(--tone) 30%, var(--line)); stroke-width: 1.5; vector-effect: non-scaling-stroke; transition: stroke 0.25s var(--ease), stroke-width 0.25s var(--ease); }
+.cm-path[data-on] { stroke: var(--tone); stroke-width: 2.5; stroke-dasharray: 10 8; animation: cm-flow 0.9s linear infinite; }
+@keyframes cm-flow { to { stroke-dashoffset: -18; } }
+.cm-hub { position: absolute; left: 50%; top: 50%; display: grid; justify-items: center; gap: 0.125rem; width: 13rem; padding: 1rem 1.25rem; border-radius: 999px; text-align: center; transform: translate(-50%, -50%); background: var(--accent-fill); color: #fff; }
+.cm-hub strong { font-size: 1.125rem; letter-spacing: -0.01em; }
+.cm-hub span:last-child { font-size: 0.8125rem; line-height: 1.35; color: rgb(255 255 255 / 0.82); }
+.cm-hub-ring { position: absolute; inset: -0.5rem; border-radius: inherit; border: 1px solid rgb(61 139 255 / 0.45); pointer-events: none; }
+.circle-map[data-lit] .cm-hub-ring { animation: cm-ring 1.2s var(--ease) infinite; }
+@keyframes cm-ring { from { inset: -0.25rem; opacity: 1; } to { inset: -1rem; opacity: 0; } }
+.cm-nodes { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; pointer-events: none; }
+.cm-nodes li { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); pointer-events: auto; }
+.cm-nodes a { position: relative; display: flex; align-items: center; gap: 0.625rem; padding: 0.4rem 0.875rem 0.4rem 0.4rem; border-radius: 999px; border: 1px solid var(--line); background: var(--sheet); color: var(--ink); text-decoration: none; white-space: nowrap; transition: transform 0.3s var(--spring), border-color 0.2s var(--ease), background-color 0.2s var(--ease); }
+.cm-tile { display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%; color: #fff; background: color-mix(in srgb, var(--tone) 82%, black); transition: transform 0.35s var(--spring); }
+.cm-name { font-size: 0.9375rem; font-weight: 650; }
+.cm-count { position: absolute; top: -0.5rem; right: -0.25rem; padding: 0.05rem 0.45rem; border-radius: 999px; font-size: 0.6875rem; font-weight: 750; color: #fff; background: var(--tone); }
+.cm-nodes a:focus-visible, .circle-map[data-lit] .cm-nodes a:is(:focus-visible) { border-color: var(--tone); }
+.cm-nodes a:active { transform: scale(0.96); }
+.cm-more { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.25rem 0 0; padding: 1.25rem 0 0; border-top: 1px solid var(--line); list-style: none; }
+.cm-more a { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.875rem 0.3rem 0.3rem; border-radius: 999px; background: var(--tile); border: 1px solid var(--line); color: var(--ink); font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: border-color 0.2s var(--ease); }
+.cm-chip-icon { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; color: #fff; background: color-mix(in srgb, var(--tone) 82%, black); }
+@media (max-width: 759px) {
+  .circle-map { height: auto; }
+  .cm-lines { display: none; }
+  .cm-hub { position: static; width: auto; margin-bottom: 0.75rem; border-radius: 18px; transform: none; }
+  .cm-nodes { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; pointer-events: auto; }
+  .cm-nodes li { position: static; transform: none; }
+  .cm-nodes a { flex-direction: column; align-items: flex-start; gap: 0.5rem; padding: 0.75rem; white-space: normal; height: 100%; border-radius: 18px; }
+  .cm-name { font-size: 0.875rem; line-height: 1.25; overflow-wrap: normal; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cm-path[data-on], .circle-map[data-lit] .cm-hub-ring { animation: none; }
+}
 
 /* FE-072: the sign-in banner of a form: a lock tile, one line, the button. */
 .signin-card { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; padding: 0.875rem 1rem; border-radius: 18px; border: 1px solid var(--line); background: var(--tile); }

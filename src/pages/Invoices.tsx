@@ -6,6 +6,8 @@ import { useInvoice, useInvoices } from '../api/queries'
 import type { InstallmentReason, InstallmentStatus, InstallmentView, InvoiceStatus, InvoiceView } from '../api/types'
 import { CopyButton } from '../components/CopyButton'
 import { NavIcon } from '../components/icons'
+import { PAGE_HUE } from '../components/pageHue'
+import { ItemTitle, PartyPair, StepBar, type StepTone } from '../components/ListBits'
 import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
@@ -13,7 +15,7 @@ import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { assertInvoiceHash, buildApproval, buildCatchUp, buildCreateInvoice, buildRejection } from '../lib/invoiceFlow'
 import { describeMarketError } from '../lib/marketError'
-import { formatCredit, shortAccount } from '../lib/format'
+import { formatCredit } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
 
 // FE-025: invoices and installments (pipeline P8, ADR-44), built from Backend API Spec 5e. The issuer requests, the debtor approves by signing all installment vouchers
@@ -27,9 +29,8 @@ type View = 'list' | 'detail' | 'request'
 
 const INVOICE_COLUMNS: Column<InvoiceView>[] = [
   { key: 'number', label: 'Number', sortValue: (i) => i.document.id },
-  { key: 'issuer', label: 'Issuer', sortValue: (i) => i.document.issuer },
-  { key: 'debtor', label: 'Debtor', sortValue: (i) => i.document.debtor },
-  { key: 'amount', label: 'Amount', sortValue: (i) => BigInt(i.document.amount) },
+  { key: 'parties', label: 'Issuer, debtor', sortValue: (i) => i.document.issuer },
+  { key: 'amount', label: 'Amount', sortValue: (i) => BigInt(i.document.amount), className: 'num' },
   { key: 'installments', label: 'Installments', sortValue: (i) => i.installments.length },
   { key: 'status', label: 'Status', sortValue: (i) => i.status },
   { key: 'open', label: '' },
@@ -39,7 +40,9 @@ const invoiceText = (i: InvoiceView) => `${i.document.id} ${i.document.issuer} $
 const STATUS_LABEL: Record<InvoiceStatus, string> = {
   requested: 'Requested', approved: 'Approved', registered: 'Registered', rejected: 'Rejected', expired: 'Expired', missed: 'Missed',
 }
-const STATUS_TONE: Record<InvoiceStatus, Tone> = { requested: 'info', approved: 'ok', registered: 'ok', rejected: 'bad', expired: 'warn', missed: 'bad' }
+/** FE-081: how one installment shows in the list bar. A registered installment is paid; a shifted one waits one epoch more. */
+const INSTALLMENT_STEP: Record<InstallmentStatus, StepTone> = { scheduled: 'todo', registered: 'done', shifted: 'active', missed: 'bad' }
+const STATUS_TONE: Record<InvoiceStatus, Tone> ={ requested: 'info', approved: 'ok', registered: 'ok', rejected: 'bad', expired: 'warn', missed: 'bad' }
 const INSTALLMENT_LABEL: Record<InstallmentStatus, string> = { scheduled: 'Scheduled', registered: 'Registered', shifted: 'Shifted', missed: 'Missed' }
 const INSTALLMENT_TONE: Record<InstallmentStatus, Tone> = { scheduled: 'info', registered: 'ok', shifted: 'warn', missed: 'bad' }
 const REASON_LABEL: Record<InstallmentReason, string> = {
@@ -325,11 +328,10 @@ export function Invoices() {
                   searchText={invoiceText}
                   renderRow={(i) => (
                     <tr key={i.invoiceHash} aria-selected={selected === i.invoiceHash}>
-                      <td>{i.document.id}</td>
-                      <td><code>{shortAccount(i.document.issuer)}</code></td>
-                      <td><code>{shortAccount(i.document.debtor)}</code></td>
-                      <td>{formatCredit(i.document.amount)}</td>
-                      <td>{i.installments.length}</td>
+                      <td><ItemTitle icon="/invoices" hue={PAGE_HUE['/invoices']} title={i.document.id} sub={i.document.memo || undefined} /></td>
+                      <td><PartyPair from={i.document.issuer} to={i.document.debtor} account={account} joint="bills" /></td>
+                      <td className="num"><span className="amount">{formatCredit(i.document.amount)}</span></td>
+                      <td><StepBar steps={i.installments.map((s) => INSTALLMENT_STEP[s.status])} doneLabel="installments paid" /></td>
                       <td><Pill tone={STATUS_TONE[i.status]}>{STATUS_LABEL[i.status]}</Pill></td>
                       <td><button type="button" className="quiet" aria-label={`Open ${i.document.id}`} onClick={() => open(i.invoiceHash)}>Open</button></td>
                     </tr>

@@ -61,7 +61,7 @@ export function SortableTable<T>({ label, rows, columns, searchText, renderRow, 
         </p>
       ) : (
         <div className="table-wrap">
-          <table aria-label={label}>
+          <table aria-label={label} className="list-table">
             <thead>
               <tr>
                 {columns.map((c) => {

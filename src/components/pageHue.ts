@@ -1,0 +1,20 @@
+/** FE-081: one hue per page, so a page's lead tile, its list rows and its tile on Home share a colour and a member learns them as places. Flat fills, no gradient. */
+export const PAGE_HUE: Record<string, string> = {
+  '/marketplace': '#3d8bff',
+  '/invoices': '#e2801f',
+  '/orders': '#2f9e8f',
+  '/licenses': '#c75bd6',
+  '/codes': '#8b6cf0',
+  '/transfers': '#3fb56a',
+  '/rent': '#e25a4f',
+  '/access': '#d4a72c',
+  '/governance': '#6c7cf0',
+  '/settlement': '#3fb56a',
+  '/stats': '#3d8bff',
+  '/risk': '#d4a72c',
+  '/charts': '#2f9e8f',
+  '/reports': '#8b6cf0',
+  '/onboarding': '#3d8bff',
+  '/settings': '#7a8798',
+  '/help': '#7a8798',
+}

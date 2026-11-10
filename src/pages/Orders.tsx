@@ -2,9 +2,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { ApiError, api } from '../api/client'
 import { useDaoRegistry, useOrder, useOrderProofs, useOrders } from '../api/queries'
-import type { OrderMilestoneView, OrderView } from '../api/types'
+import type { MilestoneStatus, OrderMilestoneView, OrderView } from '../api/types'
 import { CopyButton } from '../components/CopyButton'
 import { NavIcon } from '../components/icons'
+import { PAGE_HUE } from '../components/pageHue'
+import { ItemTitle, PartyPair, StepBar, type StepTone } from '../components/ListBits'
 import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
@@ -27,7 +29,9 @@ type View = 'list' | 'detail' | 'new'
 
 const MILESTONE_LABEL: Record<string, string> = { open: 'Open', delivered: 'Delivered', confirmed: 'Confirmed', disputed: 'Disputed', paid: 'Paid', cancelled: 'Cancelled' }
 const MILESTONE_TONE: Record<string, Tone | undefined> = { open: 'info', delivered: 'warn', confirmed: 'ok', paid: 'ok', disputed: 'bad' }
-const ORDER_TONE: Record<string, Tone | undefined> = { proposed: 'warn', open: 'info', completed: 'ok', settled: 'ok', disputed: 'bad' }
+/** FE-081: how one milestone shows in the list bar. Paid is done; delivered or confirmed waits on payment; a dispute is red; cancelled counts as not done. */
+const MILESTONE_STEP: Record<MilestoneStatus, StepTone> = { open: 'todo', delivered: 'active', confirmed: 'active', disputed: 'bad', paid: 'done', cancelled: 'todo' }
+const ORDER_TONE: Record<string, Tone | undefined> ={ proposed: 'warn', open: 'info', completed: 'ok', settled: 'ok', disputed: 'bad' }
 const REASONS = [['not_received', 'Not received'], ['not_as_described', 'Not as described'], ['other', 'Other']] as const
 /** Kinds whose note is a warning the buyer must see before ordering: shown open. */
 const WARN_KINDS: readonly string[] = ['scraping', 'loadtest']
@@ -399,8 +403,7 @@ function OrderDetail({ hash, voucherKey, onVoucherKey, showKey }: { hash: string
 const kindLabel = (o: OrderView) => plainKind(KIND_LABEL[o.order.kind as keyof typeof KIND_LABEL] ?? o.order.kind)
 const ORDER_COLUMNS: Column<OrderView>[] = [
   { key: 'kind', label: 'Kind', sortValue: kindLabel },
-  { key: 'buyer', label: 'Buyer', sortValue: (o) => o.order.buyer },
-  { key: 'seller', label: 'Seller', sortValue: (o) => o.order.seller },
+  { key: 'parties', label: 'Buyer, seller', sortValue: (o) => o.order.buyer },
   { key: 'milestones', label: 'Milestones', sortValue: (o) => o.milestones.length },
   { key: 'status', label: 'Status', sortValue: (o) => o.status },
   { key: 'open', label: '' },
@@ -456,10 +459,9 @@ export function Orders() {
                   searchText={orderText}
                   renderRow={(o) => (
                     <tr key={o.orderHash} aria-selected={selected === o.orderHash}>
-                      <td>{kindLabel(o)}</td>
-                      <td><code>{shortAccount(o.order.buyer)}</code></td>
-                      <td><code>{shortAccount(o.order.seller)}</code></td>
-                      <td>{o.milestones.length}</td>
+                      <td><ItemTitle icon="/orders" hue={PAGE_HUE['/orders']} title={kindLabel(o)} sub={`Order ${o.orderHash.slice(0, 8)}`} /></td>
+                      <td><PartyPair from={o.order.buyer} to={o.order.seller} account={account} joint="buys from" /></td>
+                      <td><StepBar steps={o.milestones.map((m) => MILESTONE_STEP[m.status])} doneLabel="milestones paid" /></td>
                       <td><Pill tone={ORDER_TONE[o.status]}>{titleCase(o.status)}</Pill></td>
                       <td><button type="button" className="quiet" aria-label={`Open order ${o.orderHash.slice(0, 8)}`} onClick={() => open(o.orderHash)}>Open</button></td>
                     </tr>

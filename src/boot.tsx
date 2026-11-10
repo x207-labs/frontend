@@ -7,6 +7,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { App } from './App'
 import { API_URL, USE_FIXTURES } from './config'
 import { createQueryClient } from './queryClient'
+import { fixtureWalletPort } from './wallet/fixtureWallet'
 import { nearConnectPort } from './wallet/nearConnect'
 import { WalletProvider } from './wallet/WalletContext'
 
@@ -23,7 +24,7 @@ if (USE_FIXTURES) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={createQueryClient()}>
-      <WalletProvider port={nearConnectPort}>
+      <WalletProvider port={USE_FIXTURES ? fixtureWalletPort : nearConnectPort}>
         <BrowserRouter>
           <App />
         </BrowserRouter>
