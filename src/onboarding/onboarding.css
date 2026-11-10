@@ -4,11 +4,13 @@
    minmax(0, 1fr) keeps a long command from widening the page (the grid item may shrink below its content). */
 .onboard { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
 .onboard-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.75rem; min-width: 0; }
-.onboard-me { display: grid; gap: 1rem; align-content: start; min-width: 0; }
+/* FE-102: the membership is one card (same surface as .panel) instead of a bare column behind a hairline; on a wide screen it stays
+   in view under the sticky top bar while the steps scroll. */
+.onboard-me { display: grid; gap: 1.25rem; align-content: start; min-width: 0; padding: 1.375rem 1.5rem 1.5rem; border-radius: var(--radius); background: var(--glass); border: 1px solid var(--line); }
 .onboard-me h2 { margin: 0; font-size: 1.125rem; }
 @media (min-width: 1100px) {
-  .onboard { grid-template-columns: minmax(0, 1fr) 19rem; gap: 3.5rem; }
-  .onboard-me { order: 2; position: sticky; top: 1.5rem; padding-left: 2rem; border-left: 1px solid var(--line); }
+  .onboard { grid-template-columns: minmax(0, 1fr) 20rem; gap: 3rem; align-items: start; }
+  .onboard-me { order: 2; position: sticky; top: 5rem; }
 }
 
 /* The membership as large figures, a small label over each; two by two. */
@@ -21,7 +23,8 @@
 @media (min-width: 600px) and (max-width: 1099px) {
   .onboard-sum { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-.onboard-circle { margin: 0; color: var(--ink-soft); font-size: 0.9375rem; }
+/* the circle count is the card's footer, under a line, so it no longer trails the figures as a loose sentence */
+.onboard-circle { margin: 0; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 0.875rem; line-height: 1.5; }
 
 /* Progress: where you are, and a four-part bar. */
 .onboarding { display: grid; gap: 1.25rem; min-width: 0; }
@@ -79,5 +82,6 @@
 .onboard-exit h2 { margin: 0; font-size: 1.125rem; }
 /* block, not the flex row of .state: a sentence with inline code must wrap as text, not as separate pieces */
 .onboard-exit p { display: block; max-width: 65ch; margin: 0; line-height: 1.6; }
-.onboard-exit p.state-error { padding: 0.75rem 1rem; }
+/* FE-102: only the vertical padding changes; the 2.5rem left padding of .state-error keeps the "!" mark clear of the text */
+.onboard-exit p.state-error { padding-block: 0.75rem; }
 .onboard-exit button { justify-self: start; min-height: 2.75rem; }
