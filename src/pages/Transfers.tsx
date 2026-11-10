@@ -5,6 +5,8 @@ import { viewContract } from '../api/chain'
 import { useTransfer } from '../api/queries'
 import type { ListingView } from '../api/types'
 import type { TransferView } from '../api/transferView'
+import { DealGlyph, DealTrack } from '../components/DealTrack'
+import { PLATFORM_GLYPH, transferPosition, transferStops } from '../components/dealSteps'
 import { NavIcon } from '../components/icons'
 import { PAGE_HUE } from '../components/pageHue'
 import { QueryState } from '../components/QueryState'
@@ -107,7 +109,7 @@ function Seller({ onPrepared }: { onPrepared: (p: PreparedTransfer) => void }) {
           {!done.needsBond && (
             <ul className="item-cards">
               <li className="item-card">
-                <span className="tone-tile" aria-hidden="true" style={tone(TONE_HEX.ok)}><NavIcon name="/marketplace" size={18} /></span>
+                <span className="tone-tile" aria-hidden="true" style={tone(TONE_HEX.ok)}><DealGlyph name={PLATFORM_GLYPH[done.document.platform]} size={18} /></span>
                 <p className="item-title"><code>{done.document.transfer_ref}</code></p>
                 <span className="pill" data-tone="ok">Ready to list</span>
                 <p className="item-meta">Paste the listing detail into the Marketplace listing form.</p>
@@ -213,15 +215,13 @@ function BuyForm({ voucherKey, onVoucherKey, onBought }: { voucherKey: string; o
       <div><button type="button" disabled={!account || busy || !/^[0-9a-f]{64}$/.test(hash.trim())} onClick={() => void check()}>Check listing</button></div>
       {checked && (
         <div className="actions" data-testid="transfer-summary">
-          <ul className="item-cards">
-            <li className="item-card">
-              <span className="tone-tile" aria-hidden="true" style={tone(PAGE_HUE['/transfers'])}><NavIcon name="/transfers" size={18} /></span>
-              <p className="item-title"><code>{checked.listing.doc.transfer_ref}</code></p>
-              <span className="pill" data-tone="info">{PLATFORM_LABEL[checked.listing.doc.platform]}</span>
-              <p className="item-meta">Proof: {PROOF_SHORT[checked.listing.doc.proof_method] ?? PROOF_LABEL[checked.listing.doc.proof_method] ?? checked.listing.doc.proof_method}</p>
-              <p className="item-meta">Seller <code>{checked.view.account}</code></p>
-            </li>
-          </ul>
+          <DealTrack
+            tile={{ glyph: PLATFORM_GLYPH[checked.listing.doc.platform] }} hue={PAGE_HUE['/transfers']} title={<code>{checked.listing.doc.transfer_ref}</code>}
+            pill={{ tone: 'info', label: PLATFORM_LABEL[checked.listing.doc.platform] }}
+            buyer={account ?? ''} seller={checked.view.account} account={account} stops={transferStops(PLATFORM_GLYPH[checked.listing.doc.platform])} done={0}
+          >
+            <p className="deal-note">Proof: {PROOF_SHORT[checked.listing.doc.proof_method] ?? PROOF_LABEL[checked.listing.doc.proof_method] ?? checked.listing.doc.proof_method}. Seller <code>{checked.view.account}</code></p>
+          </DealTrack>
           <dl className="figures">
             <div><dt>Price</dt><dd>{formatCredit(checked.listing.doc.value)} credit</dd></div>
             <div><dt>Time allowed</dt><dd>{minutes(checked.listing.windowSeconds)}</dd></div>
@@ -305,16 +305,14 @@ function Proof({ view, voucherKey, onVoucherKey }: { view: TransferView; voucher
   const state = STATUS[view.status] ?? { label: view.status, tone: 'info' as Tone }
   return (
     <div className="actions" data-testid="transfer">
-      <ul className="item-cards">
-        <li className="item-card">
-          <span className="tone-tile" aria-hidden="true" style={tone(TONE_HEX[state.tone])}><NavIcon name="/transfers" size={18} /></span>
-          <p className="item-title">{PLATFORM_LABEL[view.platform]} <code>{view.transferRef}</code></p>
-          <span className="pill" data-tone={state.tone}>{state.label}</span>
-          {held && <p className="item-meta" data-testid="window-left" role="status">{left > 0 ? `Closes in ${minutes(left)}` : 'Time is up: the sale cancels on the next read.'}</p>}
-          {view.status === 'confirmed' && <p className="item-meta">Proof met. The seller can now register the voucher.</p>}
-          {view.status === 'cancelled' && <p className="item-meta">The voucher never moved.</p>}
-        </li>
-      </ul>
+      <DealTrack
+        tile={{ glyph: PLATFORM_GLYPH[view.platform] }} hue={PAGE_HUE['/transfers']} title={<>{PLATFORM_LABEL[view.platform]} <code>{view.transferRef}</code></>}
+        pill={state} buyer={view.buyer} seller={view.seller} account={account} stops={transferStops(PLATFORM_GLYPH[view.platform])} {...transferPosition(view.status)}
+      >
+        {held && <p className="deal-note" data-testid="window-left" role="status">{left > 0 ? `Closes in ${minutes(left)}` : 'Time is up: the sale cancels on the next read.'}</p>}
+        {view.status === 'confirmed' && <p className="deal-note">Proof met. The seller can now register the voucher.</p>}
+        {view.status === 'cancelled' && <p className="deal-note">The voucher never moved.</p>}
+      </DealTrack>
       {message && <p className="state" role="status">{message}</p>}
       {error && <p className="state state-error" role="alert">{error}</p>}
       {view.cancelReason && <p className="state" data-testid="cancel-reason">Reason: <code>{view.cancelReason}</code></p>}

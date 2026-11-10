@@ -3,7 +3,9 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { api } from '../api/client'
 import { viewContract } from '../api/chain'
 import { usePurchase } from '../api/queries'
-import type { ListingView } from '../api/types'
+import type { ListingView, PurchaseView } from '../api/types'
+import { DealTrack } from '../components/DealTrack'
+import { p7Position, p7Stops } from '../components/dealSteps'
 import { NavIcon } from '../components/icons'
 import { PAGE_HUE } from '../components/pageHue'
 import { QueryState } from '../components/QueryState'
@@ -38,23 +40,18 @@ const now = () => Math.floor(Date.now() / 1000)
 const minutes = (seconds: number): string => `${Math.floor(seconds / 60)} min ${seconds % 60} s`
 
 const Pill = ({ tone, children }: { tone: Tone; children: ReactNode }) => <span className="pill" data-tone={tone}>{children}</span>
-const Tile = () => (
-  <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/codes'] }}>
-    <NavIcon name="/codes" size={18} />
-  </span>
-)
 
-/** One purchase as a card: its number, its status as a pill, and one line of what comes next. */
-function PurchaseCard({ id, status, children }: { id: string; status: string; children?: ReactNode }) {
+/** One purchase drawn as the path of the buyer's voucher (FE-084): buyer, the four steps of the exchange, seller; the status as a pill; one line of what comes next. */
+function PurchaseCard({ view, children }: { view: PurchaseView; children?: ReactNode }) {
+  const { account } = useWallet()
   return (
-    <ul className="item-cards">
-      <li className="item-card">
-        <Tile />
-        <p className="item-title">Purchase {id}</p>
-        <Pill tone={STATUS_TONE[status] ?? 'info'}>{STATUS_LABEL[status] ?? status}</Pill>
-        {children && <p className="item-meta">{children}</p>}
-      </li>
-    </ul>
+    <DealTrack
+      tile={{ nav: '/codes' }} hue={PAGE_HUE['/codes']} title={`Purchase ${view.purchaseId}`}
+      pill={{ tone: STATUS_TONE[view.status] ?? 'info', label: STATUS_LABEL[view.status] ?? view.status }}
+      buyer={view.buyer} seller={view.seller} account={account} stops={p7Stops('Code posted')} {...p7Position(view.status)}
+    >
+      {children && <p className="deal-note">{children}</p>}
+    </DealTrack>
   )
 }
 
@@ -196,9 +193,7 @@ function Serve({ voucherKey, onVoucherKey, prepared }: { voucherKey: string; onV
         <QueryState query={query} loadingLabel="Loading purchase">
           {(view) => (
             <div data-testid="serve" className="stack">
-              <PurchaseCard id={view.purchaseId} status={view.status}>
-                Buyer <code>{view.buyer}</code>
-              </PurchaseCard>
+              <PurchaseCard view={view} />
               {view.status === 'paid_held' && prepared && (
                 <>
                   <p className="state">Post the encrypted code, then say where it is.</p>
@@ -445,7 +440,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
               const canDispute = view.status === 'key_released' && (left === null || left > 0)
               return (
                 <div data-testid="purchase" className="stack">
-                  <PurchaseCard id={view.purchaseId} status={view.status}>{BUYER_HINT[view.status]}</PurchaseCard>
+                  <PurchaseCard view={view}>{BUYER_HINT[view.status]}</PurchaseCard>
                   {left !== null && view.status === 'key_released' && (
                     <p className="state" data-testid="dispute-window" role="status">
                       {left > 0 ? `Disputes open for ${minutes(left)}. No reply by then confirms automatically.` : 'The dispute window has passed: the purchase is confirmed automatically.'}

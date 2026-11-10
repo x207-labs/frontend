@@ -14,13 +14,18 @@ function hueOf(account: string): string {
   return AVATAR_HUES[h % AVATAR_HUES.length]
 }
 
-/** A member: an avatar on its own hue showing its work (a chip for a GPU seller) or, when the name says nothing, its initials; then the short name. The full account is in the title for hover and copy. */
+/** A member's avatar alone: on its own hue, showing its work (a chip for a GPU seller) or, when the name says nothing, its initials. */
+export function Avatar({ account }: { account: string }) {
+  const initials = shortAccount(account).replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase() || '?'
+  return <span className="avatar" aria-hidden="true" title={account} style={{ ['--hue' as string]: hueOf(account) }}>{AgentIcon({ account }) ?? initials}</span>
+}
+
+/** A member: the avatar, then the short name. The full account is in the title for hover and copy. */
 export function Party({ account, you }: { account: string; you?: boolean }) {
   const name = shortAccount(account)
-  const initials = name.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase() || '?'
   return (
     <span className="party" title={account}>
-      <span className="avatar" aria-hidden="true" style={{ ['--hue' as string]: hueOf(account) }}>{AgentIcon({ account }) ?? initials}</span>
+      <Avatar account={account} />
       <span className="party-name">{name}</span>
       {you && <span className="you-tag">you</span>}
     </span>
