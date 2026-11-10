@@ -25,8 +25,11 @@ html.is-landing,
   --lp-line: #8fb4ff; /* line art and leader lines */
   --lp-logo-ink: #eaf6ff; /* brand/README: ink and teal of the logo on dark */
   --lp-logo-teal: #5dcaa5;
-  --lp-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Schibsted Grotesk Variable', system-ui, sans-serif;
-  --lp-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  /* FE-099: the dashboard's faces. Bricolage for headings and figures, Geist for text, Fraunces italic for the lead line. */
+  --lp-display: 'Bricolage Grotesque Variable', 'Geist Variable', 'Helvetica Neue', system-ui, sans-serif;
+  --lp-font: 'Geist Variable', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
+  --lp-voice: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --lp-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
   --lp-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --lp-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
   --lp-pad: clamp(96px, 14vw, 180px);
@@ -168,13 +171,13 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
   position: absolute; z-index: 4; top: 0; bottom: 0; left: var(--lp-side); width: min(640px, 50vw); padding-top: 40px;
   display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left;
 }
-.lp .hero-title { font-size: clamp(38px, min(5.6vw, 9.5svh), 92px); line-height: 1; font-weight: 700; letter-spacing: -0.045em; margin: 18px 0 16px; color: var(--lp-ink); }
+.lp .hero-title { font-family: var(--lp-display); font-size: clamp(38px, min(5.6vw, 9.5svh), 92px); line-height: 1; font-weight: 700; letter-spacing: -0.035em; margin: 18px 0 16px; color: var(--lp-ink); }
 .lp .hero-title .line { display: block; }
 .lp .morph { position: relative; height: 1.08em; }
 /* The word slides up through a mask: one solid colour, no blur. */
 .lp .morph-slot { position: absolute; inset: -0.04em 0 -0.12em; overflow: hidden; }
 .lp .morph-word { position: absolute; left: 0; top: 0.04em; white-space: nowrap; color: var(--lp-accent); }
-.lp .hero-lead { font-size: clamp(15px, 1.3vw, 18px); color: var(--lp-ink-2); max-width: 34em; }
+.lp .hero-lead { font-family: var(--lp-voice); font-style: italic; font-weight: 400; font-size: clamp(17px, 1.45vw, 20px); line-height: 1.45; color: var(--lp-ink-2); max-width: 34em; }
 .lp .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 /* FE-051: the objects of the headline word, one lit at a time; "anything" lights all six. */
 .lp .hero-pill { display: inline-flex; gap: 2px; margin-top: 22px; padding: 5px; border-radius: 999px; border: 1px solid var(--lp-hair); background: var(--lp-glass); }
@@ -188,9 +191,9 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 /* "Fig. 1  Barter": the figure number of a technical drawing, then the chapter name. */
 .lp .chapter-kicker { font-size: 14px; color: var(--lp-ink-2); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--lp-hair); max-width: 22em; }
 .lp .chapter-kicker span { margin-left: 10px; color: var(--lp-ink); font-weight: 600; }
-.lp .chapter-title { font-size: clamp(32px, 4.4vw, 62px); line-height: 1.02; font-weight: 700; letter-spacing: -0.04em; }
+.lp .chapter-title { font-family: var(--lp-display); font-size: clamp(32px, 4.4vw, 62px); line-height: 1.02; font-weight: 700; letter-spacing: -0.03em; }
 .lp .chapter-figure { margin-top: 26px; display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
-.lp .chapter-figure > span:first-child { font-size: clamp(52px, 7.4vw, 112px); line-height: 0.95; font-weight: 700; letter-spacing: -0.05em; white-space: nowrap; color: var(--lp-accent); }
+.lp .chapter-figure > span:first-child { font-family: var(--lp-display); font-size: clamp(52px, 7.4vw, 112px); line-height: 0.95; font-weight: 700; letter-spacing: -0.04em; white-space: nowrap; color: var(--lp-accent); }
 .lp .chapter-figure small { font-size: 15px; color: var(--lp-ink-2); }
 .lp .chapter-note { margin-top: 14px; font-size: 16px; color: var(--lp-ink-2); }
 
@@ -227,12 +230,12 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .ring-label { font-size: 17px; font-family: var(--lp-font); fill: var(--lp-ink-2); font-variant-numeric: tabular-nums; }
 .lp .ring-id { fill: var(--lp-ink); font-weight: 650; }
 .lp .ring-core circle { fill: var(--lp-holo); }
-.lp .ring-core text { fill: var(--lp-on-accent); font-family: var(--lp-font); font-size: 25px; font-weight: 700; letter-spacing: -0.03em; }
+.lp .ring-core text { fill: var(--lp-on-accent); font-family: var(--lp-display); font-size: 25px; font-weight: 700; letter-spacing: -0.03em; }
 .lp .ring-core .ring-core-sub { font-size: 10.5px; font-weight: 500; letter-spacing: 0.02em; opacity: 0.7; }
 
 /* Sections */
 .lp .section { position: relative; max-width: 1120px; margin: 0 auto; padding: var(--lp-pad) var(--lp-gutter) 0; }
-.lp .section-title { font-size: clamp(34px, 5vw, 64px); line-height: 1.04; font-weight: 700; letter-spacing: -0.04em; max-width: 20ch; }
+.lp .section-title { font-family: var(--lp-display); font-size: clamp(34px, 5vw, 64px); line-height: 1.04; font-weight: 700; letter-spacing: -0.03em; max-width: 20ch; }
 .lp .spec-text a, .lp .spotlight a { color: var(--lp-accent); text-decoration: none; }
 @media (hover: hover) and (pointer: fine) { .lp .spec-text a:hover, .lp .spotlight a:hover { text-decoration: underline; } }
 
@@ -309,7 +312,7 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .spec-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--lp-hair); color: var(--lp-accent); }
 .lp .spec-icon .icon { width: 22px; height: 22px; }
 .lp .spec-text { display: grid; gap: 6px; padding-top: 2px; }
-.lp .spec-text h3 { font-size: clamp(19px, 1.8vw, 24px); font-weight: 650; letter-spacing: -0.025em; line-height: 1.2; }
+.lp .spec-text h3 { font-family: var(--lp-display); font-size: clamp(19px, 1.8vw, 24px); font-weight: 650; letter-spacing: -0.025em; line-height: 1.2; }
 .lp .spec-text p { font-size: 15px; color: var(--lp-ink-2); max-width: 46em; }
 .lp .spec-figure { padding-top: 6px; font-family: var(--lp-mono); font-size: 13.5px; color: var(--lp-ink); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 
@@ -317,7 +320,7 @@ html.is-landing body { margin: 0; background: var(--lp-bg); }
 .lp .snippets { margin-top: 48px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .lp .snippet { min-width: 0; border-radius: 22px; padding: 22px; }
 .lp .snippet-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
-.lp .snippet h3 { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 18px; font-weight: 650; letter-spacing: -0.02em; }
+.lp .snippet h3 { font-family: var(--lp-display); display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 18px; font-weight: 650; letter-spacing: -0.02em; }
 .lp .snippet h3 .icon { color: var(--lp-accent); }
 .lp .snippet-file { font-family: var(--lp-mono); font-size: 12px; font-weight: 400; letter-spacing: 0; color: var(--lp-ink-2); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--lp-hair); }
 .lp .copy span { display: inline-flex; align-items: center; gap: 6px; }

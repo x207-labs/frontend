@@ -1,5 +1,4 @@
-// The landing keeps Schibsted in its own font stack; the app uses the four faces below (FE-098).
-import '@fontsource-variable/schibsted-grotesk'
+// The app's four faces (FE-098); the landing imports the same four in landing/mount.tsx.
 import '@fontsource-variable/bricolage-grotesque'
 import '@fontsource-variable/geist'
 import '@fontsource-variable/fraunces/wght-italic.css'

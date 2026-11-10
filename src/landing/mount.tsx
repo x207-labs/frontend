@@ -1,4 +1,8 @@
-import '@fontsource-variable/schibsted-grotesk'
+// FE-099: the landing uses the dashboard's four faces (FE-098), self-hosted because the CSP allows only 'self' fonts.
+import '@fontsource-variable/bricolage-grotesque'
+import '@fontsource-variable/geist'
+import '@fontsource-variable/fraunces/wght-italic.css'
+import '@fontsource-variable/geist-mono'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import Landing from './Landing'
