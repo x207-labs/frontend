@@ -156,8 +156,13 @@ button.quiet:disabled { color: var(--ink-soft); background: transparent; border-
 .state p { margin: 0; }
 /* FE-090: a sentence of state text keeps a readable line length on a wide screen */
 p.state { max-width: 65ch; }
-.state-error, .state-warn { padding: 0.75rem 1rem; border-radius: 16px; border: 1px solid rgb(255 124 142 / 0.3); background: rgb(255 124 142 / 0.09); color: var(--s409); }
-.state-warn { border-color: rgb(245 165 36 / 0.3); background: rgb(245 165 36 / 0.09); color: var(--s402); }
+/* FE-096: an error or warning is a compact note as wide as its sentence: a round mark in the status colour, the sentence in body ink (pink text on pink was hard to read) */
+/* block, not the flex of .state: a sentence with <code> in it stays one running line instead of splitting into flex items */
+.state-error, .state-warn { display: block; position: relative; width: fit-content; max-width: 100%; padding: 0.625rem 0.875rem 0.625rem 2.5rem; border-radius: 12px; border: 1px solid rgb(255 124 142 / 0.28); background: rgb(255 124 142 / 0.08); color: var(--ink); line-height: 1.45; }
+.state-error > button, .state-warn > button { margin-top: 0.5rem; }
+.state-error::before, .state-warn::before { content: '!'; content: '!' / ''; position: absolute; left: 0.875rem; top: 0.6875rem; display: grid; place-items: center; width: 1.25rem; height: 1.25rem; border-radius: 50%; background: var(--s409); color: rgb(20 8 12); font-size: 0.8125rem; font-weight: 800; line-height: 1; }
+.state-warn { border-color: rgb(245 165 36 / 0.28); background: rgb(245 165 36 / 0.08); }
+.state-warn::before { background: var(--s402); }
 code { font-family: var(--mono); font-size: 0.875em; font-weight: 600; padding: 0.0625em 0.4em; border-radius: 6px; background: rgb(255 255 255 / 0.06); overflow-wrap: anywhere; }
 code.plain { font-weight: 400; color: var(--ink-soft); }
 .spinner { width: 0.875rem; height: 0.875rem; border: 2px solid var(--line); border-top-color: var(--accent-ink); border-radius: 50%; animation: spin 0.8s linear infinite; }

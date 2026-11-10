@@ -58,7 +58,7 @@ export function Settings() {
       writeCache(account, { photo: await photoFromFile(file) })
       setNote({ at: 'photo', kind: 'ok', text: 'Photo updated.' })
     } catch (e) {
-      setNote({ at: 'photo', kind: 'error', text: e instanceof PhotoError ? e.message : 'That image could not be used. Try another one.' })
+      setNote({ at: 'photo', kind: 'error', text: e instanceof PhotoError ? e.message : 'This photo could not be saved. Try another JPG, PNG or WebP.' })
     }
   }
 
