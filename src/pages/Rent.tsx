@@ -52,7 +52,9 @@ function Offer() {
   const info = PROVIDERS[provider]!
   const priceAtomic = toAtomic(price)
   const capAtomic = cap.trim() === '' ? null : toAtomic(cap)
-  const problem = refProblem !== null ? refProblem : priceAtomic === null ? 'Price per day must be a credit number > 0.' : info.costly && capAtomic === null ? 'Costly access must have a daily spending cap (daily_cap) > 0.' : null
+  // An untouched price is not a mistake yet: the form asks for it instead of opening on an error.
+  const noPrice = price.trim() === ''
+  const problem = refProblem !== null ? refProblem : noPrice ? null : priceAtomic === null ? 'Price per day must be a credit number > 0.' : info.costly && capAtomic === null ? 'Costly access must have a daily spending cap (daily_cap) > 0.' : null
   const scope = { provider, grantee_ref: ref.trim() === '' ? '<filled in by the lessee at offer_grant>' : ref.trim(), ...(resource.trim() ? { resource: resource.trim() } : {}), ...(permission.trim() ? { permission: permission.trim() } : {}), ...(capAtomic !== null ? { daily_cap: capAtomic } : {}) }
   const detail = JSON.stringify({ kind: 'access-rent', provider, ...(resource.trim() ? { resource: resource.trim() } : {}), ...(permission.trim() ? { permission: permission.trim() } : {}), price_per_day: priceAtomic, ...(capAtomic !== null ? { daily_cap: capAtomic } : {}) })
   return (
@@ -80,7 +82,8 @@ function Offer() {
       </div>
       <label><span>Lessee reference (optional)</span><input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={provider === 'ssh' ? 'ssh-ed25519 AAAA…' : provider === 'discord' ? '123456789012345678' : 'Empty: the lessee fills it in'} /></label>
       {problem && <p className="state state-error" role="alert" data-testid="rent-offer-error">{problem}</p>}
-      {!problem && (
+      {!problem && noPrice && <p className="state" data-testid="rent-offer-hint">Enter a price per day to see the listing.</p>}
+      {!problem && !noPrice && (
         <>
           <p className="rent-price">
             <strong>{formatCredit(priceAtomic!)}</strong> credit / day

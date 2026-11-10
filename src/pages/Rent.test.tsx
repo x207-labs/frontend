@@ -210,4 +210,15 @@ describe('FE-029 daily rent of an access', () => {
     expect(describeMarketError(new ApiError(409, 'access_conflict', 'any text'))).toMatch(/another grant for the same login and resource still holds it/)
     expect(describeMarketError(new ApiError(502, 'provider_grant_failed', 'GitHub answered 500'))).toMatch(/The provider failed to open access: GitHub answered 500/)
   })
+
+  it('FE-073 an empty offer form asks for the price instead of opening on an error; a wrong price is still refused', async () => {
+    const user = userEvent.setup()
+    renderApp('/rent', undefined, false, createMockWallet(RENTER, RENTER))
+    const form = await screen.findByRole('region', { name: 'Offer access rent' })
+    expect(within(form).queryByTestId('rent-offer-error')).not.toBeInTheDocument()
+    expect(within(form).getByTestId('rent-offer-hint')).toHaveTextContent('Enter a price per day')
+    await user.type(within(form).getByLabelText(/^Price per day/), 'abc')
+    expect(within(form).getByTestId('rent-offer-error')).toHaveTextContent('Price per day must be a credit number')
+    expect(within(form).queryByTestId('rent-offer-hint')).not.toBeInTheDocument()
+  })
 })
