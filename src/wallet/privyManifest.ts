@@ -64,10 +64,11 @@ async function loadDefaultWallets(fetchImpl: typeof fetch): Promise<WalletManife
 
 /**
  * The manifest to give NearConnector, or `undefined` when the Privy wallet is off (then the connector loads its own list as it always did).
- * When it is on: the library's wallets plus the Privy entry. If the library's list cannot be fetched, the Privy entry stands alone and the chooser still opens.
+ * When it is on: the Privy entry first, then the library's wallets. If the library's list cannot be fetched, the Privy entry stands alone and the chooser still opens.
+ * FE-073: first, because at the end of the list it sat below the fold of the chooser and visitors without a wallet did not see it.
  */
 export async function buildManifest(options: { enabled: boolean; origin: string; fetchImpl?: typeof fetch }): Promise<WalletManifest | undefined> {
   if (!options.enabled) return undefined
   const defaults = await loadDefaultWallets(options.fetchImpl ?? fetch)
-  return { version: '1.0.0', wallets: [...defaults.filter((w) => w.id !== PRIVY_WALLET_ID), privyWalletEntry(options.origin)] }
+  return { version: '1.0.0', wallets: [privyWalletEntry(options.origin), ...defaults.filter((w) => w.id !== PRIVY_WALLET_ID)] }
 }

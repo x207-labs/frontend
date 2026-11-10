@@ -21,9 +21,9 @@ describe('TC-FE-059-01 the Privy wallet is one more entry of the wallet list', (
     expect(f).not.toHaveBeenCalled()
   })
 
-  it('with the ids the other wallets stay and the Privy entry is added last', async () => {
+  it('FE-073 with the ids the other wallets stay and the Privy entry comes first, above the fold of the chooser', async () => {
     const manifest = await buildManifest({ enabled: true, origin: ORIGIN, fetchImpl: fakeFetch() })
-    expect(manifest?.wallets.map((w) => w.id)).toEqual(['hot', PRIVY_WALLET_ID])
+    expect(manifest?.wallets.map((w) => w.id)).toEqual([PRIVY_WALLET_ID, 'hot'])
   })
 
   it('if the default list cannot be fetched the chooser still opens with the Privy entry', async () => {
