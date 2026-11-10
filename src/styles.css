@@ -295,6 +295,8 @@ button.th-sort { padding: 0; min-height: 0; border: 0; border-radius: 0; backgro
   .action a:hover { background: rgb(61 139 255 / 0.28); }
   tbody tr:hover { background: rgb(255 255 255 / 0.04); }
   a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+  /* FE-095: only a link in running text is underlined; a link drawn as a button, tab, nav row or tile shows its hover by its fill or border */
+  a.btn:hover, a.tab:hover, .rail a:hover, .sheet a:hover, .action a:hover, .explore a:hover, .cm-nodes a:hover, .cm-more a:hover { text-decoration: none; }
   select:hover:not(:disabled, :focus) { border-color: #36425a; background-color: rgb(255 255 255 / 0.07); }
   .file-pick:hover .file-zone { border-color: var(--accent); background: var(--accent-soft); }
 }
@@ -957,7 +959,7 @@ a.btn:active { transform: scale(0.97); }
 .step .step-state { font-size: 0.8125rem; font-weight: 650; color: var(--s200); }
 .step a { align-self: flex-start; margin-top: 0.5rem; }
 /* FE-072: the page list is an app grid, as on an iPhone home screen: one glowing icon tile and the name, grouped by section. */
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; min-width: 0; min-height: 0; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .explore { display: flex; flex-wrap: wrap; gap: 1.25rem 2.5rem; }
 .explore-group { display: grid; align-content: start; gap: 0.625rem; }
 .explore-label { margin: 0; padding-left: 0.5rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0; color: var(--ink-soft); }
