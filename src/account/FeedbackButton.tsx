@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import './feedback.css'
 import { accountErrorMessage, sendFeedback } from './client'
+import { FEEDBACK_EVENT } from './feedbackEvent'
 
 const HIDDEN_ON = ['/', '/sign']
 
@@ -16,6 +17,12 @@ export function FeedbackButton() {
   useEffect(() => {
     if (open) field.current?.focus()
   }, [open])
+
+  useEffect(() => {
+    const show = () => setOpen(true)
+    window.addEventListener(FEEDBACK_EVENT, show)
+    return () => window.removeEventListener(FEEDBACK_EVENT, show)
+  }, [])
 
   if (HIDDEN_ON.includes(pathname)) return null
   const trimmed = message.trim()
@@ -49,7 +56,7 @@ export function FeedbackButton() {
           <small>Sent without your account. Page: {pathname}</small>
           <div className="feedback-actions">
             <button type="submit" disabled={trimmed === '' || state.kind === 'sending'}>{state.kind === 'sending' ? 'Sending…' : 'Send'}</button>
-            <button type="button" onClick={() => setOpen(false)}>Close</button>
+            <button type="button" className="quiet" onClick={() => setOpen(false)}>Close</button>
           </div>
           {state.kind === 'sent' && <p className="state" role="status">Thank you, it was sent.</p>}
           {state.kind === 'failed' && <p className="state-error" role="alert">{state.text}</p>}

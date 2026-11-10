@@ -7,4 +7,6 @@
 /* FE-075: on a phone the bottom tab bar holds the corner, so the button sits above it instead of covering the last tab */
 @media (max-width: 839px) {
   .feedback { bottom: calc(var(--tabbar-h, 0px) + 1.75rem + env(safe-area-inset-bottom)); }
+  /* FE-092: the floating button covered the page while scrolling; on a phone the panel opens from "Send feedback" in the More sheet */
+  .feedback-toggle { display: none; }
 }

@@ -83,6 +83,8 @@ main { width: 100%; max-width: 72rem; margin-inline: auto; padding: 0.5rem clamp
 .sheet::before { content: ''; position: absolute; top: 0.5rem; left: 50%; width: 2.5rem; height: 4px; margin-left: -1.25rem; border-radius: 4px; background: var(--line); }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; }
 .sheet-head h2 { margin: 0; }
+/* FE-092: the feedback entry ends the page list, full width so it reads as one action, not as a page */
+.sheet .sheet-feedback { width: 100%; margin-top: 1rem; }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
 
@@ -315,7 +317,9 @@ select[aria-expanded='true'] { border-color: var(--accent); box-shadow: 0 0 0 1p
 .file-zone input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
 .file-icon { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 12px; background: var(--accent-soft); color: var(--accent-ink); }
 .file-text { display: grid; gap: 0.125rem; min-width: 0; }
-.file-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+/* FE-092: the prompt wraps on a phone; only a chosen file name is cut to one line (its size and type follow below it) */
+.file-text strong { font-weight: 600; }
+.file-pick[data-chosen='true'] .file-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-text small { color: var(--ink-soft); }
 .file-pick[data-over='true'] .file-zone { border-color: var(--accent); background: var(--accent-soft); }
 .file-pick[data-chosen='true'] .file-zone { border-style: solid; border-color: #2c5a3d; background: rgb(63 181 106 / 0.07); }
@@ -668,6 +672,12 @@ table.rules td .pill { margin-left: 0.5rem; }
 .view-tabs { display: flex; align-items: center; gap: 1rem; margin: 0 0 1.25rem; }
 .view-tabs::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .view-tabs .segmented, main[data-group] .view-tabs .segmented { flex: none; margin: 0; }
+/* FE-092: on a phone the rule after the tabs was a short stub; the tabs take the whole row instead */
+@media (max-width: 559px) {
+  .view-tabs::after { display: none; }
+  .view-tabs .segmented, main[data-group] .view-tabs .segmented { display: flex; flex: 1; }
+  .view-tabs .segmented button { flex: 1 1 auto; }
+}
 /* FE-080: the voucher key is one row across the pane (label, field, note), not a floating card; the forms of a view then share the width. */
 .form.key-strip { max-width: none; margin: 0 0 1rem; }
 @media (min-width: 900px) {

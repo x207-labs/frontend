@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import { FEEDBACK_EVENT } from '../account/feedbackEvent'
 import { CIRCLE } from '../config'
 import { GROUPS, pages, type PageGroup } from '../routes'
 import { NavIcon } from './icons'
@@ -39,7 +40,8 @@ export function Sidebar() {
 
 type Tab = { label: string; group: PageGroup; icon: string }
 const TABS: Tab[] = [
-  { label: 'Home', group: 'Overview', icon: '/app' },
+  // FE-092: the tab stands for the whole Overview group (Home, results, report, graph, risk), so it carries the group's name
+  { label: 'Overview', group: 'Overview', icon: '/app' },
   { label: 'Account', group: 'My account', icon: 'account' },
   { label: 'Market', group: 'Marketplace', icon: '/marketplace' },
   { label: 'Govern', group: 'Governance', icon: '/governance' },
@@ -107,6 +109,17 @@ function MoreSheet({ onClose }: { onClose: () => void }) {
             </div>
           ))}
         </nav>
+        {/* FE-092: on a phone the feedback button does not float over the page; it opens from here */}
+        <button
+          type="button"
+          className="quiet sheet-feedback"
+          onClick={() => {
+            onClose()
+            window.dispatchEvent(new Event(FEEDBACK_EVENT))
+          }}
+        >
+          Send feedback
+        </button>
       </div>
     </div>
   )
