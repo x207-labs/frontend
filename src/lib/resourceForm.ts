@@ -4,18 +4,18 @@ import { toAtomic } from './amount'
 // FE-024: metered resource listing form (pipeline P5, class D, twelve kinds). No rules of its own: kind, unit, limit, warning, endpoint check, and the shape of
 // `detail` come from the SDK (`METERED_PRESETS`, `resourceListingDetail`); the form only converts text into a unit price and computes the cost estimate.
 export const KIND_LABEL: Record<MeteredKind, string> = {
-  cpu: '31 · Idle CPU',
-  gpu: '32 · GPU per hour',
-  storage: '33 · Storage',
-  cdn: '34 · Cache and CDN',
-  inference: '35 · Own-model inference',
-  'fine-tuning': '36 · Fine-tuning',
-  'data-feed': '44 · Data feed or oracle',
-  'iot-sensor': '45 · IoT sensor data',
-  'gas-relayer': '47 · Gas relayer',
-  'priority-slot': '49 · Priority queue slot',
-  'proxy-bandwidth': '55 · Proxy and bandwidth',
-  'home-device': '90 · Home device',
+  cpu: '31. Idle CPU',
+  gpu: '32. GPU per hour',
+  storage: '33. Storage',
+  cdn: '34. Cache and CDN',
+  inference: '35. Own-model inference',
+  'fine-tuning': '36. Fine-tuning',
+  'data-feed': '44. Data feed or oracle',
+  'iot-sensor': '45. IoT sensor data',
+  'gas-relayer': '47. Gas relayer',
+  'priority-slot': '49. Priority queue slot',
+  'proxy-bandwidth': '55. Proxy and bandwidth',
+  'home-device': '90. Home device',
 }
 export const UNIT_LABEL: Record<MeteredUnit, string> = { call: 'per call', minute: 'per minute', day: 'per day', GB: 'per GB', job: 'per job', request: 'per request' }
 

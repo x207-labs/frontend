@@ -33,10 +33,10 @@ const STATUS_OPTIONS = [
   ['all', 'All'],
 ] as const
 const CLASS_LABEL: Record<AssetClass, string> = {
-  A: 'A · native transfer (escrow)',
-  B: 'B · account access rent',
-  C: 'C · TEE broker (x402)',
-  D: 'D · direct service (voucher)',
+  A: 'Class A: native transfer (escrow)',
+  B: 'Class B: account access rent',
+  C: 'Class C: TEE broker (x402)',
+  D: 'Class D: direct service (voucher)',
 }
 const STEPS = ['What you give', 'What you want', 'Terms', 'Sign and post'] as const
 type View = 'browse' | 'post' | 'mine'
@@ -246,14 +246,14 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
         <div className="deal" aria-label="Your listing">
           <div className="deal-side">
             <span className="deal-tag">You give</span>
-            <strong>{offer.type || '—'}</strong>
-            <span>{offer.quantity || '?'} × · {offer.value || '?'} credit</span>
+            <strong>{offer.type || 'Not set'}</strong>
+            <span>{offer.quantity || '?'} units, {offer.value || '?'} credit</span>
           </div>
           <span className="deal-arrow" aria-hidden="true">⇄</span>
           <div className="deal-side">
             <span className="deal-tag">You get</span>
-            <strong>{want.type || '—'}</strong>
-            <span>{want.quantity || '?'} × · {want.value || '?'} credit</span>
+            <strong>{want.type || 'Not set'}</strong>
+            <span>{want.quantity || '?'} units, {want.value || '?'} credit</span>
           </div>
         </div>
         {missing.length > 0 && (
@@ -309,8 +309,8 @@ function AssetSide({ side, role }: { side: ListingView['offer']; role: 'give' | 
     <div className="asset-side" data-role={role}>
       <span className="class-badge" data-class={side.assetClass} aria-hidden="true">{side.assetClass}</span>
       <div>
-        <span className="asset-name">{`${side.assetType} · class ${side.assetClass}`}</span>
-        <span className="asset-meta">{formatNumber(side.quantity, 0)} units · {formatCredit(side.value)} credit</span>
+        <span className="asset-name">{side.assetType}</span>
+        <span className="asset-meta">Class {side.assetClass}, {formatNumber(side.quantity, 0)} units, {formatCredit(side.value)} credit</span>
       </div>
     </div>
   )

@@ -26,12 +26,16 @@ async function fillCreate(user: ReturnType<typeof userEvent.setup>, over: { offe
 describe('marketplace F9: browse and create listings', () => {
   it('TC-FE-019-01 listings with asset class, discount, and validity from the API', async () => {
     renderApp('/marketplace')
-    const row = (await screen.findByText(/translate-calls · class D/)).closest('tr')!
-    expect(row).toHaveTextContent('summarize-calls · class D')
+    const row = (await screen.findByText('translate-calls')).closest('tr')!
+    expect(row).toHaveTextContent('summarize-calls')
+    expect(row.querySelectorAll('.asset-meta')[0]).toHaveTextContent('Class D')
+    expect(row.querySelectorAll('.asset-meta')[1]).toHaveTextContent('Class D')
     expect(row).toHaveTextContent('10%, payment allowed')
     expect(row).toHaveTextContent('Nov 12, 2026')
-    const gpu = screen.getByText(/gpu-hours · class A/).closest('tr')!
-    expect(gpu).toHaveTextContent('dataset · class C')
+    const gpu = screen.getByText('gpu-hours').closest('tr')!
+    expect(gpu.querySelectorAll('.asset-meta')[0]).toHaveTextContent('Class A')
+    expect(gpu).toHaveTextContent('dataset')
+    expect(gpu.querySelectorAll('.asset-meta')[1]).toHaveTextContent('Class C')
     expect(gpu).toHaveTextContent('0%')
     expect(gpu).not.toHaveTextContent('payment allowed')
   })
@@ -47,11 +51,11 @@ describe('marketplace F9: browse and create listings', () => {
   it('TC-FE-019-03 the status and asset type filters call the API with parameters', async () => {
     const user = userEvent.setup()
     const { calls } = renderApp('/marketplace')
-    await screen.findByText(/translate-calls · class D/)
+    await screen.findByText('translate-calls')
     await user.type(screen.getByLabelText('Offered asset type'), 'gpu-hours')
     await waitFor(() => expect(calls().some((c) => c.includes('/listings?') && c.includes('offerType=gpu-hours'))).toBe(true))
-    expect(await screen.findByText(/gpu-hours · class A/)).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByText(/translate-calls · class D/)).not.toBeInTheDocument())
+    expect(await screen.findByText('gpu-hours')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('translate-calls')).not.toBeInTheDocument())
     await user.selectOptions(screen.getByLabelText('Status'), 'matched')
     expect(await screen.findByText('No listing matches the filter yet.')).toBeInTheDocument()
     // FE-035: the empty list says why and where the real data is
@@ -67,7 +71,7 @@ describe('marketplace F9: browse and create listings', () => {
   it('TC-FE-019-05 listing created: signed in the browser and sent with a matching hash', async () => {
     const user = userEvent.setup()
     const { requests } = renderApp('/marketplace', (p, init) => (init?.method === 'POST' && p.endsWith('/listings') ? { status: 201, body: { ...listings[0], listingHash: 'c'.repeat(64) } } : undefined), false, login())
-    await screen.findByText(/translate-calls · class D/)
+    await screen.findByText('translate-calls')
     await screen.findByText(/Sign in to create a listing|Voucher key/)
     await fillCreate(user, { offerClass: 'A' })
     await user.click(screen.getByRole('button', { name: /Sign and post listing/ }))
@@ -96,7 +100,7 @@ describe('marketplace F9: browse and create listings', () => {
       false,
       login(),
     )
-    await screen.findByText(/translate-calls · class D/)
+    await screen.findByText('translate-calls')
     await screen.findByLabelText(/Voucher key/)
     await fillCreate(user)
     await user.click(screen.getByRole('button', { name: /Sign and post listing/ }))
@@ -106,9 +110,9 @@ describe('marketplace F9: browse and create listings', () => {
 
   it('TC-FE-019-07 class options are only A to D and the form is disabled without login', async () => {
     renderApp('/marketplace')
-    await screen.findByText(/translate-calls · class D/)
+    await screen.findByText('translate-calls')
     const select = screen.getByLabelText('Class (Offering)')
-    expect(within(select).getAllByRole('option').map((o) => o.textContent?.[0])).toEqual(['A', 'B', 'C', 'D'])
+    expect(within(select).getAllByRole('option').map((o) => o.textContent?.match(/^Class ([A-Z])/)?.[1])).toEqual(['A', 'B', 'C', 'D'])
     expect(screen.getByRole('group', { name: 'Sign in to create a listing' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Sign and post listing/ })).toBeDisabled()
   })
@@ -116,7 +120,7 @@ describe('marketplace F9: browse and create listings', () => {
   it('TC-FE-019-08 validation: wrong asset type, discount above 100%, button stays disabled', async () => {
     const user = userEvent.setup()
     renderApp('/marketplace', undefined, false, login())
-    await screen.findByText(/translate-calls · class D/)
+    await screen.findByText('translate-calls')
     await screen.findByLabelText(/Voucher key/)
     await fillCreate(user)
     const button = screen.getByRole('button', { name: /Sign and post listing/ })

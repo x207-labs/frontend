@@ -152,6 +152,8 @@ button.quiet:disabled { color: var(--ink-soft); background: transparent; border-
 
 .state { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin: 0; color: var(--ink-soft); }
 .state p { margin: 0; }
+/* FE-090: a sentence of state text keeps a readable line length on a wide screen */
+p.state { max-width: 65ch; }
 .state-error, .state-warn { padding: 0.75rem 1rem; border-radius: 16px; border: 1px solid rgb(255 124 142 / 0.3); background: rgb(255 124 142 / 0.09); color: var(--s409); }
 .state-warn { border-color: rgb(245 165 36 / 0.3); background: rgb(245 165 36 / 0.09); color: var(--s402); }
 code { font-family: var(--mono); font-size: 0.875em; font-weight: 600; padding: 0.0625em 0.4em; border-radius: 6px; background: rgb(255 255 255 / 0.06); overflow-wrap: anywhere; }
@@ -462,6 +464,7 @@ a, button, select, input, textarea, summary, label, [role='option'], [role='menu
 /* label above its select, as on every other form */
 .grants-filter label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.375rem; font-weight: 600; color: var(--ink-soft); }
 .grants-filter select { min-height: 2.75rem; font-size: 1rem; }
+.sales-ttl { max-width: 65ch; color: var(--ink-soft); }
 .grants-note { margin: 0; max-width: 65ch; color: var(--ink-soft); font-size: 0.9375rem; }
 .item-cards { display: grid; gap: 0.625rem; margin: 0; padding: 0; list-style: none; }
 .item-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.25rem 1rem; padding: 0.875rem 1rem; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); }
@@ -530,6 +533,8 @@ a, button, select, input, textarea, summary, label, [role='option'], [role='menu
 .row-num::before { content: '#'; }
 .sales-list .row-title code { white-space: nowrap; }
 .sales-list .sales-expiry { min-width: 8.5rem; }
+/* FE-090: the state sentence gets room for two lines at most, not one word per line */
+.sales-list .sales-state { min-width: 12rem; }
 .deal-note { margin: 0; color: var(--ink-soft); font-size: 0.875rem; }
 .deal-note + .deal-note { margin-top: -0.5rem; }
 /* the line from the first member down to the second: who starts the deal, who answers it */
@@ -562,6 +567,20 @@ a, button, select, input, textarea, summary, label, [role='option'], [role='menu
   .sales-list.list-table tbody td:first-child { order: 0; }
   .sales-list.list-table tbody td.sales-state { order: 1; grid-column: 1 / -1; }
   .sales-list.list-table tbody td:last-child { justify-self: stretch; }
+  .sales-list.list-table tbody td.num { text-align: left; }
+  .sales-list.list-table tbody td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 0.25rem; font-size: 0.75rem; color: var(--ink-soft); }
+  .sales-list.list-table tbody td[colspan] { grid-column: 1 / -1; }
+}
+/* FE-090: eight facts do not fit as columns beside the side panel either (the table scrolled sideways and hid three of them).
+   Where its box is narrower than the full table, each sale is a card: the account on top, the state under it, the other facts in labelled cells. */
+.sales-wrap { container: sales / inline-size; }
+@container sales (max-width: 70rem) {
+  .sales-list.list-table thead { display: none; }
+  .sales-list.list-table tbody tr { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: start; gap: 0.875rem 1.25rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--line); }
+  .sales-list.list-table tbody tr:last-child { border-bottom: 0; }
+  .sales-list.list-table tbody td { display: block; padding: 0; border: 0; order: 2; }
+  .sales-list.list-table tbody td:first-child { order: 0; grid-column: 1 / -1; }
+  .sales-list.list-table tbody td.sales-state { order: 1; grid-column: 1 / -1; min-width: 0; }
   .sales-list.list-table tbody td.num { text-align: left; }
   .sales-list.list-table tbody td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 0.25rem; font-size: 0.75rem; color: var(--ink-soft); }
   .sales-list.list-table tbody td[colspan] { grid-column: 1 / -1; }
@@ -1185,8 +1204,11 @@ a.btn.ghost { color: #fff; background: rgb(255 255 255 / 0.14); box-shadow: inse
 /* FE-063: on a touch screen every button, field and navigation link is at least 44 px tall (the tab bar is 56 px). Placed after the size rules above so it wins at equal weight. */
 @media (pointer: coarse) {
   button, select, input, .rail a, .sheet a, .account-menu .item, .palette li, .palette-trigger, .account-trigger, a.btn, .see-all { min-height: 2.75rem; }
-  button.th-sort { min-height: 2.75rem; }
+  button.th-sort { min-height: 2.75rem; min-width: 2.75rem; }
   .palette-trigger, .account-trigger { min-width: 2.75rem; }
+  /* FE-090: these set their own smaller height with a class, which outranks the plain button rule above */
+  .segmented button, .word-chips button { min-height: 2.75rem; }
+  .more summary, details.tech summary { padding-block: 0.8125rem; }
 }
 
 /* FE-074: the pages of the Marketplace group centre their content (lead line, view toggle, sign-in card, empty states, forms) instead of pinning it to the left edge. Tables and lists keep the full width. */
@@ -1197,11 +1219,14 @@ main[data-group='Marketplace'] .segmented:not(.view-tabs .segmented) { display: 
 main[data-group='Marketplace'] .signin-card { justify-content: center; text-align: center; max-width: 40rem; margin-inline: auto; }
 main[data-group='Marketplace'] .signin-card > div { flex-basis: auto; }
 main[data-group='Marketplace'] .state { justify-content: center; text-align: center; }
+main[data-group='Marketplace'] p.state { margin-inline: auto; }
+/* in the content column beside the side panel, text reads from the left like its heading */
+main[data-group='Marketplace'] .grants-main .state { justify-content: flex-start; text-align: left; margin-inline: 0; }
 main[data-group='Marketplace'] .form, main[data-group='Marketplace'] .listing-form, main[data-group='Marketplace'] .negotiation, main[data-group='Marketplace'] .rent .form { margin-inline: auto; }
 /* FE-086: a form that owns a whole pane spans the pane, so its edges line up with the heading and the tabs above it (a narrow centred form under a
    left-aligned heading read as misplaced); on a wide screen its short fields sit two to a row. Text inside a form reads from the left. */
 main[data-group='Marketplace'] :is(.views-pane, .market-pane) > :is(.form, .listing-form, .negotiation) { width: 100%; max-width: none; margin-inline: 0; }
-main[data-group='Marketplace'] :is(.form, .listing-form, .negotiation) .state { justify-content: flex-start; text-align: left; }
+main[data-group='Marketplace'] :is(.form, .listing-form, .negotiation) .state { justify-content: flex-start; text-align: left; margin-inline: 0; }
 @media (min-width: 1100px) {
   main[data-group='Marketplace'] :is(.views-pane, .market-pane) > .form:not(.key-strip),
   .listing-form .step-pane { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1.25rem; align-items: start; }
@@ -1248,7 +1273,7 @@ main[data-group='Marketplace'] .lead-steps { justify-content: center; }
 .legend > span::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 2px; background: var(--c); }
 .legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
 .legend small { font-size: 0.75rem; }
-.range { position: relative; display: block; height: 0.5rem; margin-inline: 0.375rem; border-radius: 999px; background: linear-gradient(90deg, var(--s200), var(--s402)); opacity: 0.9; }
+.range { position: relative; display: block; height: 0.5rem; margin-inline: 0.375rem; border-radius: 999px; background: color-mix(in srgb, var(--accent) 40%, var(--line)); }
 .range-dot { position: absolute; top: 50%; width: 0.875rem; height: 0.875rem; border: 2px solid var(--sheet); border-radius: 50%; background: var(--ink); transform: translate(-50%, -50%); }
 .range-dot[data-kind='median'] { background: var(--accent-ink); }
 .range-ends { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.75rem; color: var(--ink-soft); }

@@ -62,7 +62,9 @@ describe('frontend security: data from other users', () => {
     const override: Override = (path) => (path.includes('/listings') && !/listings\/[0-9a-f]{64}/.test(path) ? { status: 200, body: { items: [hostile], total: 1, nextCursor: null } } : undefined)
     const before = document.querySelectorAll('script').length
     renderApp('/marketplace', override)
-    expect(await screen.findByText(/<img src=x onerror=alert\(1\)> · class D/)).toBeInTheDocument()
+    const name = await screen.findByText('<img src=x onerror=alert(1)>')
+    expect(name).toBeInTheDocument()
+    expect(name.closest('.asset-side')).toHaveTextContent('Class D')
     expect(document.querySelectorAll('img[src="x"], svg[onload], [onerror], [onload]')).toHaveLength(0)
     expect(document.querySelectorAll('script')).toHaveLength(before)
     expect((window as unknown as { __pwned?: number }).__pwned).toBeUndefined()

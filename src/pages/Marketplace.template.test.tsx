@@ -14,16 +14,16 @@ const KINDS = ['nft', 'ticket', 'game-item', 'coupon', 'license', 'ft', 'rwa', '
 // The risk warnings come from @x207/core (buildAssetTemplate); the test checks that each kind carries at least one, not the wording.
 type Case = { kind: string; fields: Record<string, string>; scope: Record<string, string>; warning: RegExp }
 const CASES: Case[] = [
-  { kind: '1 · NFT NEP-171', fields: NFT, scope: { nft_contract: 'nft.near', token_id: 't1' }, warning: /\S/ },
-  { kind: '2 · Event ticket (NFT)', fields: { ...NFT, 'Event name': 'NEAR Conf', 'Event starts (UTC)': '2099-12-01T10:00', 'Event ends (UTC)': '2099-12-02T18:00' }, scope: { nft_contract: 'nft.near', token_id: 't1' }, warning: /\S/ },
-  { kind: '3 · Game item (NFT)', fields: { ...NFT, 'Game name': 'Dungeons' }, scope: { nft_contract: 'nft.near', token_id: 't1' }, warning: /\S/ },
-  { kind: '4 · Store coupon or voucher (NFT)', fields: { ...NFT, 'Coupon content': '20 percent off', 'Valid until (UTC)': '2099-12-31T00:00' }, scope: { nft_contract: 'nft.near', token_id: 't1' }, warning: /\S/ },
-  { kind: '5 · Software license (NFT)', fields: { ...NFT, Product: 'Editor Pro', 'License terms hash (64 hex)': 'ab'.repeat(32), 'Number of seats': '3' }, scope: { nft_contract: 'nft.near', token_id: 't1' }, warning: /\S/ },
-  { kind: '6 · Fungible token NEP-141', fields: FT, scope: { ft_contract: 'token.near', amount: '2500000' }, warning: /\S/ },
-  { kind: '7 · RWA token', fields: { ...FT, 'Circle contract is on the token whitelist': 'yes', 'Grantor is on the token whitelist': 'yes' }, scope: { ft_contract: 'token.near', amount: '2500000' }, warning: /\S/ },
-  { kind: '8 · Liquid staking token', fields: FT, scope: { ft_contract: 'token.near', amount: '2500000' }, warning: /\S/ },
-  { kind: '9 · NEAR Intents balance', fields: MT, scope: { mt_contract: 'intents.testnet', token_id: 'nep141:usdt.tether-token.near', amount: '750000' }, warning: /\S/ },
-  { kind: '10 · Liquidity pool share', fields: { 'Pool name': 'NEAR-USDT', 'Multi-token contract (NEP-245)': 'intents.testnet', 'Share token ID (NEP-245)': 'nep141:usdt.tether-token.near', 'Share amount': '42' }, scope: { mt_contract: 'intents.testnet', token_id: 'nep141:usdt.tether-token.near', amount: '42' }, warning: /\S/ },
+  { kind: '1. NFT NEP-171', fields: NFT, scope: { nft_contract: 'nft.near', token_id: 't1' }, warning: /\S/ },
+  { kind: '2. Event ticket (NFT)', fields: { ...NFT, 'Event name': 'NEAR Conf', 'Event starts (UTC)': '2099-12-01T10:00', 'Event ends (UTC)': '2099-12-02T18:00' }, scope: { nft_contract: 'nft.near', token_id: 't1' }, warning: /\S/ },
+  { kind: '3. Game item (NFT)', fields: { ...NFT, 'Game name': 'Dungeons' }, scope: { nft_contract: 'nft.near', token_id: 't1' }, warning: /\S/ },
+  { kind: '4. Store coupon or voucher (NFT)', fields: { ...NFT, 'Coupon content': '20 percent off', 'Valid until (UTC)': '2099-12-31T00:00' }, scope: { nft_contract: 'nft.near', token_id: 't1' }, warning: /\S/ },
+  { kind: '5. Software license (NFT)', fields: { ...NFT, Product: 'Editor Pro', 'License terms hash (64 hex)': 'ab'.repeat(32), 'Number of seats': '3' }, scope: { nft_contract: 'nft.near', token_id: 't1' }, warning: /\S/ },
+  { kind: '6. Fungible token NEP-141', fields: FT, scope: { ft_contract: 'token.near', amount: '2500000' }, warning: /\S/ },
+  { kind: '7. RWA token', fields: { ...FT, 'Circle contract is on the token whitelist': 'yes', 'Grantor is on the token whitelist': 'yes' }, scope: { ft_contract: 'token.near', amount: '2500000' }, warning: /\S/ },
+  { kind: '8. Liquid staking token', fields: FT, scope: { ft_contract: 'token.near', amount: '2500000' }, warning: /\S/ },
+  { kind: '9. NEAR Intents balance', fields: MT, scope: { mt_contract: 'intents.testnet', token_id: 'nep141:usdt.tether-token.near', amount: '750000' }, warning: /\S/ },
+  { kind: '10. Liquidity pool share', fields: { 'Pool name': 'NEAR-USDT', 'Multi-token contract (NEP-245)': 'intents.testnet', 'Share token ID (NEP-245)': 'nep141:usdt.tether-token.near', 'Share amount': '42' }, scope: { mt_contract: 'intents.testnet', token_id: 'nep141:usdt.tether-token.near', amount: '42' }, warning: /\S/ },
 ]
 
 async function start() {

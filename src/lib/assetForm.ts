@@ -24,20 +24,20 @@ const MT: Field[] = [
 const TRI: Array<[string, string]> = [['', 'not checked'], ['yes', 'yes'], ['no', 'no']]
 
 export const KIND_FIELDS: Record<AssetKind, { label: string; fields: Field[] }> = {
-  nft: { label: '1 · NFT NEP-171', fields: [...NFT, { key: 'name', label: 'Name', kind: 'text', optional: true }] },
+  nft: { label: '1. NFT NEP-171', fields: [...NFT, { key: 'name', label: 'Name', kind: 'text', optional: true }] },
   ticket: {
-    label: '2 · Event ticket (NFT)',
+    label: '2. Event ticket (NFT)',
     fields: [...NFT, { key: 'eventName', label: 'Event name', kind: 'text' }, { key: 'startsAt', label: 'Event starts (UTC)', kind: 'datetime' }, { key: 'endsAt', label: 'Event ends (UTC)', kind: 'datetime' }],
   },
-  'game-item': { label: '3 · Game item (NFT)', fields: [...NFT, { key: 'gameName', label: 'Game name', kind: 'text' }, { key: 'collection', label: 'Collection', kind: 'text', optional: true }] },
-  coupon: { label: '4 · Store coupon or voucher (NFT)', fields: [...NFT, { key: 'description', label: 'Coupon content', kind: 'text' }, { key: 'validUntil', label: 'Valid until (UTC)', kind: 'datetime' }] },
+  'game-item': { label: '3. Game item (NFT)', fields: [...NFT, { key: 'gameName', label: 'Game name', kind: 'text' }, { key: 'collection', label: 'Collection', kind: 'text', optional: true }] },
+  coupon: { label: '4. Store coupon or voucher (NFT)', fields: [...NFT, { key: 'description', label: 'Coupon content', kind: 'text' }, { key: 'validUntil', label: 'Valid until (UTC)', kind: 'datetime' }] },
   license: {
-    label: '5 · Software license (NFT)',
+    label: '5. Software license (NFT)',
     fields: [...NFT, { key: 'product', label: 'Product', kind: 'text' }, { key: 'termsHash', label: 'License terms hash (64 hex)', kind: 'text' }, { key: 'seats', label: 'Number of seats', kind: 'number' }],
   },
-  ft: { label: '6 · Fungible token NEP-141', fields: FT },
+  ft: { label: '6. Fungible token NEP-141', fields: FT },
   rwa: {
-    label: '7 · RWA token',
+    label: '7. RWA token',
     fields: [
       ...FT,
       { key: 'wlCircle', label: 'Circle contract is on the token whitelist', kind: 'select', options: TRI, optional: true },
@@ -46,12 +46,12 @@ export const KIND_FIELDS: Record<AssetKind, { label: string; fields: Field[] }> 
     ],
   },
   lst: {
-    label: '8 · Liquid staking token',
+    label: '8. Liquid staking token',
     fields: [...FT, { key: 'rateNear', label: 'Exchange rate to NEAR (info)', kind: 'text', optional: true }, { key: 'rateSource', label: 'Exchange rate source', kind: 'text', optional: true }],
   },
-  'intents-balance': { label: '9 · NEAR Intents balance', fields: [...MT, { key: 'label', label: 'Label', kind: 'text', optional: true }] },
+  'intents-balance': { label: '9. NEAR Intents balance', fields: [...MT, { key: 'label', label: 'Label', kind: 'text', optional: true }] },
   'pool-share': {
-    label: '10 · Liquidity pool share',
+    label: '10. Liquidity pool share',
     fields: [
       { key: 'pool', label: 'Pool name', kind: 'text' },
       { key: 'standard', label: 'Share token standard', kind: 'select', options: [['nep245', 'NEP-245 multi-token'], ['nep141', 'NEP-141']] },

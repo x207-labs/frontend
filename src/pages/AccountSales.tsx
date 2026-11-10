@@ -29,7 +29,7 @@ function TtlLine() {
   const text = ttl.data === undefined ? null : formatTtl(ttl.data)
   if (ttl.isPending) return null
   return (
-    <p data-testid="max-escrow-ttl">
+    <p className="sales-ttl" data-testid="max-escrow-ttl">
       Longest lock of an account sale (<code className="plain">max_escrow_ttl</code>): {text ?? 'not available on this contract'}. A sale not delivered by its expiry can be
       cancelled by anyone, and the locker gives the seller's key back.
     </p>
@@ -39,7 +39,12 @@ function TtlLine() {
 function DetailCells({ item, withDetail, finalizedHead, epochsRead }: { item: AccountEscrowItem; withDetail: boolean; finalizedHead: number | null; epochsRead: boolean }) {
   // FE-047: the key of a held sale holds the finalized head, so it waits for the epoch list; otherwise it is read once without it and again when the list arrives.
   const detail = useAccountEscrow(item.grantId, item.state, finalizedHead, withDetail && (item.state !== 'held' || epochsRead))
-  if (!withDetail) return <><td data-label="Kind">-</td><td data-label="Lock epoch">-</td><td data-label="Delivery">-</td></>
+  if (!withDetail)
+    return (
+      <td colSpan={3} data-label="Details">
+        <span className="muted">Details are read for the first {DETAIL_ROWS} sales only</span>
+      </td>
+    )
   if (detail.isPending) return <><td colSpan={3} data-label="Details">loading…</td></>
   if (detail.isError || !detail.data) return <><td colSpan={3} data-label="Details">not available</td></>
   const d = detail.data
@@ -80,7 +85,7 @@ export function AccountSales() {
   else if (escrows.data.items.length === 0) body = <p className="state">No account sale in this circle yet.</p>
   else
     body = (
-      <div className="table-wrap">
+      <div className="table-wrap sales-wrap">
         <table className="list-table sales-list" aria-label="Account sales">
           <thead>
             <tr>

@@ -38,8 +38,8 @@ const WARN_KINDS: readonly string[] = ['scraping', 'loadtest']
 const now = () => Math.floor(Date.now() / 1000)
 
 const Pill = ({ tone, children }: { tone?: Tone; children: ReactNode }) => <span className="pill" data-tone={tone}>{children}</span>
-/** The catalogue number in front of a kind ("39 · Prompt…") is for the docs, not for the reader. */
-const plainKind = (label: string) => label.replace(/^\d+ · /, '')
+/** The catalogue number in front of a kind ("39. Prompt…") is for the docs, not for the reader. */
+const plainKind = (label: string) => label.replace(/^\d+\. /, '')
 const titleCase = (text: string) => {
   const spaced = text.replaceAll('_', ' ')
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)

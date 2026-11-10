@@ -58,8 +58,8 @@ async function open(account: string | null, state: Parameters<typeof backend>[0]
   const view = renderApp('/marketplace', override, false, wallet)
   const user = userEvent.setup()
   // FE-076: the listing row shows the asset name and its units/credit on two lines
-  const offered = (await screen.findByText(listings[row].offer.assetType + ' · class ' + listings[row].offer.assetClass)).closest('.asset-side')
-  expect(offered).toHaveTextContent(new Intl.NumberFormat('en-US').format(listings[row].offer.quantity) + ' units · ' + (row === 0 ? '100' : '250') + ' credit')
+  const offered = (await screen.findByText(listings[row].offer.assetType)).closest('.asset-side')
+  expect(offered).toHaveTextContent('Class ' + listings[row].offer.assetClass + ', ' + new Intl.NumberFormat('en-US').format(listings[row].offer.quantity) + ' units, ' + (row === 0 ? '100' : '250') + ' credit')
   if (account) await waitFor(() => expect(screen.getAllByRole('button', { name: /Open/ })[row]).toBeEnabled())
   await user.click(screen.getAllByRole('button', { name: /^Open/ })[row])
   return { ...view, user, wallet }

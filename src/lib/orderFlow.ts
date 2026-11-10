@@ -6,9 +6,9 @@ import { toAtomic } from './amount'
 // FE-027: service orders (pipeline P6, ADR-45), from Backend API Spec 5f. The document rules live in the SDK (SD-069: `normalizeOrder`); here we only turn form input into
 // a document, compute the hash with the browser's sha256 over the SDK canonical JSON, and sign the notice.
 export const KIND_LABEL: Record<OrderKind, string> = {
-  prompt: '39 · Prompt or workflow', research: '40 · Research', translation: '41 · Translation', annotation: '42 · Data annotation', scraping: '43 · Web data collection',
-  audit: '52 · Code audit', loadtest: '53 · Load test', freelance: '83 · Freelance', bug: '88 · Product testing (per bug)', lead: '51 · Referral and leads (per conversion)',
-  keeper: '46 · Keeper service (per tx)', solver: '48 · Solver service (per tx)', delegate: '16 · Delegate service (per vote)',
+  prompt: '39. Prompt or workflow', research: '40. Research', translation: '41. Translation', annotation: '42. Data annotation', scraping: '43. Web data collection',
+  audit: '52. Code audit', loadtest: '53. Load test', freelance: '83. Freelance', bug: '88. Product testing (per bug)', lead: '51. Referral and leads (per conversion)',
+  keeper: '46. Keeper service (per tx)', solver: '48. Solver service (per tx)', delegate: '16. Delegate service (per vote)',
 }
 /** Every kind can be created from this form; `delegate` uses extra mandate fields (FE-030). */
 export const CREATABLE_KINDS = ORDER_KINDS
