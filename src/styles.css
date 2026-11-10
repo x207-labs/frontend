@@ -285,9 +285,47 @@ button.th-sort { padding: 0; min-height: 0; border: 0; border-radius: 0; backgro
   .action a:hover { background: rgb(61 139 255 / 0.28); }
   tbody tr:hover { background: rgb(255 255 255 / 0.04); }
   a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+  select:hover:not(:disabled, :focus) { border-color: #36425a; background-color: rgb(255 255 255 / 0.07); }
+  .file-pick:hover .file-zone { border-color: var(--accent); background: var(--accent-soft); }
 }
 /* Fields stay at 16px or more: iOS Safari zooms the whole page into any field under 16px and does not zoom back out. */
 select, input, textarea { font-size: max(16px, 1rem); }
+
+/* FE-086: the closed select reads as a field with a value and a chevron; the list it opens is the menu below (SelectMenu), not the browser's own. */
+select { cursor: pointer; text-overflow: ellipsis; }
+select[aria-expanded='true'] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%238fc0ff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 6.5l5-5 5 5'/%3E%3C/svg%3E"); }
+.select-menu { position: fixed; z-index: 60; display: grid; gap: 2px; margin: 0; padding: 6px; list-style: none; overflow-y: auto; overscroll-behavior: contain; background: var(--tile); border: 1px solid #2f3a4c; border-radius: 14px; box-shadow: 0 18px 40px rgb(0 0 0 / 0.45); animation: select-menu-in 160ms var(--ease) both; transform-origin: top center; }
+.select-menu[data-up='true'] { transform: translateY(-100%); transform-origin: bottom center; animation-name: select-menu-up; }
+.select-menu li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 2.25rem; padding: 0.375rem 0.625rem; border-radius: 9px; color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
+.select-menu li[data-active='true'] { background: rgb(255 255 255 / 0.06); color: var(--ink); }
+.select-menu li[aria-selected='true'] { color: var(--accent-ink); font-weight: 600; }
+.select-menu li[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+.select-menu li svg { flex: none; color: var(--accent); }
+@keyframes select-menu-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
+@keyframes select-menu-up { from { opacity: 0; transform: translateY(calc(-100% + 4px)) scale(0.98); } to { transform: translateY(-100%); } }
+@media (prefers-reduced-motion: reduce) { .select-menu { animation: none; } }
+
+/* FE-086: a file field is a drop zone; the real input covers it, invisible, so click and drop work as the browser's own. */
+.file-pick { position: relative; }
+.file-zone { position: relative; display: flex; align-items: center; gap: 0.875rem; min-height: 4.5rem; padding: 0.875rem 1rem; border: 1.5px dashed #34405a; border-radius: 16px; background: rgb(255 255 255 / 0.03); color: var(--ink); font-weight: 400; transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease); }
+.file-zone input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
+.file-icon { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 12px; background: var(--accent-soft); color: var(--accent-ink); }
+.file-text { display: grid; gap: 0.125rem; min-width: 0; }
+.file-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.file-text small { color: var(--ink-soft); }
+.file-pick[data-over='true'] .file-zone { border-color: var(--accent); background: var(--accent-soft); }
+.file-pick[data-chosen='true'] .file-zone { border-style: solid; border-color: #2c5a3d; background: rgb(63 181 106 / 0.07); }
+.file-pick[data-chosen='true'] .file-icon { background: rgb(63 181 106 / 0.16); color: #7ddc9c; }
+.file-zone:has(input:focus-visible) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+/* FE-086: a plain checkbox (not a switch) is a rounded box with a drawn tick, not the browser's square. */
+:where(input[type='checkbox']):not(label.check > input) { appearance: none; -webkit-appearance: none; flex: none; width: 1.25rem; height: 1.25rem; min-height: 0; margin: 0; padding: 0; border: 1.5px solid #3a465a; border-radius: 6px; background: rgb(255 255 255 / 0.04) center / 0.875rem no-repeat; cursor: pointer; vertical-align: middle; }
+:where(input[type='checkbox']):not(label.check > input):checked { border-color: var(--accent); background-color: var(--accent-fill); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E"); }
+:where(input[type='checkbox']):not(label.check > input):disabled { opacity: 0.45; cursor: not-allowed; }
+:where(input[type='checkbox']):not(label.check > input):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: none; }
+
+/* FE-086: a label with its caption and one field, outside a form grid, keeps a gap between them instead of touching. */
+:where(label:has(> span:first-child + :is(select, input:not([type='checkbox'], [type='radio']), textarea))) { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.625rem; font-weight: 600; color: var(--ink-soft); }
 /* A tap on a control is a tap: no double-tap-to-zoom delay and no grey flash. */
 a, button, select, input, textarea, summary, label, [role='option'], [role='menuitem'] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 /* No text-size jump when the phone turns sideways. */
@@ -1053,6 +1091,28 @@ main[data-group='Marketplace'] .signin-card { justify-content: center; text-alig
 main[data-group='Marketplace'] .signin-card > div { flex-basis: auto; }
 main[data-group='Marketplace'] .state { justify-content: center; text-align: center; }
 main[data-group='Marketplace'] .form, main[data-group='Marketplace'] .listing-form, main[data-group='Marketplace'] .negotiation, main[data-group='Marketplace'] .rent .form { margin-inline: auto; }
+/* FE-086: a form that owns a whole pane spans the pane, so its edges line up with the heading and the tabs above it (a narrow centred form under a
+   left-aligned heading read as misplaced); on a wide screen its short fields sit two to a row. Text inside a form reads from the left. */
+main[data-group='Marketplace'] :is(.views-pane, .market-pane) > :is(.form, .listing-form, .negotiation) { width: 100%; max-width: none; margin-inline: 0; }
+main[data-group='Marketplace'] :is(.form, .listing-form, .negotiation) .state { justify-content: flex-start; text-align: left; }
+@media (min-width: 1100px) {
+  main[data-group='Marketplace'] :is(.views-pane, .market-pane) > .form:not(.key-strip),
+  .listing-form .step-pane { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1.25rem; align-items: start; }
+  main[data-group='Marketplace'] :is(.views-pane, .market-pane) > .form:not(.key-strip) > *,
+  .listing-form .step-pane > * { grid-column: 1 / -1; }
+  main[data-group='Marketplace'] :is(.views-pane, .market-pane) > .form:not(.key-strip) > label:not(.check, .file-pick, :has(textarea)),
+  .listing-form .step-pane > label:not(.check, :has(textarea)):not(:has(> span:first-child:only-of-type + input[maxlength='512'])),
+  .listing-form [data-pane='1'] > .form { grid-column: auto; }
+}
+/* the two templates of "What you give" are side by side choices inside the listing form, not forms of their own: a quieter tile, no second glass panel */
+:is(.form, .listing-form) .form { width: 100%; max-width: none; margin: 0; padding: 1rem 1.125rem; background: var(--tile); border-radius: 18px; }
+:is(.form, .listing-form) .form > h3:first-child { margin: 0; font-size: 1rem; }
+@media (min-width: 760px) {
+  .listing-form .side { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1rem; }
+}
+@media (min-width: 1100px) {
+  .listing-form .side { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 main[data-group='Marketplace'] .lead-steps { justify-content: center; }
 
 /* FE-076: Marketplace pulse. A bento of five figures, each with the picture that explains it; the first is wide and lit in the Marketplace tone. */

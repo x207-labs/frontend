@@ -97,6 +97,12 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
   const [error, setError] = useState<string | null>(null)
   const [created, setCreated] = useState<string | null>(null)
   const [step, setStep] = useState(1)
+  // FE-086: a step is ticked only once it was opened; "Terms" has valid defaults, so it was ticked before anyone saw it.
+  const [seen, setSeen] = useState<ReadonlySet<number>>(() => new Set([1]))
+  const go = (next: number) => {
+    setStep(next)
+    setSeen((s) => new Set(s).add(next))
+  }
 
   const sideOk = (s: Side) => ASSET_TYPE.test(s.type) && /^[1-9]\d*$/.test(s.quantity) && toAtomic(s.value) !== null
   const discountBps = bps(discount)
@@ -174,8 +180,8 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
       <ol className="stepper" aria-label="Steps">
         {STEPS.map((s, i) => (
           <li key={s}>
-            <button type="button" aria-current={step === i + 1 ? 'step' : undefined} data-done={stepOk[i] ? 'true' : undefined} onClick={() => setStep(i + 1)}>
-              <span className="stepper-dot" aria-hidden="true">{stepOk[i] && step !== i + 1 ? '✓' : i + 1}</span>
+            <button type="button" aria-current={step === i + 1 ? 'step' : undefined} data-done={stepOk[i] && seen.has(i + 1) ? 'true' : undefined} onClick={() => go(i + 1)}>
+              <span className="stepper-dot" aria-hidden="true">{stepOk[i] && seen.has(i + 1) && step !== i + 1 ? '✓' : i + 1}</span>
               <span className="stepper-label">{s}</span>
             </button>
           </li>
@@ -254,7 +260,7 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
           <p className="state state-warn">
             Still to fill:{' '}
             {missing.map((m) => (
-              <button key={m.step} type="button" className="quiet" onClick={() => setStep(m.step)}>
+              <button key={m.step} type="button" className="quiet" onClick={() => go(m.step)}>
                 {m.label}
               </button>
             ))}
@@ -270,11 +276,11 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
         {created && <p className="state" role="status">Listing posted: <code>{created}</code><CopyButton value={created} label="listing hash" /></p>}
       </div>
       <div className="step-nav">
-        <button type="button" className="quiet" disabled={step === 1} onClick={() => setStep(step - 1)}>
+        <button type="button" className="quiet" disabled={step === 1} onClick={() => go(step - 1)}>
           Back
         </button>
         {step < STEPS.length && (
-          <button type="button" onClick={() => setStep(step + 1)}>
+          <button type="button" onClick={() => go(step + 1)}>
             Continue
           </button>
         )}

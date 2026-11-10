@@ -11,6 +11,7 @@ import { LateEpochNotice } from './LateEpochNotice'
 import { PhaseStrip } from './PhaseStrip'
 import { AccountMenu } from './AccountMenu'
 import { CommandPalette } from './CommandPalette'
+import { SelectMenu } from './SelectMenu'
 
 function Header() {
   const { pathname } = useLocation()
@@ -73,6 +74,7 @@ export function Layout() {
           </div>
           <TabBar />
         </div>
+        <SelectMenu />
       </DetailSlotProvider>
     </EpochProvider>
   )

@@ -21,6 +21,7 @@ import { checkListingToBuy, memberOnChain } from '../lib/listingCheck'
 import { describeMarketError } from '../lib/marketError'
 import { keyFingerprint, sha256Hex, signMessageWithVoucher } from '../lib/barter'
 import { useWallet } from '../wallet/WalletContext'
+import { FilePicker } from '../components/FilePicker'
 
 // FE-028: content licenses (pipeline P7, ADR-46), from Backend API Spec 5g. The seller prepares a license from a local file (hash, encryption in the browser, listing detail); the buyer buys
 // (voucher held by the backend), downloads the ciphertext with progress, checks the hash, and confirms or disputes with a cheating proof; the rights holder files a takedown.
@@ -93,7 +94,7 @@ function Seller({ onPrepared, onDeliver }: { onPrepared: (p: PreparedLicense) =>
     <form className="form" aria-label="Prepare license" onSubmit={(e) => { e.preventDefault(); void prepare() }}>
       <h2 className="card-title">Prepare a license</h2>
       <p className="state">The file is encrypted here and never leaves this browser.</p>
-      <label><span>File</span><input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
+      <FilePicker label="File" file={file} onFile={setFile} hint="A dataset, a model, a document: any type, read only in this browser" />
       <div className="field-pair">
         <label>
           <span>Asset type</span>
