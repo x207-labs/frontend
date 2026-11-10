@@ -1,5 +1,6 @@
 import { useDaoProposals, useParams, useParamsHistory, useRelayerFeeEvents } from '../api/queries'
-import type { DaoProposal, Params } from '../api/types'
+import type { ReactNode } from 'react'
+import type { DaoProposal, Params, ParamsResponse } from '../api/types'
 import { NEAR_NETWORK } from '../config'
 import { NavIcon } from '../components/icons'
 import { QueryState } from '../components/QueryState'
@@ -236,6 +237,93 @@ function RelayerFees() {
   )
 }
 
+const mins = (seconds: number) => formatNumber(seconds / 60)
+
+// FE-078: one epoch drawn to scale. Trading runs for epoch_length, then the clearing proposals, then the payment window;
+// the next epoch opens at cutoff, so a second lane starts there. A pending change is drawn as a hatched extension.
+function EpochLife({ data }: { data: ParamsResponse }) {
+  const { epoch_length: open, proposal_window: clear, payment_window: pay } = data.active
+  const nextPay = typeof data.nextEpoch?.payment_window === 'number' ? data.nextEpoch.payment_window : null
+  const extra = nextPay !== null && nextPay > pay ? nextPay - pay : 0
+  const total = open + clear + pay + extra
+  const pct = (s: number) => `${(s / total) * 100}%`
+  const life = open + clear + pay
+  return (
+    <figure className="epoch-life">
+      <div className="life-head">
+        <strong>{mins(life)} min</strong>
+        <span>from an epoch's first trade to its payment deadline</span>
+      </div>
+      <div className="life-lanes" role="img" aria-label={`Trading ${mins(open)} minutes, clearing proposals ${mins(clear)} minutes, payment window ${mins(pay)} minutes. The next epoch opens at cutoff.`}>
+        <div className="life-lane">
+          <span className="life-tag">Epoch N</span>
+          <div className="life-bar">
+            <span className="life-seg" data-kind="open" style={{ width: pct(open) }}>{mins(open)}m</span>
+            <span className="life-seg" data-kind="clear" style={{ width: pct(clear) }} />
+            <span className="life-seg" data-kind="pay" style={{ width: pct(pay) }}>{mins(pay)}m</span>
+            {extra > 0 && <span className="life-seg" data-kind="pending" style={{ width: pct(extra) }} />}
+          </div>
+        </div>
+        <div className="life-lane">
+          <span className="life-tag">Epoch N+1</span>
+          <div className="life-bar">
+            <span className="life-gap" style={{ width: pct(open) }} />
+            <span className="life-seg" data-kind="open" data-fade="true" style={{ width: pct(total - open) }}>opens at cutoff</span>
+          </div>
+        </div>
+        <div className="life-ticks" aria-hidden="true">
+          <span className="life-tick-end" style={{ left: pct(open) }}>Cutoff</span>
+          <span className="life-tick-minor" style={{ left: pct(open + clear) }}>Commit</span>
+          <span className={extra > 0 ? undefined : 'life-tick-end'} style={{ left: pct(life) }}>Deadline</span>
+        </div>
+      </div>
+      <ul className="life-legend">
+        <li data-kind="open">Trading <b>{mins(open)} min</b></li>
+        <li data-kind="clear">Clearing proposals <b>{mins(clear)} min</b></li>
+        <li data-kind="pay">Payment window <b>{mins(pay)} min</b></li>
+        {extra > 0 && nextPay !== null && (
+          <li data-kind="pending">
+            Payment window <b>{mins(nextPay)} min</b> from epoch {data.nextEpochEffective}
+          </li>
+        )}
+      </ul>
+    </figure>
+  )
+}
+
+// FE-078: the credit limit as its formula: a share of stake plus a share of cash settled, never above the cap.
+function LimitFormula({ data }: { data: ParamsResponse }) {
+  const { base_limit_ratio: base, limit_growth: growth, limit_cap: cap, limit_decay: decay } = data.active
+  const share = (bps: number) => ({ width: `${Math.min(100, bps / 100)}%` })
+  return (
+    <figure className="limit-formula" aria-label="How a credit limit is set">
+      <div className="formula-row">
+        <div className="formula-term">
+          <span className="formula-value">{percent(base)}</span>
+          <span className="formula-label">of your stake</span>
+          <span className="formula-meter" aria-hidden="true"><i style={share(base)} /></span>
+        </div>
+        <span className="formula-op" aria-hidden="true">+</span>
+        <div className="formula-term">
+          <span className="formula-value">{percent(growth)}</span>
+          <span className="formula-label">of cash you settled</span>
+          <span className="formula-meter" aria-hidden="true"><i style={share(growth)} /></span>
+        </div>
+      </div>
+      <div className="formula-cap">
+        <span>Capped at</span>
+        <strong>{formatCredit(cap)} credit</strong>
+      </div>
+      <figcaption>{decay === 0 ? 'Limits do not shrink while a member is idle.' : `An idle member loses ${percent(decay)} of the limit per epoch.`}</figcaption>
+    </figure>
+  )
+}
+
+const GROUP_VISUAL: Partial<Record<string, (props: { data: ParamsResponse }) => ReactNode>> = {
+  Timing: EpochLife,
+  'Credit limits': LimitFormula,
+}
+
 export function Governance() {
   const params = useParams()
   const history = useParamsHistory()
@@ -252,8 +340,11 @@ export function Governance() {
       <QueryState query={params} loadingLabel="Loading parameters">
         {(data) => (
           <div className="rule-groups">
-            {RULE_GROUPS.map((group) => (
-              <div className="table-wrap" key={group.title}>
+            {RULE_GROUPS.map((group) => {
+              const Visual = GROUP_VISUAL[group.title]
+              return (
+              <div className="table-wrap rule-card" data-group={group.title} key={group.title}>
+                {Visual && <Visual data={data} />}
                 <table className="rules" aria-label={group.title}>
                   <caption>{group.title}</caption>
                   <tbody>
@@ -278,7 +369,8 @@ export function Governance() {
                   </tbody>
                 </table>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </QueryState>
