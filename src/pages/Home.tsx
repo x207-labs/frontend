@@ -7,6 +7,7 @@ import type { EpochItem, SettlementItem } from '../api/types'
 import { ExploreGrid } from '../components/ExploreGrid'
 import { NavIcon } from '../components/icons'
 import { LoopMotif } from '../components/LoopMotif'
+import { PhaseStrip } from '../components/PhaseStrip'
 import { ErrorNotice, Loading } from '../components/QueryState'
 import { useProgress } from '../onboarding/progress'
 import { computeSteps, type MemberState, type StepId } from '../onboarding/steps'
@@ -52,7 +53,8 @@ function StartHere({ account, member }: { account: string | null; member: Member
   const steps = computeSteps({ account, member, acknowledged })
   const done = steps.filter((s) => s.status === 'done').length
   return (
-    <section className="card span-all" aria-labelledby="home-start">
+    // FE-077: once every step is done the card folds into one row of ticked chips, so a finished checklist no longer takes a screen
+    <section className={done === steps.length ? 'card span-all start-all-done' : 'card span-all'} aria-labelledby="home-start">
       <div className="card-head">
         <h2 id="home-start">Start here</h2>
         <p className="section-eyebrow">{done === steps.length ? 'All steps done' : `${done} of ${steps.length} steps done`}</p>
@@ -137,7 +139,35 @@ function Position({ epoch, rows }: { epoch: EpochItem | null; rows: SettlementIt
   if (epoch === null) return <Stat label="Position this epoch" value="not available" />
   const mine = rows.find((s) => s.epoch === epoch.epoch)
   if (!mine) return <Stat label={`Position in epoch ${epoch.epoch}`} value="none yet" note={`The epoch is ${epoch.phase.replace('_', ' ')}. A position appears once clearing has run.`} />
-  return <Stat label={`Position in epoch ${epoch.epoch}`} value={formatCredit(mine.net)} unit="credit" note={`${mine.role === 'debtor' ? 'You owe' : 'You are owed'} ${formatCredit(mine.amount)} credit, status ${mine.status}.`} />
+  return <Stat tone={mine.role === 'debtor' ? 'red' : 'green'} label={`Position in epoch ${epoch.epoch}`} value={formatCredit(mine.net)} unit="credit" note={`${mine.role === 'debtor' ? 'You owe' : 'You are owed'} ${formatCredit(mine.amount)} credit, status ${mine.status}.`} />
+}
+
+// FE-077: the limit drawn as a ring, owed against free, so the one number on the hero card has its picture beside it.
+function CreditRing({ used, debt, free }: { used: number; debt: string; free: string }) {
+  return (
+    <figure className="credit-ring" aria-hidden="true">
+      <div className="credit-ring-dial">
+        <svg viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" pathLength={100} />
+          <circle cx="60" cy="60" r="50" pathLength={100} strokeDasharray={`${Math.max(used, 0.5)} 100`} />
+        </svg>
+        <span><b>{used}%</b>of limit</span>
+      </div>
+      <figcaption>
+        <span data-part="owed">Owed <b>{formatCredit(debt)}</b></span>
+        <span data-part="free">Free <b>{formatCredit(free)}</b></span>
+      </figcaption>
+    </figure>
+  )
+}
+
+// FE-077: the epoch as a track of its six phases with the live one lit, and the deadline as time left, not only a date.
+function untilText(iso: string, now: number): string {
+  const ms = Date.parse(iso) - now
+  if (!Number.isFinite(ms)) return ''
+  if (ms <= 0) return 'passed'
+  const h = Math.floor(ms / 3_600_000)
+  return h >= 48 ? `in ${Math.floor(h / 24)} days` : h >= 1 ? `in ${h} h` : `in ${Math.max(1, Math.floor(ms / 60_000))} min`
 }
 
 function Dashboard({ account }: { account: string }) {
@@ -146,6 +176,7 @@ function Dashboard({ account }: { account: string }) {
   const epochs = useEpochs()
   // the greeting is read once, when the page opens
   const [hello] = useState(() => greeting(new Date()))
+  const [now] = useState(() => Date.now())
   // FE-073: the name the person saved in Settings, else the short account, as the account menu shows it; a 64-hex implicit account in full ran off the line
   const cached = useCachedAccount(account)
   const name = cached.displayName || displayAccount(account)
@@ -187,22 +218,24 @@ function Dashboard({ account }: { account: string }) {
               <h2 id="home-numbers">Your account</h2>
               <Link className="see-all" to={{ pathname: '/settings', search }}>Settings</Link>
             </div>
-            <p className="hero-label">Remaining limit</p>
-            <p className="hero-figure">
-              <strong>{formatCredit(member.data.headroom)}</strong> credit
-            </p>
-            <div className="progress" aria-hidden="true">
-              <span style={{ width: `${used}%` }} />
+            <div className="hero-main">
+              <div className="hero-copy">
+                <p className="hero-label">Remaining limit</p>
+                <p className="hero-figure">
+                  <strong>{formatCredit(member.data.headroom)}</strong> credit
+                </p>
+                <p className="hero-note">
+                  Debt outstanding: {formatCredit(member.data.outstandingDebt)} of {formatCredit(member.data.limit)} credit ({used}% used).
+                </p>
+              </div>
+              <CreditRing used={used} debt={member.data.outstandingDebt} free={member.data.headroom} />
             </div>
-            <p className="hero-note">
-              Debt outstanding: {formatCredit(member.data.outstandingDebt)} of {formatCredit(member.data.limit)} credit ({used}% used).
-            </p>
             <p className="cta-row">
               <Link className="btn light" to={{ pathname: '/marketplace', search }}>Trade in the marketplace</Link>
               <Link className="btn ghost" to={{ pathname: '/settlement', search }}>Pay and claim</Link>
             </p>
           </div>
-          <dl className="stats kpis">
+          <dl className="stats kpis ledger">
             <Stat icon="/onboarding" tone="blue" label="Credit limit" value={formatCredit(member.data.limit)} unit="credit" />
             <Stat icon="/settlement" tone="green" label="Claimable balance" value={formatCredit(claimable)} unit="credit" note="Owed to you and not claimed yet." />
             <Stat icon="/access" tone="amber" label="Stake" value={formatCredit(member.data.stake)} unit="credit" />
@@ -234,9 +267,27 @@ function Dashboard({ account }: { account: string }) {
             <h2 id="home-epoch">This epoch</h2>
             <Link className="see-all" to={{ pathname: '/reports', search }}>Epoch report</Link>
           </div>
-          <dl className="stats">
+          {current && (
+            <div className="epoch-track">
+              <PhaseStrip phase={current.phase} />
+            </div>
+          )}
+          <dl className="stats epoch-stats">
             <Position epoch={current} rows={rows} />
-            <Stat label="Payment deadline" value={next ? formatTime(next) : 'none set'} note={next ? undefined : 'No payment is due right now.'} />
+            <div className="stat stat-deadline">
+              <dt>Payment deadline</dt>
+              {next ? (
+                <>
+                  <dd><strong>{untilText(next, now)}</strong></dd>
+                  <dd className="stat-note">{formatTime(next)}</dd>
+                </>
+              ) : (
+                <>
+                  <dd><strong>none set</strong></dd>
+                  <dd className="stat-note">No payment is due right now.</dd>
+                </>
+              )}
+            </div>
           </dl>
         </section>
       </div>

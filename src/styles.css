@@ -728,6 +728,59 @@ a.btn.ghost { color: #fff; background: rgb(255 255 255 / 0.14); box-shadow: inse
   .bento { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); align-items: start; }
   .bento > .span-all { grid-column: 1 / -1; }
 }
+/* FE-077: the hero card carries its picture (a ring of the limit, owed against free); the three KPIs read as one ledger strip instead of three boxes;
+   the epoch card shows the six phases as a track and the deadline as time left; a finished Start here folds into one row. */
+.hero-main { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; }
+.hero-copy { min-width: 0; }
+.hero-card .hero-note { max-width: 28rem; }
+.hero-card .cta-row { margin-top: 1.25rem; }
+.credit-ring { flex: none; display: grid; justify-items: center; gap: 0.625rem; margin: 0; }
+.credit-ring-dial { position: relative; width: 8.5rem; height: 8.5rem; }
+.credit-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.credit-ring circle { fill: none; stroke-width: 11; stroke: rgb(255 255 255 / 0.9); }
+.credit-ring circle + circle { stroke: #ffb35c; stroke-linecap: round; transition: stroke-dasharray 0.8s var(--ease); }
+.credit-ring-dial > span { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; font-size: 0.75rem; color: rgb(255 255 255 / 0.8); }
+.credit-ring-dial b { display: block; font-size: 1.625rem; font-weight: 750; letter-spacing: -0.03em; color: #fff; font-variant-numeric: tabular-nums; }
+.credit-ring figcaption { display: flex; gap: 0.875rem; font-size: 0.75rem; color: rgb(255 255 255 / 0.8); }
+.credit-ring figcaption span { display: inline-flex; align-items: center; gap: 0.375rem; }
+.credit-ring figcaption span::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 2px; background: rgb(255 255 255 / 0.9); }
+.credit-ring figcaption [data-part='owed']::before { background: #ffb35c; }
+.credit-ring figcaption b { color: #fff; font-variant-numeric: tabular-nums; }
+.kpis.ledger { gap: 0; padding: 0.25rem 0; border-radius: 24px; background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.kpis.ledger .stat { padding: 1rem 1.25rem; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.kpis.ledger .stat + .stat { border-left: 1px solid var(--line); }
+.kpis.ledger .stat dd strong { font-size: 1.625rem; }
+.stat[data-tone='red'] { --tone: var(--s409); }
+.stat[data-tone='red'] dd strong { color: var(--s409); }
+.epoch-track .phases { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; margin: 0 0 1.25rem; }
+.epoch-track .phases li { display: grid; justify-items: center; gap: 0.5rem; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; font-size: 0.6875rem; text-align: center; line-height: 1.2; }
+.epoch-track .phases li::before { position: relative; left: auto; top: auto; z-index: 1; width: 0.75rem; height: 0.75rem; margin: 0; box-shadow: 0 0 0 3px var(--sheet); }
+.epoch-track .phases li::after { content: ''; position: absolute; top: 0.34375rem; left: -50%; width: 100%; height: 2px; background: var(--line); }
+.epoch-track .phases li:first-child::after { display: none; }
+.epoch-track .phases li.past::after, .epoch-track .phases li.now::after { background: var(--s200); }
+.epoch-track .phases li.now { color: var(--ink); font-weight: 650; background: none; }
+.epoch-track .phases li.now::before { width: 1rem; height: 1rem; margin-top: -0.125rem; background: var(--accent); box-shadow: 0 0 0 3px var(--sheet), 0 0 0 5px var(--accent-soft); }
+.epoch-track .phases li:not(.now) { color: var(--ink-soft); }
+.epoch-stats { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+.epoch-stats .stat dd strong { font-size: 1.625rem; }
+.start-all-done .progress { display: none; }
+.start-all-done .card-head { margin-bottom: 0.75rem; }
+.start-all-done .steps { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.start-all-done .step { flex-direction: row; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem 0.375rem 0.375rem; border-radius: 999px; }
+.start-all-done .step::before { width: 1.5rem; height: 1.5rem; font-size: 0.75rem; }
+.start-all-done .step h3 { margin: 0; font-size: 0.875rem; font-weight: 600; }
+.start-all-done .step p, .start-all-done .step .step-state { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 520px) {
+  .hero-main { align-items: flex-start; }
+  .credit-ring-dial { width: 6.5rem; height: 6.5rem; }
+  .credit-ring-dial b { font-size: 1.25rem; }
+  .credit-ring figcaption { flex-direction: column; gap: 0.25rem; }
+  .kpis.ledger { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kpis.ledger .stat { padding: 0.875rem 0.75rem; }
+  .kpis.ledger .stat dd strong { font-size: 1.25rem; }
+  .kpis.ledger .stat-note { display: none; }
+  .kpis.ledger .stat-icon { display: none; }
+}
 
 /* FE-063: on a touch screen every button, field and navigation link is at least 44 px tall (the tab bar is 56 px). Placed after the size rules above so it wins at equal weight. */
 @media (pointer: coarse) {
