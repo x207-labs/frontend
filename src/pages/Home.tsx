@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { api } from '../api/client'
-import { useEpochs, useMember } from '../api/queries'
+import { useEpochs, useInvoices, useMember, useOrders } from '../api/queries'
 import type { EpochItem, SettlementItem } from '../api/types'
-import { ExploreGrid } from '../components/ExploreGrid'
+import { CircleMap } from '../components/CircleMap'
 import { NavIcon } from '../components/icons'
 import { LoopMotif } from '../components/LoopMotif'
 import { PhaseStrip } from '../components/PhaseStrip'
@@ -112,7 +112,7 @@ function SignedOut() {
           <h2 id="home-explore">Explore without signing in</h2>
           <Link className="see-all" to={{ pathname: '/help', search }}>Help</Link>
         </div>
-        <ExploreGrid groups={['Overview', 'Marketplace', 'Governance', 'Help']} skip={['/app']} />
+        <CircleMap signedIn={false} />
       </section>
     </div>
   )
@@ -174,6 +174,9 @@ function Dashboard({ account }: { account: string }) {
   const { search } = useLocation()
   const member = useMember(account)
   const epochs = useEpochs()
+  // FE-082: the same queries (and cache) as the Invoices and Service orders pages, for the counts on the trade map
+  const invoices = useInvoices({ party: account })
+  const orders = useOrders({ party: account })
   // the greeting is read once, when the page opens
   const [hello] = useState(() => greeting(new Date()))
   const [now] = useState(() => Date.now())
@@ -296,10 +299,10 @@ function Dashboard({ account }: { account: string }) {
 
       <section className="card span-all" aria-labelledby="home-explore">
         <div className="card-head">
-          <h2 id="home-explore">Go somewhere</h2>
+          <h2 id="home-explore">Where to trade</h2>
           <Link className="see-all" to={{ pathname: '/help', search }}>Help</Link>
         </div>
-        <ExploreGrid groups={['Overview', 'My account', 'Marketplace', 'Governance', 'Help']} skip={['/app']} />
+        <CircleMap signedIn counts={{ '/invoices': invoices.data?.items.length, '/orders': orders.data?.items.length }} />
       </section>
     </div>
   )
