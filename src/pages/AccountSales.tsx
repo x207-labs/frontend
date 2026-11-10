@@ -3,7 +3,9 @@ import { ApiError } from '../api/client'
 import { useAccountEscrow, useAccountEscrows, useEpochs, useGrants, useMaxEscrowTtl } from '../api/queries'
 import type { AccountEscrowItem, AccountEscrowState } from '../api/types'
 import { ErrorNotice, Loading } from '../components/QueryState'
-import { formatExpiry, formatTtl, shortAccount } from '../lib/format'
+import { ItemTitle, Party } from '../components/ListBits'
+import { PAGE_HUE } from '../components/pageHue'
+import { formatExpiry, formatTtl } from '../lib/format'
 
 // FE-045: sales of a NEAR account through a locker (contract 0.0.18, barter kinds #11 and #14), read only. The list comes from `GET account-escrows`, the expiry
 // from the grant of the same id (`GET grants`), the lock epoch from `GET account-escrows/{grantId}`, the time limit from the contract view `get_max_escrow_ttl`.
@@ -14,6 +16,9 @@ const STATE_LABEL: Record<AccountEscrowState, string> = {
   delivered: 'delivered to the buyer',
   cancelled: "cancelled: seller's key returned",
 }
+// FE-085: rows in the list look of FE-081. The tile hue and the state dot say where the sale stands: held (blue), delivered (green), cancelled (red).
+const STATE_TONE: Record<AccountEscrowState, 'info' | 'ok' | 'bad'> = { held: 'info', delivered: 'ok', cancelled: 'bad' }
+const STATE_HUE: Record<AccountEscrowState, string> = { held: '#3d8bff', delivered: '#3fb56a', cancelled: '#e25a4f' }
 /** Detail reads are one request per row: only the newest rows get one. */
 const DETAIL_ROWS = 50
 
@@ -34,18 +39,18 @@ function TtlLine() {
 function DetailCells({ item, withDetail, finalizedHead, epochsRead }: { item: AccountEscrowItem; withDetail: boolean; finalizedHead: number | null; epochsRead: boolean }) {
   // FE-047: the key of a held sale holds the finalized head, so it waits for the epoch list; otherwise it is read once without it and again when the list arrives.
   const detail = useAccountEscrow(item.grantId, item.state, finalizedHead, withDetail && (item.state !== 'held' || epochsRead))
-  if (!withDetail) return <><td>-</td><td>-</td><td>-</td></>
-  if (detail.isPending) return <><td colSpan={3}>loading…</td></>
-  if (detail.isError || !detail.data) return <><td colSpan={3}>not available</td></>
+  if (!withDetail) return <><td data-label="Kind">-</td><td data-label="Lock epoch">-</td><td data-label="Delivery">-</td></>
+  if (detail.isPending) return <><td colSpan={3} data-label="Details">loading…</td></>
+  if (detail.isError || !detail.data) return <><td colSpan={3} data-label="Details">not available</td></>
   const d = detail.data
   const kind = d.member ? 'member account' : 'account'
   const epoch = d.lockedEpoch === null ? '-' : `${d.lockedEpoch}${d.lockedEpochFinalized ? ' (finalized)' : ''}`
   const delivery = d.state !== 'held' ? '-' : d.ready ? 'can be delivered now' : 'waits until the lock epoch is finalized'
   return (
     <>
-      <td>{kind}</td>
-      <td className="num">{epoch}</td>
-      <td>{delivery}</td>
+      <td data-label="Kind">{kind}</td>
+      <td className="num" data-label="Lock epoch">{epoch}</td>
+      <td data-label="Delivery">{d.state === 'held' ? <span className="state-line" data-tone={d.ready ? 'ok' : 'warn'}>{delivery}</span> : <span className="muted">-</span>}</td>
     </>
   )
 }
@@ -75,11 +80,11 @@ export function AccountSales() {
   else
     body = (
       <div className="table-wrap">
-        <table aria-label="Account sales">
+        <table className="list-table sales-list" aria-label="Account sales">
           <thead>
             <tr>
-              <th scope="col" className="num">Grant</th>
               <th scope="col">Account sold</th>
+              <th scope="col" className="num">Grant</th>
               <th scope="col">State</th>
               <th scope="col">Buyer (new owner)</th>
               <th scope="col">Expires</th>
@@ -91,13 +96,13 @@ export function AccountSales() {
           <tbody>
             {escrows.data.items.map((e, i) => (
               <tr key={e.grantId}>
-                <td className="num">{e.grantId}</td>
                 <td>
-                  <code className="plain">{e.account}</code>
+                  <ItemTitle icon="/access" hue={STATE_HUE[e.state] ?? PAGE_HUE['/access']} title={<code className="plain">{e.account}</code>} sub="NEAR account" />
                 </td>
-                <td>{STATE_LABEL[e.state] ?? e.state}</td>
-                <td>{e.newOwner ? shortAccount(e.newOwner) : '-'}</td>
-                <td>{expiry.has(e.grantId) ? formatExpiry(expiry.get(e.grantId)!) : 'not available'}</td>
+                <td className="num row-num" data-label="Grant">{e.grantId}</td>
+                <td className="sales-state"><span className="state-line" data-tone={STATE_TONE[e.state] ?? 'info'}>{STATE_LABEL[e.state] ?? e.state}</span></td>
+                <td data-label="Buyer">{e.newOwner ? <Party account={e.newOwner} /> : <span className="muted">no buyer yet</span>}</td>
+                <td className="sales-expiry" data-label="Expires">{expiry.has(e.grantId) ? formatExpiry(expiry.get(e.grantId)!) : 'not available'}</td>
                 <DetailCells item={e} withDetail={i < DETAIL_ROWS} finalizedHead={finalizedHead} epochsRead={epochsRead} />
               </tr>
             ))}

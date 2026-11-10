@@ -397,6 +397,17 @@ a, button, select, input, textarea, summary, label, [role='option'], [role='menu
 .deal-stop[data-state='bad'] .deal-node { color: #fff; background: var(--s409); box-shadow: none; }
 .deal-stop[data-state='warn'] .deal-node { color: #2b1c02; background: var(--s402); box-shadow: none; }
 .deal-stop:is([data-state='done'], [data-state='active'], [data-state='bad'], [data-state='warn'])::after { color: var(--ink); font-weight: 600; }
+/* FE-085: a state in words led by a dot in its tone (account sales); the words stay ink so long states read as text, not as a pill */
+.state-line { display: inline-flex; align-items: baseline; gap: 0.5rem; max-width: 18rem; }
+.state-line::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--tone, var(--ink-soft)); transform: translateY(-1px); }
+.state-line[data-tone='ok'] { --tone: var(--s200); }
+.state-line[data-tone='warn'] { --tone: var(--s402); }
+.state-line[data-tone='bad'] { --tone: var(--s409); }
+.state-line[data-tone='info'] { --tone: var(--s202); }
+.row-num { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.row-num::before { content: '#'; }
+.sales-list .row-title code { white-space: nowrap; }
+.sales-list .sales-expiry { min-width: 8.5rem; }
 .deal-note { margin: 0; color: var(--ink-soft); font-size: 0.875rem; }
 .deal-note + .deal-note { margin-top: -0.5rem; }
 /* the line from the first member down to the second: who starts the deal, who answers it */
@@ -423,6 +434,15 @@ a, button, select, input, textarea, summary, label, [role='option'], [role='menu
   /* the title takes the first row, so an open button in an even cell would sit alone on the left: give it the row, on the right */
   .list-table:has(.row-title) tbody td:last-child:nth-child(even) { grid-column: 1 / -1; }
   .list-table:has(.row-title) .row-sub { max-width: none; }
+  /* FE-085: an account sale has more facts than a two-column card holds: the state runs across under the title, the rest sit in pairs, each named by its data-label */
+  .sales-list.list-table tbody tr { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .sales-list.list-table tbody td { order: 2; }
+  .sales-list.list-table tbody td:first-child { order: 0; }
+  .sales-list.list-table tbody td.sales-state { order: 1; grid-column: 1 / -1; }
+  .sales-list.list-table tbody td:last-child { justify-self: stretch; }
+  .sales-list.list-table tbody td.num { text-align: left; }
+  .sales-list.list-table tbody td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 0.25rem; font-size: 0.75rem; color: var(--ink-soft); }
+  .sales-list.list-table tbody td[colspan] { grid-column: 1 / -1; }
 }
 /* FE-073: governance. The rules in four grouped tables side by side, the approved next change as one solid violet note. */
 .rule-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: 1rem; }
