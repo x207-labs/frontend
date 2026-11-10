@@ -1,6 +1,7 @@
 // FE-060: where a visitor is in the four onboarding steps. Pure: the page feeds it the wallet account, what the read API says about the member,
 // and the two things only the visitor can tell us (they got test funds, they made a first payment).
 import type { Member } from '../api/types'
+import { displayAccount } from '../lib/account'
 
 export const STEP_IDS = ['login', 'funds', 'join', 'payment'] as const
 export type StepId = (typeof STEP_IDS)[number]
@@ -40,7 +41,8 @@ export function computeSteps({ account, member, acknowledged }: StepsInput): Ste
   }
   const firstOpen = STEP_IDS.find((id) => !done[id])
   const notes: Record<StepId, string> = {
-    login: account ? `Signed in as ${account}.` : 'Sign in with a wallet, or with email or Google.',
+    // FE-073: the short form, as in the account menu; a 64-hex implicit account in full ran out of the step card
+    login: account ? `Signed in as ${displayAccount(account)}.` : 'Sign in with a wallet, or with email or Google.',
     funds: done.funds ? (m ? 'Funds found: the account is already a member.' : 'Marked as done.') : 'You need test NEAR for gas and mock USDT for the stake.',
     join: loading ? 'Checking the circle…' : staked ? 'Registered and staked.' : m ? 'Registered. Add stake to get a credit limit.' : 'Register and stake in one go.',
     payment: done.payment ? 'Done.' : 'Pay a listing or call a paid endpoint with your agent.',

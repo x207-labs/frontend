@@ -13,6 +13,8 @@ import { computeSteps, type MemberState, type StepId } from '../onboarding/steps
 import { formatCredit, formatTime } from '../lib/format'
 import { currentEpoch, homeActions, sumAmounts } from '../lib/home'
 import { useWallet } from '../wallet/WalletContext'
+import { useCachedAccount } from '../account/cache'
+import { displayAccount } from '../lib/account'
 
 function Stat({ label, value, unit, note, icon, tone }: { label: string; value: string; unit?: string; note?: string; icon?: string; tone?: string }) {
   return (
@@ -144,6 +146,9 @@ function Dashboard({ account }: { account: string }) {
   const epochs = useEpochs()
   // the greeting is read once, when the page opens
   const [hello] = useState(() => greeting(new Date()))
+  // FE-073: the name the person saved in Settings, else the short account, as the account menu shows it; a 64-hex implicit account in full ran off the line
+  const cached = useCachedAccount(account)
+  const name = cached.displayName || displayAccount(account)
   const settlements = useQuery({
     queryKey: ['member-settlements', account],
     queryFn: () => api.memberSettlements(account),
@@ -170,7 +175,7 @@ function Dashboard({ account }: { account: string }) {
     <div className="home-grid bento">
       {/* FE-069: a greeting line as in the reference dashboards, with the epoch it is about, so the page says whose it is and when at a glance */}
       <p className="greet span-all">
-        {hello}, <strong>{account}</strong>
+        {hello}, <strong title={account}>{name}</strong>
         {current && <span>, epoch {current.epoch}, {current.phase.replace('_', ' ')}</span>}
       </p>
       {notMember && <StartHere account={account} member={memberState} />}
@@ -206,20 +211,23 @@ function Dashboard({ account }: { account: string }) {
       )}
 
       <div className={member.data ? 'bento-side' : 'bento-side span-all'}>
-        <section className="card" aria-labelledby="home-actions">
-          <div className="card-head">
-            <h2 id="home-actions">Actions to take</h2>
-          </div>
-          {settlements.isError && !notMember && <p className="state state-error" role="alert">Settlements could not be read, so this list may be incomplete.</p>}
-          <ul className="actions">
-            {actions.map((a) => (
-              <li key={a.key} className={`action action-${a.tone}`}>
-                <span>{a.text}</span>
-                <Link to={{ pathname: a.to, search }}>{a.cta}</Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {/* FE-073: for an account outside the circle the only action was "Join the circle", the same step Start here already shows above, so the card is left out */}
+        {!notMember && (
+          <section className="card" aria-labelledby="home-actions">
+            <div className="card-head">
+              <h2 id="home-actions">Actions to take</h2>
+            </div>
+            {settlements.isError && <p className="state state-error" role="alert">Settlements could not be read, so this list may be incomplete.</p>}
+            <ul className="actions">
+              {actions.map((a) => (
+                <li key={a.key} className={`action action-${a.tone}`}>
+                  <span>{a.text}</span>
+                  <Link to={{ pathname: a.to, search }}>{a.cta}</Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="card" aria-labelledby="home-epoch">
           <div className="card-head">

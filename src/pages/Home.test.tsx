@@ -4,6 +4,8 @@ import type { EpochItem, MemberResponse, SettlementItem } from '../api/types'
 import { apiError, renderApp } from '../test/render'
 import { createMockWallet } from '../test/walletMock'
 import { currentEpoch, homeActions } from '../lib/home'
+import { resetCache, writeCache } from '../account/cache'
+import { displayAccount } from '../lib/account'
 
 const SCRAPER = 'scraper.x207-circle.near'
 const settlement = (status: string, extra: object = {}): SettlementItem =>
@@ -87,10 +89,23 @@ describe('FE-056 home page', () => {
 
   it('an account the read API does not know is offered onboarding, not an error', async () => {
     renderApp('/app', (p) => (p.includes('/members/new.testnet') && !p.includes('settlements') ? apiError(404, 'not_found', 'no such member') : undefined), false, createMockWallet('new.testnet', 'new.testnet'))
-    expect(await screen.findByText(/not a member of the circle yet/)).toBeInTheDocument()
-    // FE-069: the sidebar now names the onboarding page "Join the circle" too, so the action link is looked up inside its own block.
-    const actions = screen.getByRole('region', { name: 'Actions to take' })
-    expect(within(actions).getByRole('link', { name: 'Join the circle' })).toHaveAttribute('href', expect.stringContaining('/onboarding'))
-    expect(screen.getByRole('region', { name: 'Start here' })).toHaveTextContent('Register and stake')
+    expect(await screen.findByRole('region', { name: 'Start here' })).toHaveTextContent('Register and stake')
+    // FE-073: Start here already carries the join step, so the actions card with the same "Join the circle" link is left out.
+    expect(screen.queryByRole('region', { name: 'Actions to take' })).toBeNull()
+  })
+
+  it('TC-FE-073-01 a 64-hex implicit account is greeted by its saved name and shown short, never in full', async () => {
+    const implicit = 'e'.repeat(60) + '1234'
+    writeCache(implicit, { displayName: 'Shenhan' })
+    try {
+      renderApp('/app', (p) => (p.includes(`/members/${implicit}`) && !p.includes('settlements') ? apiError(404, 'not_found', 'no such member') : undefined), false, createMockWallet(implicit, implicit))
+      // the guest view shows first while the wallet restores the session, so wait for the signed-in note
+      expect(await screen.findByText(`Signed in as ${displayAccount(implicit)}.`)).toBeInTheDocument()
+      expect(screen.getByRole('region', { name: 'Start here' })).not.toHaveTextContent(implicit)
+      expect(screen.getByText('Shenhan', { selector: '.greet strong' })).toBeInTheDocument()
+      expect(document.querySelector('.account-trigger .avatar')).toHaveTextContent('S')
+    } finally {
+      resetCache()
+    }
   })
 })

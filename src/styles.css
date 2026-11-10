@@ -558,7 +558,7 @@ a.btn:active { transform: scale(0.97); }
 .step.is-done::before { content: '✓'; color: var(--paper); background: var(--s200); box-shadow: none; }
 .step.is-next { border-color: var(--accent); box-shadow: none; }
 .step h3 { margin: 0.25rem 0 0; font-size: 1.0625rem; letter-spacing: -0.01em; }
-.step p { margin: 0; color: var(--ink-soft); line-height: 1.5; flex: 1; }
+.step p { margin: 0; color: var(--ink-soft); line-height: 1.5; flex: 1; overflow-wrap: anywhere; }
 .step .step-state { font-size: 0.8125rem; font-weight: 650; color: var(--s200); }
 .step a { align-self: flex-start; margin-top: 0.5rem; }
 /* FE-072: the page list is an app grid, as on an iPhone home screen: one glowing icon tile and the name, grouped by section. */

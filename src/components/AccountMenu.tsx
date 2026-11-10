@@ -74,7 +74,7 @@ export function AccountMenu() {
     <div className="account" ref={root} onKeyDown={onKeyDown}>
       <span className="net-badge" title={`The wallet is on NEAR ${NETWORK.toLowerCase()}`}>{NETWORK}</span>
       <button type="button" className="account-trigger" ref={trigger} aria-haspopup="menu" aria-expanded={open} aria-label={`Account menu for ${account}`} title={account} onClick={() => setOpen((o) => !o)}>
-        <span className="avatar" aria-hidden="true">{initial(account)}</span>
+        <span className="avatar" aria-hidden="true">{initial(cached.displayName || account)}</span>
         <span className="wallet-account">{cached.displayName || displayAccount(account)}</span>
       </button>
       {open && (
