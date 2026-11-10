@@ -1,4 +1,9 @@
+// The landing keeps Schibsted in its own font stack; the app uses the four faces below (FE-098).
 import '@fontsource-variable/schibsted-grotesk'
+import '@fontsource-variable/bricolage-grotesque'
+import '@fontsource-variable/geist'
+import '@fontsource-variable/fraunces/wght-italic.css'
+import '@fontsource-variable/geist-mono'
 import './styles.css'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
