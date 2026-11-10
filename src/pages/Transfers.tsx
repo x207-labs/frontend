@@ -13,6 +13,7 @@ import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
+import { demoVoucherKey } from '../demo/mode'
 import { pairStateWithHeld, recallHeld, rememberHeld } from '../lib/codeFlow'
 import { toAtomic } from '../lib/amount'
 import { formatCredit } from '../lib/format'
@@ -380,7 +381,7 @@ function Status({ voucherKey, onVoucherKey, openId, onOpen }: { voucherKey: stri
 }
 
 export function Transfers() {
-  const [voucherKey, setVoucherKey] = useState('')
+  const [voucherKey, setVoucherKey] = useState(demoVoucherKey)
   const [, setPrepared] = useState<PreparedTransfer | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
   const [view, setView] = useState<View>('buy')

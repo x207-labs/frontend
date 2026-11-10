@@ -12,6 +12,7 @@ import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
+import { demoVoucherKey } from '../demo/mode'
 import { keyFingerprint } from '../lib/barter'
 import {
   UNVERIFIABLE_CODE_LIMIT, VERIFIABLE_CODE_LIMIT, buildCodeKeyRelease, buildCodePurchase, codeCheckNotice, codeDocumentOfListing, codeOverLimit, disputeSecondsLeft, pairStateWithHeld, parseCodeListing, prepareCode, receiveCode, recallHeld, rememberHeld,
@@ -498,7 +499,7 @@ const VIEWS: ReadonlyArray<readonly [View, string]> = [['buy', 'Buy'], ['sell', 
 
 export function Codes() {
   const { account } = useWallet()
-  const [voucherKey, setVoucherKey] = useState('')
+  const [voucherKey, setVoucherKey] = useState(demoVoucherKey)
   const [prepared, setPrepared] = useState<PreparedCode | null>(null)
   const [view, setView] = useState<View>('buy')
   return (

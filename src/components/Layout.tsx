@@ -11,6 +11,7 @@ import { LateEpochNotice } from './LateEpochNotice'
 import { PhaseStrip } from './PhaseStrip'
 import { AccountMenu } from './AccountMenu'
 import { CommandPalette } from './CommandPalette'
+import { DemoBanner, DemoToggle } from '../demo/DemoToggle'
 import { SelectMenu } from './SelectMenu'
 
 function Header() {
@@ -60,10 +61,12 @@ export function Layout() {
               </p>
               <div className="topbar-tools">
                 <CommandPalette />
+                <DemoToggle />
                 <AccountMenu />
               </div>
             </div>
             <main id="content" ref={main} tabIndex={-1} data-group={group}>
+              <DemoBanner />
               <Header />
               {/* FE-067: a new key per page, so each page eases in (the CSS animates the blocks of .route one after the other) */}
               <div className="route" key={pathname}>

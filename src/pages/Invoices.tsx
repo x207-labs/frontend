@@ -13,6 +13,7 @@ import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
+import { demoVoucherKey } from '../demo/mode'
 import { assertInvoiceHash, buildApproval, buildCatchUp, buildCreateInvoice, buildRejection } from '../lib/invoiceFlow'
 import { describeMarketError } from '../lib/marketError'
 import { formatCredit } from '../lib/format'
@@ -273,7 +274,7 @@ export function Invoices() {
   const { account } = useWallet()
   const [status, setStatus] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
-  const [voucherKey, setVoucherKey] = useState('')
+  const [voucherKey, setVoucherKey] = useState(demoVoucherKey)
   const [picked, setPicked] = useState<View | null>(null)
   const query: Record<string, string> = { ...(account ? { party: account } : {}), ...(status ? { status } : {}) }
   const invoices = useInvoices(query, Boolean(account))

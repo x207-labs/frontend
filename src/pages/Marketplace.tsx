@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { api } from '../api/client'
-import { useListings, useMarketStats } from '../api/queries'
+import { useListing, useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { AssetTemplateForm, type TemplateCheck } from '../components/AssetTemplateForm'
 import { CopyButton } from '../components/CopyButton'
@@ -18,6 +18,7 @@ import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
+import { demoVoucherKey } from '../demo/mode'
 import { ASSET_CLASSES, listingHash, signListing, type AssetClass, type Listing } from '../lib/barter'
 import { fromAtomic, toAtomic } from '../lib/amount'
 import { describeMarketError } from '../lib/marketError'
@@ -454,10 +455,13 @@ function sharePercent(a: string, b: string): number {
 export function Marketplace() {
   const [status, setStatus] = useState<string>('open')
   const [offerType, setOfferType] = useState('')
-  const [voucherKey, setVoucherKey] = useState('')
+  const [voucherKey, setVoucherKey] = useState(demoVoucherKey)
   const [selected, setSelected] = useState<ListingView | null>(null)
   const query: Record<string, string> = { status, ...(offerType.trim() ? { offerType: offerType.trim() } : {}) }
   const listings = useListings(query)
+  // FE-100: the negotiation follows the listing as it is now, so after an accept it shows "matched" instead of still waiting for an answer.
+  const current = useListing(selected?.listingHash ?? null).data
+  const shown = selected && current?.listingHash === selected.listingHash ? current : selected
   // FE-072: one view at a time (browse, post, your own), as a store app does, instead of every part on one long page. The views only hide
   // with CSS, so links and tests still reach every part; #post-listing (from the empty hint) opens the post view.
   const { hash } = useLocation()
@@ -510,7 +514,7 @@ export function Marketplace() {
           />
         )}
       </QueryState>
-      {selected && <Negotiation listing={selected} voucherKey={voucherKey} onVoucherKey={setVoucherKey} onClose={() => setSelected(null)} />}
+      {shown && <Negotiation listing={shown} voucherKey={voucherKey} onVoucherKey={setVoucherKey} onClose={() => setSelected(null)} />}
       </section>
       <section className="market-pane" data-pane="mine" aria-label="Your intents">
         <OwnIntents />

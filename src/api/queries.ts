@@ -68,6 +68,9 @@ export const useAllMetrics = (epochs: { epoch: number; final: boolean }[]) =>
 
 export const useListings = (query: Record<string, string>) =>
   useQuery({ queryKey: ['listings', query], queryFn: () => api.listings(query) })
+/** One listing as it is now. Under the `listings` key, so an accept or a cancel (which refresh `listings`) refreshes it too. */
+export const useListing = (hash: string | null) =>
+  useQuery({ queryKey: ['listings', 'one', hash], queryFn: () => api.listing(hash!), enabled: hash !== null })
 export const useMarketStats = () => useQuery({ queryKey: ['market-stats'], queryFn: api.marketStats })
 export const useOffers = (hash: string | null) =>
   useQuery({ queryKey: ['offers', hash], queryFn: () => api.offers(hash!), enabled: hash !== null })

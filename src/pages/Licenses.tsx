@@ -12,6 +12,7 @@ import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
+import { demoVoucherKey } from '../demo/mode'
 import {
   LICENSE_ASSET_TYPES, buildKeyRelease, buildPurchase, cipherPostedNotice, prepareLicense, signSellerNotice, proofForApi, purchaseNotice, receiveLicense, signPurchaseNotice, sourceUrl, takedownMessage,
   type DownloadResult, type PreparedLicense,
@@ -500,7 +501,7 @@ const VIEWS: ReadonlyArray<readonly [View, string]> = [['buy', 'Buy'], ['sell', 
 
 export function Licenses() {
   const { account } = useWallet()
-  const [voucherKey, setVoucherKey] = useState('')
+  const [voucherKey, setVoucherKey] = useState(demoVoucherKey)
   const [prepared, setPrepared] = useState<PreparedLicense | null>(null)
   const [view, setView] = useState<View>('buy')
   return (

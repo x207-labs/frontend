@@ -231,6 +231,18 @@ tr[aria-selected='true'] { outline: 2px solid var(--focus); outline-offset: -2px
 @keyframes pop { from { opacity: 0; transform: scale(0.92) translateY(-6px); } to { opacity: 1; transform: none; } }
 /* FE-057: Cmd-K palette, table tools, next-step links */
 .topbar-tools { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; min-width: 0; }
+/* FE-100: the Demo switch and the strip that says demo mode is on. Amber (--s402), the colour the app already uses for "not final". */
+.demo-toggle { display: flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0.25rem 0.875rem 0.25rem 0.5rem; border-radius: 999px; background: var(--glass); color: var(--ink-soft); border: 1px solid var(--line); font-weight: 500; box-shadow: none; }
+.demo-toggle-track { position: relative; width: 2rem; height: 1.125rem; border-radius: 999px; background: var(--tile); border: 1px solid var(--line); transition: background 0.2s var(--ease), border-color 0.2s var(--ease); }
+.demo-toggle-thumb { position: absolute; top: 2px; left: 2px; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--ink-soft); transition: transform 0.25s var(--spring), background 0.2s var(--ease); }
+.demo-toggle.is-on { color: var(--s402); border-color: color-mix(in srgb, var(--s402) 45%, var(--line)); }
+.demo-toggle.is-on .demo-toggle-track { background: color-mix(in srgb, var(--s402) 22%, var(--tile)); border-color: var(--s402); }
+.demo-toggle.is-on .demo-toggle-thumb { transform: translateX(0.875rem); background: var(--s402); }
+.demo-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; margin: 0 0 1.25rem; padding: 0.75rem 1rem; border-radius: 16px; background: color-mix(in srgb, var(--s402) 10%, var(--sheet)); border: 1px solid color-mix(in srgb, var(--s402) 40%, var(--line)); }
+.demo-banner p { margin: 0; color: var(--ink); max-width: 62ch; }
+.demo-banner strong { color: var(--s402); }
+.demo-banner button { min-height: 2.5rem; }
+@media (prefers-reduced-motion: reduce) { .demo-toggle-track, .demo-toggle-thumb { transition: none; } }
 .palette-trigger { display: flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0.25rem 0.875rem; border-radius: 999px; background: var(--glass); color: var(--ink-soft); border: 1px solid var(--line); font-weight: 500; box-shadow: none; }
 .palette-trigger kbd { display: none; padding: 0 0.375rem; border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: 0.75rem; }
 .palette-label { display: none; }

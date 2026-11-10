@@ -12,6 +12,7 @@ import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
+import { demoVoucherKey } from '../demo/mode'
 import { formatCredit, formatTime, shortAccount } from '../lib/format'
 import { describeMarketError } from '../lib/marketError'
 import {
@@ -413,7 +414,7 @@ const orderText = (o: OrderView) => `${kindLabel(o)} ${o.order.buyer} ${o.order.
 export function Orders() {
   const { account } = useWallet()
   const [selected, setSelected] = useState<string | null>(null)
-  const [voucherKey, setVoucherKey] = useState('')
+  const [voucherKey, setVoucherKey] = useState(demoVoucherKey)
   const [picked, setPicked] = useState<View | null>(null)
   const orders = useOrders(account ? { party: account } : {}, Boolean(account))
   // A first visit with nothing to list starts on the new order form; everything else starts on the list.

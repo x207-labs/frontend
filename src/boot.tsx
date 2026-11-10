@@ -10,9 +10,11 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { App } from './App'
 import { API_URL, USE_FIXTURES } from './config'
+import { DEMO_MODE } from './demo/mode'
 import { createQueryClient } from './queryClient'
 import { fixtureWalletPort } from './wallet/fixtureWallet'
 import { nearConnectPort } from './wallet/nearConnect'
+import type { WalletPort } from './wallet/types'
 import { WalletProvider } from './wallet/WalletContext'
 
 // FE-044: the dashboard boot, moved out of main.tsx unchanged so "/" can load the landing page without the wallet.
@@ -25,10 +27,18 @@ if (USE_FIXTURES) {
     String(input).startsWith(API_URL) ? fake(input) : real(input, init)
 }
 
+// FE-100: demo mode answers every request inside the tab and signs with a demo wallet; the live network and wallet are not loaded.
+let port: WalletPort = USE_FIXTURES ? fixtureWalletPort : nearConnectPort
+if (DEMO_MODE && !USE_FIXTURES) {
+  const [{ installDemoNetwork }, { demoWalletPort }] = await Promise.all([import('./demo/network'), import('./demo/wallet')])
+  await installDemoNetwork()
+  port = demoWalletPort
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={createQueryClient()}>
-      <WalletProvider port={USE_FIXTURES ? fixtureWalletPort : nearConnectPort}>
+      <WalletProvider port={port}>
         <BrowserRouter>
           <App />
         </BrowserRouter>

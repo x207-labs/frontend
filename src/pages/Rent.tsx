@@ -7,6 +7,7 @@ import { PROVIDER_GLYPHS } from '../components/glyphs'
 import { NavIcon, ProviderIcon } from '../components/icons'
 import { PAGE_HUE } from '../components/pageHue'
 import { BROKER_URL, CONTRACT_ID } from '../config'
+import { demoVoucherKey } from '../demo/mode'
 import { signMessageWithVoucher } from '../lib/barter'
 import { toAtomic, fromAtomic } from '../lib/amount'
 import { formatCredit, formatTime } from '../lib/format'
@@ -352,7 +353,7 @@ function Renter({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey
 // FE-072: two views (lend access, or the access you rent) instead of both forms on one long page; both stay in the page and only hide with CSS.
 const RENT_VIEWS = [['offer', 'Offer access'], ['mine', 'My rentals']] as const
 export function Rent() {
-  const [voucherKey, setVoucherKey] = useState('')
+  const [voucherKey, setVoucherKey] = useState(demoVoucherKey)
   const [tab, setTab] = useState<'offer' | 'mine'>('offer')
   return (
     <>
