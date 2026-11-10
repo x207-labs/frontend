@@ -4,7 +4,8 @@
   position: fixed;
   z-index: 40;
   right: 1rem;
-  bottom: calc(var(--tabbar-h, 0px) + 1.5rem + env(safe-area-inset-bottom));
+  /* FE-075: above the Feedback button, which sits above the tab bar on a phone */
+  bottom: calc(var(--tabbar-h, 0px) + 5.25rem + env(safe-area-inset-bottom));
   left: 1rem;
   display: flex;
   flex-direction: column;

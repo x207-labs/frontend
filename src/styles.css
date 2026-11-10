@@ -744,5 +744,25 @@ main[data-group='Marketplace'] .signin-card { justify-content: center; text-alig
 main[data-group='Marketplace'] .signin-card > div { flex-basis: auto; }
 main[data-group='Marketplace'] .state { justify-content: center; text-align: center; }
 main[data-group='Marketplace'] .form, main[data-group='Marketplace'] .listing-form, main[data-group='Marketplace'] .negotiation, main[data-group='Marketplace'] .rent .form { margin-inline: auto; }
+main[data-group='Marketplace'] .lead-steps { justify-content: center; }
+
+/* FE-075: on a wide screen the "how it works" lead of a trade page becomes a side rail on the left: the tone tile, the one line, and the steps
+   stacked top to bottom with a line joining the numbers. It stays in view while the page scrolls. Narrower screens keep the stacked lead above the content. */
+@media (min-width: 1200px) {
+  .route:has(> .page-lead .lead-steps) { display: grid; grid-template-columns: 14.5rem minmax(0, 1fr); column-gap: 2.5rem; align-items: start; }
+  .route:has(> .page-lead .lead-steps) > * { grid-column: 2; min-width: 0; }
+  main .route > .page-lead:has(.lead-steps) {
+    grid-column: 1; grid-row: 1 / span 12; position: sticky; top: 5rem;
+    flex-direction: column; flex-wrap: nowrap; align-items: flex-start; justify-content: flex-start; gap: 1rem;
+    margin: 0; padding: 1.25rem; text-align: left;
+    background: var(--sheet); border: 1px solid var(--line); border-radius: var(--radius);
+  }
+  main .route > .page-lead:has(.lead-steps) > p { flex: none; max-width: none; font-size: 0.9375rem; line-height: 1.5; }
+  main .route > .page-lead .lead-steps { flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; gap: 0; padding-top: 1rem; border-top: 1px solid var(--line); }
+  main .route > .page-lead .lead-steps li { position: relative; display: flex; align-items: flex-start; gap: 0.75rem; padding: 0 0 1.25rem; background: none; border: 0; border-radius: 0; line-height: 1.75rem; }
+  main .route > .page-lead .lead-steps li:last-child { padding-bottom: 0; }
+  main .route > .page-lead .lead-steps li::before { flex: none; }
+  main .route > .page-lead .lead-steps li:not(:last-child)::after { content: ''; position: absolute; left: calc(0.875rem - 1px); top: 2rem; bottom: 0.25rem; width: 2px; border-radius: 2px; background: var(--line); }
+}
 
 .evm-badge { display: inline-block; margin-left: 0.4em; padding: 0 0.45em; border: 1px solid currentColor; border-radius: 6px; font-size: 0.75em; font-weight: 700; text-decoration: none; vertical-align: middle; }

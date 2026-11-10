@@ -4,3 +4,7 @@
 .feedback-panel textarea { width: 100%; box-sizing: border-box; font-size: 1rem; }
 .feedback-actions { display: flex; gap: 0.5rem; }
 .feedback-toggle { min-height: 44px; }
+/* FE-075: on a phone the bottom tab bar holds the corner, so the button sits above it instead of covering the last tab */
+@media (max-width: 839px) {
+  .feedback { bottom: calc(var(--tabbar-h, 0px) + 1.75rem + env(safe-area-inset-bottom)); }
+}
