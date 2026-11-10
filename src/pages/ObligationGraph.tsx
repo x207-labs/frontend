@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { ApiError } from '../api/client'
 import { useObligations } from '../api/queries'
 import type { ObligationEdge, Obligations } from '../api/types'
+import { agentGlyph } from '../components/glyphs'
 import { NoEpoch } from '../components/NoEpoch'
 import { QueryState } from '../components/QueryState'
 import { useEpochSelection, useSelectedEpoch } from '../epoch'
@@ -107,9 +108,13 @@ function FlowGraph({ title, edges, nodes, mode, focus }: { title: string; edges:
               >
                 <circle className="node-halo" cx={p.x} cy={p.y} r={NODE_R + 8} />
                 <circle className="node" cx={p.x} cy={p.y} r={NODE_R} />
-                <text className="node-initials" x={p.x} y={p.y + 5} textAnchor="middle" aria-hidden="true">
-                  {initials(n)}
-                </text>
+                {agentGlyph(n) ? (
+                  <path className="node-glyph" d={agentGlyph(n)!} transform={`translate(${p.x - 11} ${p.y - 11}) scale(${22 / 24})`} aria-hidden="true" />
+                ) : (
+                  <text className="node-initials" x={p.x} y={p.y + 5} textAnchor="middle" aria-hidden="true">
+                    {initials(n)}
+                  </text>
+                )}
                 <text className="tick" x={p.x} y={p.y + NODE_R + 20} textAnchor="middle">
                   {shortAccount(n)}
                 </text>

@@ -8,7 +8,7 @@ import { formatExpiry } from '../lib/format'
 
 const SCRAPER = 'scraper.x207-circle.near'
 const TRANSLATOR = 'translator.x207-circle.near'
-const rowOf = (id: number) => screen.getByText(String(id), { selector: 'td.num' }).closest('tr') as HTMLElement
+const rowOf = (id: number) => screen.getByText(`#${id}`, { selector: '.row-id' }).closest('tr') as HTMLElement
 
 describe('FE-017 dashboard grant F8', () => {
   it('TC-FE-017-01 the grantor sees active and revoked grants with class, grantee, status, validity, and reason', async () => {
@@ -36,7 +36,7 @@ describe('FE-017 dashboard grant F8', () => {
     expect(rowOf(3)).toHaveTextContent('Paid endpoint (x402)')
     expect(rowOf(4)).toHaveTextContent(/Lends to|Open offer/)
     expect(rowOf(4)).toHaveTextContent('Offered')
-    expect(screen.queryByText('2', { selector: 'td.num' })).not.toBeInTheDocument()
+    expect(screen.queryByText('#2', { selector: '.row-id' })).not.toBeInTheDocument()
   })
 
   it('TC-FE-017-03 the status filter calls the read API with the status and filters the table', async () => {

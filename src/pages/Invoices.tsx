@@ -285,7 +285,7 @@ export function Invoices() {
   return (
     <>
       <div className="page-lead">
-        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/invoices'] }}>
           <NavIcon name="/invoices" size={22} />
         </span>
         <p>Ask a customer to pay in installments, or approve an invoice sent to you.</p>

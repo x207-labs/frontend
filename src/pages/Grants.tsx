@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useGrants, useMembers } from '../api/queries'
 import type { Grant, GrantEscrow, GrantStatus } from '../api/types'
 import { NavIcon } from '../components/icons'
+import { ItemTitle, Party } from '../components/ListBits'
+import { PAGE_HUE } from '../components/pageHue'
 import { QueryState } from '../components/QueryState'
 import { formatCredit, formatExpiry, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
@@ -63,8 +65,73 @@ export function EscrowCell({ escrow }: { escrow: GrantEscrow | null | undefined 
 type Row = Grant & { role: 'grantor' | 'grantee' }
 
 function Counterparty({ g }: { g: Row }) {
-  if (g.role === 'grantee') return <>Rents from <strong>{shortAccount(g.grantor)}</strong></>
-  return g.grantee ? <>Lends to <strong>{shortAccount(g.grantee)}</strong></> : <>Open offer</>
+  if (g.role === 'grantee') return <span className="party-with"><span className="row-sub">Rents from</span> <Party account={g.grantor} /></span>
+  return g.grantee ? <span className="party-with"><span className="row-sub">Lends to</span> <Party account={g.grantee} /></span> : <span className="row-sub">Open offer</span>
+}
+
+// FE-083: who holds which access until when, drawn on one time axis. A lane runs from now to the end of the grant: solid while it is used,
+// dashed while it waits for a renter, struck through when it was ended early; a grant that ran out is a dot where it ended. The table under it says the same in words.
+const LANE_TONE: Record<GrantStatus, string> = { active: '#3fb56a', offered: '#3d8bff', revoked: '#e25a4f', expired: '#7a8798' }
+const nsToMs = (ns: string) => {
+  try {
+    return Number(BigInt(ns) / 1_000_000n)
+  } catch {
+    return Number.NaN
+  }
+}
+const shortDate = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+
+function AccessTimeline({ rows }: { rows: Row[] }) {
+  const [now] = useState(() => Date.now())
+  const lanes = rows.map((g) => ({ g, end: nsToMs(g.expiresAt) })).filter((l) => Number.isFinite(l.end))
+  if (lanes.length === 0) return null
+  const ends = lanes.map((l) => l.end)
+  const lo = Math.min(now, ...ends)
+  const hi = Math.max(now, ...ends)
+  const pad = (hi - lo) * 0.04 || 86_400_000
+  const t0 = lo - pad
+  const span = hi + pad - t0
+  const at = (t: number) => ((t - t0) / span) * 100
+  const ticks = [0, 1, 2, 3].map((i) => lo + ((hi - lo) * i) / 3)
+  return (
+    <figure className="access-timeline" aria-hidden="true" style={{ ['--now' as string]: `${at(now)}%` }}>
+      <ol>
+        {lanes.map(({ g, end }) => {
+          const other = g.role === 'grantee' ? g.grantor : g.grantee
+          const from = at(Math.min(now, end))
+          return (
+            <li key={g.grantId} data-status={g.status} style={{ ['--lane' as string]: LANE_TONE[g.status] }}>
+              <span className="lane-who">
+                {other ? <Party account={other} /> : <span className="lane-open">Anyone</span>}
+                <small>{g.assetType}</small>
+              </span>
+              <span className="lane-track">
+                {g.status === 'expired' || end <= now ? (
+                  <span className="lane-dot" style={{ left: `${at(end)}%` }} />
+                ) : (
+                  <span className="lane-bar" style={{ left: `${from}%`, width: `${at(end) - from}%` }} />
+                )}
+              </span>
+            </li>
+          )
+        })}
+      </ol>
+      <div className="lane-axis">
+        <span />
+        <span className="lane-ticks">
+          {ticks.map((t, i) => (
+            <span key={i} style={{ left: `${at(t)}%` }}>{shortDate(t)}</span>
+          ))}
+        </span>
+      </div>
+      <figcaption className="lane-key">
+        {(['active', 'offered', 'revoked', 'expired'] as GrantStatus[]).map((s) => (
+          <span key={s} data-status={s} style={{ ['--lane' as string]: LANE_TONE[s] }}>{STATUS_LABEL[s]}</span>
+        ))}
+        <span className="key-now">Now</span>
+      </figcaption>
+    </figure>
+  )
 }
 
 function GrantTable({ rows }: { rows: Row[] }) {
@@ -73,10 +140,9 @@ function GrantTable({ rows }: { rows: Row[] }) {
   return (
     <>
       <div className="table-wrap">
-        <table aria-label="Grant list">
+        <table className="list-table" aria-label="Grant list">
           <thead>
             <tr>
-              <th scope="col" className="num">#</th>
               <th scope="col">Access</th>
               <th scope="col">With</th>
               <th scope="col" className="num">Price</th>
@@ -88,16 +154,18 @@ function GrantTable({ rows }: { rows: Row[] }) {
           <tbody>
             {rows.map((g) => (
               <tr key={g.grantId}>
-                <td className="num">{g.grantId}</td>
                 <td>
-                  <code className="plain">{g.assetType}</code>
-                  <br />
-                  <small className="muted">{CLASS_LABEL[g.class] ?? g.class}</small>
+                  <ItemTitle
+                    icon="/access"
+                    hue={LANE_TONE[g.status]}
+                    title={<><code className="plain">{g.assetType}</code> <span className="row-id">#{g.grantId}</span></>}
+                    sub={CLASS_LABEL[g.class] ?? g.class}
+                  />
                 </td>
                 <td>
                   <Counterparty g={g} />
                 </td>
-                <td className="num">{`${formatCredit(g.unitPrice)} per ${g.unit}`}</td>
+                <td className="num"><span className="amount">{formatCredit(g.unitPrice)}</span> <span className="muted">per {g.unit}</span></td>
                 <td>
                   <span className="pill" data-tone={STATUS_TONE[g.status]}>
                     {STATUS_LABEL[g.status] ?? g.status}
@@ -178,7 +246,7 @@ export function Grants() {
   return (
     <>
       <div className="page-lead">
-        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/access'] }}>
           <NavIcon name="/access" size={22} />
         </span>
         <p>Who may use what, and until when. The owner keeps the password; the contract keeps the record.</p>
@@ -220,6 +288,7 @@ export function Grants() {
         {(data: { items: Row[] }) => (
           <>
             <Figures rows={data.items} />
+            <AccessTimeline rows={data.items} />
             <GrantTable rows={data.items} />
           </>
         )}

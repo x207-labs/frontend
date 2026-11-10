@@ -12,6 +12,7 @@ import { ResourceListingForm } from '../components/ResourceListingForm'
 import { Negotiation } from '../components/Negotiation'
 import { OwnIntents } from '../components/OwnIntents'
 import { EmptyHint } from '../components/EmptyHint'
+import { AgentIcon } from '../components/icons'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
@@ -319,7 +320,7 @@ function ListingRow({ listing, selected, onSelect }: { listing: ListingView; sel
     <tr aria-selected={selected} className="listing-row">
       <td>
         <div className="poster">
-          <span className="poster-avatar" aria-hidden="true">{shortAccount(listing.account).charAt(0).toUpperCase()}</span>
+          <span className="poster-avatar" aria-hidden="true">{AgentIcon({ account: listing.account, size: 16 }) ?? shortAccount(listing.account).charAt(0).toUpperCase()}</span>
           <code>{shortAccount(listing.account)}</code>
           {isHumanListing(listing.detail) && <span className="badge" data-testid="human-badge">human</span>}
         </div>

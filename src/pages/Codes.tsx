@@ -5,6 +5,7 @@ import { viewContract } from '../api/chain'
 import { usePurchase } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { NavIcon } from '../components/icons'
+import { PAGE_HUE } from '../components/pageHue'
 import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
@@ -38,7 +39,7 @@ const minutes = (seconds: number): string => `${Math.floor(seconds / 60)} min ${
 
 const Pill = ({ tone, children }: { tone: Tone; children: ReactNode }) => <span className="pill" data-tone={tone}>{children}</span>
 const Tile = () => (
-  <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+  <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/codes'] }}>
     <NavIcon name="/codes" size={18} />
   </span>
 )
@@ -508,7 +509,7 @@ export function Codes() {
   return (
     <>
       <div className="page-lead">
-        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/codes'] }}>
           <NavIcon name="/codes" size={22} />
         </span>
         <p>Buy or sell a single-use code. It stays hidden until you pay.</p>

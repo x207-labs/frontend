@@ -6,6 +6,7 @@ import { useTransfer } from '../api/queries'
 import type { ListingView } from '../api/types'
 import type { TransferView } from '../api/transferView'
 import { NavIcon } from '../components/icons'
+import { PAGE_HUE } from '../components/pageHue'
 import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
@@ -214,7 +215,7 @@ function BuyForm({ voucherKey, onVoucherKey, onBought }: { voucherKey: string; o
         <div className="actions" data-testid="transfer-summary">
           <ul className="item-cards">
             <li className="item-card">
-              <span className="tone-tile" aria-hidden="true" style={tone('#e2801f')}><NavIcon name="/transfers" size={18} /></span>
+              <span className="tone-tile" aria-hidden="true" style={tone(PAGE_HUE['/transfers'])}><NavIcon name="/transfers" size={18} /></span>
               <p className="item-title"><code>{checked.listing.doc.transfer_ref}</code></p>
               <span className="pill" data-tone="info">{PLATFORM_LABEL[checked.listing.doc.platform]}</span>
               <p className="item-meta">Proof: {PROOF_SHORT[checked.listing.doc.proof_method] ?? PROOF_LABEL[checked.listing.doc.proof_method] ?? checked.listing.doc.proof_method}</p>
@@ -388,7 +389,7 @@ export function Transfers() {
   return (
     <>
       <div className="page-lead">
-        <span className="tone-tile" aria-hidden="true" style={tone('#e2801f')}><NavIcon name="/transfers" size={22} /></span>
+        <span className="tone-tile" aria-hidden="true" style={tone(PAGE_HUE['/transfers'])}><NavIcon name="/transfers" size={22} /></span>
         <p>The item moves on its own platform; x207 never touches it.</p>
         <ol className="lead-steps" aria-label="How it works">
           <li>Seller lists</li>

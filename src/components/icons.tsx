@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { agentGlyph, PROVIDER_GLYPHS } from './glyphs'
 
 // FE-054: one hairline icon per page, drawn on a 24px grid with the current text colour, so the icon rail and the tab bar need no icon font and no brand marks.
 // The key is the route path; "more" and the group tabs reuse these.
@@ -92,6 +93,27 @@ const PATHS: Record<string, ReactNode> = {
 }
 
 export type IconName = keyof typeof PATHS
+
+/** A member's work as an icon (a chip for gpu, a globe for scraper); null when the account name says nothing about it, so the caller keeps initials. */
+export function AgentIcon({ account, size = 14 }: { account: string; size?: number }) {
+  const d = agentGlyph(account)
+  if (!d) return null
+  return (
+    <svg className="agent-icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d={d} />
+    </svg>
+  )
+}
+
+/** The mark of a service that access is rented on (GitHub, Discord, SSH, S3, AWS). */
+export function ProviderIcon({ provider, size = 20 }: { provider: string; size?: number }) {
+  const g = PROVIDER_GLYPHS[provider] ?? PROVIDER_GLYPHS.mock
+  return (
+    <svg className="provider-icon" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" {...(g.filled ? { fill: 'currentColor' } : { fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const })}>
+      <path d={g.d} />
+    </svg>
+  )
+}
 
 export function NavIcon({ name, size = 22 }: { name: string; size?: number }) {
   return (

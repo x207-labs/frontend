@@ -3,7 +3,9 @@ import { useState } from 'react'
 import { api } from '../api/client'
 import type { RentChallenge, RentView } from '../api/types'
 import { VoucherKeyField } from '../components/VoucherKeyField'
-import { NavIcon } from '../components/icons'
+import { PROVIDER_GLYPHS } from '../components/glyphs'
+import { NavIcon, ProviderIcon } from '../components/icons'
+import { PAGE_HUE } from '../components/pageHue'
 import { CONTRACT_ID } from '../config'
 import { signMessageWithVoucher } from '../lib/barter'
 import { toAtomic, fromAtomic } from '../lib/amount'
@@ -14,13 +16,13 @@ import { useWallet } from '../wallet/WalletContext'
 // FE-029: daily access rental (pipeline P2, ADR-47), from the broker README (BE-060). The provider prepares the scope and rental listing; the renter sees the access state, today's cost, checks
 // the access before paying for the next day (the only rule is in the SDK: `checkAccessBeforeNextDay`), and stops the rental. Daily payment is made by the x402 client or agent, not this page.
 // The six providers are the adapters the broker ships (ADR-47); a new kind of access needs a new broker adapter first, so the page offers exactly these.
-export const PROVIDERS: Record<string, { label: string; short: string; what: string; glyph: string; costly: boolean; note: string }> = {
-  github: { label: 'GitHub (repo collaborator or org seat)', short: 'GitHub', what: 'Repo or org seat', glyph: 'GH', costly: true, note: 'GitHub terms restrict account sharing; collaborators and org seats are not password sharing. You are responsible for your own org policy.' },
-  discord: { label: 'Discord (server role)', short: 'Discord', what: 'Server role', glyph: 'DC', costly: false, note: 'A role is only for existing server members; Discord terms forbid selling accounts, not roles.' },
-  ssh: { label: 'SSH (key with command= and expiry)', short: 'SSH', what: 'Key with expiry', glyph: '>_', costly: false, note: 'The key is valid until the end of the paid day on your own machine, even if the broker is down.' },
-  's3-presigned': { label: 'S3 (presigned URL)', short: 'S3', what: 'Presigned link', glyph: 'S3', costly: false, note: 'A presigned URL cannot be revoked; the loss is at most one day.' },
-  'aws-sts': { label: 'AWS (role with permission boundary)', short: 'AWS', what: 'Bounded role', glyph: 'AW', costly: true, note: 'A session cannot be revoked before it expires. Real costs are billed per day with a daily cap.' },
-  mock: { label: 'Mock provider (demo)', short: 'Demo', what: 'Touches nothing', glyph: '◎', costly: false, note: 'Demo only; touches no real service.' },
+export const PROVIDERS: Record<string, { label: string; short: string; what: string; costly: boolean; note: string }> = {
+  github: { label: 'GitHub (repo collaborator or org seat)', short: 'GitHub', what: 'Repo or org seat', costly: true, note: 'GitHub terms restrict account sharing; collaborators and org seats are not password sharing. You are responsible for your own org policy.' },
+  discord: { label: 'Discord (server role)', short: 'Discord', what: 'Server role', costly: false, note: 'A role is only for existing server members; Discord terms forbid selling accounts, not roles.' },
+  ssh: { label: 'SSH (key with command= and expiry)', short: 'SSH', what: 'Key with expiry', costly: false, note: 'The key is valid until the end of the paid day on your own machine, even if the broker is down.' },
+  's3-presigned': { label: 'S3 (presigned URL)', short: 'S3', what: 'Presigned link', costly: false, note: 'A presigned URL cannot be revoked; the loss is at most one day.' },
+  'aws-sts': { label: 'AWS (role with permission boundary)', short: 'AWS', what: 'Bounded role', costly: true, note: 'A session cannot be revoked before it expires. Real costs are billed per day with a daily cap.' },
+  mock: { label: 'Mock provider (demo)', short: 'Demo', what: 'Touches nothing', costly: false, note: 'Demo only; touches no real service.' },
 }
 /** B4-F5 (review batch 4): the reference of the lessee as the broker can prove it. An SSH key must be `ssh-ed25519` (the proof is a raw ed25519 signature); a key of another type is accepted by the contract and by the broker's first check but can never be proven, so the grant could never open. */
 export function granteeRefProblem(provider: string, ref: string): string | null {
@@ -41,6 +43,31 @@ export function granteeRefProblem(provider: string, ref: string): string | null 
 const STATUS_LABEL: Record<string, string> = { active: 'Active', revoke_pending: 'Revocation pending', revoked: 'Revoked' }
 const STATUS_TONE: Record<string, { tone: 'ok' | 'warn' | 'bad'; hex: string }> = { active: { tone: 'ok', hex: '#2f9e5b' }, revoke_pending: { tone: 'warn', hex: '#c98a12' }, revoked: { tone: 'bad', hex: '#c4455a' } }
 const now = () => Math.floor(Date.now() / 1000)
+const DAY_MS = 86_400_000
+
+/** The next seven UTC days as a strip: a day is filled as far as it is paid, and a line marks now inside today. Rent is paid by the day, so the strip is the bill. */
+function PaidDays({ paidUntil }: { paidUntil: string }) {
+  const [nowMs] = useState(() => Date.now())
+  const end = Date.parse(paidUntil)
+  if (Number.isNaN(end)) return null
+  const t0 = nowMs - (nowMs % DAY_MS) // the start of today in UTC
+  const nowAt = ((nowMs - t0) / DAY_MS) * 100
+  const days = Array.from({ length: 7 }, (_, i) => t0 + i * DAY_MS)
+  const paidDays = Math.max(0, Math.ceil((end - t0) / DAY_MS))
+  return (
+    <div className="paid-days" role="img" aria-label={paidDays === 0 ? 'Not paid for today' : `Paid for ${paidDays} ${paidDays === 1 ? 'day' : 'days'}, until ${formatTime(paidUntil)}`}>
+      {days.map((d, i) => {
+        const paid = Math.min(1, Math.max(0, (end - d) / DAY_MS))
+        return (
+          <span key={d} className="paid-day" data-today={i === 0 ? 'true' : undefined} aria-hidden="true">
+            <span className="paid-track"><span className="paid-fill" style={{ width: `${paid * 100}%` }} />{i === 0 && <span className="paid-now" style={{ left: `${nowAt}%` }} />}</span>
+            <small>{i === 0 ? 'Today' : new Date(d).toLocaleDateString('en', { weekday: 'short', timeZone: 'UTC' })}</small>
+          </span>
+        )
+      })}
+    </div>
+  )
+}
 
 function Offer() {
   const [provider, setProvider] = useState('github')
@@ -66,7 +93,7 @@ function Offer() {
         {Object.entries(PROVIDERS).map(([k, v]) => (
           <label key={k} className="provider-tile" title={v.label} data-costly={v.costly ? 'true' : undefined}>
             <input type="radio" name="rent-provider" value={k} checked={provider === k} onChange={() => setProvider(k)} />
-            <span className="provider-glyph" aria-hidden="true">{v.glyph}</span>
+            <span className="provider-glyph" aria-hidden="true" style={{ ['--tone' as string]: PROVIDER_GLYPHS[k]?.tone }}><ProviderIcon provider={k} size={22} /></span>
             <strong>{v.short}</strong>
             <small>{v.what}</small>
           </label>
@@ -275,14 +302,20 @@ function Renter({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey
       <div><button type="button" disabled={!valid} onClick={() => void load()}>View access</button></div>
       {view && (
         <div className="actions" data-testid="rent-view">
-          <ul className="item-cards">
-            <li className="item-card">
-              <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: STATUS_TONE[view.status]?.hex ?? '#3d78d6' }}>{PROVIDERS[view.provider]?.glyph ?? '◎'}</span>
-              <p className="item-title">{PROVIDERS[view.provider]?.short ?? view.provider} <code>{view.granteeRef.length > 30 ? `${view.granteeRef.slice(0, 16)}…${view.granteeRef.slice(-10)}` : view.granteeRef}</code></p>
+          {/* FE-083: the rental reads as a pass for one service: its mark on the service's colour, who it is for, and the days already paid. */}
+          <div className="access-pass" style={{ ['--tone' as string]: PROVIDER_GLYPHS[view.provider]?.tone ?? PAGE_HUE['/rent'] }}>
+            <div className="pass-head">
+              <span className="pass-mark" aria-hidden="true"><ProviderIcon provider={view.provider} size={26} /></span>
+              <span className="pass-name">
+                <strong>{PROVIDERS[view.provider]?.short ?? view.provider}</strong>
+                <small>{PROVIDERS[view.provider]?.what ?? 'Access'}</small>
+              </span>
               <span className="pill" data-tone={STATUS_TONE[view.status]?.tone ?? 'info'}>{STATUS_LABEL[view.status] ?? view.status}</span>
-              {view.reason && <p className="item-meta">Reason: {view.reason}</p>}
-            </li>
-          </ul>
+            </div>
+            <p className="pass-ref"><span className="row-sub">For</span> <code>{view.granteeRef.length > 30 ? `${view.granteeRef.slice(0, 16)}…${view.granteeRef.slice(-10)}` : view.granteeRef}</code></p>
+            {view.reason && <p className="item-meta">Reason: {view.reason}</p>}
+            <PaidDays paidUntil={view.paidUntil} />
+          </div>
           <dl className="figures">
             <div><dt>Paid until</dt><dd>{formatTime(view.paidUntil)}</dd></div>
             <div><dt>Cost today</dt><dd data-testid="rent-today">{view.today?.cost == null ? 'no cost' : `${formatCredit(view.today.cost)} credit`}</dd></div>
@@ -324,7 +357,7 @@ export function Rent() {
     <>
     {/* FE-080: the same lead as the other trade pages (a side rail on a wide screen); the marks say what each day does instead of a number. */}
     <div className="page-lead">
-      <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+      <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/rent'] }}>
         <NavIcon name="/rent" size={22} />
       </span>
       <p>Lend access to an account by the day, or use access you rent. Either side can stop any day.</p>

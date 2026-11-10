@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { shortAccount } from '../lib/format'
-import { NavIcon } from './icons'
+import { AgentIcon, NavIcon } from './icons'
 
 // FE-081: the pieces of a list row. A row reads left to right: what it is (a tinted icon tile, a bold title, a muted line), who is on it (avatars),
 // how far it got (a bar with one segment per step) and where it stands (the status pill). Colour encodes the member or the step state, never decoration.
@@ -14,13 +14,13 @@ function hueOf(account: string): string {
   return AVATAR_HUES[h % AVATAR_HUES.length]
 }
 
-/** A member: an initials avatar on its own hue, then the short name. The full account is in the title for hover and copy. */
+/** A member: an avatar on its own hue showing its work (a chip for a GPU seller) or, when the name says nothing, its initials; then the short name. The full account is in the title for hover and copy. */
 export function Party({ account, you }: { account: string; you?: boolean }) {
   const name = shortAccount(account)
   const initials = name.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase() || '?'
   return (
     <span className="party" title={account}>
-      <span className="avatar" aria-hidden="true" style={{ ['--hue' as string]: hueOf(account) }}>{initials}</span>
+      <span className="avatar" aria-hidden="true" style={{ ['--hue' as string]: hueOf(account) }}>{AgentIcon({ account }) ?? initials}</span>
       <span className="party-name">{name}</span>
       {you && <span className="you-tag">you</span>}
     </span>

@@ -5,6 +5,7 @@ import { viewContract } from '../api/chain'
 import { usePurchase } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { NavIcon } from '../components/icons'
+import { PAGE_HUE } from '../components/pageHue'
 import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
@@ -44,7 +45,7 @@ const download = (name: string, bytes: Uint8Array): string => {
 
 const Pill = ({ tone, children }: { tone: Tone; children: ReactNode }) => <span className="pill" data-tone={tone}>{children}</span>
 const Tile = () => (
-  <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+  <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/licenses'] }}>
     <NavIcon name="/licenses" size={18} />
   </span>
 )
@@ -491,7 +492,7 @@ export function Licenses() {
   return (
     <>
       <div className="page-lead">
-        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#e2801f' }}>
+        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/licenses'] }}>
           <NavIcon name="/licenses" size={22} />
         </span>
         <p>Sell or buy a license for a file. The file never touches our servers.</p>

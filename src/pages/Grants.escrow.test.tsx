@@ -11,7 +11,7 @@ const grant = (grantId: number, escrow: object | null, assetType = 'rwa:tokenize
 const withGrants = (items: object[]): Override => (p) =>
   p.includes('/grants') ? { status: 200, body: { circle: 'agents-main', unit: 'credit', decimals: 6, items, nextCursor: null } } : undefined
 // FE-045: the account sales table on the same page also has grant ids, so the row is looked up in the grant list only
-const rowOf = (id: number) => within(screen.getByRole('table', { name: 'Grant list' })).getByText(String(id), { selector: 'td.num' }).closest('tr') as HTMLElement
+const rowOf = (id: number) => within(screen.getByRole('table', { name: 'Grant list' })).getByText(`#${id}`, { selector: '.row-id' }).closest('tr') as HTMLElement
 
 describe('FE-022 escrow of tokens in the grant list', () => {
   it('TC-FE-022-01 a token escrow shows the contract, the exact amount in token units and its state, with the warning about fee tokens', async () => {

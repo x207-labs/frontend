@@ -364,7 +364,7 @@ function OrderDetail({ hash, voucherKey, onVoucherKey, showKey }: { hash: string
                       <ul className="item-cards" aria-label="On-chain proofs">
                         {items.map((p) => (
                           <li key={p.txHash} className="item-card">
-                            <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#2f9e8f' }}><NavIcon name="/orders" size={18} /></span>
+                            <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/orders'] }}><NavIcon name="/orders" size={18} /></span>
                             <p className="item-title"><code>{shortTx(p.txHash)}</code></p>
                             <Pill tone="ok">{p.method}</Pill>
                             <p className="item-meta">Signed by <code>{shortAccount(p.signer)}</code></p>
@@ -424,7 +424,7 @@ export function Orders() {
   return (
     <>
       <div className="page-lead">
-        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#3d8bff' }}>
+        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/orders'] }}>
           <NavIcon name="/orders" size={22} />
         </span>
         <p>Order work as a buyer, or deliver and get paid as a seller.</p>
