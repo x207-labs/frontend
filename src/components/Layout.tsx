@@ -39,6 +39,7 @@ export function Layout() {
   const main = useRef<HTMLElement>(null)
   const first = useRef(true)
   const title = pages.find((p) => p.path === pathname)?.title
+  const group = pages.find((p) => p.path === pathname)?.group // FE-074: the CSS centres the content of the Marketplace pages
   // FE-031: each page has its own title, and a change of page moves the focus to the content, so a keyboard or screen reader user does not stay in the navigation
   useEffect(() => {
     document.title = title ? `${title} · x207` : 'x207'
@@ -61,7 +62,7 @@ export function Layout() {
                 <AccountMenu />
               </div>
             </div>
-            <main id="content" ref={main} tabIndex={-1}>
+            <main id="content" ref={main} tabIndex={-1} data-group={group}>
               <Header />
               {/* FE-067: a new key per page, so each page eases in (the CSS animates the blocks of .route one after the other) */}
               <div className="route" key={pathname}>

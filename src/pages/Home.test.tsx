@@ -94,6 +94,12 @@ describe('FE-056 home page', () => {
     expect(screen.queryByRole('region', { name: 'Actions to take' })).toBeNull()
   })
 
+  it('TC-FE-074-01 main carries the page group, so the CSS can centre the Marketplace pages', async () => {
+    renderApp('/marketplace')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Marketplace' })).toBeInTheDocument()
+    expect(document.querySelector('main')).toHaveAttribute('data-group', 'Marketplace')
+  })
+
   it('TC-FE-073-01 a 64-hex implicit account is greeted by its saved name and shown short, never in full', async () => {
     const implicit = 'e'.repeat(60) + '1234'
     writeCache(implicit, { displayName: 'Shenhan' })

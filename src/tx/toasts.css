@@ -1,4 +1,5 @@
-/* FE-061: transaction status toasts. Own file, so the app styles stay with the layout owner. Colours come from the tokens of styles.css. */
+/* FE-061: transaction status toasts. Own file, so the app styles stay with the layout owner. Colours come from the tokens of styles.css.
+   FE-074: a soft solid card, a tinted icon tile on the left, title + label + detail, a pill action; no coloured edge, no blur, no glow. */
 .tx-toasts {
   position: fixed;
   z-index: 40;
@@ -7,47 +8,82 @@
   left: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.625rem;
   margin: 0;
   padding: 0;
   list-style: none;
   pointer-events: none;
 }
 .tx-toast {
+  --tone: var(--s202);
+  --tone-soft: rgb(125 180 255 / 0.14);
   pointer-events: auto;
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--glass-strong, var(--sheet));
+  gap: 0.875rem;
+  padding: 0.875rem 0.875rem 0.875rem 0.875rem;
+  background: var(--tile);
   color: var(--ink);
   border: 1px solid var(--line);
-  border-left-width: 4px;
-  border-radius: 16px;
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 18px 48px -18px rgba(0, 0, 0, 0.8);
+  border-radius: 22px;
+  box-shadow: 0 14px 40px -20px rgb(0 0 0 / 0.7);
+  animation: tx-toast-in 360ms var(--ease, ease) both;
 }
-.tx-toast-pending { border-left-color: var(--s202); }
-.tx-toast-confirmed { border-left-color: var(--s200); }
-.tx-toast-failed { border-left-color: var(--s409); }
-.tx-toast-cancelled { border-left-color: var(--ink-soft); }
-.tx-toast-body { min-width: 0; overflow-wrap: anywhere; }
-.tx-toast-detail { margin: 0.25rem 0 0; }
-.tx-toast a { color: var(--accent-ink); }
+.tx-toast-confirmed { --tone: var(--s200); --tone-soft: rgb(79 216 138 / 0.14); }
+.tx-toast-failed { --tone: var(--s409); --tone-soft: rgb(255 124 142 / 0.14); }
+.tx-toast-cancelled { --tone: var(--ink-soft); --tone-soft: rgb(157 176 194 / 0.14); }
+.tx-toast-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 14px;
+  background: var(--tone-soft);
+  color: var(--tone);
+}
+.tx-toast-spin { animation: tx-toast-spin 900ms linear infinite; }
+.tx-toast-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.tx-toast-body p { margin: 0; }
+.tx-toast-title { font-weight: 650; line-height: 1.3; }
+.tx-toast-label { margin-top: 0.125rem; color: var(--ink-soft); font-size: 0.9375rem; }
+.tx-toast-detail { margin-top: 0.375rem; font-size: 0.875rem; color: var(--ink-soft); }
+.tx-toast-failed .tx-toast-detail { color: var(--ink); }
+.tx-toast-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  margin-top: 0.625rem;
+  padding: 0 0.875rem;
+  border-radius: 999px;
+  background: var(--tone-soft);
+  color: var(--tone);
+  font-size: 0.875rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+.tx-toast-action:hover { background: rgb(79 216 138 / 0.22); }
 .tx-toast-close {
   flex: none;
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  margin: -0.5rem -0.75rem -0.5rem 0;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: -0.5rem -0.5rem -0.5rem 0;
   background: none;
   border: 0;
+  border-radius: 999px;
   color: var(--ink-soft);
-  font-size: 1.25rem;
-  line-height: 1;
   cursor: pointer;
 }
+.tx-toast-close:hover { color: var(--ink); background: rgb(255 255 255 / 0.06); }
+@keyframes tx-toast-in { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: none; } }
+@keyframes tx-toast-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .tx-toast { animation: none; }
+  .tx-toast-spin { animation: none; }
+}
 @media (min-width: 840px) {
-  .tx-toasts { left: auto; bottom: 1rem; width: 24rem; }
+  /* above the Feedback button, which sits in the same corner */
+  .tx-toasts { left: auto; bottom: 4.75rem; width: 24rem; }
 }

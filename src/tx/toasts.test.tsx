@@ -24,7 +24,7 @@ describe('FE-061 transaction status toasts', () => {
     await fillJoin(user)
     await user.click(screen.getByRole('button', { name: 'Sign join and stake' }))
     const list = await screen.findByRole('list', { name: 'Transaction status' })
-    const confirmed = await within(list).findAllByText('Confirmed')
+    const confirmed = await within(list).findAllByText('Transaction confirmed')
     expect(confirmed.length).toBe(2) // join, then stake
     const links = within(list).getAllByRole('link', { name: 'View on explorer' })
     expect(links[0]).toHaveAttribute('href', 'https://testnet.nearblocks.io/txns/hash1')
@@ -41,7 +41,7 @@ describe('FE-061 transaction status toasts', () => {
     await user.click(screen.getByRole('button', { name: 'Sign join and stake' }))
     const list = await screen.findByRole('list', { name: 'Transaction status' })
     expect(await within(list).findByRole('alert')).toHaveTextContent('This account is already a member of the circle.')
-    expect(within(list).queryByText('Confirmed')).toBeNull()
+    expect(within(list).queryByText('Transaction confirmed')).toBeNull()
     expect(wallet.txs).toEqual([]) // the stake was not sent after the failed join
   })
 
@@ -54,7 +54,7 @@ describe('FE-061 transaction status toasts', () => {
     await fillJoin(user)
     await user.click(screen.getByRole('button', { name: 'Sign join and stake' }))
     const list = await screen.findByRole('list', { name: 'Transaction status' })
-    expect(await within(list).findByText('Cancelled')).toBeInTheDocument()
+    expect(await within(list).findByText('Transaction cancelled')).toBeInTheDocument()
     expect(within(list).queryByRole('alert')).toBeNull()
   })
 
@@ -62,7 +62,7 @@ describe('FE-061 transaction status toasts', () => {
     const user = userEvent.setup()
     renderApp('/stats', undefined, false, createMockWallet('a.testnet', 'a.testnet'))
     const id = txToasts.start('join')
-    expect(await screen.findByText('Pending')).toBeInTheDocument()
+    expect(await screen.findByText('Waiting for your wallet')).toBeInTheDocument()
     txToasts.settle(id, { kind: 'confirmed', label: 'join', hash: 'h9' })
     await user.click(await screen.findByRole('button', { name: 'Dismiss' }))
     expect(screen.queryByRole('list', { name: 'Transaction status' })).toBeNull()

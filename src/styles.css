@@ -735,4 +735,14 @@ a.btn.ghost { color: #fff; background: rgb(255 255 255 / 0.14); box-shadow: inse
   .palette-trigger, .account-trigger { min-width: 2.75rem; }
 }
 
+/* FE-074: the pages of the Marketplace group centre their content (lead line, view toggle, sign-in card, empty states, forms) instead of pinning it to the left edge. Tables and lists keep the full width. */
+main[data-group='Marketplace'] .page-lead { justify-content: center; text-align: center; }
+main[data-group='Marketplace'] .page-lead > p { flex-basis: auto; }
+main[data-group='Marketplace'] .market-top { justify-content: center; }
+main[data-group='Marketplace'] .segmented, main[data-group='Marketplace'] .segmented.views-toggle { display: flex; width: fit-content; margin-inline: auto; }
+main[data-group='Marketplace'] .signin-card { justify-content: center; text-align: center; max-width: 40rem; margin-inline: auto; }
+main[data-group='Marketplace'] .signin-card > div { flex-basis: auto; }
+main[data-group='Marketplace'] .state { justify-content: center; text-align: center; }
+main[data-group='Marketplace'] .form, main[data-group='Marketplace'] .listing-form, main[data-group='Marketplace'] .negotiation, main[data-group='Marketplace'] .rent .form { margin-inline: auto; }
+
 .evm-badge { display: inline-block; margin-left: 0.4em; padding: 0 0.45em; border: 1px solid currentColor; border-radius: 6px; font-size: 0.75em; font-weight: 700; text-decoration: none; vertical-align: middle; }
