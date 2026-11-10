@@ -25,18 +25,20 @@ export function IntentsBalancePanel() {
   }
 
   return (
-    <section aria-label="Unwithdrawn Intents balance">
+    // FE-088: a panel with the balance as one large figure (label small above it), the explanation under it, then the button
+    <section className="panel intents-panel" aria-label="Unwithdrawn Intents balance">
       <h3>Unwithdrawn Intents balance</h3>
       <QueryState query={balance} loadingLabel="Loading Intents balance">
         {(raw) => {
           const waiting = BigInt(raw) > 0n
           return (
             <>
-              <p className="state" role="status">
-                Contract balance on Intents: <strong>{formatCredit(raw)}</strong> USDT
-                {waiting ? ' waiting to be withdrawn to the contract NEP-141 account.' : '. Nothing is waiting.'}
+              <p className="figure" role="status">
+                <span className="figure-label">Contract balance on Intents</span>
+                <span className="figure-value"><strong>{formatCredit(raw)}</strong> USDT</span>
+                <span className="figure-note">{waiting ? 'Waiting to be withdrawn to the contract NEP-141 account.' : 'Nothing is waiting.'}</span>
               </p>
-              <p className="state">
+              <p className="panel-copy">
                 Residuals paid through NEAR Intents (<code className="plain">mt_on_transfer</code>) arrive as a multi-token balance on Intents. Claims to a
                 NEAR account are paid with <code className="plain">ft_transfer</code> from the contract USDT balance, so a claim can fail until this balance
                 is withdrawn. A failed claim is not lost: retry after the withdrawal. Anyone may press this button; the transaction uses 150 Tgas
@@ -52,7 +54,7 @@ export function IntentsBalancePanel() {
         }}
       </QueryState>
       {history.data && history.data.withdrawals > 0 && (
-        <p className="state" data-testid="withdrawal-history">
+        <p className="panel-copy" data-testid="withdrawal-history">
           Withdrawn {history.data.withdrawals} times, total <strong>{formatCredit(history.data.totalWithdrawn)}</strong> USDT. Latest{' '}
           {formatCredit(history.data.items[0]?.amount)} USDT at block {history.data.items[0]?.changedBlock}.
         </p>

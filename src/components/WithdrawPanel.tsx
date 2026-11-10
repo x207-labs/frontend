@@ -107,7 +107,8 @@ export function WithdrawPanel({ account }: { account: string }) {
   }
 
   return (
-    <section className="withdraw" aria-label="Withdrawal to another chain">
+    // FE-088: the same panel as the Intents balance beside it, fields one under the other, label above each
+    <section className="withdraw form" aria-label="Withdrawal to another chain">
       <h3>Withdraw Intents balance to another chain</h3>
       <label>
         <span>Destination chain</span>
@@ -121,7 +122,7 @@ export function WithdrawPanel({ account }: { account: string }) {
       </label>
       <label>
         <span>Recipient address</span>
-        <input value={recipient} onChange={(e) => setRecipient(e.target.value)} />
+        <input value={recipient} onChange={(e) => setRecipient(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="off" />
       </label>
       {needsAck && (
         <label className="check">

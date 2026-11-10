@@ -5,16 +5,21 @@ import { useEpochSettlements } from '../api/queries'
 import type { SettlementItem } from '../api/types'
 import { DepositBranch } from '../components/DepositBranch'
 import { IntentsBalancePanel } from '../components/IntentsBalancePanel'
+import { ItemTitle, Party } from '../components/ListBits'
 import { NoEpoch } from '../components/NoEpoch'
 import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { WithdrawPanel } from '../components/WithdrawPanel'
 import { TxResult } from '../components/TxResult'
 import { useSelectedEpoch } from '../epoch'
-import { formatCredit, shortAccount } from '../lib/format'
+import { formatCredit } from '../lib/format'
 import { NEAR_NETWORK } from '../config'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { claimTx, settleTx } from '../wallet/transactions'
+
+// FE-088: the page reads like a bill. On top, the two numbers a member comes for (what I owe now, what I can claim), large and unboxed.
+// Under them, one bill per epoch: the amount, its state, the deadline and the buttons, in two columns (pay, claim) on a wide screen.
+// Then the Intents balance and the withdrawal side by side, and last the positions of every member in the epoch.
 
 function useNow(intervalMs = 1000): number {
   const [now, setNow] = useState(() => Date.now())
@@ -31,6 +36,12 @@ function countdown(ms: number): string {
   const m = Math.floor((total % 3600) / 60)
   const s = total % 60
   return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`
+}
+
+const STATUS_TONE: Record<string, 'ok' | 'warn' | 'bad' | 'info'> = { due: 'warn', defaulted: 'bad', paid: 'ok', settled: 'ok', claimable: 'info', claimed: 'ok' }
+
+function sum(items: SettlementItem[]): string {
+  return items.reduce((total, i) => total + BigInt(i.amount ?? '0'), 0n).toString()
 }
 
 function DueRow({ item, account }: { item: SettlementItem; account: string }) {
@@ -51,23 +62,30 @@ function DueRow({ item, account }: { item: SettlementItem; account: string }) {
   }
 
   return (
-    <li className="due">
-      <p>
+    <li className="bill" data-tone={expired ? 'bad' : payable ? 'warn' : 'ok'}>
+      <div className="bill-head">
+        <ItemTitle icon="/settlement" hue={expired ? '#e25a4f' : '#e2801f'} title={`Epoch ${item.epoch}`} sub="Amount owed" />
+        <span className="pill" data-tone={expired ? 'bad' : STATUS_TONE[item.status] ?? 'info'}>{expired && item.status === 'due' ? 'expired' : item.status}</span>
+      </div>
+      <p className="bill-amount">
+        <strong>{formatCredit(item.amount)}</strong> credit
+      </p>
+      <p className="bill-line">
         Epoch {item.epoch}: net position <strong>{formatCredit(item.net)}</strong>, amount owed{' '}
         <strong>{formatCredit(item.amount)}</strong> credit, status <code>{item.status}</code>
       </p>
       {item.status === 'due' && deadline !== null && !expired && (
-        <p>
-          Payment deadline {item.due}, remaining <span data-testid="countdown">{countdown(deadline - now)}</span>
+        <p className="bill-line">
+          Payment deadline {item.due}, remaining <span className="bill-clock" data-testid="countdown">{countdown(deadline - now)}</span>
         </p>
       )}
       {expired && <p className="state state-error" role="alert">Payment window expired.</p>}
       {(item.status === 'due' || item.status === 'defaulted') && (
-        <div>
+        <div className="bill-actions">
           <button type="button" onClick={() => void pay()} disabled={!payable || signing}>
             {signing ? 'Waiting for wallet…' : 'Pay residual'}
-          </button>{' '}
-          <button type="button" onClick={() => setOther((v) => !v)} disabled={!payable}>
+          </button>
+          <button type="button" className="quiet" aria-expanded={other} onClick={() => setOther((v) => !v)} disabled={!payable}>
             Pay with another asset
           </button>
         </div>
@@ -97,8 +115,15 @@ function ClaimRow({ item, account }: { item: SettlementItem; account: string }) 
   }
 
   return (
-    <li className="claim">
-      <p>
+    <li className="bill" data-tone={claimable ? 'info' : 'ok'}>
+      <div className="bill-head">
+        <ItemTitle icon="/settlement" hue="#2f9e8f" title={`Epoch ${item.epoch}`} sub="Balance to claim" />
+        <span className="pill" data-tone={STATUS_TONE[item.status] ?? 'info'}>{item.status}</span>
+      </div>
+      <p className="bill-amount">
+        <strong>{formatCredit(item.amount)}</strong> credit
+      </p>
+      <p className="bill-line">
         Epoch {item.epoch}: balance <strong>{formatCredit(item.amount)}</strong> credit, status <code>{item.status}</code>
         {item.status === 'claimed' && item.destination && <> to <code>{item.destination}</code></>}
         {item.status === 'claimed' && item.txHash && (
@@ -107,11 +132,11 @@ function ClaimRow({ item, account }: { item: SettlementItem; account: string }) 
       </p>
       {claimable && item.claimableNow === false && <p className="state">Waiting for finalize_epoch before it can be claimed.</p>}
       {claimable && (
-        <div>
+        <div className="bill-actions">
           <button type="button" onClick={() => void claim('near')} disabled={!item.claimableNow || signing}>
             Claim to NEAR account
-          </button>{' '}
-          <button type="button" onClick={() => void claim('intents')} disabled={!item.claimableNow || signing}>
+          </button>
+          <button type="button" className="quiet" onClick={() => void claim('intents')} disabled={!item.claimableNow || signing}>
             Claim to Intents balance
           </button>
         </div>
@@ -143,28 +168,46 @@ function MyDues() {
       {(data) => {
         const debts = data.items.filter((i) => i.role === 'debtor')
         const credits = data.items.filter((i) => i.role === 'creditor')
+        const owed = sum(debts.filter((i) => i.status === 'due' || i.status === 'defaulted'))
+        const toClaim = sum(credits.filter((i) => i.status === 'claimable'))
         return (
           <>
-            {debts.length === 0 ? (
-              <p className="state">No dues.</p>
-            ) : (
-              <ul className="dues">
-                {debts.map((item) => (
-                  <DueRow key={`${item.epoch}`} item={item} account={account} />
-                ))}
-              </ul>
-            )}
-            <h3>Balance to claim</h3>
-            {credits.length === 0 ? (
-              <p className="state">No balance to claim.</p>
-            ) : (
-              <ul className="claims">
-                {credits.map((item) => (
-                  <ClaimRow key={`${item.epoch}`} item={item} account={account} />
-                ))}
-              </ul>
-            )}
-            <WithdrawPanel account={account} />
+            <dl className="settle-sum">
+              <div data-tone={owed !== '0' ? 'warn' : undefined}>
+                <dt>You owe</dt>
+                <dd><strong>{formatCredit(owed)}</strong> credit</dd>
+              </div>
+              <div data-tone={toClaim !== '0' ? 'ok' : undefined}>
+                <dt>You can claim</dt>
+                <dd><strong>{formatCredit(toClaim)}</strong> credit</dd>
+              </div>
+            </dl>
+            <div className="settle-cols">
+              <section className="settle-col" aria-labelledby="settle-pay">
+                <h3 id="settle-pay">To pay</h3>
+                {debts.length === 0 ? (
+                  <p className="state">No dues.</p>
+                ) : (
+                  <ul className="bills">
+                    {debts.map((item) => (
+                      <DueRow key={`${item.epoch}`} item={item} account={account} />
+                    ))}
+                  </ul>
+                )}
+              </section>
+              <section className="settle-col" aria-labelledby="settle-claim">
+                <h3 id="settle-claim">Balance to claim</h3>
+                {credits.length === 0 ? (
+                  <p className="state">No balance to claim.</p>
+                ) : (
+                  <ul className="bills">
+                    {credits.map((item) => (
+                      <ClaimRow key={`${item.epoch}`} item={item} account={account} />
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </div>
           </>
         )
       }}
@@ -175,41 +218,51 @@ function MyDues() {
 export function Settlement() {
   const epoch = useSelectedEpoch()
   const settlements = useEpochSettlements(epoch)
+  const { account } = useWallet()
   if (epoch === null) return <NoEpoch />
   return (
-    <>
-      <h2>Your dues</h2>
-      <MyDues />
-      <h2>Intents balance</h2>
-      <IntentsBalancePanel />
-      <h2>All positions in epoch {epoch}</h2>
-      <QueryState
-        query={settlements}
-        loadingLabel="Loading settlement"
-        isEmpty={(d) => d.items.length === 0}
-        empty="No settlement positions in this epoch."
-      >
-        {(data) => (
-          <div className="table-wrap"><table>
-            <thead>
-              <tr>
-                <th scope="col">Member</th>
-                <th scope="col">Status</th>
-                <th scope="col" className="num">Net position</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.items.map((item) => (
-                <tr key={item.account}>
-                  <td>{shortAccount(item.account ?? '')}</td>
-                  <td>{item.status}</td>
-                  <td className="num">{formatCredit(item.net)}</td>
+    <div className="settle">
+      <section className="settle-block" aria-labelledby="settle-dues">
+        <h2 id="settle-dues">Your dues</h2>
+        <MyDues />
+      </section>
+      <section className="settle-block" aria-labelledby="settle-intents">
+        <h2 id="settle-intents">Intents balance</h2>
+        <div className="settle-cols">
+          <IntentsBalancePanel />
+          {account && <WithdrawPanel account={account} />}
+        </div>
+      </section>
+      <section className="settle-block" aria-labelledby="settle-all">
+        <h2 id="settle-all">All positions in epoch {epoch}</h2>
+        <QueryState
+          query={settlements}
+          loadingLabel="Loading settlement"
+          isEmpty={(d) => d.items.length === 0}
+          empty="No settlement positions in this epoch."
+        >
+          {(data) => (
+            <div className="table-wrap"><table>
+              <thead>
+                <tr>
+                  <th scope="col">Member</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" className="num">Net position</th>
                 </tr>
-              ))}
-            </tbody>
-          </table></div>
-        )}
-      </QueryState>
-    </>
+              </thead>
+              <tbody>
+                {data.items.map((item) => (
+                  <tr key={item.account}>
+                    <td><Party account={item.account ?? ''} you={item.account === account} /></td>
+                    <td><span className="pill" data-tone={STATUS_TONE[item.status] ?? 'info'}>{item.status}</span></td>
+                    <td className="num">{formatCredit(item.net)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table></div>
+          )}
+        </QueryState>
+      </section>
+    </div>
   )
 }
