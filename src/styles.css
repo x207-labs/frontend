@@ -262,6 +262,7 @@ button.th-sort { padding: 0; min-height: 0; border: 0; border-radius: 0; backgro
   button:hover:not(:disabled) { background: #2373ee; box-shadow: none; }
   a.btn:hover { background: #2373ee; }
   a.btn.quiet:hover { background: var(--accent-soft); }
+  table[aria-label='Listings'] tbody tr:hover { background: rgb(255 255 255 / 0.03); }
   .word-chips button:hover:not([aria-pressed='true']) { background: rgb(255 255 255 / 0.1); box-shadow: none; }
   .explore a:hover { border-color: var(--line); background: var(--tile); }
   .explore a:hover .explore-icon { transform: translateY(-3px) scale(1.05); }
@@ -427,15 +428,15 @@ a { color: var(--accent-ink); text-decoration-color: rgb(143 192 255 / 0.4); ove
 .member-suspended { color: var(--s409); font-weight: 700; }
 
 /* Facts of one record: a grouped list of label and value, as in iOS Settings. */
-.status-panel, main dl:not(.stats):not(.facts):not(.glossary):not(.figures), .detail dl { display: grid; grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr); margin: 0.5rem 0 1rem; background: var(--glass); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
-.status-panel dt, .status-panel dd, main dl:not(.stats):not(.facts):not(.glossary):not(.figures) dt, main dl:not(.stats):not(.facts):not(.glossary):not(.figures) dd, .detail dl dt, .detail dl dd { margin: 0; padding: 0.75rem 1rem; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
-.status-panel dt, main dl:not(.stats):not(.facts):not(.glossary):not(.figures) dt, .detail dl dt { color: var(--ink-soft); font-size: 0.875rem; }
-.status-panel > :nth-child(-n + 2), main dl:not(.stats):not(.facts):not(.glossary):not(.figures) > :nth-child(-n + 2), .detail dl > :nth-child(-n + 2) { border-top: 0; }
+.status-panel, main dl:not(.stats):not(.facts):not(.glossary):not(.figures):not(.pulse), .detail dl { display: grid; grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr); margin: 0.5rem 0 1rem; background: var(--glass); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.status-panel dt, .status-panel dd, main dl:not(.stats):not(.facts):not(.glossary):not(.figures):not(.pulse) dt, main dl:not(.stats):not(.facts):not(.glossary):not(.figures):not(.pulse) dd, .detail dl dt, .detail dl dd { margin: 0; padding: 0.75rem 1rem; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.status-panel dt, main dl:not(.stats):not(.facts):not(.glossary):not(.figures):not(.pulse) dt, .detail dl dt { color: var(--ink-soft); font-size: 0.875rem; }
+.status-panel > :nth-child(-n + 2), main dl:not(.stats):not(.facts):not(.glossary):not(.figures):not(.pulse) > :nth-child(-n + 2), .detail dl > :nth-child(-n + 2) { border-top: 0; }
 @media (max-width: 599px) {
-  .status-panel, main dl:not(.stats):not(.facts):not(.glossary):not(.figures), .detail dl { grid-template-columns: minmax(0, 1fr); }
-  .status-panel dt, main dl:not(.stats):not(.facts):not(.glossary):not(.figures) dt, .detail dl dt { padding-bottom: 0; }
-  .status-panel dd, main dl:not(.stats):not(.facts):not(.glossary):not(.figures) dd, .detail dl dd { padding-top: 0.125rem; border-top: 0; }
-  .status-panel > :first-child, main dl:not(.stats):not(.facts):not(.glossary):not(.figures) > :first-child, .detail dl > :first-child { border-top: 0; }
+  .status-panel, main dl:not(.stats):not(.facts):not(.glossary):not(.figures):not(.pulse), .detail dl { grid-template-columns: minmax(0, 1fr); }
+  .status-panel dt, main dl:not(.stats):not(.facts):not(.glossary):not(.figures):not(.pulse) dt, .detail dl dt { padding-bottom: 0; }
+  .status-panel dd, main dl:not(.stats):not(.facts):not(.glossary):not(.figures):not(.pulse) dd, .detail dl dd { padding-top: 0.125rem; border-top: 0; }
+  .status-panel > :first-child, main dl:not(.stats):not(.facts):not(.glossary):not(.figures):not(.pulse) > :first-child, .detail dl > :first-child { border-top: 0; }
 }
 
 .report-head { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 1.5rem 2rem; }
@@ -745,6 +746,87 @@ main[data-group='Marketplace'] .signin-card > div { flex-basis: auto; }
 main[data-group='Marketplace'] .state { justify-content: center; text-align: center; }
 main[data-group='Marketplace'] .form, main[data-group='Marketplace'] .listing-form, main[data-group='Marketplace'] .negotiation, main[data-group='Marketplace'] .rent .form { margin-inline: auto; }
 main[data-group='Marketplace'] .lead-steps { justify-content: center; }
+
+/* FE-076: Marketplace pulse. A bento of five figures, each with the picture that explains it; the first is wide and lit in the Marketplace tone. */
+.pulse { --mk: #e2801f; flex: 1 1 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin: 0; }
+.pulse-card { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; padding: 1rem 1.125rem 1.125rem; background: var(--sheet); border: 1px solid var(--line); border-radius: var(--radius); text-align: left; }
+.pulse-card dt { font-size: 0.8125rem; font-weight: 600; color: var(--ink-soft); }
+.pulse-card dd { margin: 0; }
+.pulse-card dd > .pulse-figure { font-size: 1.875rem; font-weight: 750; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ink); }
+.pulse-card dd > .bar-stack, .pulse-card dd > .split, .pulse-card dd > .range, .pulse-card dd > .ring-row, .pulse-card dd > .rank, .pulse-card dd > .legend, .pulse-card dd > .range-ends { margin-top: 0.875rem; }
+.pulse-card dd > .legend, .pulse-card dd > .range-ends { margin-top: 0.625rem; }
+.pulse-unit { font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
+.pulse-wide { grid-column: 1 / -1; background: color-mix(in srgb, var(--mk) 14%, var(--sheet)); border-color: color-mix(in srgb, var(--mk) 35%, var(--line)); }
+.pulse-wide dd > .pulse-figure { font-size: 2.75rem; }
+.pulse-wide ~ .pulse-card:nth-child(n + 4) { grid-column: 1 / -1; }
+.bar-stack, .split { display: flex; gap: 3px; height: 0.75rem; }
+.bar-stack > span, .split > span { min-width: 0.5rem; border-radius: 4px; transition: flex-grow 0.6s var(--ease); }
+[data-state='open'] { --c: var(--mk, #e2801f); }
+[data-state='matched'] { --c: var(--s200); }
+[data-state='cancelled'] { --c: var(--s409); }
+[data-state='expired'] { --c: #6b7a8c; }
+[data-part='pay'] { --c: var(--accent); }
+[data-part='barter'] { --c: #b38cff; }
+.bar-stack > span, .split > span { background: var(--c); }
+.legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.8125rem; color: var(--ink-soft); }
+.legend > span { display: inline-flex; align-items: center; gap: 0.375rem; }
+.legend > span::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 2px; background: var(--c); }
+.legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.legend small { font-size: 0.75rem; }
+.range { position: relative; display: block; height: 0.5rem; margin-inline: 0.375rem; border-radius: 999px; background: linear-gradient(90deg, var(--s200), var(--s402)); opacity: 0.9; }
+.range-dot { position: absolute; top: 50%; width: 0.875rem; height: 0.875rem; border: 2px solid var(--sheet); border-radius: 50%; background: var(--ink); transform: translate(-50%, -50%); }
+.range-dot[data-kind='median'] { background: var(--accent-ink); }
+.range-ends { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.75rem; color: var(--ink-soft); }
+.ring-row { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8125rem; color: var(--ink-soft); }
+.ring-row b { color: var(--ink); }
+.ring { flex: none; width: 3rem; height: 3rem; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 4.5; stroke: var(--tile); }
+.ring circle + circle { stroke: var(--s200); stroke-linecap: round; }
+.rank { display: grid; gap: 0.375rem; }
+.rank-row { display: grid; grid-template-columns: minmax(0, 7rem) 1fr auto; align-items: center; gap: 0.625rem; font-size: 0.8125rem; }
+.rank-row code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-bar { height: 0.375rem; border-radius: 999px; background: var(--tile); }
+.rank-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+@media (min-width: 900px) {
+  .pulse { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .pulse-wide { grid-column: span 2; }
+  .pulse-wide .bar-stack { height: 1.125rem; }
+  .pulse-wide ~ .pulse-card:nth-child(n + 4) { grid-column: span 2; }
+}
+@media (max-width: 420px) {
+  .pulse-card { padding: 0.875rem 0.875rem 1rem; }
+  .pulse-card dd > .pulse-figure { font-size: 1.625rem; }
+}
+/* the listing rows read as trades: poster with an initial, asset sides with their class letter, tinted discount and status */
+.poster { display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
+.poster-avatar { display: grid; place-items: center; flex: none; width: 2rem; height: 2rem; border-radius: 10px; background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; font-size: 0.875rem; }
+.asset-side { display: flex; align-items: flex-start; gap: 0.625rem; min-width: 11rem; }
+.asset-name { display: block; font-weight: 650; color: var(--ink); }
+.asset-meta { display: block; margin-top: 0.125rem; font-size: 0.8125rem; color: var(--ink-soft); }
+.class-badge { display: grid; place-items: center; flex: none; width: 1.75rem; height: 1.75rem; border-radius: 8px; font-size: 0.8125rem; font-weight: 800; color: #fff; background: color-mix(in srgb, var(--cls) 80%, black); }
+.class-badge[data-class='A'] { --cls: #2fae6a; }
+.class-badge[data-class='B'] { --cls: #3d8bff; }
+.class-badge[data-class='C'] { --cls: #8b6cf0; }
+.class-badge[data-class='D'] { --cls: #e2801f; }
+.asset-side[data-role='want']::before { content: '⇄'; align-self: center; margin-right: 0.125rem; color: var(--ink-soft); }
+.pill[data-tone='info'] { --tone: var(--s202); }
+table[aria-label='Listings'] td { vertical-align: middle; }
+table[aria-label='Listings'] .asset-name, table[aria-label='Listings'] td:nth-child(5) { white-space: nowrap; }
+table[aria-label='Listings'] tbody tr { transition: background-color 0.2s var(--ease); }
+@media (max-width: 759px) {
+  /* a phone shows each listing as a card: the table rows become stacked blocks */
+  table[aria-label='Listings'] thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table[aria-label='Listings'], table[aria-label='Listings'] tbody { display: block; width: 100%; }
+  table[aria-label='Listings'] tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; padding: 1rem; border-bottom: 1px solid var(--line); }
+  table[aria-label='Listings'] tbody td { display: block; min-width: 0; padding: 0; border: 0; }
+  table[aria-label='Listings'] tbody td:nth-child(5) { white-space: normal; text-align: right; }
+  table[aria-label='Listings'] .asset-side { min-width: 0; }
+  table[aria-label='Listings'] .asset-name { white-space: normal; }
+  table[aria-label='Listings'] tbody td:nth-child(1), table[aria-label='Listings'] tbody td:nth-child(2), table[aria-label='Listings'] tbody td:nth-child(3) { grid-column: 1 / -1; }
+  table[aria-label='Listings'] tbody td:last-child { grid-column: 1 / -1; }
+  table[aria-label='Listings'] tbody td:last-child button { width: 100%; }
+  .asset-side { min-width: 0; }
+}
 
 /* FE-075: on a wide screen the "how it works" lead of a trade page becomes a side rail on the left: the tone tile, the one line, and the steps
    stacked top to bottom with a line joining the numbers. It stays in view while the page scrolls. Narrower screens keep the stacked lead above the content. */

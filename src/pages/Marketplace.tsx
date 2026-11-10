@@ -294,16 +294,41 @@ const LISTING_COLUMNS: Column<ListingView>[] = [
 ]
 const listingText = (l: ListingView) => `${l.account} ${l.offer.assetType} ${l.want.assetType} ${l.status} ${l.listingHash.slice(0, 8)}`
 
-function ListingRow({ listing, selected, onSelect }: { listing: ListingView; selected: boolean; onSelect: () => void }) {
-  const side = (s: ListingView['offer']) => `${s.assetType} · class ${s.assetClass} · ${formatNumber(s.quantity, 0)} units · ${formatCredit(s.value)} credit`
+// FE-076: a listing row reads as a trade: who posts it, the asset given and the asset wanted (each with its class letter in its colour), the discount,
+// how long it stays open, and the status as a tinted word. The table stays a table, so sorting, the filter and screen readers keep working.
+const STATUS_TONE: Record<string, string> = { open: 'ok', matched: 'info', cancelled: 'bad', expired: 'warn' }
+function AssetSide({ side, role }: { side: ListingView['offer']; role: 'give' | 'want' }) {
   return (
-    <tr aria-selected={selected}>
-      <td><code>{shortAccount(listing.account)}</code>{isHumanListing(listing.detail) && <> <span className="badge" data-testid="human-badge">human</span></>}</td>
-      <td>{side(listing.offer)}</td>
-      <td>{side(listing.want)}</td>
-      <td>{formatNumber(listing.discountBps / 100)}%{listing.acceptPayment ? ', payment allowed' : ''}</td>
-      <td>{formatTime(listing.expiresAt)}</td>
-      <td>{listing.status}</td>
+    <div className="asset-side" data-role={role}>
+      <span className="class-badge" data-class={side.assetClass} aria-hidden="true">{side.assetClass}</span>
+      <div>
+        <span className="asset-name">{`${side.assetType} · class ${side.assetClass}`}</span>
+        <span className="asset-meta">{formatNumber(side.quantity, 0)} units · {formatCredit(side.value)} credit</span>
+      </div>
+    </div>
+  )
+}
+function timeLeft(iso: string): string {
+  const ms = Date.parse(iso) - Date.now()
+  if (!Number.isFinite(ms) || ms <= 0) return 'ended'
+  const h = Math.floor(ms / 3_600_000)
+  return h >= 48 ? `${Math.floor(h / 24)} days left` : h >= 1 ? `${h} h left` : `${Math.max(1, Math.floor(ms / 60_000))} min left`
+}
+function ListingRow({ listing, selected, onSelect }: { listing: ListingView; selected: boolean; onSelect: () => void }) {
+  return (
+    <tr aria-selected={selected} className="listing-row">
+      <td>
+        <div className="poster">
+          <span className="poster-avatar" aria-hidden="true">{shortAccount(listing.account).charAt(0).toUpperCase()}</span>
+          <code>{shortAccount(listing.account)}</code>
+          {isHumanListing(listing.detail) && <span className="badge" data-testid="human-badge">human</span>}
+        </div>
+      </td>
+      <td><AssetSide side={listing.offer} role="give" /></td>
+      <td><AssetSide side={listing.want} role="want" /></td>
+      <td><span className="pill" data-tone={listing.discountBps > 0 ? 'ok' : undefined}>{formatNumber(listing.discountBps / 100)}%{listing.acceptPayment ? ', payment allowed' : ''}</span></td>
+      <td>{formatTime(listing.expiresAt)}<span className="asset-meta">{timeLeft(listing.expiresAt)}</span></td>
+      <td><span className="pill" data-tone={STATUS_TONE[listing.status]}>{listing.status}</span></td>
       <td>
         <button type="button" onClick={onSelect} aria-label={`Open ${listing.listingHash.slice(0, 8)}`}>
           Open
@@ -317,20 +342,106 @@ function Stats() {
   const stats = useMarketStats()
   if (stats.data === undefined) return stats.isError ? <ErrorNotice error={stats.error} onRetry={() => stats.refetch()} /> : <Loading label="Loading statistics" />
   const s = stats.data
+  const l = s.listings
+  const total = Math.max(1, l.total)
+  const t = s.timeToMatchSeconds
+  const span = t.min !== null && t.max !== null && t.max > t.min ? t.max - t.min : 0
+  const at = (v: number | null) => (v === null || span === 0 ? 50 : ((v - (t.min ?? 0)) / span) * 100)
+  const discountShare = sharePercent(s.matches.discountValue, s.matches.listingValue)
+  const mix = Math.max(1, s.matches.pay + s.matches.barter)
+  // FE-076: each figure carries the picture that explains it: where the listings went, how the matches were paid, the spread of match times,
+  // and the share of value given up as discount. The dt/dd pairs stay, so the figures still read as a list.
   return (
-    <dl className="status-panel" aria-label="Marketplace statistics">
-      <dt>Open listings</dt>
-      <dd>{s.listings.open}</dd>
-      <dt>Matched</dt>
-      <dd>{s.matches.count}</dd>
-      <dt>Average time to match</dt>
-      <dd>{s.timeToMatchSeconds.average === null ? 'none yet' : `${formatNumber(s.timeToMatchSeconds.average, 0)} seconds`}</dd>
-      <dt>Discount value</dt>
-      <dd>{formatCredit(s.matches.discountValue)}</dd>
-      <dt>Seeker revenue</dt>
-      <dd>{formatCredit(s.searcherRevenue.total)}</dd>
+    <dl className="pulse" aria-label="Marketplace statistics">
+      <div className="pulse-card pulse-wide">
+        <dt>Open listings</dt>
+        <dd>
+          <span className="pulse-figure">{l.open}</span> <span className="pulse-unit">of {l.total} posted</span>
+          <span className="bar-stack" aria-hidden="true">
+            {LISTING_STATES.map(([k, label]) => l[k] > 0 && <span key={k} data-state={k} style={{ flexGrow: l[k] }} title={`${label}: ${l[k]}`} />)}
+          </span>
+          <span className="legend">
+            {LISTING_STATES.map(([k, label]) => (
+              <span key={k} data-state={k}>{label} <b>{l[k]}</b> <small>{Math.round((l[k] / total) * 100)}%</small></span>
+            ))}
+          </span>
+        </dd>
+      </div>
+      <div className="pulse-card">
+        <dt>Matched</dt>
+        <dd>
+          <span className="pulse-figure">{s.matches.count}</span> <span className="pulse-unit">trades</span>
+          <span className="split" aria-hidden="true">
+            <span data-part="pay" style={{ flexGrow: s.matches.pay || 0.0001 }} />
+            <span data-part="barter" style={{ flexGrow: s.matches.barter || 0.0001 }} />
+          </span>
+          <span className="legend">
+            <span data-part="pay">Paid in credit <b>{Math.round((s.matches.pay / mix) * 100)}%</b></span>
+            <span data-part="barter">Barter <b>{Math.round((s.matches.barter / mix) * 100)}%</b></span>
+          </span>
+        </dd>
+      </div>
+      <div className="pulse-card">
+        <dt>Average time to match</dt>
+        <dd>
+          <span className="pulse-figure">{t.average === null ? 'none yet' : formatNumber(t.average, 0)}</span>{t.average !== null && <span className="pulse-unit"> seconds</span>}
+          {t.min !== null && t.max !== null && (
+            <>
+              <span className="range" aria-hidden="true">
+                <span className="range-dot" data-kind="median" style={{ left: `${at(t.median)}%` }} />
+                <span className="range-dot" data-kind="average" style={{ left: `${at(t.average)}%` }} />
+              </span>
+              <span className="range-ends"><span>fastest {formatNumber(t.min, 0)} s</span><span>{t.samples} sampled</span><span>slowest {formatNumber(t.max, 0)} s</span></span>
+            </>
+          )}
+        </dd>
+      </div>
+      <div className="pulse-card">
+        <dt>Discount value</dt>
+        <dd>
+          <span className="pulse-figure">{formatCredit(s.matches.discountValue)}</span> <span className="pulse-unit">credit</span>
+          <span className="ring-row">
+            <svg className="ring" viewBox="0 0 36 36" aria-hidden="true">
+              <circle cx="18" cy="18" r="15.5" pathLength="100" />
+              <circle cx="18" cy="18" r="15.5" pathLength="100" strokeDasharray={`${discountShare} 100`} />
+            </svg>
+            <span><b>{discountShare}%</b> of the {formatCredit(s.matches.listingValue)} credit traded was given as discount</span>
+          </span>
+        </dd>
+      </div>
+      <div className="pulse-card">
+        <dt>Seeker revenue</dt>
+        <dd>
+          <span className="pulse-figure">{formatCredit(s.searcherRevenue.total)}</span> <span className="pulse-unit">credit</span>
+          <span className="rank">
+            {s.searcherRevenue.bySearcher.slice(0, 3).map((r) => (
+              <span key={r.account} className="rank-row">
+                <code>{shortAccount(r.account)}</code>
+                <span className="rank-bar" aria-hidden="true"><span style={{ width: `${sharePercent(r.total, s.searcherRevenue.total)}%` }} /></span>
+                <b>{formatCredit(r.total)}</b>
+              </span>
+            ))}
+            {s.searcherRevenue.bySearcher.length === 0 && <span className="asset-meta">No searcher has earned yet.</span>}
+          </span>
+        </dd>
+      </div>
     </dl>
   )
+}
+const LISTING_STATES = [
+  ['open', 'Open'],
+  ['matched', 'Matched'],
+  ['cancelled', 'Cancelled'],
+  ['expired', 'Expired'],
+] as const
+/** a as a whole percent of b; both are integer strings in the smallest unit */
+function sharePercent(a: string, b: string): number {
+  try {
+    const d = BigInt(b)
+    return d <= 0n ? 0 : Math.max(0, Math.min(100, Number((BigInt(a) * 100n) / d)))
+  } catch {
+    return 0
+  }
 }
 
 export function Marketplace() {
