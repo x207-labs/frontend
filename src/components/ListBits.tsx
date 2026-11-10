@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { shortAccount } from '../lib/format'
+import { useCachedAccount } from '../account/cache'
 import { AgentIcon, NavIcon } from './icons'
 
 // FE-081: the pieces of a list row. A row reads left to right: what it is (a tinted icon tile, a bold title, a muted line), who is on it (avatars),
@@ -16,7 +17,9 @@ function hueOf(account: string): string {
 
 /** A member's avatar alone: on its own hue, showing its work (a chip for a GPU seller) or, when the name says nothing, its initials. */
 export function Avatar({ account }: { account: string }) {
+  const photo = useCachedAccount(account).photo // FE-087: only the person's own account can have one; it is set in Settings and kept in this browser
   const initials = shortAccount(account).replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase() || '?'
+  if (photo) return <span className="avatar" aria-hidden="true" title={account} data-photo="true"><img src={photo} alt="" /></span>
   return <span className="avatar" aria-hidden="true" title={account} style={{ ['--hue' as string]: hueOf(account) }}>{AgentIcon({ account }) ?? initials}</span>
 }
 

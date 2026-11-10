@@ -3,7 +3,8 @@
 import { useSyncExternalStore } from 'react'
 
 const ACCOUNT_CACHE_KEY = 'x207.account.cache'
-export type CachedAccount = { displayName?: string; email?: string | null; deadlineReminder?: boolean }
+// FE-087: `photo` is the profile picture as a small data URL. It lives only here (the service has no field for it), so it is per browser.
+export type CachedAccount = { displayName?: string; email?: string | null; deadlineReminder?: boolean; photo?: string }
 
 type Store = Record<string, CachedAccount>
 const listeners = new Set<() => void>()
