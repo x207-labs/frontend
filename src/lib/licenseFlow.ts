@@ -61,15 +61,23 @@ export type DownloadResult =
  * Buyer: downloads the ciphertext from the source (with progress), checks `cipher_hash`, then the seller's release and the content against `content_hash`. A wrong source or signature
  * is not cheating and yields no proof; wrong content yields a cheating proof anyone can check.
  */
-export async function receiveLicense(view: PurchaseView, sellerPublicKey: string, buyerSecretKey: string, onProgress: (received: number) => void): Promise<DownloadResult> {
+export async function receiveLicense(view: PurchaseView, sellerPublicKey: string, buyerSecretKey: string, onProgress: (received: number) => void, saved?: Uint8Array): Promise<DownloadResult> {
   if (view.source === null || view.cipherHash === null || view.release === null || view.releaseSignature === null) return { state: 'refused', reason: 'The seller has not yet posted the ciphertext and released the key.' }
   if (view.release.cipher_hash !== view.cipherHash) return { state: 'refused', reason: 'The cipher_hash in the release differs from the one the seller recorded.' }
   let ciphertext: Uint8Array
-  try {
-    ciphertext = await fetchCiphertext(view.source, view.cipherHash, licenseSources.current, { onProgress })
-  } catch (e) {
-    if (e instanceof LicenseError && e.code === 'cipher_hash_mismatch') return { state: 'refused', reason: 'The downloaded bytes do not match cipher_hash: wrong source, not proof of cheating.' }
-    return { state: 'refused', reason: e instanceof Error ? e.message : String(e) }
+  if (saved) {
+    // FE-097: a file the buyer saved from the source is checked against the same cipher_hash as a download, so nothing is trusted that a download would not be.
+    if (contentHash(saved) !== view.cipherHash) return { state: 'refused', reason: 'The file you chose does not match cipher_hash: it is not the file the seller posted. This is not proof of cheating.' }
+    ciphertext = saved
+  } else {
+    try {
+      ciphertext = await fetchCiphertext(view.source, view.cipherHash, licenseSources.current, { onProgress })
+    } catch (e) {
+      if (e instanceof LicenseError && e.code === 'cipher_hash_mismatch') return { state: 'refused', reason: 'The downloaded bytes do not match cipher_hash: wrong source, not proof of cheating.' }
+      // FE-097: fetch rejects with a TypeError when the host does not answer, refuses other sites (CORS), or is outside the page's connect-src; the browser does not say which.
+      if (e instanceof TypeError) return { state: 'refused', reason: DOWNLOAD_BLOCKED }
+      return { state: 'refused', reason: e instanceof Error ? e.message : String(e) }
+    }
   }
   const verdict = verifyDelivery({ ciphertext, release: view.release as LicenseRelease, signature: view.releaseSignature, sellerPublicKey, buyerSecretKey, purchaseId: view.purchaseId })
   if (verdict.ok) return { state: 'ok', content: verdict.content }
@@ -81,6 +89,20 @@ export async function receiveLicense(view: PurchaseView, sellerPublicKey: string
     wrong_purchase: 'This key release is for another purchase: do not use it.',
   }
   return { state: 'refused', reason: text[verdict.reason] ?? verdict.reason }
+}
+
+export const DOWNLOAD_BLOCKED =
+  'This browser could not download the file from the source. The host did not answer, does not let other sites download from it, or is not a host this dashboard may connect to. Open the source, save the file, then choose it below.'
+
+/** FE-097: the address the buyer opens to save the ciphertext by hand. A link is a navigation, which the page's connect-src does not govern. */
+export function sourceUrl(source: { kind: 'https' | 'ipfs'; ref: string }): string | null {
+  if (source.kind === 'ipfs') return /^[A-Za-z0-9]+$/.test(source.ref) ? `${IPFS_GATEWAYS[0]}/ipfs/${source.ref}` : null
+  try {
+    const url = new URL(source.ref)
+    return url.protocol === 'https:' ? url.href : null
+  } catch {
+    return null
+  }
 }
 
 export { makeCheatProof }

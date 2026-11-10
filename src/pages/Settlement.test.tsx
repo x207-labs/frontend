@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apiError, renderApp } from '../test/render'
@@ -73,7 +73,21 @@ describe('settlement debtor', () => {
       createMockWallet(SCRAPER, SCRAPER),
     )
     expect(await screen.findByText(/Loading dues/)).toBeInTheDocument()
-    expect(await screen.findByRole('alert')).toHaveTextContent('member_not_found')
+    // FE-097: 404 member_not_found is "not joined", said with the way to join, not an error to retry
+    const note = await screen.findByTestId('not-member')
+    expect(note).toHaveTextContent('has not joined the circle')
+    expect(within(note).getByRole('link', { name: 'Join the circle' })).toHaveAttribute('href', '/onboarding')
+  })
+
+  it('TC-FE-009-06 another read error stays an error with a retry', async () => {
+    renderApp(
+      '/settlement?epoch=42',
+      (p) => (p.includes('/settlements') && p.includes('/members/') ? apiError(500, 'internal_error', 'Database down') : undefined),
+      false,
+      createMockWallet(SCRAPER, SCRAPER),
+    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('internal_error')
+    expect(screen.queryByTestId('not-member')).toBeNull()
   })
 
   it('TC-FE-009-07 wallet rejects: cancelled and status stays due', async () => {

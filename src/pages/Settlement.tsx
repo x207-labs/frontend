@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '../api/client'
+import { Link } from 'react-router-dom'
+import { ApiError, api } from '../api/client'
 import { useEpochSettlements } from '../api/queries'
 import type { SettlementItem } from '../api/types'
 import { DepositBranch } from '../components/DepositBranch'
@@ -158,6 +159,14 @@ function MyDues() {
     retry: false,
   })
   if (!account) return <SignInPrompt action="see your dues" />
+  // FE-097: an account that has not joined gets member_not_found (404); that is an answer, not an error to retry (as on Home).
+  const e = query.error
+  if (query.data === undefined && e instanceof ApiError && (e.status === 404 || e.code === 'member_not_found'))
+    return (
+      <p className="state" role="status" data-testid="not-member">
+        This account has not joined the circle, so it has no dues and nothing to claim. <Link to="/onboarding">Join the circle</Link> to stake and start trading on credit.
+      </p>
+    )
   return (
     <QueryState
       query={query}

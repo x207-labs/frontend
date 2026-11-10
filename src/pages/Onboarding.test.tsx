@@ -48,6 +48,11 @@ describe('onboarding F1', () => {
     expect(link).toHaveAttribute('href', expect.stringContaining('/help'))
   })
 
+  it('FE-097 the terms message is not an error before anything is typed', async () => {
+    await login()
+    expect(screen.queryByText(/Agreement to the terms is required/)).toBeNull()
+  })
+
   it('TC-FE-004-02 three validation messages and a disabled button', async () => {
     const { user } = await login()
     await user.type(screen.getByLabelText(/pubkey_voucher/), 'abc')

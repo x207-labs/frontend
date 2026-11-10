@@ -13,7 +13,7 @@ import { SignInPrompt } from '../components/SignInPrompt'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import {
-  LICENSE_ASSET_TYPES, buildKeyRelease, buildPurchase, cipherPostedNotice, prepareLicense, signSellerNotice, proofForApi, purchaseNotice, receiveLicense, signPurchaseNotice, takedownMessage,
+  LICENSE_ASSET_TYPES, buildKeyRelease, buildPurchase, cipherPostedNotice, prepareLicense, signSellerNotice, proofForApi, purchaseNotice, receiveLicense, signPurchaseNotice, sourceUrl, takedownMessage,
   type DownloadResult, type PreparedLicense,
 } from '../lib/licenseFlow'
 import { formatCredit } from '../lib/format'
@@ -260,6 +260,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
   const [id, setId] = useState('')
   const [open, setOpen] = useState<string | null>(null)
   const [sellerKey, setSellerKey] = useState('')
+  const [saved, setSaved] = useState<File | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
   const [result, setResult] = useState<DownloadResult | null>(null)
   const [busy, setBusy] = useState(false)
@@ -267,14 +268,17 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
   const [error, setError] = useState<string | null>(null)
   const query = usePurchase(open)
 
-  async function check() {
+  async function check(file?: File) {
     if (!query.data) return
     setBusy(true)
     setError(null)
     setResult(null)
-    setProgress(0)
+    setProgress(file ? null : 0)
     try {
-      setResult(await receiveLicense(query.data, sellerKey.trim(), voucherKey, setProgress))
+      const bytes = file ? new Uint8Array(await file.arrayBuffer()) : undefined
+      setResult(await receiveLicense(query.data, sellerKey.trim(), voucherKey, setProgress, bytes))
+    } catch (e) {
+      setResult({ state: 'refused', reason: e instanceof Error && file ? 'That file could not be read. Choose it again.' : describeMarketError(e) })
     } finally {
       setBusy(false)
     }
@@ -317,6 +321,20 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
                     <label><span>Seller public key</span><input value={sellerKey} onChange={(e) => setSellerKey(e.target.value)} placeholder="ed25519:…" /></label>
                     <div><button type="button" disabled={busy || voucherKey.trim() === '' || sellerKey.trim() === ''} onClick={() => void check()}>Download and check hash</button></div>
                     {progress !== null && <p className="state" data-testid="download-progress" role="status">Downloaded {progress} bytes</p>}
+                    {view.source && (
+                      <div className="stack" data-testid="saved-file">
+                        <FilePicker
+                          label="Or check a file you saved"
+                          file={saved}
+                          onFile={setSaved}
+                          hint="If the download is blocked, open the source, save the file, then choose it here. It is checked against cipher_hash like a download."
+                        />
+                        <div className="actions">
+                          <button type="button" disabled={busy || saved === null || voucherKey.trim() === '' || sellerKey.trim() === ''} onClick={() => saved && void check(saved)}>Check saved file</button>
+                          {sourceUrl(view.source) && <a href={sourceUrl(view.source) ?? undefined} target="_blank" rel="noopener noreferrer">Open the source</a>}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
                 {result?.state === 'ok' && (

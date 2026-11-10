@@ -39,7 +39,11 @@ describe('FE-015 DAO proposals on the governance page', () => {
 
   it('TC-FE-015-05 DAO unreadable (502): an error message, the parameter page still shows', async () => {
     renderApp('/governance', (p) => (p.endsWith('/proposals') ? apiError(502, 'dao_unavailable', 'DAO proposals unreadable') : undefined))
-    expect((await screen.findAllByText(/dao_unavailable|DAO proposals unreadable/)).length).toBeGreaterThan(0)
+    // FE-097: the upstream RPC text is not shown; the note says the parameters are still current
+    const note = await screen.findByTestId('dao-unavailable')
+    expect(note).toHaveTextContent('dao_unavailable')
+    expect(note).toHaveTextContent('parameters above come from the circle contract')
+    expect(note).not.toHaveTextContent('DAO proposals unreadable')
     expect(await screen.findByText('Limit decay')).toBeInTheDocument()
   })
 

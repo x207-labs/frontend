@@ -54,9 +54,15 @@ export function describeMarketError(e: unknown): string {
         return 'A code bound to its owner\'s identity cannot be sold.'
       case 'exclusive_taken':
         return 'This code or content has already been sold in this circle.'
+      case 'broker_not_configured':
+        return 'Access rentals go through the provider\'s broker, and this dashboard has none configured. Ask the provider for its broker, or use a dashboard that points at it.'
       default:
         return `${e.code}: ${e.message}`
     }
   }
+  // FE-097: fetch rejects with a TypeError ("Failed to fetch", "Load failed", "NetworkError…" by browser) when a server cannot be reached; say it in words.
+  if (e instanceof TypeError) return NETWORK_MESSAGE
   return e instanceof Error ? e.message : String(e)
 }
+
+export const NETWORK_MESSAGE = 'The server could not be reached. Check your connection and try again.'

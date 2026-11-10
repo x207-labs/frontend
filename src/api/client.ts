@@ -95,7 +95,7 @@ async function get<T>(path: string): Promise<T> {
   throw new ApiError(
     res.status,
     error?.code ?? 'http_error',
-    error?.message ?? `Read API menjawab HTTP ${res.status}`,
+    error?.message ?? `The read API answered HTTP ${res.status}.`,
     withRetryAfter(res, error?.details),
   )
 }
@@ -112,9 +112,18 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   throw new ApiError(
     res.status,
     error?.code ?? 'http_error',
-    error?.message ?? `Read API menjawab HTTP ${res.status}`,
+    error?.message ?? `The read API answered HTTP ${res.status}.`,
     withRetryAfter(res, error?.details),
   )
+}
+
+/** FE-097: the access rental broker. A build with no broker (config.ts) fails here with a code the page can explain, before any request. */
+async function broker<T>(path: string, init?: RequestInit): Promise<T> {
+  if (BROKER_URL === null) throw new ApiError(0, 'broker_not_configured', 'This dashboard has no access broker configured.')
+  const res = await fetch(`${BROKER_URL}${path}`, init)
+  const body = await res.json().catch(() => null)
+  if (!res.ok) throw new ApiError(res.status, body?.error ?? 'http_error', body?.message ?? `The broker answered HTTP ${res.status}.`, undefined)
+  return body as T
 }
 
 const circle = `/x207/circles/${encodeURIComponent(CIRCLE)}`
@@ -219,25 +228,11 @@ export const api = {
     post<{ listingHash: string; verdict: 'valid' | 'used' | 'unknown'; checkedAt: number; validUntilMs: number | null }>(`${circle}/listings/${listingHash}/code-check`, { notice, signature, code, salt }),
   takedown: (listingHash: string, claim: string, evidenceHash: string, signature: string) => post<unknown>(`${circle}/listings/${listingHash}/takedown`, { claim, evidence_hash: evidenceHash, signature }),
   /** Access rental broker (BE-060), a server separate from the read API: the state of one access and stopping the rental with a signed notice. */
-  rent: async (grantId: number): Promise<RentView> => {
-    const res = await fetch(`${BROKER_URL}/grants/${grantId}/access`)
-    const body = await res.json().catch(() => null)
-    if (!res.ok) throw new ApiError(res.status, body?.error ?? 'http_error', body?.message ?? `Broker menjawab HTTP ${res.status}`, undefined)
-    return body as RentView
-  },
+  rent: (grantId: number): Promise<RentView> => broker<RentView>(`/grants/${grantId}/access`),
   /** `grantee_ref` proof challenge (BE-057): `{required:false}` for providers that do not ask for it. */
-  rentChallenge: async (grantId: number): Promise<RentChallenge> => {
-    const res = await fetch(`${BROKER_URL}/grants/${grantId}/access/challenge`)
-    const body = await res.json().catch(() => null)
-    if (!res.ok) throw new ApiError(res.status, body?.error ?? 'http_error', body?.message ?? `Broker menjawab HTTP ${res.status}`, undefined)
-    return body as RentChallenge
-  },
-  stopRent: async (grantId: number, notice: object, signature: string): Promise<RentView> => {
-    const res = await fetch(`${BROKER_URL}/grants/${grantId}/access/stop`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notice, signature }) })
-    const body = await res.json().catch(() => null)
-    if (!res.ok) throw new ApiError(res.status, body?.error ?? 'http_error', body?.message ?? `Broker menjawab HTTP ${res.status}`, undefined)
-    return body as RentView
-  },
+  rentChallenge: (grantId: number): Promise<RentChallenge> => broker<RentChallenge>(`/grants/${grantId}/access/challenge`),
+  stopRent: (grantId: number, notice: object, signature: string): Promise<RentView> =>
+    broker<RentView>(`/grants/${grantId}/access/stop`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notice, signature }) }),
   cancelListing: (hash: string, signature: string) => post<ListingView>(`${circle}/listings/${hash}/cancel`, { signature }),
   offers: (hash: string) => get<{ items: OfferView[] }>(`${circle}/listings/${hash}/offers`),
   postOffer: (hash: string, offer: object, signature: string, inReplyTo?: string) =>

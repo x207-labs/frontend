@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ApiError, api } from '../api/client'
 import type { DepositQuote, Job } from '../api/types'
 import { CIRCLE } from '../config'
+import { describeMarketError } from '../lib/marketError'
 
 // Sample source assets for the 1Click branch; the full list from 1Click is outside this page's scope.
 const ORIGIN_ASSETS = [
@@ -75,7 +76,7 @@ export function DepositBranch({ purpose, account, amount, epoch, onReady }: Prop
       )
     } catch (e) {
       setQuote(null)
-      setError(e instanceof ApiError ? (QUOTE_ERRORS[e.code] ?? e.message) : String(e))
+      setError(e instanceof ApiError ? (QUOTE_ERRORS[e.code] ?? e.message) : describeMarketError(e))
     } finally {
       setLoading(false)
     }

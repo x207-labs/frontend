@@ -85,6 +85,7 @@ export function AccountMenu() {
             Copy address
           </button>
           <Link to="/settings" role="menuitem" className="item" onClick={() => close(false)}>
+            <NavIcon name="/settings" size={18} />
             Settings
           </Link>
           <button type="button" role="menuitem" className="item" onClick={() => { close(false); void logout() }}>

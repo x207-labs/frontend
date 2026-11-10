@@ -1,5 +1,6 @@
 import { useDaoProposals, useParams, useParamsHistory, useRelayerFeeEvents } from '../api/queries'
 import type { ReactNode } from 'react'
+import { ApiError } from '../api/client'
 import type { DaoProposal, Params, ParamsResponse } from '../api/types'
 import { NEAR_NETWORK } from '../config'
 import { NavIcon } from '../components/icons'
@@ -105,6 +106,22 @@ function ComingUp() {
 // FE-015: Sputnik DAO `set_params` proposals. Read only; votes are cast in the DAO, not on this page.
 function DaoProposals() {
   const proposals = useDaoProposals()
+  // FE-097: dao_unavailable carries the upstream RPC text (block heights, contract ids); said in words instead, the parameters above stay current.
+  const e = proposals.error
+  if (proposals.data === undefined && e instanceof ApiError && e.code === 'dao_unavailable')
+    return (
+      <>
+        <h2>DAO proposals</h2>
+        <div className="state" role="status" data-testid="dao-unavailable">
+          <p>
+            <code>dao_unavailable</code> The DAO could not be read right now, so its proposals are not listed. The parameters above come from the circle contract and are current.
+          </p>
+          <button type="button" onClick={() => void proposals.refetch()}>
+            Try again
+          </button>
+        </div>
+      </>
+    )
   return (
     <>
       <h2>DAO proposals</h2>

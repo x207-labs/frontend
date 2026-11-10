@@ -34,6 +34,16 @@ export const INTENTS_EXPLORER_URL: string =
 export const NEAR_RPC_URL: string =
   env.VITE_NEAR_RPC_URL ?? (NEAR_NETWORK === 'mainnet' ? 'https://rpc.mainnet.fastnear.com' : 'https://rpc.testnet.fastnear.com')
 /** Access rental broker (BE-060): the provider's broker server address, not the read API. */
-export const BROKER_URL: string = env.VITE_X207_BROKER_URL ?? 'http://localhost:8788'
+// FE-097: same rule as csp.ts: the local default broker only goes with a local API. A hosted build with no broker has none (null), so the rental page says so instead of
+// trying the visitor's own machine, which the production policy blocks.
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+const apiIsLocal = (() => {
+  try {
+    return LOCAL_HOSTS.includes(new URL(ENV_API_URL).hostname)
+  } catch {
+    return true
+  }
+})()
+export const BROKER_URL: string | null = env.VITE_X207_BROKER_URL ?? (apiIsLocal ? 'http://localhost:8788' : null)
 /** FE-041: the guide for agents that hold only a `0x` key. FE-072: the app's own Help, never GitHub. */
 export const EVM_GUIDE_URL = '/help#term-evm'

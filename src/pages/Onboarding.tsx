@@ -86,7 +86,8 @@ function JoinForm({ registered }: { registered: boolean }) {
             <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} disabled={!account} />
             <span>I agree to the circle terms with the hash above.</span>
           </label>
-          {!agreed && account && <small className="state-error" data-hint>Agreement to the terms is required.</small>}
+          {/* FE-097: said once the form is being filled, not as an error before any input */}
+          {!agreed && account && (pubkey || termsHash || amount) && <small className="state-error" data-hint>Agreement to the terms is required.</small>}
         </>
       )}
       <label>

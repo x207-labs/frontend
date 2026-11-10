@@ -1,12 +1,12 @@
 import { GranteeProofError, RentError, buildGistContent, parseSshEd25519, checkAccessBeforeNextDay, encodeGranteeProof, granteeChallenge, parseGranteeProof, type GranteeProof } from '@x207/core'
 import { useState } from 'react'
-import { api } from '../api/client'
+import { ApiError, api } from '../api/client'
 import type { RentChallenge, RentView } from '../api/types'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { PROVIDER_GLYPHS } from '../components/glyphs'
 import { NavIcon, ProviderIcon } from '../components/icons'
 import { PAGE_HUE } from '../components/pageHue'
-import { CONTRACT_ID } from '../config'
+import { BROKER_URL, CONTRACT_ID } from '../config'
 import { signMessageWithVoucher } from '../lib/barter'
 import { toAtomic, fromAtomic } from '../lib/amount'
 import { formatCredit, formatTime } from '../lib/format'
@@ -299,7 +299,8 @@ function Renter({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey
     <section className="form" aria-label="My access">
       <h2 className="sr-only">My rentals</h2>
       <label><span>Grant number</span><input value={id} onChange={(e) => setId(e.target.value)} inputMode="numeric" /></label>
-      <div><button type="button" disabled={!valid} onClick={() => void load()}>View access</button></div>
+      {BROKER_URL === null && <p className="state" role="status" data-testid="no-broker">{describeMarketError(new ApiError(0, 'broker_not_configured', ''))}</p>}
+      <div><button type="button" disabled={!valid || BROKER_URL === null} onClick={() => void load()}>View access</button></div>
       {view && (
         <div className="actions" data-testid="rent-view">
           {/* FE-083: the rental reads as a pass for one service: its mark on the service's colour, who it is for, and the days already paid. */}

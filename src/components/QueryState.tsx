@@ -19,9 +19,9 @@ export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry: () =>
   const limit = error instanceof ApiError && ['rate_limited', 'payload_too_large', 'open_limit_reached'].includes(error.code)
   const message = limit
     ? describeMarketError(error)
-    : error instanceof Error && error.message !== 'Failed to fetch'
+    : error instanceof Error && !(error instanceof TypeError)
       ? error.message
-      : 'Read API unreachable.'
+      : 'The read API could not be reached. Check your connection and try again.'
   return (
     <div className="state state-error" role="alert">
       <p>

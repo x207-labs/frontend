@@ -27,6 +27,10 @@ export const NEAR_CONNECT_ICON_ORIGINS = [
 // FE-045: follows CIRCLE_OPTIONS (v018 and v017 in, v016 out: it has no host).
 export const CIRCLE_API_ORIGINS = ['https://v018.x207.boxd.sh', 'https://v017.x207.boxd.sh', 'https://v015.x207.boxd.sh', 'https://v014.x207.boxd.sh', 'https://x207.boxd.sh']
 
+// FE-097: a license buyer downloads the ciphertext of an `ipfs` source from these gateways (licenseFlow.ts IPFS_GATEWAYS; a test keeps the two lists equal). An `https` source is
+// any host the seller chose, so it is not added: connect-src stays a short list (the voucher key is in the page), and a blocked download tells the buyer to save the file by hand.
+export const IPFS_GATEWAY_ORIGINS = ['https://ipfs.io', 'https://dweb.link']
+
 export const PRIVY_ORIGIN = 'https://auth.privy.io'
 export const ACCOUNT_SERVICE_ORIGIN = 'https://vldhsabgpfxccsljdtye.supabase.co'
 
@@ -47,6 +51,7 @@ export function buildCsp(env: Env, nonce?: string): string {
     if (o) connect.add(o)
   }
   for (const o of NEAR_CONNECT_MANIFEST_ORIGINS) connect.add(o)
+  for (const o of IPFS_GATEWAY_ORIGINS) connect.add(o)
   // FE-059: the Privy wallet talks to the Privy API and loads its key frame from the same host; both are opened only when the build has a Privy app id.
   const privy = env.VITE_PRIVY_APP_ID?.trim() // FE-066: the Client ID is optional
   if (privy) connect.add(PRIVY_ORIGIN)

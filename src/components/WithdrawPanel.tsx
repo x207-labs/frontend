@@ -5,6 +5,7 @@ import type { WithdrawQuote } from '../api/types'
 import { CIRCLE, INTENTS_EXPLORER_URL } from '../config'
 import { toAtomic } from '../lib/amount'
 import { formatCredit } from '../lib/format'
+import { describeMarketError } from '../lib/marketError'
 import { useWallet } from '../wallet/WalletContext'
 import { ErrorNotice, Loading } from './QueryState'
 
@@ -47,7 +48,7 @@ export function WithdrawPanel({ account }: { account: string }) {
   const status = intentHash ? (job.data?.status ?? 'processing') : null
 
   const describe = (e: unknown): string => {
-    if (!(e instanceof ApiError)) return e instanceof Error ? e.message : String(e)
+    if (!(e instanceof ApiError)) return describeMarketError(e)
     const d = e.details as Record<string, unknown> | undefined
     switch (e.code) {
       case 'below_withdraw_threshold':
