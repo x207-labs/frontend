@@ -165,7 +165,9 @@ describe('onboarding F1', () => {
     expect(await screen.findByText(/is already registered/)).toBeInTheDocument()
     expect(screen.queryByLabelText(/pubkey_voucher/)).not.toBeInTheDocument()
     await user.type(screen.getByLabelText(/Stake amount/), '10')
-    await user.click(screen.getByRole('button', { name: /join and stake/ }))
+    // FE-089: the button names only the stake, since join is not part of what gets signed
+    expect(screen.queryByRole('button', { name: /join and stake/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Sign stake' }))
     expect(await screen.findByText(/Waiting for signature/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Waiting for wallet/ })).toBeDisabled()
     release()

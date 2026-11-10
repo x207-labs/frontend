@@ -114,7 +114,12 @@ function JoinForm({ registered }: { registered: boolean }) {
       )}
       <div>
         <button type="submit" disabled={!canSend}>
-          {signing ? 'Waiting for wallet…' : source === 'near' ? 'Sign join and stake' : 'Sign withdraw, join, and stake'}
+          {/* FE-089: a registered member only adds stake, so the button names only what will be signed */}
+          {signing
+            ? 'Waiting for wallet…'
+            : needsJoin
+              ? source === 'near' ? 'Sign join and stake' : 'Sign withdraw, join, and stake'
+              : source === 'near' ? 'Sign stake' : 'Sign withdraw and stake'}
         </button>
       </div>
       {step && <p className="state" role="status">Step: {step}</p>}
@@ -129,26 +134,44 @@ function StatusPanel({ account }: { account: string }) {
   if (member.data === null) {
     return (
       <p className="state">
-        Account {account} is not registered yet. <a href="#join">Fill in the join form below</a>.
+        Account {account} is not registered yet. <a href="#join">Fill in the join form</a> in step 3.
       </p>
     )
   }
   if (member.data === undefined && member.isError) return <ErrorNotice error={member.error} onRetry={() => member.refetch()} />
   const m = member.data
-  const cell = (value: string | undefined) => (m ? formatCredit(value) : <Loading label="Loading" />)
+  const cell = (value: string | undefined) =>
+    m ? (
+      <>
+        <strong>{formatCredit(value)}</strong> USDT
+      </>
+    ) : (
+      <Loading label="Loading" />
+    )
+  // FE-089: the membership as four figures, a small label over each large number, no boxes.
   return (
-    <dl className="status-panel" aria-label="Onboarding status">
-      <dt>Status</dt>
-      <dd>{m ? <code>{m.status}</code> : <Loading label="Loading" />}</dd>
-      <dt>Stake</dt>
-      <dd>{cell(m?.stake)}</dd>
-      <dt>Credit limit</dt>
-      <dd>{cell(m?.limit)}</dd>
-      <dt>Headroom</dt>
-      <dd>{cell(m?.headroom)}</dd>
+    <dl className="onboard-sum" aria-label="Onboarding status">
+      <div>
+        <dt>Status</dt>
+        <dd>{m ? <span className="pill" data-tone={MEMBER_TONE[m.status] ?? 'info'}>{m.status}</span> : <Loading label="Loading" />}</dd>
+      </div>
+      <div>
+        <dt>Stake</dt>
+        <dd>{cell(m?.stake)}</dd>
+      </div>
+      <div>
+        <dt>Credit limit</dt>
+        <dd>{cell(m?.limit)}</dd>
+      </div>
+      <div>
+        <dt>Headroom</dt>
+        <dd>{cell(m?.headroom)}</dd>
+      </div>
     </dl>
   )
 }
+
+const MEMBER_TONE: Record<string, 'ok' | 'warn' | 'bad' | 'info'> = { active: 'ok', pending: 'info', suspended: 'bad', exited: 'warn' }
 
 export function Onboarding() {
   const members = useMembers()
@@ -161,21 +184,31 @@ export function Onboarding() {
     : memberQuery.data === null
       ? { kind: 'none' }
       : { kind: 'loading' }
+  // FE-089: on a wide screen the steps on the left and the membership beside them; on a phone the membership first, then the steps.
+  // Leaving the circle is its own block under the steps, not part of the join step.
   return (
-    <>
-      <QueryState query={members} loadingLabel="Loading members">
-        {(data) => (
-          <p>
-            {data.items.length} members registered in circle {CIRCLE}.
-          </p>
-        )}
-      </QueryState>
-      <OnboardingSteps account={account} member={memberState}>
+    <div className="onboard">
+      <aside className="onboard-me" aria-labelledby="onboard-me">
+        <h2 id="onboard-me">Your membership</h2>
         {account && <StatusPanel account={account} />}
-        {memberQuery.data && <ExitPanel member={memberQuery.data} />}
-        <h4 id="join">Join and stake</h4>
-        <JoinForm registered={registered} />
-      </OnboardingSteps>
-    </>
+        <QueryState query={members} loadingLabel="Loading members">
+          {(data) => (
+            <p className="onboard-circle">
+              {data.items.length} members registered in circle {CIRCLE}.
+            </p>
+          )}
+        </QueryState>
+      </aside>
+      <div className="onboard-main">
+        <OnboardingSteps account={account} member={memberState}>
+          <JoinForm registered={registered} />
+        </OnboardingSteps>
+        {memberQuery.data && (
+          <div className="onboard-exit">
+            <ExitPanel member={memberQuery.data} />
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
