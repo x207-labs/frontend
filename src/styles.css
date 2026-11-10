@@ -286,6 +286,10 @@ button.th-sort { padding: 0; min-height: 0; border: 0; border-radius: 0; backgro
   .palette-trigger:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent-ink); box-shadow: none; }
   button.th-sort:hover:not(:disabled) { background: transparent; color: var(--accent-ink); box-shadow: none; }
   button.quiet:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent-ink); border-color: rgb(61 139 255 / 0.4); box-shadow: none; }
+  /* FE-094: a view tab that is not chosen and a stepper step are not primary buttons; without these the global button hover paints them solid blue */
+  .segmented button:hover:not(:disabled, [aria-pressed='true']) { background: rgb(255 255 255 / 0.07); color: var(--ink); }
+  .stepper button:hover:not(:disabled) { background: none; color: var(--ink); }
+  .stepper button:hover:not(:disabled, [aria-current='step']) .stepper-dot { border-color: var(--accent); color: var(--ink); }
   .rail a:hover:not(.active) { background: rgb(255 255 255 / 0.06); color: var(--ink); }
   .stat:hover, .facts > div:hover, .action:hover { transform: translateY(-2px); border-color: rgb(61 139 255 / 0.4); }
   .action a:hover { background: rgb(61 139 255 / 0.28); }
