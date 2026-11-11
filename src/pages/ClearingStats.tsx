@@ -96,7 +96,9 @@ function Statement({ m, selected, pruned }: { m: EpochMetrics; selected: EpochIt
 function Figures({ m }: { m: EpochMetrics }) {
   const eff = efficiency(m)
   const { search } = useLocation()
-  const cleared = noClearing(m) ? null : m.clearedRatio
+  const cleared = noClearing(m) || m.voucherCount === 0 ? null : m.clearedRatio
+  // an epoch with no vouchers has nothing to clear: "yet" would promise a result that will never come
+  const none = m.voucherCount === 0 ? 'No vouchers in this epoch' : 'No clearing result yet'
   return (
     <section className="ep-section" aria-label="Headline figures">
       <div className="ds-kpis ep-kpis">
@@ -104,15 +106,15 @@ function Figures({ m }: { m: EpochMetrics }) {
           label="Transfers avoided"
           value={eff ? formatNumber(eff.avoided, 0) : '—'}
           unit={eff ? `of ${formatNumber(m.voucherCount, 0)}` : undefined}
-          note={eff ? `${formatPercent(eff.avoidedShare)} of the vouchers need no transfer` : 'No clearing result yet'}
+          note={eff ? `${formatPercent(eff.avoidedShare)} of the vouchers need no transfer` : none}
         />
         <Kpi
           label="Cash needed"
           value={eff ? formatCredit2(eff.cashNeeded) : '—'}
           unit={eff ? 'credit' : undefined}
-          note={eff ? `${formatPercent(eff.cashShare)} of the ${formatCredit2(m.totalVoucherValue)} credit owed` : 'No clearing result yet'}
+          note={eff ? `${formatPercent(eff.cashShare)} of the ${formatCredit2(m.totalVoucherValue)} credit owed` : none}
         />
-        <Kpi label="Cleared ratio" value={cleared === null ? '—' : formatPercent(cleared)} note={cleared === null ? 'No clearing result yet' : `Ratio ${formatNumber(cleared)}: the share of what was owed`} />
+        <Kpi label="Cleared ratio" value={cleared === null ? '—' : formatPercent(cleared)} note={cleared === null ? none : `Ratio ${formatNumber(cleared)}: the share of what was owed`} />
         <Kpi label="Cleared value" value={m.cleared === null ? '—' : formatCredit2(m.cleared)} unit={m.cleared === null ? undefined : 'credit'} note="Cancelled in loops" />
       </div>
       <details className="more ep-more">

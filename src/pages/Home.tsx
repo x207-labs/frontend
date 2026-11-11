@@ -175,7 +175,7 @@ function Kpis({ ready }: { ready: Ready | null }) {
           />
         </>
       ) : (
-        <Kpi badge="E" label="Epochs checked" value={ready ? ready.scanned : '…'} note={ready ? `None carried vouchers. The circle has ${ready.total.toLocaleString('en-US')} epochs.` : undefined} />
+        <Kpi badge="E" label="Epochs checked" value={ready ? ready.scanned : '…'} note={ready ? `None of them carried vouchers.${ready.live ? ` The live epoch is ${ready.live.epoch}.` : ''}` : undefined} />
       )}
     </section>
   )
@@ -220,7 +220,7 @@ function EpochsTable({ scan }: { scan: VoucherScan }) {
         <h2 id="home-epochs-h">Epochs with vouchers</h2>
         {scan.state === 'ready' && (
           <p>
-            The newest {scan.scanned} of {scan.total.toLocaleString('en-US')} epochs were checked; the ones without vouchers are left out. Amounts in credit, moved in {MONEY}.
+            The newest {scan.scanned} epochs were checked; the ones without vouchers are left out. Amounts in credit, moved in {MONEY}.
           </p>
         )}
       </div>

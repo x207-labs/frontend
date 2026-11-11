@@ -13,7 +13,7 @@ export type VoucherScan =
       state: 'ready'
       /** The epochs that carried vouchers among the ones read, newest first. */
       rows: VoucherEpoch[]
-      /** How many epochs were read, and how many the circle has. */
+      /** How many epochs were read, and how many the epoch list returned (one page of the list, not the circle's total). */
       scanned: number
       total: number
       /** The epoch members are in now (newest not finalized, else the newest) and whether it is known to hold no vouchers yet. */
