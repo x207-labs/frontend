@@ -1,0 +1,187 @@
+/* v4 internal pages, circle and account group: Who owes whom (/charts), Risk (/risk), Join the circle (/onboarding),
+   Pay and claim (/settlement), Settings (/settings). Loaded after styles.css. Recipe: src/ds/README.md, "Internal pages v4".
+   The statement frame (.ep, .ep-head, .ep-eyebrow, .ep-title, .ep-lede, .ep-section, .ep-h2, .ep-table, .ep-cards, .ep-kpis) comes from epoch.css; this file adds what these pages need on top.
+   Every page root carries `.cl`, which scopes the rules for markup that other components own (forms, panels, the Intents panels, the sortable table).
+   Hover only under (hover: hover) and (pointer: fine); colour only where it names a status; lime marks "now" and focus. */
+
+/* ---------- a member's standing: a badge with the word; the dot takes the role colour ---------- */
+.ds-status[data-member] { text-transform: capitalize; }
+.ds-status[data-member='active'] { --tone: var(--ds-settled); }
+.ds-status[data-member='pending'] { --tone: var(--ds-claim); }
+.ds-status[data-member='suspended'] { --tone: var(--ds-default); }
+
+/* ---------- controls: 10px corners, lime focus ---------- */
+.cl :is(input, select, textarea) { border-radius: var(--ds-r-ctl); background-color: var(--ds-surface); border-color: var(--ds-rule); }
+.cl :is(input, select, textarea):focus { border-color: var(--ds-focus); box-shadow: 0 0 0 1px var(--ds-focus); }
+.cl input:disabled { background-color: transparent; }
+.cl .ds-btn:disabled { border: 1px solid var(--ds-rule); background: transparent; color: var(--ds-ink-3); box-shadow: none; filter: none; cursor: not-allowed; }
+
+/* the buttons that shared panels draw themselves (Intents balance, withdrawal, 1Click quote, leaving the circle, "Try again") are quiet: the one glowing primary is a DS button */
+.cl :is(.panel, .withdraw, .branch, .onboard-exit, .state-error) button:not(.ds-btn, .copy) { min-height: 44px; padding: 0 18px; border: 1px solid var(--ds-rule-2); border-radius: var(--ds-r-ctl); background: transparent; color: var(--ds-ink); font: 600 15px/1 var(--ds-font-text); }
+.cl :is(.panel, .withdraw, .branch, .onboard-exit, .state-error) button:not(.ds-btn, .copy):disabled { border-color: var(--ds-rule); color: var(--ds-ink-3); }
+@media (hover: hover) and (pointer: fine) {
+  .cl :is(.panel, .withdraw, .branch, .onboard-exit, .state-error) button:not(.ds-btn, .copy):hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); box-shadow: none; }
+}
+
+/* panels and forms: the quiet surface */
+.cl .panel, .cl .form { padding: var(--ds-s5); border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule); background: var(--ds-surface); }
+.cl .panel > h3, .cl .withdraw.form > h3 { margin: 0; font: var(--ds-display-weight) 18px/1.2 var(--ds-font-display); font-stretch: 108%; letter-spacing: -0.01em; }
+.cl .form label > span:first-child { font-size: 14px; color: var(--ds-ink-2); }
+.cl .form label.check { margin-inline: 0; padding-inline: 0; }
+.cl .form label.check input { background: var(--ds-surface-3); box-shadow: inset 0 0 0 1px var(--ds-rule-2); }
+.cl .form label.check input:checked { background: var(--ds-accent); box-shadow: none; }
+.cl .form label.check input:focus-visible { outline: 2px solid var(--ds-focus); }
+.cl .you-tag { margin-left: 8px; padding: 1px 8px; border: 1px solid rgba(169, 203, 255, 0.28); border-radius: var(--ds-r-chip); background: rgba(47, 91, 255, 0.18); color: var(--ds-soft); font: 500 11px/1.6 var(--ds-font-mono); }
+.cl .cl-party { display: inline-flex; align-items: center; }
+
+/* the Intents balance panel: the balance as one big figure, the label in small caps */
+.cl .figure-label { font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+.cl .figure-value { font: 500 13px/1.3 var(--ds-font-text); color: var(--ds-ink-3); }
+.cl .figure-value strong { margin-right: 6px; color: var(--ds-ink); font: var(--ds-display-weight) 34px/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.cl .figure-note, .cl .panel-copy { font-size: 14px; color: var(--ds-ink-2); }
+
+/* the sortable member table keeps its own markup: the same hairlines as .ep-table (the tables written here carry .ep-table themselves) */
+.cl .table-wrap:not(.ep-table) { background: none; border: 0; border-radius: 0; box-shadow: none; }
+.cl .table-wrap:not(.ep-table) :is(th, td) { padding: 12px 16px 12px 0; border-bottom: 1px solid var(--ds-rule); vertical-align: middle; }
+.cl .table-wrap:not(.ep-table) :is(th, td):last-child { padding-right: 0; }
+.cl .table-wrap:not(.ep-table) thead th { vertical-align: bottom; border-bottom-color: var(--ds-rule-2); font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+.cl .table-wrap:not(.ep-table) td { font-size: 14px; line-height: 1.4; color: var(--ds-ink-2); }
+.cl .table-wrap:not(.ep-table) td:first-child { color: var(--ds-ink); font-weight: 500; }
+.cl .table-wrap:not(.ep-table) td.num { font: 500 14px/1.35 var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; color: var(--ds-ink); }
+.cl .table-wrap:not(.ep-table) button.th-sort { font-family: inherit; }
+.cl .table-tools { gap: 8px 16px; margin-bottom: 0; }
+.cl .table-tools label span { font: 500 11px/1 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+.cl .table-tools .state { font: 500 12px/1.4 var(--ds-font-mono); color: var(--ds-ink-3); }
+
+/* the cards of a narrow screen: a cell that names the row (the member) is its title, not a labelled line */
+@media (max-width: 640px) {
+  .cl .ep-cards td[data-title] { display: block; text-align: left; color: var(--ds-ink); font: 600 16px/1.3 var(--ds-font-text); }
+  .cl .ep-cards td[data-title]::before { content: none; }
+}
+
+/* ---------- Who owes whom: statement, figures, the map on the blue floor ---------- */
+.cl-graph .flow-stage { gap: var(--ds-s6); align-content: start; }
+.cl-floor { display: grid; gap: 12px; padding: var(--ds-s4); border-radius: var(--ds-r-floor); color: #fff; background: radial-gradient(120% 95% at 50% 42%, var(--ds-floor-a), var(--ds-floor-b)); }
+.cl-floor .flow-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 4px 4px 0 8px; }
+.cl-floor .flow-key { margin: 0; max-width: 58ch; font: 500 12px/1.5 var(--ds-font-mono); color: rgba(255, 255, 255, 0.9); }
+.cl-floor .segmented { margin-left: 0; background: rgba(8, 12, 60, 0.4); border-color: rgba(255, 255, 255, 0.28); }
+.cl-floor .segmented button { min-height: 2.5rem; padding: 0 16px; color: rgba(255, 255, 255, 0.92); font: 600 14px/1 var(--ds-font-text); }
+.cl-floor .segmented button[aria-pressed='true'] { background: linear-gradient(180deg, #ffffff, #dfe9f7); color: var(--ds-eye); }
+.cl-floor .segmented button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.cl-floor .flow { padding: 0; border: 0; border-radius: 24px; background: rgba(8, 12, 60, 0.4); }
+.cl-floor .flow-title { padding: 14px 18px 0; font: 500 12px/1.4 var(--ds-font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255, 255, 255, 0.9); }
+.cl-floor .tooltip { padding: 8px 12px; border-color: rgba(255, 255, 255, 0.28); background: rgba(8, 12, 40, 0.96); font: 500 12.5px/1.4 var(--ds-font-text); }
+/* the map: white is what is owed, lime is what the loops cancelled (the colours of the Tally blocks); nodes are the dark orbs of the replay, no colour per member */
+.cl-graph .flow .edge { stroke: var(--ds-ink); opacity: 0.92; }
+.cl-graph .flow .edge-dim { stroke: var(--ds-lime); opacity: 0.7; }
+.cl-graph .flow .edge-faded { opacity: 0.14; }
+.cl-graph .flow .edge-cycle { stroke: var(--ds-lime); opacity: 1; }
+.cl-graph .flow .edge-ghost { stroke: var(--ds-lime); opacity: 0.3; }
+.cl-graph .flow .edge-flow { stroke: var(--ds-floor-b); stroke-width: 1.5; }
+.cl-graph .flow .arrow { fill: var(--ds-ink); }
+.cl-graph .flow .arrow-cycle { fill: var(--ds-lime); }
+.cl-graph .flow .node { fill: var(--ds-eye); stroke: var(--ds-orb-edge); stroke-width: 2; }
+.cl-graph .flow .node-halo { fill: #fff; opacity: 0.1; }
+.cl-graph .flow .node-initials { fill: var(--ds-ink); font: 600 14px/1 var(--ds-font-mono); }
+.cl-graph .flow .tick { fill: #fff; stroke: rgba(8, 12, 60, 0.9); stroke-width: 4px; font: 500 13px/1 var(--ds-font-mono); }
+/* the loops that cancelled: lime-tinted chips, like the cancelled share of the map */
+.cl-graph .cycles { display: grid; gap: var(--ds-s2); }
+.cl-graph .cycles .ep-sechint { margin-top: 0; }
+.cl-graph .cycles ul { gap: var(--ds-s2); }
+.cl-graph .cycles button { min-height: 2.5rem; padding: 0 14px; border: 1px solid rgba(200, 245, 60, 0.38); border-radius: var(--ds-r-chip); background: rgba(200, 245, 60, 0.08); color: var(--ds-ink); font: 500 13px/1.2 var(--ds-font-mono); text-align: left; box-shadow: none; }
+.cl-graph .cycles button:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+.cl-graph .more > summary { color: var(--ds-accent-ink); }
+@media (hover: hover) and (pointer: fine) {
+  .cl-floor .segmented button:hover:not([aria-pressed='true']) { background: rgba(255, 255, 255, 0.14); color: #fff; }
+  .cl-graph .cycles button:hover:not(:disabled) { background: rgba(200, 245, 60, 0.16); border-color: rgba(200, 245, 60, 0.6); box-shadow: none; }
+}
+
+/* ---------- Risk ---------- */
+.risk { margin-top: 0; }
+.risk-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-self: start; max-width: 100%; font-weight: 500; color: var(--ds-ink-3); }
+.risk-pick > span { font: 500 11px/1 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+.risk-pick select { min-height: 2.75rem; font-size: 1rem; }
+.risk .soft { color: var(--ds-ink-3); }
+/* headroom: the number with a thin bar of its share of the limit; under a quarter the bar is amber and the word "low" stands by the number */
+.risk-room { display: inline-flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.risk-meter { width: 3.5rem; height: 6px; background: var(--ds-surface-3); }
+.risk-meter > span { background: var(--ds-soft); }
+.risk-meter > [data-low] { background: var(--ds-due); }
+.risk-low { font: 500 11px/1 var(--ds-font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ds-due); }
+.risk .list-table :is(th, td) { white-space: nowrap; }
+/* the loss order: three steps on hairlines, like the steps of the epoch report */
+.loss-order { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ds-s5); }
+.loss-order li { display: grid; align-content: start; gap: 4px; padding-top: 12px; border-top: 2px solid var(--ds-rule-2); }
+.loss-n { display: block; width: auto; height: auto; border: 0; border-radius: 0; background: none; font: 500 12px/1 var(--ds-font-mono); letter-spacing: 0.04em; color: var(--ds-ink-3); }
+.loss-text { padding-top: 0; }
+.loss-text strong { font: 600 15px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+.loss-text span { font-size: 14px; line-height: 1.45; color: var(--ds-ink-2); }
+@media (max-width: 759px) { .loss-order { grid-template-columns: minmax(0, 1fr); gap: var(--ds-s4); } }
+/* the member table scrolls inside its wrapper on a phone, so the sort buttons stay; the member column stays in view */
+@media (max-width: 760px) {
+  .risk .list-table :is(th, td):first-child { position: sticky; left: 0; z-index: 1; padding-right: 12px; background: var(--ds-paper); }
+}
+
+/* ---------- Pay and claim ---------- */
+.settle-cols { gap: var(--ds-s5); }
+.settle-col { gap: var(--ds-s3); }
+.settle-col > h3 { margin: 0; font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+.bills { gap: var(--ds-s3); }
+.bill { --bill-tone: var(--ds-rule); gap: 12px; padding: var(--ds-s5); border-radius: var(--ds-r-panel); border: 1px solid color-mix(in srgb, var(--bill-tone) 45%, var(--ds-rule)); background: var(--ds-surface); }
+.bill[data-tone='due'] { --bill-tone: var(--ds-due); }
+.bill[data-tone='default'] { --bill-tone: var(--ds-default); }
+.bill[data-tone='claim'] { --bill-tone: var(--ds-claim); }
+.bill[data-tone='settled'] { --bill-tone: var(--ds-settled); }
+.bill-head { align-items: flex-start; gap: 8px 16px; }
+.bill-id { display: grid; gap: 2px; min-width: 0; }
+.bill-id strong { font: 600 16px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+.bill-id span { font-size: 13px; color: var(--ds-ink-3); }
+.bill-amount { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; color: var(--ds-ink-3); }
+.bill-amount .ds-num { color: var(--ds-ink); font: var(--ds-display-weight) clamp(32px, 3vw, 40px)/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.bill-amount small { font: 500 13px/1 var(--ds-font-text); }
+.bill-line { font-size: 14px; color: var(--ds-ink-2); }
+.bill-line strong { color: var(--ds-ink); font-weight: 500; }
+.bill-clock { color: var(--ds-due); font: 500 14px/1.4 var(--ds-font-mono); font-variant-numeric: tabular-nums; }
+.bill-actions { gap: var(--ds-s2); }
+.cl-kpis .ds-kpi { overflow: hidden; }
+@media (max-width: 520px) {
+  .cl-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cl-kpis .ds-kpi { padding: 12px; }
+  .cl-kpis .ds-value { font-size: 26px; }
+}
+
+/* ---------- Settings ---------- */
+.settings { max-width: 44rem; margin-inline: 0; gap: var(--ds-s6); padding-top: var(--ds-s3); }
+.settings-hero { gap: 16px 24px; padding: var(--ds-s5); border: 1px solid var(--ds-rule); border-radius: var(--ds-r-panel); background: var(--ds-surface); }
+.settings-photo { width: 5.5rem; height: 5.5rem; background: var(--ds-surface-3); color: var(--ds-accent-ink); font: var(--ds-display-weight) 2rem/1 var(--ds-font-display); box-shadow: 0 0 0 2px var(--ds-surface), 0 0 0 3px var(--ds-rule-2); }
+.settings-who h2 { font: var(--ds-display-weight) 22px/1.2 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; }
+.settings-account { font: 400 13px/1.4 var(--ds-font-mono); color: var(--ds-ink-3); }
+.photo-pick { min-height: 2.75rem; padding: 0 18px; border: 1px solid var(--ds-rule-2); border-radius: var(--ds-r-ctl); background: transparent; color: var(--ds-ink); font: 600 15px/1 var(--ds-font-text); }
+.photo-pick:focus-within { outline: 2px solid var(--ds-focus); }
+.settings-group { gap: var(--ds-s3); }
+.settings-group-head h3 { font: 600 var(--ds-fs-h3)/1.2 var(--ds-font-display); font-stretch: 108%; letter-spacing: -0.01em; }
+.settings-group-head p { margin-top: 4px; font-size: 14px; color: var(--ds-ink-3); }
+.settings .form { padding: var(--ds-s5); }
+.settings-note { color: var(--ds-settled); font-weight: 600; }
+.settings-actions { gap: 10px 16px; }
+@media (hover: hover) and (pointer: fine) {
+  .photo-pick:hover { background: rgba(255, 255, 255, 0.08); }
+}
+
+/* ---------- a phone ---------- */
+@media (max-width: 640px) {
+  .cl-floor { padding: 12px; border-radius: 28px; }
+  .cl-floor .flow { border-radius: 20px; }
+  .cl-floor .flow-key { font-size: 11.5px; }
+  .cl-graph .flow .tick { font-size: 22px; stroke-width: 6px; }
+  .cl-graph .flow .node-initials { font-size: 22px; }
+  .settings-hero { padding: var(--ds-s4); }
+  .cl .panel, .cl .form { padding: var(--ds-s4); }
+}
+
+/* a touch screen: every key, field and link of these pages is at least 44 px */
+@media (pointer: coarse) {
+  .cl-floor .segmented button, .cl-graph .cycles button { min-height: 2.75rem; }
+  .cl .th-sort { min-height: 2.75rem; }
+  .cl .table-tools input, .cl .form input:not([type='checkbox']), .cl .form select { min-height: 2.75rem; }
+}

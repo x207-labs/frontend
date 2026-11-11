@@ -5,22 +5,25 @@ import type { ObligationEdge, Obligations } from '../api/types'
 import { agentGlyph } from '../components/glyphs'
 import { NoEpoch } from '../components/NoEpoch'
 import { QueryState } from '../components/QueryState'
+import { CIRCLE } from '../config'
+import { Kpi } from '../ds/components'
 import { useEpochSelection, useSelectedEpoch } from '../epoch'
 import { decomposeCycles } from '../lib/cycles'
-import { EDGES_PRUNED_NOTE, formatCredit, formatPercent, shortAccount } from '../lib/format'
+import { EDGES_PRUNED_NOTE, formatCredit, formatCredit2, formatNumber, formatPercent, shortAccount } from '../lib/format'
 
-// FE-070: one large map of the debts instead of three small ones. Each member is a coloured node (the colour follows the member, in the fixed order of
-// the dataviz reference palette, dark steps, validated against the page surface); each debt is a curved arrow whose thickness is its amount. "Before"
-// and "After clearing" are one map with a switch, so the same arrows visibly shrink when the loops cancel. The numbers stay one click away as a table.
+// FE-070: one large map of the debts instead of three small ones. Each member is a node; each debt is a curved arrow from the debtor to the creditor whose
+// thickness is its amount. "Before" and "After clearing" are one map with a switch, so the same arrows visibly shrink when the loops cancel. The numbers stay one click away as a table.
+// v4: the map sits on the blue floor (the 30% of energy) and follows the design system: no colour per member. White is what is owed, lime is what the loops cancelled
+// (the colours of the Tally blocks). The statement above it (one sentence, the figures as cards) is the 70% of calm.
 const W = 640
 const H = 420
 const NODE_R = 24
-const PALETTE = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767']
 
 type Point = { x: number; y: number }
 type Mode = 'live' | 'before' | 'after'
 const keyOf = (e: { debtor: string; creditor: string }) => `${e.debtor}>${e.creditor}`
 const units = (raw: string | null | undefined): number => Number(BigInt(raw ?? '0'))
+const phaseWord = (phase: string): string => phase.replace(/_/g, ' ')
 
 function positions(nodes: string[]): Map<string, Point> {
   const rx = nodes.length <= 2 ? 200 : 230
@@ -51,7 +54,6 @@ const initials = (account: string) => shortAccount(account).replace(/[^a-z0-9]/g
 
 function FlowGraph({ title, edges, nodes, mode, focus }: { title: string; edges: ObligationEdge[]; nodes: string[]; mode: Mode; focus: Set<string> | null }) {
   const at = useMemo(() => positions(nodes), [nodes])
-  const color = (n: string) => PALETTE[nodes.indexOf(n) % PALETTE.length]
   const [tip, setTip] = useState<{ text: string; at: Point } | null>(null)
   const [hot, setHot] = useState<string | null>(null)
   const max = Math.max(1, ...edges.map((e) => units(e.amount)))
@@ -63,11 +65,12 @@ function FlowGraph({ title, edges, nodes, mode, focus }: { title: string; edges:
       <div className="flow-plot">
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${title}, ${edges.length} edges`}>
           <defs>
-            {PALETTE.map((c, i) => (
-              <marker key={c} id={`arrow-${mode}-${i}`} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
-                <path d="M0 0 L10 5 L0 10 z" fill={c} />
-              </marker>
-            ))}
+            <marker id={`arrow-${mode}`} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+              <path className="arrow" d="M0 0 L10 5 L0 10 z" />
+            </marker>
+            <marker id={`arrow-${mode}-cycle`} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+              <path className="arrow arrow-cycle" d="M0 0 L10 5 L0 10 z" />
+            </marker>
           </defs>
           {edges.map((e) => {
             const a = at.get(e.debtor)!
@@ -75,21 +78,22 @@ function FlowGraph({ title, edges, nodes, mode, focus }: { title: string; edges:
             const { d, mid } = curve(a, b)
             const gone = mode === 'after' && e.remaining === '0'
             const value = mode === 'after' ? units(e.remaining) : units(e.amount)
+            const inCycle = focus?.has(keyOf(e)) === true
             const faded = (hot !== null && !touches(e)) || (focus !== null && !focus.has(keyOf(e)))
-            const cls = ['edge', gone && 'edge-dim', faded && 'edge-faded', focus?.has(keyOf(e)) && 'edge-cycle'].filter(Boolean).join(' ')
+            const cls = ['edge', gone && 'edge-dim', faded && 'edge-faded', inCycle && 'edge-cycle'].filter(Boolean).join(' ')
             const text =
               mode === 'after'
                 ? `${shortAccount(e.debtor)} → ${shortAccount(e.creditor)}: ${formatCredit(e.amount)} owed, ${formatCredit(e.cleared)} cleared, ${formatCredit(e.remaining)} left`
                 : `${shortAccount(e.debtor)} owes ${shortAccount(e.creditor)} ${formatCredit(e.amount)} credit`
             return (
-              <g key={keyOf(e)} style={{ color: color(e.debtor) }}>
+              <g key={keyOf(e)}>
                 {mode === 'after' && <path className="edge-ghost" d={d} strokeWidth={width(units(e.amount))} aria-hidden="true" />}
                 <path
                   data-testid={`edge-${mode}-${shortAccount(e.debtor)}-${shortAccount(e.creditor)}`}
                   className={cls}
                   d={d}
                   strokeWidth={gone ? 1.5 : width(value)}
-                  markerEnd={gone ? undefined : `url(#arrow-${mode}-${nodes.indexOf(e.debtor) % PALETTE.length})`}
+                  markerEnd={gone ? undefined : `url(#arrow-${mode}${inCycle ? '-cycle' : ''})`}
                 />
                 {!gone && <path className="edge-flow" d={d} aria-hidden="true" />}
                 <path className="edge-hit" d={d} onMouseEnter={() => setTip({ text, at: mid })} onMouseLeave={() => setTip(null)} />
@@ -102,7 +106,6 @@ function FlowGraph({ title, edges, nodes, mode, focus }: { title: string; edges:
               <g
                 key={n}
                 className={hot !== null && hot !== n && !edges.some((e) => (e.debtor === hot && e.creditor === n) || (e.creditor === hot && e.debtor === n)) ? 'node-g is-faded' : 'node-g'}
-                style={{ color: color(n) }}
                 onMouseEnter={() => setHot(n)}
                 onMouseLeave={() => setHot(null)}
               >
@@ -134,29 +137,29 @@ function FlowGraph({ title, edges, nodes, mode, focus }: { title: string; edges:
 
 function EdgeTable({ edges, staged }: { edges: ObligationEdge[]; staged: boolean }) {
   return (
-    <div className="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Debtor</th>
-          <th>Creditor</th>
-          <th>Amount</th>
-          {staged && <th>Cleared</th>}
-          {staged && <th>Remaining</th>}
-        </tr>
-      </thead>
-      <tbody>
-        {edges.map((e) => (
-          <tr key={keyOf(e)}>
-            <td>{shortAccount(e.debtor)}</td>
-            <td>{shortAccount(e.creditor)}</td>
-            <td>{formatCredit(e.amount)}</td>
-            {staged && <td>{formatCredit(e.cleared)}</td>}
-            {staged && <td>{formatCredit(e.remaining)}</td>}
+    <div className="table-wrap ep-table ep-cards">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Debtor</th>
+            <th scope="col">Creditor</th>
+            <th scope="col" className="num">Amount</th>
+            {staged && <th scope="col" className="num">Cleared</th>}
+            {staged && <th scope="col" className="num">Remaining</th>}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {edges.map((e) => (
+            <tr key={keyOf(e)}>
+              <th scope="row" data-label="Debtor">{shortAccount(e.debtor)}</th>
+              <td data-label="Creditor">{shortAccount(e.creditor)}</td>
+              <td className="num" data-label="Amount (credit)">{formatCredit2(e.amount)}</td>
+              {staged && <td className="num" data-label="Cleared (credit)">{formatCredit2(e.cleared)}</td>}
+              {staged && <td className="num" data-label="Remaining (credit)">{formatCredit2(e.remaining)}</td>}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -166,16 +169,49 @@ const ERROR_TEXT: Record<string, string> = {
   epoch_not_found: 'Epoch not found.',
 }
 
-function Stage({ live, cleared }: { live: Obligations; cleared: Obligations | null }) {
+/** The figures of the map, from the two stages: what is owed, what the loops cancelled and what is left. `cleared`/`left` are `null` while the epoch has no clearing result. */
+type Sums = { count: number; total: bigint; cleared: bigint | null; left: bigint | null; share: number }
+function sumsOf(live: Obligations, cleared: Obligations | null): Sums {
+  const total = BigInt(live.totalObligation)
+  const done = cleared ? cleared.edges.reduce((sum, e) => sum + BigInt(e.cleared ?? '0'), 0n) : null
+  return {
+    count: live.edgeCount,
+    total,
+    cleared: done,
+    left: done === null ? null : total > done ? total - done : 0n,
+    share: done !== null && total > 0n ? Number((done * 10000n) / total) / 10000 : 0,
+  }
+}
+
+/** The one sentence under the title, with the real numbers of the epoch. */
+function ledeOf(s: Sums): string {
+  const debts = `${formatNumber(s.count, 0)} ${s.count === 1 ? 'obligation' : 'obligations'} worth ${formatCredit2(s.total.toString())} credit.`
+  if (s.cleared === null || s.left === null) return `${debts} No clearing result yet, so nothing has been cancelled.`
+  return `${debts} The loops cancelled ${formatCredit2(s.cleared.toString())} credit, ${formatPercent(s.share)} of the debts, and ${formatCredit2(s.left.toString())} credit is left to settle.`
+}
+
+function Head({ epoch, phase, sums, pruned }: { epoch: number; phase: string | undefined; sums: Sums | null; pruned: boolean }) {
+  return (
+    <header className="ep-head">
+      <p className="ep-eyebrow">
+        {CIRCLE} · epoch {epoch}
+        {phase ? ` · ${phaseWord(phase)}` : ''}
+      </p>
+      {/* the page title is the h1 of the shell; this one names the epoch the page is about */}
+      <h2 className="ep-title">Epoch {epoch} debt map</h2>
+      {sums && sums.count > 0 && <p className="ep-lede">{ledeOf(sums)}</p>}
+      {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}
+    </header>
+  )
+}
+
+function Stage({ live, cleared, sums }: { live: Obligations; cleared: Obligations | null; sums: Sums }) {
   const [view, setView] = useState<'before' | 'after'>('after')
   const [focus, setFocus] = useState<Set<string> | null>(null)
   const nodes = useMemo(
     () => [...new Set([...live.edges, ...(cleared?.edges ?? [])].flatMap((e) => [e.debtor, e.creditor]))].sort(),
     [live, cleared],
   )
-  const totalCleared = (cleared?.edges ?? []).reduce((sum, e) => sum + BigInt(e.cleared ?? '0'), 0n)
-  const total = BigInt(live.totalObligation)
-  const share = total > 0n ? Number((totalCleared * 10000n) / total) / 10000 : 0
   const cycles = useMemo(
     () => (cleared ? decomposeCycles(cleared.edges.map((e) => ({ debtor: e.debtor, creditor: e.creditor, cleared: BigInt(e.cleared ?? '0') }))) : []),
     [cleared],
@@ -184,75 +220,87 @@ function Stage({ live, cleared }: { live: Obligations; cleared: Obligations | nu
   const shown = mode === 'after' ? cleared!.edges : live.edges
   const title = mode === 'after' ? 'After clearing' : mode === 'before' ? 'Before clearing' : 'Current epoch'
   return (
-    <section className="flow-stage" aria-label="Debts between members">
-      <div className="flow-head">
-        <p className="flow-lede">
-          {live.edgeCount} obligations worth {formatCredit(live.totalObligation)} credit.
-        </p>
-        {cleared && (
-          <p className="flow-pill">
-            Cleared value: <strong>{formatCredit(totalCleared.toString())}</strong> credit, {formatPercent(share)} of the debts
-          </p>
-        )}
-        {cleared && (
-          <div className="segmented" role="group" aria-label="Which debts to show">
-            {(['before', 'after'] as const).map((v) => (
-              <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}>
-                {v === 'before' ? 'Before clearing' : 'After clearing'}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      <FlowGraph title={title} edges={shown} nodes={nodes} mode={mode} focus={focus} />
-      {cycles.length > 0 && (
-        <section className="cycles" aria-label="Cleared cycles">
-          <h3 className="section-eyebrow">Loops that cancelled</h3>
-          <ul>
-            {cycles.map((c, i) => {
-              const keys = new Set(c.path.slice(1).map((to, j) => `${c.path[j]}>${to}`))
-              return (
-                <li key={i}>
-                  <button
-                    type="button"
-                    onMouseEnter={() => setFocus(keys)}
-                    onMouseLeave={() => setFocus(null)}
-                    onFocus={() => setFocus(keys)}
-                    onBlur={() => setFocus(null)}
-                  >
-                    {c.path.map(shortAccount).join(' → ')}: {formatCredit(c.amount.toString())} per edge
+    <>
+      <section className="ep-section" aria-label="Headline figures">
+        <div className="ds-kpis ep-kpis cl-kpis">
+          <Kpi label="Obligations" value={formatNumber(sums.count, 0)} note={`Debts between members in epoch ${live.epoch}`} />
+          <Kpi label="Owed" value={formatCredit2(sums.total.toString())} unit="credit" note="Before the loops cancel" />
+          {sums.cleared !== null && sums.left !== null && (
+            <>
+              <Kpi label="Cleared in loops" value={formatCredit2(sums.cleared.toString())} unit="credit" note={`${formatPercent(sums.share)} of the debts`} />
+              <Kpi label="Left after loops" value={formatCredit2(sums.left.toString())} unit="credit" note="Still owed once the loops cancelled" />
+            </>
+          )}
+        </div>
+      </section>
+      <section className="flow-stage ep-section" aria-label="Debts between members">
+        <div className="cl-floor">
+          <div className="flow-head">
+            <p className="flow-key">An arrow runs from the debtor to the creditor; its thickness is the amount. White is owed, lime is cancelled in loops.</p>
+            {cleared && (
+              <div className="segmented" role="group" aria-label="Which debts to show">
+                {(['before', 'after'] as const).map((v) => (
+                  <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}>
+                    {v === 'before' ? 'Before clearing' : 'After clearing'}
                   </button>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      )}
-      <details className="more">
-        <summary>Show as a table</summary>
-        <EdgeTable edges={cleared ? cleared.edges : live.edges} staged={cleared !== null} />
-      </details>
-    </section>
+                ))}
+              </div>
+            )}
+          </div>
+          <FlowGraph title={title} edges={shown} nodes={nodes} mode={mode} focus={focus} />
+        </div>
+        {cycles.length > 0 && (
+          <section className="cycles" aria-label="Cleared cycles">
+            <h3 className="ep-h2">Loops that cancelled</h3>
+            <p className="ep-sechint">Point at a loop to light it up on the map. Amounts in credit.</p>
+            <ul>
+              {cycles.map((c, i) => {
+                const keys = new Set(c.path.slice(1).map((to, j) => `${c.path[j]}>${to}`))
+                return (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onMouseEnter={() => setFocus(keys)}
+                      onMouseLeave={() => setFocus(null)}
+                      onFocus={() => setFocus(keys)}
+                      onBlur={() => setFocus(null)}
+                    >
+                      {c.path.map(shortAccount).join(' → ')}: {formatCredit(c.amount.toString())} per edge
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
+        <details className="more ep-more">
+          <summary>Show as a table</summary>
+          <EdgeTable edges={cleared ? cleared.edges : live.edges} staged={cleared !== null} />
+        </details>
+      </section>
+    </>
   )
 }
 
 export function ObligationGraph() {
   const epoch = useSelectedEpoch()
-  const pruned = useEpochSelection().selected?.edgesUnavailable === true
+  const selected = useEpochSelection().selected
+  const pruned = selected?.edgesUnavailable === true
   const live = useObligations(epoch, 'live')
   const cleared = useObligations(epoch, 'cleared')
   if (epoch === null) return <NoEpoch />
   const clearedData = cleared.data && cleared.data.edges.length > 0 ? cleared.data : null
+  const sums = live.data ? sumsOf(live.data, clearedData) : null
   return (
-    <>
-      {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}
+    <div className="ep cl cl-graph">
+      <Head epoch={epoch} phase={selected?.phase} sums={sums} pruned={pruned} />
       <QueryState
         query={live}
         loadingLabel="Loading obligations"
         isEmpty={(d) => d.edges.length === 0}
         empty={pruned ? 'The edges of this epoch were pruned on-chain and the indexer has none for it, so there is no graph to draw.' : 'No obligations registered in this epoch yet.'}
       >
-        {(data) => <Stage live={data} cleared={clearedData} />}
+        {(data) => <Stage live={data} cleared={clearedData} sums={sumsOf(data, clearedData)} />}
       </QueryState>
       {cleared.error instanceof ApiError && ERROR_TEXT[cleared.error.code] ? (
         <p className="state" role="status">{ERROR_TEXT[cleared.error.code]}</p>
@@ -266,6 +314,6 @@ export function ObligationGraph() {
           {() => null}
         </QueryState>
       )}
-    </>
+    </div>
   )
 }

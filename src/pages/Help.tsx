@@ -1,10 +1,10 @@
 // FE-069: the help page a first-time customer can reach from every page (sidebar, page search, sign-in cards, not-found page).
 // It explains the product in four steps, defines every word the other pages use, answers the first questions, and links every page.
-// FE-070: fewer words, more pictures. Each step is a drawing and one short line; the loop animation shows the idea; one word is read at a time.
-import { useEffect, useRef, useState } from 'react'
+// FE-070: fewer words, more pictures. Each step is a drawing and one short line; the loop animation shows the idea.
+// v4: an editorial page. The idea and its four steps, then the words as one hairline definition list (every word is on the page, a #term-<id> link scrolls to it and marks it), then the first questions as quiet disclosures.
+import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ExploreGrid } from '../components/ExploreGrid'
-import { NavIcon } from '../components/icons'
 import { LoopMotif } from '../components/LoopMotif'
 import { StepGlyph, type Glyph } from '../components/StepGlyph'
 import { GROUPS } from '../routes'
@@ -47,68 +47,52 @@ const GLOSSARY: { id: string; term: string; text: string }[] = [
   { id: 'evm', term: 'EVM member', text: 'A member that joined with an Ethereum-style 0x key and signs its vouchers the EVM way (EIP-712).' },
 ]
 
-const FAQ: { q: string; a: string; icon: string; tone: string }[] = [
-  { q: 'Do I need real money?', a: 'No. This circle runs on the NEAR testnet. Join the circle gives you free test NEAR and test USDT in one click.', icon: '/settlement', tone: '#2fae6a' },
-  { q: 'What happens when I sign in?', a: 'Your wallet only shows who you are. Every action that changes something (joining, signing a voucher, paying) asks your wallet to confirm it first.', icon: 'account', tone: '#3d8bff' },
-  { q: 'Why can I see some pages without signing in?', a: 'The results of every epoch are public, so anyone can check how much was owed, what cancelled and what was paid. Your own forms and balances need a sign-in.', icon: '/stats', tone: '#3d8bff' },
-  { q: 'When do I have to pay?', a: 'Only during the payment window at the end of an epoch, and only your net amount. Home and Pay and claim show the deadline.', icon: '/reports', tone: '#e2801f' },
-  { q: 'What if somebody does not pay me?', a: 'Their stake covers the debt first, then the reserve fund. The Risk page shows how much each part covers.', icon: '/risk', tone: '#e0567f' },
-  { q: 'Some pages say “read only”. Why?', a: 'Access grants and Governance show what the contract and the DAO decided. Changes are made there, not on this page.', icon: '/governance', tone: '#8b6cf0' },
-  { q: 'I run an AI agent. Do I need this app?', a: 'No. Agents use the x207 SDK, or ask the read-only MCP server, in code. These pages are for people.', icon: '/orders', tone: '#2fae6a' },
+const FAQ: { q: string; a: string }[] = [
+  { q: 'Do I need real money?', a: 'No. This circle runs on the NEAR testnet. Join the circle gives you free test NEAR and test USDT in one click.' },
+  { q: 'What happens when I sign in?', a: 'Your wallet only shows who you are. Every action that changes something (joining, signing a voucher, paying) asks your wallet to confirm it first.' },
+  { q: 'Why can I see some pages without signing in?', a: 'The results of every epoch are public, so anyone can check how much was owed, what cancelled and what was paid. Your own forms and balances need a sign-in.' },
+  { q: 'When do I have to pay?', a: 'Only during the payment window at the end of an epoch, and only your net amount. Home and Pay and claim show the deadline.' },
+  { q: 'What if somebody does not pay me?', a: 'Their stake covers the debt first, then the reserve fund. The Risk page shows how much each part covers.' },
+  { q: 'Some pages say “read only”. Why?', a: 'Access grants and Governance show what the contract and the DAO decided. Changes are made there, not on this page.' },
+  { q: 'I run an AI agent. Do I need this app?', a: 'No. Agents use the x207 SDK, or ask the read-only MCP server, in code. These pages are for people.' },
 ]
 
-// One word at a time: a row of chips, and the chosen word large beside it. A #term-<id> link opens on that word.
+// The words: every one is on the page. A #term-<id> link from another page scrolls to its word and marks it.
 function Words() {
   const { hash } = useLocation()
-  const [picked, setPicked] = useState(() => GLOSSARY.find((g) => `#term-${g.id}` === hash)?.id ?? GLOSSARY[0].id)
-  const word = GLOSSARY.find((g) => g.id === picked) ?? GLOSSARY[0]
-  const ref = useRef<HTMLDivElement>(null)
-  // a link from another page (#term-<id>) opens Help on that word (set while rendering, when the hash changes) and scrolls it into view
-  const [seenHash, setSeenHash] = useState(hash)
-  if (hash !== seenHash) {
-    setSeenHash(hash)
-    const id = GLOSSARY.find((g) => `#term-${g.id}` === hash)?.id
-    if (id) setPicked(id)
-  }
+  const target = GLOSSARY.find((g) => `#term-${g.id}` === hash)?.id
   useEffect(() => {
-    if (hash.startsWith('#term-')) ref.current?.scrollIntoView?.({ block: 'center' })
-  }, [hash])
+    if (target) document.getElementById(`term-${target}`)?.scrollIntoView?.({ block: 'center' })
+  }, [target])
   return (
-    <div className="words" ref={ref}>
-      <ul className="word-chips" aria-label="Words">
-        {GLOSSARY.map((g) => (
-          <li key={g.id}>
-            <button type="button" aria-pressed={g.id === picked} onClick={() => setPicked(g.id)}>
-              {g.term}
-            </button>
-          </li>
-        ))}
-      </ul>
-      <div className="word-card" id={`term-${word.id}`} aria-live="polite">
-        <p className="word-term" key={word.id}>{word.term}</p>
-        <p className="word-text">{word.text}</p>
-      </div>
-    </div>
+    <dl className="ax-glossary kv">
+      {GLOSSARY.map((g) => (
+        <div key={g.id} id={`term-${g.id}`} className="ax-term" data-target={g.id === target ? 'true' : undefined}>
+          <dt>{g.term}</dt>
+          <dd>{g.text}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
 export function Help() {
   const { search } = useLocation()
   return (
-    <div className="home-grid bento">
-      <section className="card span-all how" aria-labelledby="help-how">
-        <div className="how-intro">
-          <p className="section-eyebrow">The idea in one minute</p>
-          <h2 id="help-how">Owe in a loop, pay almost nothing.</h2>
-          <p className="cta-row">
-            <Link className="btn" to={{ pathname: '/onboarding', search }}>Join the circle</Link>
-            <Link className="btn quiet" to={{ pathname: '/stats', search }}>See a real epoch</Link>
+    <div className="ax ax-help">
+      <section className="ax-idea" aria-labelledby="help-how">
+        <div className="ax-idea-copy">
+          <p className="ax-eyebrow">The idea in one minute</p>
+          <h2 id="help-how" className="ax-title">Owe in a loop, pay only the difference.</h2>
+          <p className="ax-cta">
+            <Link className="ds-btn" data-variant="glow" to={{ pathname: '/onboarding', search }}>Join the circle</Link>
+            <Link className="ds-btn" data-variant="quiet" to={{ pathname: '/stats', search }}>See a real epoch</Link>
           </p>
         </div>
         <LoopMotif />
-        <ol className="how-flow">
+        <ol className="ax-flow" aria-label="How x207 works">
           {HOW.map((s) => (
-            <li key={s.title} className="how-step">
+            <li key={s.title} className="ax-flow-step">
               <StepGlyph name={s.glyph} />
               <h3>{s.title}</h3>
               <p>{s.text}</p>
@@ -117,36 +101,25 @@ export function Help() {
         </ol>
       </section>
 
-      <section className="card span-all" aria-labelledby="help-words">
-        <div className="card-head">
-          <h2 id="help-words">What the words mean</h2>
-        </div>
+      <section className="ax-section" aria-labelledby="help-words">
+        <h2 id="help-words" className="ax-h2">What the words mean</h2>
         <Words />
       </section>
 
-      <section aria-labelledby="help-faq" className="card span-all faq">
-        <div className="card-head">
-          <h2 id="help-faq">First questions</h2>
-        </div>
-        <div className="faq-list">
+      <section className="ax-section" aria-labelledby="help-faq">
+        <h2 id="help-faq" className="ax-h2">First questions</h2>
+        <div className="ax-faq">
           {FAQ.map((f) => (
             <details key={f.q}>
-              <summary>
-                <span className="faq-icon" aria-hidden="true" style={{ ['--tone' as string]: f.tone }}>
-                  <NavIcon name={f.icon} size={18} />
-                </span>
-                {f.q}
-              </summary>
+              <summary>{f.q}</summary>
               <p>{f.a}</p>
             </details>
           ))}
         </div>
       </section>
 
-      <section className="card span-all" aria-labelledby="help-pages">
-        <div className="card-head">
-          <h2 id="help-pages">Every page</h2>
-        </div>
+      <section className="ax-section" aria-labelledby="help-pages">
+        <h2 id="help-pages" className="ax-h2">Every page</h2>
         <ExploreGrid groups={GROUPS} skip={['/help']} />
       </section>
     </div>

@@ -14,6 +14,7 @@ import { SortableTable, type Column } from '../components/SortableTable'
 import { VoucherKeyField } from '../components/VoucherKeyField'
 import { CONTRACT_ID } from '../config'
 import { demoVoucherKey } from '../demo/mode'
+import { AgentText } from '../ds/components'
 import { assertInvoiceHash, buildApproval, buildCatchUp, buildCreateInvoice, buildRejection } from '../lib/invoiceFlow'
 import { describeMarketError } from '../lib/marketError'
 import { formatCredit } from '../lib/format'
@@ -31,7 +32,7 @@ type View = 'list' | 'detail' | 'request'
 const INVOICE_COLUMNS: Column<InvoiceView>[] = [
   { key: 'number', label: 'Number', sortValue: (i) => i.document.id },
   { key: 'parties', label: 'Issuer, debtor', sortValue: (i) => i.document.issuer },
-  { key: 'amount', label: 'Amount', sortValue: (i) => BigInt(i.document.amount), className: 'num' },
+  { key: 'amount', label: 'Amount (credit)', sortValue: (i) => BigInt(i.document.amount), className: 'num' },
   { key: 'installments', label: 'Installments', sortValue: (i) => i.installments.length },
   { key: 'status', label: 'Status', sortValue: (i) => i.status },
   { key: 'open', label: '' },
@@ -43,7 +44,8 @@ const STATUS_LABEL: Record<InvoiceStatus, string> = {
 }
 /** FE-081: how one installment shows in the list bar. A registered installment is paid; a shifted one waits one epoch more. */
 const INSTALLMENT_STEP: Record<InstallmentStatus, StepTone> = { scheduled: 'todo', registered: 'done', shifted: 'active', missed: 'bad' }
-const STATUS_TONE: Record<InvoiceStatus, Tone> ={ requested: 'info', approved: 'ok', registered: 'ok', rejected: 'bad', expired: 'warn', missed: 'bad' }
+// v4: the tone is the x207 result code (ok 200, info 202, warn 402, bad 409): approved is accepted (202), only a registered invoice is settled (200); a request that waits, or has expired, is no result code
+const STATUS_TONE: Record<InvoiceStatus, Tone | undefined> = { requested: undefined, approved: 'info', registered: 'ok', rejected: 'bad', expired: undefined, missed: 'bad' }
 const INSTALLMENT_LABEL: Record<InstallmentStatus, string> = { scheduled: 'Scheduled', registered: 'Registered', shifted: 'Shifted', missed: 'Missed' }
 const INSTALLMENT_TONE: Record<InstallmentStatus, Tone> = { scheduled: 'info', registered: 'ok', shifted: 'warn', missed: 'bad' }
 const REASON_LABEL: Record<InstallmentReason, string> = {
@@ -54,7 +56,7 @@ const STATUS_FILTERS = ['', 'requested', 'approved', 'registered', 'rejected', '
 
 type Obligation = { cumulative: string; last_seq: number } | null
 
-const Pill = ({ tone, children }: { tone: Tone; children: ReactNode }) => <span className="pill" data-tone={tone}>{children}</span>
+const Pill = ({ tone, children }: { tone?: Tone; children: ReactNode }) => <span className="pill" data-tone={tone}>{children}</span>
 /** A failed installment the debtor may still shift once (a catch-up voucher is signed after the failure). */
 const canShift = (item: InstallmentView) => item.reason === 'headroom' && item.status === 'scheduled' && !item.shifted
 
@@ -112,10 +114,10 @@ function InstallmentRow({ item, canCatchUp, onCatchUp, busy }: { item: Installme
   const moved = item.shifted && item.voucherEpoch !== null
   return (
     <tr>
-      <td>{item.index}</td>
-      <td>{item.epoch}</td>
-      <td>{formatCredit(item.amount)}</td>
-      <td>
+      <td className="ms-index" data-label="Installment">{item.index}</td>
+      <td data-label="Epoch">{item.epoch}</td>
+      <td className="num" data-label="Amount (credit)">{formatCredit(item.amount)}</td>
+      <td data-label="Status">
         {!(moved && item.status === 'shifted') && <Pill tone={INSTALLMENT_TONE[item.status]}>{INSTALLMENT_LABEL[item.status]}</Pill>}
         {moved && <p className="item-meta">shifted to epoch {item.voucherEpoch}</p>}
         {item.reason && <p className="item-meta">{REASON_LABEL[item.reason]}</p>}
@@ -197,17 +199,17 @@ function InvoiceDetail({ hash, voucherKey, onVoucherKey, showKey }: { hash: stri
                 <div><dt>Amount</dt><dd>{amount} credit</dd></div>
                 <div><dt>Installments</dt><dd>{view.installments.length}</dd></div>
               </dl>
-              <dl className="status-panel">
-                <dt>Issuer</dt><dd><code>{doc.issuer}</code>{isIssuer && <> <Pill tone="info">You</Pill></>}</dd>
-                <dt>Debtor</dt><dd><code>{doc.debtor}</code>{isDebtor && <> <Pill tone="info">You</Pill></>}</dd>
-                {doc.memo && <><dt>Memo</dt><dd>{doc.memo}</dd></>}
+              <dl className="status-panel kv">
+                <dt>Issuer</dt><dd><code>{doc.issuer}</code>{isIssuer && <> <Pill>You</Pill></>}</dd>
+                <dt>Debtor</dt><dd><code>{doc.debtor}</code>{isDebtor && <> <Pill>You</Pill></>}</dd>
+                {doc.memo && <><dt>Memo</dt><dd><AgentText>{doc.memo}</AgentText></dd></>}
               </dl>
-              {view.rejectReason && <p className="state" role="status">Rejection reason: {view.rejectReason}</p>}
+              {view.rejectReason && <p className="state" role="status">Rejection reason: <AgentText>{view.rejectReason}</AgentText></p>}
               {view.needsBond && <p className="state state-warn" role="status" data-testid="invoice-bond">Needs a two-sided bond before it is registered (CT-094).</p>}
               <h3>Installments</h3>
               <div className="table-wrap">
                 <table aria-label="Installment schedule">
-                  <thead><tr><th>#</th><th>Epoch</th><th>Amount</th><th>Status</th><th /></tr></thead>
+                  <thead><tr><th>#</th><th>Epoch</th><th className="num">Amount (credit)</th><th>Status</th><th /></tr></thead>
                   <tbody>
                     {view.installments.map((item) => (
                       <InstallmentRow
@@ -243,7 +245,7 @@ function InvoiceDetail({ hash, voucherKey, onVoucherKey, showKey }: { hash: stri
               {showKey && (needsKey || voucherKey !== '') && <div className="form"><VoucherKeyField value={voucherKey} onChange={onVoucherKey} /></div>}
               {isDebtor && requested && (
                 <div>
-                  <button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void approve()} aria-label={`Approve and sign ${view.installments.length} installments: ${amount} credit to ${doc.issuer}`}>
+                  <button type="button" className="glow" disabled={busy || voucherKey.trim() === ''} onClick={() => void approve()} aria-label={`Approve and sign ${view.installments.length} installments: ${amount} credit to ${doc.issuer}`}>
                     Approve and sign {view.installments.length} installments
                   </button>{' '}
                   <button type="button" className="quiet" disabled={busy || voucherKey.trim() === ''} onClick={() => void reject()} aria-label={`Reject invoice ${amount} credit from ${doc.issuer}`}>
@@ -254,7 +256,7 @@ function InvoiceDetail({ hash, voucherKey, onVoucherKey, showKey }: { hash: stri
               {isIssuer && requested && <p className="state">Waiting for the debtor to approve.</p>}
               <details className="tech">
                 <summary>Technical details</summary>
-                <dl>
+                <dl className="kv">
                   <dt>Invoice hash</dt><dd><code>{view.invoiceHash}</code><CopyButton value={view.invoiceHash} label="invoice hash" /></dd>
                 </dl>
               </details>
@@ -284,7 +286,7 @@ export function Invoices() {
   const open = (hash: string) => { setSelected(hash); setPicked('detail') }
 
   return (
-    <>
+    <div className="mk" data-mk="invoices">
       <div className="page-lead">
         <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/invoices'] }}>
           <NavIcon name="/invoices" size={22} />
@@ -329,11 +331,11 @@ export function Invoices() {
                   searchText={invoiceText}
                   renderRow={(i) => (
                     <tr key={i.invoiceHash} aria-selected={selected === i.invoiceHash}>
-                      <td><ItemTitle icon="/invoices" hue={PAGE_HUE['/invoices']} title={i.document.id} sub={i.document.memo || undefined} /></td>
-                      <td><PartyPair from={i.document.issuer} to={i.document.debtor} account={account} joint="bills" /></td>
-                      <td className="num"><span className="amount">{formatCredit(i.document.amount)}</span></td>
-                      <td><StepBar steps={i.installments.map((s) => INSTALLMENT_STEP[s.status])} doneLabel="installments paid" /></td>
-                      <td><Pill tone={STATUS_TONE[i.status]}>{STATUS_LABEL[i.status]}</Pill></td>
+                      <td><ItemTitle icon="/invoices" hue={PAGE_HUE['/invoices']} title={i.document.id} sub={i.document.memo ? <AgentText>{i.document.memo}</AgentText> : undefined} /></td>
+                      <td data-label="Issuer, debtor"><PartyPair from={i.document.issuer} to={i.document.debtor} account={account} joint="bills" /></td>
+                      <td className="num" data-label="Amount (credit)"><span className="amount">{formatCredit(i.document.amount)}</span></td>
+                      <td data-label="Installments"><StepBar steps={i.installments.map((s) => INSTALLMENT_STEP[s.status])} doneLabel="installments paid" /></td>
+                      <td data-label="Status"><Pill tone={STATUS_TONE[i.status]}>{STATUS_LABEL[i.status]}</Pill></td>
                       <td><button type="button" className="quiet" aria-label={`Open ${i.document.id}`} onClick={() => open(i.invoiceHash)}>Open</button></td>
                     </tr>
                   )}
@@ -350,6 +352,6 @@ export function Invoices() {
           <CreateInvoice voucherKey={voucherKey} onVoucherKey={setVoucherKey} showKey={shown !== 'detail'} onCreated={open} />
         </section>
       </div>
-    </>
+    </div>
   )
 }

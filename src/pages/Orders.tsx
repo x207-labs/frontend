@@ -32,7 +32,7 @@ const MILESTONE_LABEL: Record<string, string> = { open: 'Open', delivered: 'Deli
 const MILESTONE_TONE: Record<string, Tone | undefined> = { open: 'info', delivered: 'warn', confirmed: 'ok', paid: 'ok', disputed: 'bad' }
 /** FE-081: how one milestone shows in the list bar. Paid is done; delivered or confirmed waits on payment; a dispute is red; cancelled counts as not done. */
 const MILESTONE_STEP: Record<MilestoneStatus, StepTone> = { open: 'todo', delivered: 'active', confirmed: 'active', disputed: 'bad', paid: 'done', cancelled: 'todo' }
-const ORDER_TONE: Record<string, Tone | undefined> ={ proposed: 'warn', open: 'info', completed: 'ok', settled: 'ok', disputed: 'bad' }
+const ORDER_TONE: Record<string, Tone | undefined> = { open: 'info', completed: 'ok', settled: 'ok', disputed: 'bad' } // v4: a proposed order waits for a signature, it is no result code
 const REASONS = [['not_received', 'Not received'], ['not_as_described', 'Not as described'], ['other', 'Other']] as const
 /** Kinds whose note is a warning the buyer must see before ordering: shown open. */
 const WARN_KINDS: readonly string[] = ['scraping', 'loadtest']
@@ -198,16 +198,16 @@ function MilestoneRow({ view, opened, m, account, voucherKey, busy, run }: {
   const canCancel = (isSeller && (m.status === 'open' || m.status === 'delivered')) || (isBuyer && m.status === 'open' && now() > m.dueAt)
   return (
     <tr>
-      <td>{m.index}</td>
-      <td>{formatCredit(m.amount)}</td>
-      <td>{formatTime(new Date(m.dueAt * 1000).toISOString())}</td>
-      <td>
+      <td className="ms-index" data-label="Milestone">{m.index}</td>
+      <td className="num" data-label="Amount (credit)">{formatCredit(m.amount)}</td>
+      <td data-label="Due">{formatTime(new Date(m.dueAt * 1000).toISOString())}</td>
+      <td data-label="Status">
         <Pill tone={MILESTONE_TONE[m.status]}>{MILESTONE_LABEL[m.status] ?? m.status}</Pill>
         {m.autoConfirmed && <p className="item-meta">Confirmed automatically after the dispute window</p>}
         {m.outcome && <p className="item-meta">Outcome: {m.outcome}</p>}
         {m.disputeReason && <p className="item-meta">Reason: {titleCase(m.disputeReason)}</p>}
       </td>
-      <td>{m.deliverableHash ? <code>{m.deliverableHash.slice(0, 12)}</code> : '-'}</td>
+      <td data-label="Deliverable">{m.deliverableHash ? <code>{m.deliverableHash.slice(0, 12)}</code> : '-'}</td>
       <td>
         {pattern !== 'proof' && isSeller && m.status === 'open' && (
           <div>
@@ -310,9 +310,9 @@ function OrderDetail({ hash, voucherKey, onVoucherKey, showKey }: { hash: string
                 <div><dt>Total</dt><dd>{formatCredit(total.toString())} credit</dd></div>
                 <div><dt>Milestones</dt><dd>{view.milestones.length}</dd></div>
               </dl>
-              <dl className="status-panel">
-                <dt>Buyer</dt><dd><code>{view.order.buyer}</code>{isBuyer && <> <Pill tone="info">You</Pill></>}</dd>
-                <dt>Seller</dt><dd><code>{view.order.seller}</code>{isSeller && <> <Pill tone="info">You</Pill></>}</dd>
+              <dl className="status-panel kv">
+                <dt>Buyer</dt><dd><code>{view.order.buyer}</code>{isBuyer && <> <Pill>You</Pill></>}</dd>
+                <dt>Seller</dt><dd><code>{view.order.seller}</code>{isSeller && <> <Pill>You</Pill></>}</dd>
                 {view.order.target && (<><dt>Target</dt><dd><code>{view.order.target}</code> <Pill tone={view.targetVerified ? 'ok' : 'warn'}>{view.targetVerified ? 'Ownership proven' : 'Ownership not yet proven'}</Pill></dd></>)}
                 {view.order.proof && (<><dt>Payment</dt><dd>{formatCredit(view.order.proof.amountPerTx)} credit per {kind === 'delegate' ? 'vote' : 'transaction'}</dd></>)}
               </dl>
@@ -321,13 +321,13 @@ function OrderDetail({ hash, voucherKey, onVoucherKey, showKey }: { hash: string
               {kind === 'delegate' && view.mandate && (
                 <section aria-label="Mandate" data-testid="order-mandate">
                   <h3>Mandate</h3>
-                  <dl className="status-panel">
+                  <dl className="status-panel kv">
                     <dt>DAO</dt><dd><code>{view.mandate.dao}</code><DaoNote dao={view.mandate.dao} /></dd>
                     <dt>Paid proposal kinds</dt><dd>{view.mandate.kinds.map((k) => <span key={k}><Pill>{k}</Pill>{' '}</span>)}</dd>
                   </dl>
                   <details className="tech">
                     <summary>Mandate hashes</summary>
-                    <dl>
+                    <dl className="kv">
                       <dt>Rules (hash)</dt><dd><code>{view.mandate.rulesHash}</code></dd>
                       <dt>Mandate hash</dt><dd><code>{view.order.mandateHash}</code></dd>
                     </dl>
@@ -343,7 +343,7 @@ function OrderDetail({ hash, voucherKey, onVoucherKey, showKey }: { hash: string
               <h3>Milestones</h3>
               <div className="table-wrap">
                 <table aria-label="Milestones">
-                  <thead><tr><th>#</th><th>Amount</th><th>Due</th><th>Status</th><th>Deliverable</th><th /></tr></thead>
+                  <thead><tr><th>#</th><th className="num">Amount (credit)</th><th>Due</th><th>Status</th><th>Deliverable</th><th /></tr></thead>
                   <tbody>
                     {view.milestones.map((m) => <MilestoneRow key={m.index} view={view} opened={hash} m={m} account={account} voucherKey={voucherKey} busy={busy} run={run} />)}
                   </tbody>
@@ -380,7 +380,7 @@ function OrderDetail({ hash, voucherKey, onVoucherKey, showKey }: { hash: string
               {kind === 'delegate' && isSeller && view.status === 'open' && <ClaimVote view={view} hash={hash} voucherKey={voucherKey} busy={busy} run={run} />}
               <details className="tech">
                 <summary>Technical details</summary>
-                <dl>
+                <dl className="kv">
                   <dt>Order hash</dt><dd><code>{view.orderHash}</code><CopyButton value={view.orderHash} label="order hash" /></dd>
                   <dt>Signed by</dt><dd>{view.signedBy.map(shortAccount).join(', ') || 'no one'}</dd>
                   {view.order.sampleHash && (<><dt>Sample (hash)</dt><dd><code>{view.order.sampleHash}</code></dd></>)}
@@ -423,7 +423,7 @@ export function Orders() {
   const open = (hash: string) => { setSelected(hash); setPicked('detail') }
 
   return (
-    <>
+    <div className="mk" data-mk="orders">
       <div className="page-lead">
         <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/orders'] }}>
           <NavIcon name="/orders" size={22} />
@@ -461,9 +461,9 @@ export function Orders() {
                   renderRow={(o) => (
                     <tr key={o.orderHash} aria-selected={selected === o.orderHash}>
                       <td><ItemTitle icon="/orders" hue={PAGE_HUE['/orders']} title={kindLabel(o)} sub={`Order ${o.orderHash.slice(0, 8)}`} /></td>
-                      <td><PartyPair from={o.order.buyer} to={o.order.seller} account={account} joint="buys from" /></td>
-                      <td><StepBar steps={o.milestones.map((m) => MILESTONE_STEP[m.status])} doneLabel="milestones paid" /></td>
-                      <td><Pill tone={ORDER_TONE[o.status]}>{titleCase(o.status)}</Pill></td>
+                      <td data-label="Buyer, seller"><PartyPair from={o.order.buyer} to={o.order.seller} account={account} joint="buys from" /></td>
+                      <td data-label="Milestones"><StepBar steps={o.milestones.map((m) => MILESTONE_STEP[m.status])} doneLabel="milestones paid" /></td>
+                      <td data-label="Status"><Pill tone={ORDER_TONE[o.status]}>{titleCase(o.status)}</Pill></td>
                       <td><button type="button" className="quiet" aria-label={`Open order ${o.orderHash.slice(0, 8)}`} onClick={() => open(o.orderHash)}>Open</button></td>
                     </tr>
                   )}
@@ -480,6 +480,6 @@ export function Orders() {
           <CreateOrder voucherKey={voucherKey} onVoucherKey={setVoucherKey} showKey={shown !== 'detail'} onCreated={open} />
         </section>
       </div>
-    </>
+    </div>
   )
 }

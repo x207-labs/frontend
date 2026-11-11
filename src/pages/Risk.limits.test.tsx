@@ -52,7 +52,7 @@ describe('FE-013 limit history and loss allocation', () => {
     const row = within(table).getAllByRole('row')[1]!
     const cells = within(row).getAllByRole('cell').map((c) => c.textContent)
     // owed 35, paid 5, stake 20, haircut 4: reserve 35 - 5 - 20 - 4 = 6
-    expect(cells.slice(1)).toEqual(['35', '20', '6', '4'])
+    expect(cells.slice(1)).toEqual(['35.00', '20.00', '6.00', '4.00'])
     // FE-090: the loss order is a list of its three steps, in order
     const order = within(screen.getByRole('list', { name: 'Loss order' })).getAllByRole('listitem').map((li) => li.querySelector('strong')?.textContent)
     expect(order).toEqual(['Debtor stake', 'Reserve fund', 'Haircut to direct creditors'])

@@ -28,7 +28,7 @@ describe('risk', () => {
   it('TC-FE-012-02 defaults list with stake slashed calls status=defaulted', async () => {
     const { calls } = renderApp('/risk?epoch=42', (p) => (p.includes('status=defaulted') ? { status: 200, body: defaulted } : undefined))
     await screen.findByRole('heading', { name: 'Defaults in epoch 42' })
-    expect((await screen.findAllByText('35')).length).toBeGreaterThan(0)
+    expect((await screen.findAllByText('35.00')).length).toBeGreaterThan(0)
     expect(calls().some((c) => c.endsWith('/epochs/42/settlements?status=defaulted'))).toBe(true)
   })
 
@@ -55,6 +55,6 @@ describe('risk', () => {
     renderApp('/risk', (p) => (p.endsWith('/members') ? { status: 200, body: { items: suspended, nextCursor: null } } : undefined))
     const row = (await screen.findByText('scraper')).closest('tr')!
     expect(within(row).getByText('suspended')).toBeInTheDocument()
-    expect(within(row).getAllByText('0').length).toBeGreaterThanOrEqual(2)
+    expect(within(row).getAllByText('0.00').length).toBeGreaterThanOrEqual(2)
   })
 })

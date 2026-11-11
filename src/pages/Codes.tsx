@@ -102,7 +102,7 @@ function Seller({ onPrepared, onDeliver }: { onPrepared: (p: PreparedCode) => vo
           <div><button type="button" className="quiet" onClick={onDeliver}>Serve a purchase</button></div>
           <details className="tech">
             <summary>Technical details</summary>
-            <dl className="status-panel">
+            <dl className="status-panel kv">
               <dt>code_commitment</dt><dd><code>{done.document.code_commitment}</code></dd>
               <dt>cipher_hash</dt><dd><code>{done.cipherHash}</code></dd>
               <dt>Resource</dt><dd><code>{done.resource}</code></dd>
@@ -343,10 +343,10 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
           <p className="state">Issuer <code>{checked.listing.issuer}</code> <Pill tone={checked.listing.verifiable ? 'ok' : 'warn'}>{checked.listing.verifiable ? 'checkable' : 'not checkable'}</Pill></p>
           <p className="state">You pay <code>{checked.view.account}</code>. Your payment is held until the code checks out.</p>
           <Warnings listing={checked.listing} />
-          <div><button type="button" disabled={busy || voucherKey.trim() === '' || checked.listing.overLimit} onClick={() => void buy()}>Buy for {formatCredit(checked.view.offer.value)} credit</button></div>
+          <div><button type="button" className="glow" disabled={busy || voucherKey.trim() === '' || checked.listing.overLimit} onClick={() => void buy()}>Buy for {formatCredit(checked.view.offer.value)} credit</button></div>
           <details className="tech">
             <summary>Technical details</summary>
-            <dl className="status-panel">
+            <dl className="status-panel kv">
               <dt>code_commitment</dt><dd><code>{checked.listing.codeCommitment}</code></dd>
               <dt>Seller key fingerprint</dt><dd><code>{checked.fingerprint}</code></dd>
             </dl>
@@ -459,7 +459,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
                       <p className="state" role="status"><Pill tone="ok">Matches</Pill> The code matches the listing. Confirm to release your payment, or do nothing and it confirms when the window ends.</p>
                       {shown && <dl className="figures"><div><dt>Your code</dt><dd><code data-testid="code-value" style={{ fontSize: '1em' }}>{result.code}</code></dd></div></dl>}
                       <div className="actions">
-                        <button type="button" disabled={busy} onClick={() => void notify('confirmed', null, null)}>Confirm</button>
+                        <button type="button" className="glow" disabled={busy} onClick={() => void notify('confirmed', null, null)}>Confirm</button>
                         {!shown && <button type="button" className="quiet" onClick={() => setShown(true)}>Show code</button>}
                       </div>
                     </div>
@@ -477,7 +477,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
                   {view.source && (
                     <details className="tech">
                       <summary>Technical details</summary>
-                      <dl className="status-panel">
+                      <dl className="status-panel kv">
                         <dt>Source</dt><dd><code>{view.source.kind}</code> <code>{view.source.ref}</code></dd>
                       </dl>
                     </details>
@@ -503,7 +503,7 @@ export function Codes() {
   const [prepared, setPrepared] = useState<PreparedCode | null>(null)
   const [view, setView] = useState<View>('buy')
   return (
-    <>
+    <div className="mk" data-mk="codes">
       <div className="page-lead">
         <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/codes'] }}>
           <NavIcon name="/codes" size={22} />
@@ -536,6 +536,6 @@ export function Codes() {
           <Serve voucherKey={voucherKey} onVoucherKey={setVoucherKey} prepared={prepared} />
         </section>
       </div>
-    </>
+    </div>
   )
 }

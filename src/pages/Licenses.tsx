@@ -123,7 +123,7 @@ function Seller({ onPrepared, onDeliver }: { onPrepared: (p: PreparedLicense) =>
           </div>
           <details className="tech">
             <summary>Technical details</summary>
-            <dl className="status-panel">
+            <dl className="status-panel kv">
               <dt>content_hash</dt><dd><code>{done.document.content_hash}</code></dd>
               <dt>cipher_hash</dt><dd><code>{done.cipherHash}</code></dd>
               <dt>Resource</dt><dd><code>{done.resource}</code></dd>
@@ -342,7 +342,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
                   <div data-testid="license-ok" className="stack">
                     <p className="state" role="status"><Pill tone="ok">Matches</Pill> The content matches the listing. Confirm to release your payment.</p>
                     <div className="actions">
-                      <button type="button" disabled={busy} onClick={() => void notify('confirmed', null, null)}>Confirm</button>
+                      <button type="button" className="glow" disabled={busy} onClick={() => void notify('confirmed', null, null)}>Confirm</button>
                       <button type="button" className="quiet" onClick={() => download('license-content', result.content)}>Save file</button>
                     </div>
                   </div>
@@ -360,7 +360,7 @@ function Buyer({ voucherKey }: { voucherKey: string }) {
                 {view.source && (
                   <details className="tech">
                     <summary>Technical details</summary>
-                    <dl className="status-panel">
+                    <dl className="status-panel kv">
                       <dt>Source</dt><dd><code>{view.source.kind}</code> <code>{view.source.ref}</code></dd>
                       {view.cipherHash && <><dt>cipher_hash</dt><dd><code>{view.cipherHash}</code></dd></>}
                     </dl>
@@ -445,10 +445,10 @@ function BuyForm({ voucherKey, onBought }: { voucherKey: string; onBought: (id: 
             <div><dt>Seller signature</dt><dd>Verified</dd></div>
           </dl>
           <p className="state">You pay <code>{checked.view.account}</code>. Your payment is held until the file checks out.</p>
-          <div><button type="button" disabled={busy || voucherKey.trim() === ''} onClick={() => void buy()}>Buy for {formatCredit(checked.view.offer.value)} credit</button></div>
+          <div><button type="button" className="glow" disabled={busy || voucherKey.trim() === ''} onClick={() => void buy()}>Buy for {formatCredit(checked.view.offer.value)} credit</button></div>
           <details className="tech">
             <summary>Technical details</summary>
-            <dl className="status-panel">
+            <dl className="status-panel kv">
               <dt>Seller key fingerprint</dt><dd><code>{checked.fingerprint}</code></dd>
               <dt>License document</dt><dd><code>{checked.docHash}</code></dd>
               <dt>Checks</dt><dd>hash matches the one typed; signature matches the seller key in the contract</dd>
@@ -505,7 +505,7 @@ export function Licenses() {
   const [prepared, setPrepared] = useState<PreparedLicense | null>(null)
   const [view, setView] = useState<View>('buy')
   return (
-    <>
+    <div className="mk" data-mk="licenses">
       <div className="page-lead">
         <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/licenses'] }}>
           <NavIcon name="/licenses" size={22} />
@@ -541,6 +541,6 @@ export function Licenses() {
           <Takedown voucherKey={voucherKey} onVoucherKey={setVoucherKey} />
         </section>
       </div>
-    </>
+    </div>
   )
 }

@@ -281,7 +281,7 @@ function CreateListing({ voucherKey, onVoucherKey }: { voucherKey: string; onVou
           Back
         </button>
         {step < STEPS.length && (
-          <button type="button" onClick={() => go(step + 1)}>
+          <button type="button" className="glow" onClick={() => go(step + 1)}>
             Continue
           </button>
         )}
@@ -304,7 +304,8 @@ const listingText = (l: ListingView) => `${l.account} ${l.offer.assetType} ${l.w
 
 // FE-076: a listing row reads as a trade: who posts it, the asset given and the asset wanted (each with its class letter in its colour), the discount,
 // how long it stays open, and the status as a tinted word. The table stays a table, so sorting, the filter and screen readers keep working.
-const STATUS_TONE: Record<string, string> = { open: 'ok', matched: 'info', cancelled: 'bad', expired: 'warn' }
+// v4: the tone is the x207 result code (ok 200, info 202, warn 402, bad 409). An open listing is claimable (202), a matched one is settled (200); a cancelled or expired one is no result code, so its word stands alone.
+const STATUS_TONE: Record<string, string | undefined> = { open: 'info', matched: 'ok' }
 function AssetSide({ side, role }: { side: ListingView['offer']; role: 'give' | 'want' }) {
   return (
     <div className="asset-side" data-role={role}>
@@ -334,9 +335,9 @@ function ListingRow({ listing, selected, onSelect }: { listing: ListingView; sel
       </td>
       <td><AssetSide side={listing.offer} role="give" /></td>
       <td><AssetSide side={listing.want} role="want" /></td>
-      <td><span className="pill" data-tone={listing.discountBps > 0 ? 'ok' : undefined}>{formatNumber(listing.discountBps / 100)}%{listing.acceptPayment ? ', payment allowed' : ''}</span></td>
-      <td>{formatTime(listing.expiresAt)}<span className="asset-meta">{timeLeft(listing.expiresAt)}</span></td>
-      <td><span className="pill" data-tone={STATUS_TONE[listing.status]}>{listing.status}</span></td>
+      <td data-label="Discount"><span className="pill">{formatNumber(listing.discountBps / 100)}%{listing.acceptPayment ? ', payment allowed' : ''}</span></td>
+      <td data-label="Valid until">{formatTime(listing.expiresAt)}<span className="asset-meta">{timeLeft(listing.expiresAt)}</span></td>
+      <td data-label="Status"><span className="pill" data-tone={STATUS_TONE[listing.status]}>{listing.status}</span></td>
       <td>
         <button type="button" onClick={onSelect} aria-label={`Open ${listing.listingHash.slice(0, 8)}`}>
           Open
@@ -473,7 +474,7 @@ export function Marketplace() {
   }
 
   return (
-    <div className="market" data-view={view}>
+    <div className="market mk" data-mk="marketplace" data-view={view}>
       <div className="market-top">
         <Stats />
       </div>

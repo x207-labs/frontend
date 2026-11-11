@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { onboardingPayload } from '../account/onboardingSync'
 import { describeAccountFailure, useAccountActions, useSigning } from '../account/useAccount'
 import { NEAR_NETWORK } from '../config'
+import { Button } from '../ds/components'
 import './onboarding.css'
 import { FaucetPanel } from './FaucetPanel'
 import { useProgress } from './progress'
@@ -45,9 +46,9 @@ function ManualFunds({ account, onDone, done }: { account: string; onDone: () =>
         </li>
       </ol>
       {!done && (
-        <button type="button" onClick={onDone}>
+        <Button type="button" variant="glow" onClick={onDone}>
           I have the funds
-        </button>
+        </Button>
       )}
     </>
   )
@@ -61,9 +62,9 @@ function PaymentBody({ account, onDone, done }: { account: string; onDone: () =>
         <Link to="/help#term-agents">guide</Link> to make a paid call from {account}. The payment shows up in your credit panel and in the next 207 report.
       </p>
       {!done && (
-        <button type="button" onClick={onDone}>
+        <Button type="button" variant="glow" onClick={onDone}>
           I made a payment
-        </button>
+        </Button>
       )}
     </>
   )

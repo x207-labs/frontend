@@ -2,9 +2,9 @@ import { useDaoProposals, useParams, useParamsHistory, useRelayerFeeEvents } fro
 import type { ReactNode } from 'react'
 import { ApiError } from '../api/client'
 import type { DaoProposal, Params, ParamsResponse } from '../api/types'
-import { NEAR_NETWORK } from '../config'
-import { NavIcon } from '../components/icons'
+import { CONTRACT_ID, NEAR_NETWORK } from '../config'
 import { QueryState } from '../components/QueryState'
+import { Button, StatusBadge, type StatusCode } from '../ds/components'
 import { formatCredit, formatNumber } from '../lib/format'
 
 type Key = keyof Params
@@ -73,7 +73,14 @@ const describeParams = (params: DaoProposal['params']) =>
         .map(([key, value]) => `${labelOf(key)}: ${formatField(key, value)}`)
         .join(', ')
 
-const PROPOSAL_TONE: Partial<Record<DaoProposal['status'], string>> = { InProgress: 'info', Approved: 'ok', Rejected: 'bad', Failed: 'bad' }
+/** The result code that fits a proposal: an open vote is accepted and waiting (202), an approved one is settled (200), a rejected or failed one is a conflict (409). Removed, expired and moved ones carry no code, only the word. */
+const PROPOSAL_CODE: Partial<Record<DaoProposal['status'], StatusCode>> = { InProgress: 202, Approved: 200, Rejected: 409, Failed: 409 }
+
+function ProposalStatus({ status }: { status: DaoProposal['status'] }) {
+  const code = PROPOSAL_CODE[status]
+  const label = STATUS_LABEL[status] ?? status
+  return code === undefined ? <span className="pill">{label}</span> : <StatusBadge code={code} label={label} />
+}
 
 // FE-073: the rules in four groups a member thinks in, instead of one long table of contract fields.
 const RULE_GROUPS: { title: string; keys: Key[] }[] = [
@@ -110,21 +117,19 @@ function DaoProposals() {
   const e = proposals.error
   if (proposals.data === undefined && e instanceof ApiError && e.code === 'dao_unavailable')
     return (
-      <>
-        <h2>DAO proposals</h2>
+      <section className="ax-section" aria-labelledby="gov-proposals">
+        <h2 id="gov-proposals" className="ax-h2">DAO proposals</h2>
         <div className="state" role="status" data-testid="dao-unavailable">
           <p>
             <code>dao_unavailable</code> The DAO could not be read right now, so its proposals are not listed. The parameters above come from the circle contract and are current.
           </p>
-          <button type="button" onClick={() => void proposals.refetch()}>
-            Try again
-          </button>
+          <Button onClick={() => void proposals.refetch()}>Try again</Button>
         </div>
-      </>
+      </section>
     )
   return (
-    <>
-      <h2>DAO proposals</h2>
+    <section className="ax-section" aria-labelledby="gov-proposals">
+      <h2 id="gov-proposals" className="ax-h2">DAO proposals</h2>
       <QueryState
         query={proposals}
         loadingLabel="Loading DAO proposals"
@@ -135,7 +140,7 @@ function DaoProposals() {
           const open = data.items.filter((p) => p.status === 'InProgress')
           const closed = data.items.filter((p) => p.status !== 'InProgress')
           const table = (items: DaoProposal[], label: string) => (
-            <div className="table-wrap">
+            <div className="table-wrap ax-table ax-cards">
               <table aria-label={label}>
                 <thead>
                   <tr>
@@ -151,23 +156,20 @@ function DaoProposals() {
                     const t = tally(p.votes)
                     return (
                       <tr key={p.id}>
-                        <td className="num">
+                        <td className="num" data-label="Proposal">
                           <a href={`${EXPLORER_ACCOUNT}${data.dao}`} target="_blank" rel="noreferrer">
                             {p.id}
                           </a>
                         </td>
-                        <td>
+                        <td className="ax-change" data-label="Change">
                           <strong>{describeParams(p.params)}</strong>
-                          <br />
                           <small className="muted">{p.description}</small>
                         </td>
-                        <td>
-                          <span className="pill" data-tone={PROPOSAL_TONE[p.status]}>
-                            {STATUS_LABEL[p.status] ?? p.status}
-                          </span>
+                        <td data-label="Status">
+                          <ProposalStatus status={p.status} />
                         </td>
-                        <td>{p.proposer}</td>
-                        <td className="num">{`${t.approve} / ${t.reject} / ${t.remove}`}</td>
+                        <td className="ax-who" data-label="Proposed by">{p.proposer}</td>
+                        <td className="num" data-label="For / against / remove">{`${t.approve} / ${t.reject} / ${t.remove}`}</td>
                       </tr>
                     )
                   })}
@@ -177,13 +179,13 @@ function DaoProposals() {
           )
           return (
             <>
-              <p className="state">
+              <p className="ax-note">
                 The council votes in <a href={`${EXPLORER_ACCOUNT}${data.dao}`} target="_blank" rel="noreferrer">{data.dao}</a>, not on this page.
               </p>
               {open.length === 0 ? <p className="state">No open proposals.</p> : table(open, 'Open proposals')}
               {closed.length > 0 && (
                 <>
-                  <h3>Closed proposals</h3>
+                  <h3 className="ax-h3">Closed proposals</h3>
                   {table(closed, 'Closed proposals')}
                 </>
               )}
@@ -191,7 +193,7 @@ function DaoProposals() {
           )
         }}
       </QueryState>
-    </>
+    </section>
   )
 }
 
@@ -212,7 +214,7 @@ function RelayerFees() {
       >
         {(data) => (
           <>
-            <div className="table-wrap">
+            <div className="table-wrap ax-table ax-cards">
               <table>
                 <thead>
                   <tr>
@@ -228,17 +230,17 @@ function RelayerFees() {
                 <tbody>
                   {[...data.items].reverse().map((e) => (
                     <tr key={`${e.receiptId}-${e.logIndex}`}>
-                      <td>
+                      <td className="ax-first" data-label="Event">
                         {e.event === 'relayer_fee_paid' ? 'Paid' : 'Failed, not paid'}
                         {' '}
                         <code className="plain">{e.event}</code>
                       </td>
-                      <td>{e.data.account_id}</td>
-                      <td>{e.data.relayer}</td>
-                      <td>{e.data.action}</td>
-                      <td className="num">{e.data.epoch}</td>
-                      <td className="num">{formatCredit(e.data.amount)}</td>
-                      <td className="num">
+                      <td className="ax-who" data-label="Member">{e.data.account_id}</td>
+                      <td className="ax-who" data-label="Relayer">{e.data.relayer}</td>
+                      <td data-label="Action">{e.data.action}</td>
+                      <td className="num" data-label="Epoch">{e.data.epoch}</td>
+                      <td className="num" data-label="Fee (credit)">{formatCredit(e.data.amount)}</td>
+                      <td className="num" data-label="Block">
                         {e.txHash ? <a href={`${EXPLORER_TX}${e.txHash}`} target="_blank" rel="noreferrer">{e.blockHeight}</a> : e.blockHeight}
                       </td>
                     </tr>
@@ -344,23 +346,45 @@ const GROUP_VISUAL: Partial<Record<string, (props: { data: ParamsResponse }) => 
 export function Governance() {
   const params = useParams()
   const history = useParamsHistory()
+  const active = params.data?.active
   return (
-    <>
-      <div className="page-lead">
-        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: '#8b6cf0' }}>
-          <NavIcon name="/governance" size={22} />
-        </span>
+    <div className="ax ax-gov">
+      <header className="ax-lede">
         <p>The rules every member trades under. The DAO council changes them by vote, and a change starts at a later epoch, never mid-trade.</p>
-      </div>
+        {/* the facts the page already holds: where the circle lives and the two clocks every member trades by */}
+        <dl className="kv ax-facts">
+          <div>
+            <dt>Circle contract</dt>
+            <dd className="ds-num">{CONTRACT_ID}</dd>
+          </div>
+          <div>
+            <dt>Network</dt>
+            <dd className="ds-num">NEAR {NEAR_NETWORK}</dd>
+          </div>
+          {active && (
+            <>
+              <div>
+                <dt>Epoch length</dt>
+                <dd className="ds-num">{formatField('epoch_length', active.epoch_length)}</dd>
+              </div>
+              <div>
+                <dt>Payment window</dt>
+                <dd className="ds-num">{formatField('payment_window', active.payment_window)}</dd>
+              </div>
+            </>
+          )}
+        </dl>
+      </header>
       <ComingUp />
-      <h2>Current rules</h2>
+      <section className="ax-section" aria-labelledby="gov-rules">
+      <h2 id="gov-rules" className="ax-h2">Current rules</h2>
       <QueryState query={params} loadingLabel="Loading parameters">
         {(data) => (
-          <div className="rule-groups">
+          <div className="ax-rules">
             {RULE_GROUPS.map((group) => {
               const Visual = GROUP_VISUAL[group.title]
               return (
-              <div className="table-wrap rule-card" data-group={group.title} key={group.title}>
+              <div className="ax-rule" data-group={group.title} key={group.title}>
                 {Visual && <Visual data={data} />}
                 <table className="rules" aria-label={group.title}>
                   <caption>{group.title}</caption>
@@ -391,8 +415,10 @@ export function Governance() {
           </div>
         )}
       </QueryState>
+      </section>
       <DaoProposals />
-      <h2>Change history</h2>
+      <section className="ax-section" aria-labelledby="gov-history">
+      <h2 id="gov-history" className="ax-h2">Change history</h2>
       <QueryState
         query={history}
         loadingLabel="Loading history"
@@ -400,7 +426,7 @@ export function Governance() {
         empty="No parameter changes yet."
       >
         {(data) => (
-          <div className="table-wrap">
+          <div className="table-wrap ax-table ax-cards">
             <table>
               <thead>
                 <tr>
@@ -414,14 +440,14 @@ export function Governance() {
               <tbody>
                 {data.items.map((item) => (
                   <tr key={`${item.blockHeight}-${item.field}`}>
-                    <td>
+                    <td className="ax-first" data-label="Parameter">
                       {labelOf(item.field)}
                       <code className="plain muted">{item.field}</code>
                     </td>
-                    <td className="num">{formatField(item.field, item.oldValue)}</td>
-                    <td className="num">{formatField(item.field, item.newValue)}</td>
-                    <td className="num">{item.effectiveEpoch}</td>
-                    <td className="num">{item.blockHeight}</td>
+                    <td className="num" data-label="From">{formatField(item.field, item.oldValue)}</td>
+                    <td className="num" data-label="To">{formatField(item.field, item.newValue)}</td>
+                    <td className="num" data-label="Effective from epoch">{item.effectiveEpoch}</td>
+                    <td className="num" data-label="Block">{item.blockHeight}</td>
                   </tr>
                 ))}
               </tbody>
@@ -429,7 +455,8 @@ export function Governance() {
           </div>
         )}
       </QueryState>
+      </section>
       <RelayerFees />
-    </>
+    </div>
   )
 }

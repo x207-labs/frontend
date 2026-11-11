@@ -28,7 +28,11 @@ describe('obligation graph', () => {
 
   it('TC-FE-006-02 after clearing: edges with remaining 0 are dimmed and the cleared total = the sum of cleared', async () => {
     renderApp('/charts?epoch=42')
-    expect(await screen.findByText(/Cleared value:/)).toHaveTextContent('377.74')
+    // v4: the cleared total is a figure card (two decimals), not a pill in the sentence
+    const figures = await screen.findByRole('region', { name: 'Headline figures' })
+    expect(within(figures).getByText('Cleared in loops')).toBeInTheDocument()
+    expect(within(figures).getByText('377.74')).toBeInTheDocument()
+    expect(within(figures).getByText('35.00')).toBeInTheDocument()
     expect(screen.getByTestId('edge-after-translator-summarizer')).toHaveClass('edge-dim')
     expect(screen.getByTestId('edge-after-scraper-gpu')).not.toHaveClass('edge-dim')
     await userEvent.click(screen.getByRole('button', { name: 'Before clearing' }))

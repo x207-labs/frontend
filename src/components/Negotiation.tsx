@@ -22,7 +22,7 @@ const MODE_LABEL = { pay: 'Pay discounted price', barter: 'Barter' } as const
 function Breakdown({ listing, breakdown }: { listing: ListingView; breakdown: QuickBreakdown }) {
   if (breakdown.mode === 'pay') {
     return (
-      <dl aria-label="Payment breakdown">
+      <dl className="kv" aria-label="Payment breakdown">
         <dt>Counterparty pays</dt>
         <dd>{formatCredit(breakdown.counterpartyPays)} credit</dd>
         <dt>Seller receives</dt>
@@ -33,7 +33,7 @@ function Breakdown({ listing, breakdown }: { listing: ListingView; breakdown: Qu
     )
   }
   return (
-    <dl aria-label="Barter breakdown">
+    <dl className="kv" aria-label="Barter breakdown">
       <dt>Counterparty gives</dt>
       <dd>{listing.want.assetType} worth {formatCredit(breakdown.counterpartyGives)} credit</dd>
       <dt>Counterparty receives</dt>
@@ -220,7 +220,7 @@ function AcceptPanel({ listing, offer, voucherKey, onVoucherKey }: {
           ) : (
             <p>A single voucher payment: {shortAccount(preview.payment!.payer)} → {shortAccount(preview.payment!.payee)}, {formatCredit(preview.payment!.amount)} credit. No bundle signature.</p>
           )}
-          <button type="button" onClick={() => void accept()} disabled={busy !== null || (preview.bundle !== null && voucherKey.trim() === '')}>
+          <button type="button" className="glow" onClick={() => void accept()} disabled={busy !== null || (preview.bundle !== null && voucherKey.trim() === '')}>
             {busy === 'sign' ? 'Signing…' : preview.bundle ? 'Sign and accept' : 'Accept'}
           </button>
         </>

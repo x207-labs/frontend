@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api } from '../api/client'
 import { formatCredit } from '../lib/format'
 import { formatNear } from '@x207/core'
+import { Button } from '../ds/components'
 import { arrived, faucetOutcome, readBalances, type Balances, type FaucetGrant, type FaucetOutcome } from './faucet'
 
 export const WATCH_POLL_MS = 3_000
@@ -88,15 +89,15 @@ export function FaucetPanel({
       </p>
       {depleted && phase.kind === 'idle' && <p className="state-error" role="alert">The faucet has reached its limit for today. Try again tomorrow, or use the manual steps below.</p>}
       {phase.kind !== 'arrived' && (
-        <button type="button" onClick={() => void claim()} disabled={busy || depleted}>
+        <Button type="button" variant="glow" onClick={() => void claim()} disabled={busy || depleted}>
           {phase.kind === 'sending' ? 'Sending…' : phase.kind === 'watching' ? 'Waiting for the funds…' : phase.kind === 'refused' && phase.outcome.next === 'retry' ? 'Try again' : 'Get test funds'}
-        </button>
+        </Button>
       )}
       {phase.kind === 'watching' && <p className="state" role="status">Funds sent. Waiting for the NEAR and USDT to show in {account}…</p>}
       {phase.kind === 'slow' && (
         <>
           <p className="state" role="status">The funds were sent but are not visible yet. This can take a minute.</p>
-          <button type="button" onClick={() => setPhase({ kind: 'watching', grant: phase.grant, before: phase.before })}>Check again</button>
+          <Button type="button" variant="quiet" onClick={() => setPhase({ kind: 'watching', grant: phase.grant, before: phase.before })}>Check again</Button>
         </>
       )}
       {phase.kind === 'arrived' && (

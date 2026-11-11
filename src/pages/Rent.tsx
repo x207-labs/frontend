@@ -3,11 +3,10 @@ import { useState } from 'react'
 import { ApiError, api } from '../api/client'
 import type { RentChallenge, RentView } from '../api/types'
 import { VoucherKeyField } from '../components/VoucherKeyField'
-import { PROVIDER_GLYPHS } from '../components/glyphs'
-import { NavIcon, ProviderIcon } from '../components/icons'
-import { PAGE_HUE } from '../components/pageHue'
+import { ProviderIcon } from '../components/icons'
 import { BROKER_URL, CONTRACT_ID } from '../config'
 import { demoVoucherKey } from '../demo/mode'
+import { Button, StatusBadge } from '../ds/components'
 import { signMessageWithVoucher } from '../lib/barter'
 import { toAtomic, fromAtomic } from '../lib/amount'
 import { formatCredit, formatTime } from '../lib/format'
@@ -44,6 +43,12 @@ export function granteeRefProblem(provider: string, ref: string): string | null 
 const STATUS_LABEL: Record<string, string> = { active: 'Active', revoke_pending: 'Revocation pending', revoked: 'Revoked' }
 const STATUS_TONE: Record<string, { tone: 'ok' | 'warn' | 'bad'; hex: string }> = { active: { tone: 'ok', hex: '#2f9e5b' }, revoke_pending: { tone: 'warn', hex: '#c98a12' }, revoked: { tone: 'bad', hex: '#c4455a' } }
 const now = () => Math.floor(Date.now() / 1000)
+
+/** A status in the design system's words: the result code and the word for the tones that map onto one (ok 200, warn 402, bad 409); a plain word for the rest. */
+const TONE_CODE = { ok: 200, warn: 402, bad: 409 } as const
+function Pill({ tone, label }: { tone: 'ok' | 'warn' | 'bad' | 'info'; label: string }) {
+  return tone === 'info' ? <span className="pill" data-tone="info">{label}</span> : <StatusBadge code={TONE_CODE[tone]} label={label} />
+}
 const DAY_MS = 86_400_000
 
 /** The next seven UTC days as a strip: a day is filled as far as it is paid, and a line marks now inside today. Rent is paid by the day, so the strip is the bill. */
@@ -87,25 +92,25 @@ function Offer() {
   const scope = { provider, grantee_ref: ref.trim() === '' ? '<filled in by the lessee at offer_grant>' : ref.trim(), ...(resource.trim() ? { resource: resource.trim() } : {}), ...(permission.trim() ? { permission: permission.trim() } : {}), ...(capAtomic !== null ? { daily_cap: capAtomic } : {}) }
   const detail = JSON.stringify({ kind: 'access-rent', provider, ...(resource.trim() ? { resource: resource.trim() } : {}), ...(permission.trim() ? { permission: permission.trim() } : {}), price_per_day: priceAtomic, ...(capAtomic !== null ? { daily_cap: capAtomic } : {}) })
   return (
-    <section className="form" aria-label="Offer access rent">
+    <section className="ax-form" aria-label="Offer access rent">
       {/* FE-072: the provider is picked from tiles (one tap, the name and what is rented), not from a long dropdown */}
       <fieldset className="provider-tiles">
         <legend>Provider</legend>
         {Object.entries(PROVIDERS).map(([k, v]) => (
           <label key={k} className="provider-tile" title={v.label} data-costly={v.costly ? 'true' : undefined}>
             <input type="radio" name="rent-provider" value={k} checked={provider === k} onChange={() => setProvider(k)} />
-            <span className="provider-glyph" aria-hidden="true" style={{ ['--tone' as string]: PROVIDER_GLYPHS[k]?.tone }}><ProviderIcon provider={k} size={22} /></span>
+            <span className="provider-glyph" aria-hidden="true"><ProviderIcon provider={k} size={22} /></span>
             <strong>{v.short}</strong>
             <small>{v.what}</small>
           </label>
         ))}
       </fieldset>
       <p className="state" role="note" data-testid="rent-provider-note">{info.note}</p>
-      <div className="field-pair">
+      <div className="ax-pair">
         <label><span>Resource</span><input value={resource} onChange={(e) => setResource(e.target.value)} placeholder={provider === 'github' ? 'owner/repo' : provider === 'discord' ? 'role id' : provider === 'ssh' ? 'command' : 'object'} /></label>
         <label><span>Permission</span><input value={permission} onChange={(e) => setPermission(e.target.value)} placeholder="pull" /></label>
       </div>
-      <div className="field-pair">
+      <div className="ax-pair">
         <label><span>Price per day (credit)</span><input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" /></label>
         <label><span>Daily spending cap {info.costly ? '(required)' : '(optional)'}</span><input value={cap} onChange={(e) => setCap(e.target.value)} inputMode="decimal" /></label>
       </div>
@@ -153,7 +158,7 @@ function ProofState({ proof, warnings }: { proof: string | null; warnings: strin
   const pill = { verified: ['ok', 'Proven'], unproven: ['bad', 'Not proven'], not_applicable: ['info', 'Not applicable'], unknown: ['info', 'No statement'] }[kind]
   return (
     <p role="status" data-testid="rent-proof-state" data-proof={kind} className={kind === 'unproven' ? 'state state-error' : 'state'}>
-      <span className="pill" data-tone={pill[0]}>{pill[1]}</span> {text}{warned && kind === 'verified' ? ' The broker still shows a warning.' : ''}
+      <Pill tone={pill[0] as 'ok' | 'bad' | 'info'} label={pill[1]} /> {text}{warned && kind === 'verified' ? ' The broker still shows a warning.' : ''}
     </p>
   )
 }
@@ -206,14 +211,14 @@ function GranteeProofPanel({ view, voucherKey, account }: { view: RentView; vouc
     }
   }
   return (
-    <div className="actions" data-testid="rent-proof-panel">
+    <div className="ax-proof" data-testid="rent-proof-panel">
       <h3>Reference ownership</h3>
       <ProofState proof={view.proof ?? null} warnings={view.warnings ?? []} />
       {kind === null && <p className="state">This provider does not use proof from this page.</p>}
       {kind === 'oauth' && <p className="state">Discord proves ownership with OAuth on the provider side. This page stores no tokens.</p>}
       {(kind === 'near-gist' || kind === 'ssh-signature') && (
         <>
-          <div><button type="button" className="quiet" onClick={() => void fetchChallenge()}>Fetch challenge from broker</button></div>
+          <div><Button type="button" onClick={() => void fetchChallenge()}>Fetch challenge from broker</Button></div>
           {challenge && !challenge.required && <p className="state" data-testid="rent-challenge-none">The broker asks for no proof for this grant.</p>}
           {challenge?.required && (
             <>
@@ -224,7 +229,7 @@ function GranteeProofPanel({ view, voucherKey, account }: { view: RentView; vouc
               </details>
               {kind === 'near-gist' ? (
                 <>
-                  <div><button type="button" disabled={voucherKey.trim() === ''} onClick={makeContent}>Sign for gist</button></div>
+                  <div><Button type="button" disabled={voucherKey.trim() === ''} onClick={makeContent}>Sign for gist</Button></div>
                   {content && (
                     <details className="tech" open>
                       <summary>Gist content</summary>
@@ -237,7 +242,7 @@ function GranteeProofPanel({ view, voucherKey, account }: { view: RentView; vouc
               ) : (
                 <label><span>ed25519 signature of the challenge by the SSH key (base64; made on your machine with <code>signSshChallenge</code>)</span><input value={signature} onChange={(e) => setSignature(e.target.value)} /></label>
               )}
-              <div><button type="button" disabled={kind === 'near-gist' ? gist.trim() === '' : signature.trim() === ''} onClick={makeProof}>Build proof</button></div>
+              <div><Button type="button" disabled={kind === 'near-gist' ? gist.trim() === '' : signature.trim() === ''} onClick={makeProof}>Build proof</Button></div>
             </>
           )}
           {proof && (
@@ -297,22 +302,22 @@ function Renter({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey
     }
   }
   return (
-    <section className="form" aria-label="My access">
+    <section className="ax-form" aria-label="My access">
       <h2 className="sr-only">My rentals</h2>
       <label><span>Grant number</span><input value={id} onChange={(e) => setId(e.target.value)} inputMode="numeric" /></label>
       {BROKER_URL === null && <p className="state" role="status" data-testid="no-broker">{describeMarketError(new ApiError(0, 'broker_not_configured', ''))}</p>}
-      <div><button type="button" disabled={!valid || BROKER_URL === null} onClick={() => void load()}>View access</button></div>
+      <div><Button type="button" variant={view ? 'quiet' : 'glow'} disabled={!valid || BROKER_URL === null} onClick={() => void load()}>View access</Button></div>
       {view && (
-        <div className="actions" data-testid="rent-view">
-          {/* FE-083: the rental reads as a pass for one service: its mark on the service's colour, who it is for, and the days already paid. */}
-          <div className="access-pass" style={{ ['--tone' as string]: PROVIDER_GLYPHS[view.provider]?.tone ?? PAGE_HUE['/rent'] }}>
+        <div className="ax-deal" data-testid="rent-view">
+          {/* FE-083: the rental reads as a pass for one service: its mark, who it is for, and the days already paid. */}
+          <div className="access-pass">
             <div className="pass-head">
               <span className="pass-mark" aria-hidden="true"><ProviderIcon provider={view.provider} size={26} /></span>
               <span className="pass-name">
                 <strong>{PROVIDERS[view.provider]?.short ?? view.provider}</strong>
                 <small>{PROVIDERS[view.provider]?.what ?? 'Access'}</small>
               </span>
-              <span className="pill" data-tone={STATUS_TONE[view.status]?.tone ?? 'info'}>{STATUS_LABEL[view.status] ?? view.status}</span>
+              <Pill tone={STATUS_TONE[view.status]?.tone ?? 'info'} label={STATUS_LABEL[view.status] ?? view.status} />
             </div>
             <p className="pass-ref"><span className="row-sub">For</span> <code>{view.granteeRef.length > 30 ? `${view.granteeRef.slice(0, 16)}…${view.granteeRef.slice(-10)}` : view.granteeRef}</code></p>
             {view.reason && <p className="item-meta">Reason: {view.reason}</p>}
@@ -326,15 +331,17 @@ function Renter({ voucherKey, onVoucherKey }: { voucherKey: string; onVoucherKey
           {view.revokePending && <p className="state state-error" role="status">Revocation pending: attempt {view.revokePending.attempts}{view.revokePending.lastError ? ` (${view.revokePending.lastError})` : ''}.</p>}
           {check && (
             <p className={check.ok ? 'state' : 'state state-error'} role="status" data-testid="rent-check">
-              <span className="pill" data-tone={check.ok ? 'ok' : 'bad'}>{check.ok ? 'Access running' : 'Not paid'}</span> {check.text}
+              <Pill tone={check.ok ? 'ok' : 'bad'} label={check.ok ? 'Access running' : 'Not paid'} /> {check.text}
             </p>
           )}
           <VoucherKeyField value={voucherKey} onChange={onVoucherKey} disabled={!account} />
-          <button type="button" onClick={() => void checkNext()}>Check before paying</button>
-          <button type="button" className="quiet" disabled={!account || voucherKey.trim() === '' || view.status === 'revoked'} onClick={() => void stop()}>Stop rent</button>
+          <div className="ax-actions">
+            <Button type="button" variant="glow" onClick={() => void checkNext()}>Check before paying</Button>
+            <Button type="button" disabled={!account || voucherKey.trim() === '' || view.status === 'revoked'} onClick={() => void stop()}>Stop rent</Button>
+          </div>
           <details className="tech">
             <summary>Technical details</summary>
-            <dl className="status-panel">
+            <dl className="ax-dl kv">
               <dt>Grant</dt><dd>{view.grantId}</dd>
               <dt>Provider</dt><dd>{view.provider}</dd>
               <dt>Reference</dt><dd><code>{view.granteeRef}</code></dd>
@@ -356,20 +363,17 @@ export function Rent() {
   const [voucherKey, setVoucherKey] = useState(demoVoucherKey)
   const [tab, setTab] = useState<'offer' | 'mine'>('offer')
   return (
-    <>
-    {/* FE-080: the same lead as the other trade pages (a side rail on a wide screen); the marks say what each day does instead of a number. */}
-    <div className="page-lead">
-      <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/rent'] }}>
-        <NavIcon name="/rent" size={22} />
-      </span>
+    <div className="ax ax-rent">
+    {/* FE-080: the same lead as the other trade pages: one statement and the days of a rent as numbered steps. */}
+    <header className="ax-lede">
       <p>Lend access to an account by the day, or use access you rent. Either side can stop any day.</p>
-      <ol className="lead-steps rent-days" aria-label="How a rent runs">
-        <li data-mark="1">Pay one day</li>
-        <li data-mark="✓">Access works</li>
-        <li data-mark="↻">Pay the next day</li>
-        <li data-mark="✕" data-tone="stop">Stop any day</li>
+      <ol className="ax-steps" aria-label="How a rent runs">
+        <li>Pay one day</li>
+        <li>Access works</li>
+        <li>Pay the next day</li>
+        <li>Stop any day</li>
       </ol>
-    </div>
+    </header>
     <div className="market rent" data-view={tab}>
       <div className="view-tabs">
         <div className="segmented market-views" role="group" aria-label="Rent view">
@@ -387,6 +391,6 @@ export function Rent() {
         <Renter voucherKey={voucherKey} onVoucherKey={setVoucherKey} />
       </div>
     </div>
-    </>
+    </div>
   )
 }

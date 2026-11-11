@@ -1,0 +1,342 @@
+/* v4 internal pages, marketplace group: Marketplace (/marketplace), Invoices (/invoices), Service orders (/orders),
+   Content licenses (/licenses), One-time codes (/codes). Loaded after styles.css. Recipe: src/ds/README.md, "Internal pages v4".
+   Every rule starts with `main .mk` (each page's root; Marketplace is `.market.mk`), so Transfers, Rent and Access grants, which share the old frames of
+   styles.css, are untouched, and the rules win over the old `main[data-group='Marketplace']` ones at equal weight.
+   These pages are the 70% calm part of the blend: hairlines, mono small caps, amounts in mono, status as code + word (the pill carries its 200/202/402/409 mark
+   from the tone it already has), lime only for focus and for "now" (the open step, the open row). One glowing button per screen: an enabled submit key or `.glow`. */
+
+/* ---------- frame ---------- */
+main .mk { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ds-s6); min-width: 0; padding-top: var(--ds-s2); color: var(--ds-ink); }
+main .mk > * { min-width: 0; margin: 0; }
+main .mk .views { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ds-s4); min-width: 0; }
+main .mk .views > * { min-width: 0; margin: 0; }
+main .mk .views-pane, main .mk .market-pane { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ds-s4); align-content: start; min-width: 0; margin: 0; }
+main .mk .views-pane[data-active='false'], main .mk.market:not([data-view='browse']) [data-pane='browse'], main .mk.market:not([data-view='post']) [data-pane='post'], main .mk.market:not([data-view='mine']) [data-pane='mine'] { display: none; }
+main .mk h2 { margin: 0; font: var(--ds-display-weight) 20px/1.2 var(--ds-font-display); font-stretch: 108%; letter-spacing: -0.01em; color: var(--ds-ink); overflow-wrap: anywhere; }
+main .mk h3 { margin: 0; font: 650 16px/1.3 var(--ds-font-text); font-stretch: 100%; letter-spacing: 0; color: var(--ds-ink); }
+main .mk h4 { margin: 0; font: 650 15px/1.3 var(--ds-font-text); letter-spacing: 0; color: var(--ds-ink); }
+main .mk .views-pane > h2:first-child, main .mk .market-pane > h2:first-child, main .mk .views-pane > h3:first-child { margin-top: 0; }
+main .mk h2 .pill { margin-left: 8px; vertical-align: middle; }
+main .mk code { padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.05); font: 500 0.86em/1.4 var(--ds-font-mono); overflow-wrap: anywhere; }
+main .mk code.plain { font-weight: 400; color: var(--ds-ink-2); }
+main .mk a { color: var(--ds-accent-ink); text-decoration-color: rgba(169, 203, 255, 0.4); text-underline-offset: 0.2em; }
+main .mk .next-step { font-weight: 600; }
+main .mk .muted { color: var(--ds-ink-3); font-size: 13px; }
+
+/* ---------- the lead: one sentence, then the steps of the deal on hairlines ---------- */
+main .mk .page-lead { display: grid; gap: var(--ds-s4); margin: 0; padding: 0; text-align: left; justify-content: stretch; }
+main .mk .page-lead > p { flex: none; max-width: 62ch; margin: 0; font: 400 15px/1.55 var(--ds-font-text); color: var(--ds-ink-2); }
+main .mk .page-lead .tone-tile { display: none; } /* decorative page hue (aria-hidden): colour is for status only */
+main .mk .lead-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: var(--ds-s3) var(--ds-s5); width: 100%; margin: 0; padding: 0; list-style: none; counter-reset: lead; justify-content: stretch; }
+main .mk .lead-steps li { counter-increment: lead; display: grid; align-content: start; gap: 6px; padding: 12px 0 0; border: 0; border-top: 2px solid var(--ds-rule-2); border-radius: 0; background: none; font: 600 15px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+main .mk .lead-steps li::before { content: counter(lead, decimal-leading-zero); display: block; width: auto; height: auto; border-radius: 0; background: none; font: 500 12px/1 var(--ds-font-mono); letter-spacing: 0.04em; color: var(--ds-ink-3); }
+
+/* ---------- sign in: a quiet banner; the glowing key is the one in the top bar ---------- */
+main .mk .signin-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--ds-s3) var(--ds-s4); max-width: none; margin: 0; padding: var(--ds-s4) var(--ds-s5); border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface); text-align: left; }
+main .mk .signin-card > div { flex: 1 1 16rem; min-width: 0; }
+main .mk .signin-card strong { display: block; font: 650 16px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+main .mk .signin-card p { margin: 2px 0 0; font-size: 14px; color: var(--ds-ink-2); }
+main .mk .signin-lock { width: 2.5rem; height: 2.5rem; border-radius: var(--ds-r-ctl); background: var(--ds-surface-2); border: 1px solid var(--ds-rule); color: var(--ds-soft); }
+main .mk .signin-card button { border-color: transparent; background: linear-gradient(180deg, #ffffff, #dfe9f7); color: #0a1226; }
+main .mk .signin-card button:disabled { border-color: var(--ds-rule); background: transparent; color: var(--ds-ink-3); }
+main .mk .help-link { font-size: 14px; color: var(--ds-ink-2); }
+main .mk .wallet-error { color: var(--ds-default); }
+
+/* ---------- views: a segmented pill with a hairline running to the right edge ---------- */
+main .mk .view-tabs { display: flex; align-items: center; gap: var(--ds-s4); margin: 0; }
+main .mk .view-tabs::after { background: var(--ds-rule); }
+main .mk .segmented { display: inline-flex; flex-wrap: nowrap; gap: 2px; width: auto; max-width: 100%; margin: 0; padding: 3px; border-radius: 999px; border: 1px solid var(--ds-rule); background: var(--ds-surface); }
+main .mk .segmented button { min-height: 2.25rem; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--ds-ink-2); font: 600 14px/1 var(--ds-font-text); box-shadow: none; }
+main .mk .segmented button[aria-pressed='true'] { background: var(--ds-surface-3); color: var(--ds-ink); box-shadow: inset 0 0 0 1px var(--ds-rule-2); }
+
+/* ---------- filters and the table tools: small mono caps labels over controls on the surface ---------- */
+main .mk .filters { display: flex; flex-wrap: wrap; align-items: end; gap: var(--ds-s3) var(--ds-s5); margin: 0; }
+main .mk .filters label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: min(100%, 11rem); font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+main .mk .filters :is(select, input) { background-color: var(--ds-surface); }
+main .mk .table-tools { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--ds-s2) var(--ds-s4); margin: 0 0 var(--ds-s3); }
+main .mk .table-tools label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: min(100%, 16rem); font: 500 13px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+main .mk .table-tools input { background-color: var(--ds-surface); }
+main .mk .table-tools .state { margin: 0 0 10px; font: 500 12px/1.4 var(--ds-font-mono); color: var(--ds-ink-3); }
+
+/* ---------- controls: radius 10, hairline, the lime ring on focus ---------- */
+main .mk :is(input:not([type='file'], [type='checkbox'], [type='radio']), select, textarea) { min-height: 2.5rem; border: 1px solid var(--ds-rule-2); border-radius: var(--ds-r-ctl); background-color: var(--ds-paper); color: var(--ds-ink); }
+main .mk textarea { min-height: 5rem; }
+main .mk :is(input:not([type='file'], [type='checkbox'], [type='radio']), select, textarea):focus { border-color: var(--ds-focus); box-shadow: 0 0 0 1px var(--ds-focus); outline: none; }
+main .mk :is(input, select, textarea):disabled { border-color: var(--ds-rule); background-color: transparent; color: var(--ds-ink-3); }
+main .mk input::placeholder, main .mk textarea::placeholder { color: var(--ds-ink-3); opacity: 1; }
+
+/* buttons: quiet by default; the glowing one is an enabled submit key or `.glow` (one per screen) */
+main .mk button { min-height: 2.5rem; padding: 0 16px; border: 1px solid var(--ds-rule-2); border-radius: var(--ds-r-ctl); background: transparent; color: var(--ds-ink); font: 600 14px/1.2 var(--ds-font-text); box-shadow: none; }
+main .mk button:disabled { border-color: var(--ds-rule); background: transparent; color: var(--ds-ink-3); cursor: not-allowed; }
+main .mk :is(button.glow, button[type='submit']):not(:disabled) { border-color: transparent; background: linear-gradient(180deg, var(--ds-accent), var(--ds-accent-2)); color: #fff; box-shadow: var(--ds-glow); }
+main .mk button.copy { min-height: 1.75rem; margin-left: 8px; padding: 0 10px; border-radius: var(--ds-r-chip); font: 500 12.5px/1 var(--ds-font-text); color: var(--ds-ink-2); vertical-align: middle; }
+main .mk small button { min-height: 2rem; margin-left: 8px; padding: 0 12px; font-size: 12.5px; }
+main .mk .state button { min-height: 2rem; margin: 2px 6px 2px 0; padding: 0 12px; font-size: 13px; }
+main .mk button.th-sort { min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: inherit; box-shadow: none; }
+
+/* ---------- panels: forms, the negotiation, the key strip ---------- */
+main .mk :is(.form, .listing-form, .negotiation) { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ds-s4); max-width: none; margin: 0; padding: var(--ds-s5); border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule); background: var(--ds-surface); box-shadow: none; }
+main .mk .form.key-strip { margin: 0; padding: var(--ds-s4) var(--ds-s5); border-radius: var(--ds-r-card); }
+main .mk :is(.form, .listing-form, .negotiation) :is(.form, .accept, .asset-template, .resource-template) { gap: var(--ds-s3); max-width: none; margin: 0; padding: var(--ds-s4); border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); }
+main .mk :is(.form, .listing-form, .negotiation) :is(.form, .accept, .asset-template, .resource-template) > h3:first-child { margin: 0; font-size: 15px; }
+main .mk .negotiation { margin: 0; }
+main .mk .negotiation .page-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ds-s2) var(--ds-s4); margin: 0; }
+main .mk .negotiation .page-title h3 { font: var(--ds-display-weight) 18px/1.2 var(--ds-font-display); font-stretch: 108%; letter-spacing: -0.01em; }
+main .mk .negotiation > p { margin: 0; max-width: 70ch; font-size: 14px; line-height: 1.55; color: var(--ds-ink-2); }
+main .mk .card-title { margin: 0; font: var(--ds-display-weight) 18px/1.2 var(--ds-font-display); font-stretch: 108%; letter-spacing: -0.01em; color: var(--ds-ink); }
+main .mk :is(.form, .listing-form, .negotiation) label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; font: 500 13px/1.35 var(--ds-font-text); color: var(--ds-ink-2); }
+main .mk :is(.form, .listing-form, .negotiation) label small { font: 400 12.5px/1.5 var(--ds-font-text); color: var(--ds-ink-3); }
+main .mk .form label.check { display: flex; min-height: 3rem; color: var(--ds-ink); font: 500 14px/1.4 var(--ds-font-text); }
+main .mk .form.key-strip > label { align-items: start; }
+main .mk .field-pair { gap: var(--ds-s4); }
+main .mk fieldset:not([class]) > legend { margin-bottom: var(--ds-s2); font: 500 13px/1.35 var(--ds-font-text); color: var(--ds-ink-2); }
+main .mk .side { gap: var(--ds-s3); margin: 0; padding: var(--ds-s4); border: 1px solid var(--ds-rule); border-radius: var(--ds-r-card); background: var(--ds-surface-2); }
+main .mk .side legend { padding: 0 8px; font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-2); }
+main .mk .stack, main .mk .views-pane > section, main .mk .market-pane > section { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ds-s4); min-width: 0; }
+main .mk .views-pane > section > h3 { margin-bottom: calc(var(--ds-s2) * -1); }
+main .mk :is(.views-pane, .form, .negotiation, .accept) > button { justify-self: start; }
+main .mk .actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ds-s2) var(--ds-s3); margin: 0; padding: 0; list-style: none; }
+main .mk .actions > p { flex: 1 1 100%; margin: 0; font-size: 14px; color: var(--ds-ink-2); }
+main .mk .switches { border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); }
+main .mk .switches label.check + label.check { border-top-color: var(--ds-rule); }
+main .mk .form label.check input:checked { background: var(--ds-accent); }
+main .mk .form label.check input:focus-visible { outline-color: var(--ds-focus); }
+main .mk .file-zone { border: 1.5px dashed var(--ds-rule-2); border-radius: var(--ds-r-card); background: var(--ds-paper); }
+main .mk .file-icon { border-radius: var(--ds-r-ctl); background: var(--ds-surface-2); border: 1px solid var(--ds-rule); color: var(--ds-soft); }
+main .mk .file-pick[data-chosen='true'] .file-zone { border-style: solid; border-color: var(--ds-ink-3); background: var(--ds-paper); }
+main .mk .file-pick[data-chosen='true'] .file-icon { background: var(--ds-surface-3); color: var(--ds-ink); }
+main .mk .file-text small { color: var(--ds-ink-3); }
+main .mk .warnings { margin: 0; padding-left: 1.1rem; font-size: 13.5px; line-height: 1.5; color: var(--ds-ink-2); }
+
+/* ---------- notes: a state line, a warning (402 amber) and an error (409 red) ---------- */
+main .mk .state { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--ds-s2) var(--ds-s3); margin: 0; text-align: left; font-size: 14px; line-height: 1.5; color: var(--ds-ink-2); }
+main .mk p.state { display: block; max-width: 70ch; margin-inline: 0; } /* a sentence with a code, a pill or a link in it stays one running line (the old flex split it into spaced pieces) */
+main .mk p.state:has(> .spinner) { display: flex; }
+main .mk p.state .pill { vertical-align: middle; }
+main .mk .state-error, main .mk .state-warn { display: block; width: fit-content; max-width: 100%; padding: 10px 14px 10px 2.5rem; border-radius: var(--ds-r-ctl); border: 1px solid color-mix(in srgb, var(--ds-default) 38%, transparent); background: color-mix(in srgb, var(--ds-default) 9%, var(--ds-surface)); color: var(--ds-ink); text-align: left; }
+main .mk .state-warn { border-color: color-mix(in srgb, var(--ds-due) 38%, transparent); background: color-mix(in srgb, var(--ds-due) 9%, var(--ds-surface)); }
+main .mk .state-error::before { background: var(--ds-default); }
+main .mk .state-warn::before { background: var(--ds-due); }
+main .mk .skeleton { border-radius: var(--ds-r-card); background: var(--ds-surface-2); }
+
+/* ---------- tables: hairlines, mono small caps headers, numbers right-aligned in mono ---------- */
+main .mk .table-wrap { overflow-x: auto; margin: 0; border: 1px solid var(--ds-rule); border-radius: var(--ds-r-panel); background: var(--ds-surface); box-shadow: none; }
+main .mk .table-wrap table { width: 100%; border-collapse: collapse; }
+main .mk .table-wrap :is(th, td) { padding: 12px 16px; border-bottom: 1px solid var(--ds-rule); vertical-align: middle; text-align: left; font-size: 14px; line-height: 1.4; color: var(--ds-ink-2); }
+main .mk .table-wrap thead th { vertical-align: bottom; border-bottom-color: var(--ds-rule-2); font: 500 11px/1.3 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); white-space: nowrap; }
+main .mk .table-wrap tbody tr:last-child > * { border-bottom: 0; }
+main .mk .table-wrap :is(th.num, td.num) { text-align: right; font-family: var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; white-space: nowrap; }
+main .mk .table-wrap td.num { font-size: 13.5px; font-weight: 500; color: var(--ds-ink); }
+main .mk .table-wrap td:first-child, main .mk .table-wrap tbody th { color: var(--ds-ink); }
+main .mk .table-wrap tr[aria-selected='true'] { outline: 0; }
+main .mk .table-wrap tr[aria-selected='true'] > * { background: rgba(47, 108, 240, 0.1); }
+main .mk .table-wrap tr[aria-selected='true'] > :first-child { box-shadow: inset 3px 0 0 var(--ds-focus); }
+main .mk .table-wrap td button { margin: 2px 6px 2px 0; }
+main .mk .amount { font: 500 14px/1.3 var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; color: var(--ds-ink); }
+main .mk .row-title { gap: var(--ds-s3); }
+main .mk .row-text strong { font: 600 14.5px/1.35 var(--ds-font-text); color: var(--ds-ink); }
+main .mk .row-sub { max-width: 20rem; font-size: 12.5px; color: var(--ds-ink-3); }
+main .mk .item-meta { color: var(--ds-ink-3); font-size: 13px; }
+main .mk .item-title { font: 600 14.5px/1.35 var(--ds-font-text); }
+main .mk .item-cards { gap: 0; border: 1px solid var(--ds-rule); border-radius: var(--ds-r-panel); background: var(--ds-surface); overflow: hidden; }
+main .mk .item-card { padding: 12px 16px; border: 0; border-bottom: 1px solid var(--ds-rule); border-radius: 0; background: none; }
+main .mk .item-card:last-child { border-bottom: 0; }
+main .mk .intents { display: grid; gap: var(--ds-s2); margin: 0; padding: 0; list-style: none; }
+main .mk .intents li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ds-s2) var(--ds-s4); padding: 12px 16px; border: 1px solid var(--ds-rule); border-radius: var(--ds-r-card); background: var(--ds-surface); }
+main .mk .intents li p { flex: 1 1 18rem; margin: 0; font-size: 14px; line-height: 1.5; color: var(--ds-ink-2); }
+
+/* members: a quiet avatar (the hue is only a tint), a "you" chip */
+main .mk .avatar { background: color-mix(in srgb, var(--hue, var(--ds-ink-3)) 16%, var(--ds-surface-3)); box-shadow: inset 0 0 0 1px var(--ds-rule-2); color: var(--ds-ink); }
+main .mk .party-name { font: 600 14px/1.3 var(--ds-font-text); }
+main .mk .party-pair::before { background: var(--ds-rule-2); }
+main .mk :is(.you-tag, .badge) { padding: 1px 7px; border-radius: var(--ds-r-badge); border: 1px solid rgba(169, 203, 255, 0.28); background: rgba(47, 91, 255, 0.18); font: 500 11px/1.5 var(--ds-font-mono); color: var(--ds-soft); }
+main .mk .tone-tile { color: var(--ds-soft); background: var(--ds-surface-2); border: 1px solid var(--ds-rule); }
+
+/* the steps of an invoice or an order in a list row: done ink-2, the one waiting lime, a failed one 409, the rest dim */
+main .mk .step-bar { gap: var(--ds-s3); }
+main .mk .step-track > span { height: 6px; border-radius: 3px; background: var(--ds-surface-3); }
+main .mk .step-track > span[data-step='done'] { background: var(--ds-ink-2); }
+main .mk .step-track > span[data-step='active'] { background: var(--ds-focus); }
+main .mk .step-track > span[data-step='bad'] { background: var(--ds-default); }
+main .mk .step-count { font: 500 12.5px/1 var(--ds-font-mono); color: var(--ds-ink-2); }
+
+/* ---------- status: a pill is a status badge, code + word (src/ds/components.css .ds-status) ---------- */
+main .mk .pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: var(--ds-r-badge); border: 1px solid var(--ds-rule); background: rgba(255, 255, 255, 0.03); font: 500 12px/1.5 var(--ds-font-text); color: var(--ds-ink); white-space: nowrap; }
+main .mk .pill[data-tone]::before { content: var(--code); flex: none; width: auto; height: auto; margin: 0; border-radius: 0; background: none; font: 500 11px/1 var(--ds-font-mono); color: var(--tone); }
+main .mk .pill[data-tone='ok'] { --tone: var(--ds-settled); --code: '200'; }
+main .mk .pill[data-tone='info'] { --tone: var(--ds-claim); --code: '202'; }
+main .mk .pill[data-tone='warn'] { --tone: var(--ds-due); --code: '402'; }
+main .mk .pill[data-tone='bad'] { --tone: var(--ds-default); --code: '409'; }
+
+/* ---------- facts: figures as a hairline row, key-value lists as hairline rows ---------- */
+main .mk dl.figures { display: flex; flex-wrap: wrap; gap: 14px 44px; margin: 0; padding: 16px 0; border-block: 1px solid var(--ds-rule); }
+main .mk dl.figures > div { min-width: 0; padding: 0; border: 0; border-radius: 0; background: none; }
+main .mk dl.figures dt { margin: 0 0 4px; font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+main .mk dl.figures dd { margin: 0; font: 500 18px/1.3 var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; letter-spacing: 0; color: var(--ds-ink); overflow-wrap: anywhere; }
+main .mk dl.kv { display: grid; grid-template-columns: minmax(7.5rem, 13rem) minmax(0, 1fr); margin: 0; border: 0; border-top: 1px solid var(--ds-rule); border-radius: 0; background: none; overflow: visible; }
+main .mk dl.kv > :is(dt, dd) { margin: 0; padding: 10px 0; border: 0; border-bottom: 1px solid var(--ds-rule); background: none; }
+main .mk dl.kv > dt { display: flex; align-items: center; padding-right: 16px; font: 500 11px/1.4 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+main .mk dl.kv > dd { text-align: left; font-size: 14px; line-height: 1.45; color: var(--ds-ink); overflow-wrap: anywhere; }
+main .mk details.tech { margin: 0; border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface); }
+main .mk details.tech summary { display: flex; align-items: center; min-height: 2.75rem; padding: 0 16px; font: 600 14px/1.3 var(--ds-font-text); color: var(--ds-ink-2); cursor: pointer; }
+main .mk details.tech > :not(summary) { margin: 0 16px 14px; }
+main .mk details.tech > dl.kv { margin-bottom: 8px; }
+main .mk details.tech p { font-size: 14px; line-height: 1.55; color: var(--ds-ink-2); }
+
+/* ---------- Marketplace: the five figures (glass edge as the KPI), the bars in quiet inks ---------- */
+main .mk .market-top { display: block; margin: 0; }
+main .mk .pulse { gap: var(--ds-s3); }
+main .mk .pulse-card { position: relative; gap: var(--ds-s2); padding: 14px 16px 16px; border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule); background: var(--ds-glass); box-shadow: var(--ds-shadow-card); text-align: left; }
+main .mk .pulse-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(160deg, rgba(169, 203, 255, 0.45), transparent 40%, transparent 70%, rgba(169, 203, 255, 0.18));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+main .mk .pulse-wide { background: var(--ds-glass); border-color: var(--ds-rule); }
+main .mk .pulse-card dt { font: 500 13px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+main .mk .pulse-card dd > .pulse-figure, main .mk .pulse-wide dd > .pulse-figure { font: var(--ds-display-weight) 34px/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ds-ink); }
+main .mk .pulse-unit { font: 500 13px/1 var(--ds-font-text); color: var(--ds-ink-3); }
+main .mk .bar-stack, main .mk .split { gap: 2px; height: 10px; border-radius: 999px; overflow: hidden; background: var(--ds-surface-3); }
+main .mk .pulse-wide .bar-stack { height: 10px; }
+main .mk .bar-stack > span, main .mk .split > span { border-radius: 0; background: var(--c); }
+main .mk .pulse [data-state='open'] { --c: var(--ds-claim); }
+main .mk .pulse [data-state='matched'] { --c: var(--ds-settled); }
+main .mk .pulse [data-state='cancelled'] { --c: var(--ds-default); }
+main .mk .pulse [data-state='expired'] { --c: var(--ds-ink-3); }
+main .mk .pulse [data-part='pay'] { --c: var(--ds-accent); }
+main .mk .pulse [data-part='barter'] { --c: var(--ds-soft); }
+main .mk .legend { gap: 4px 16px; font: 400 12.5px/1.4 var(--ds-font-text); color: var(--ds-ink-3); }
+main .mk .legend > span::before { border-radius: 2px; }
+main .mk .legend b { font: 500 12.5px/1.4 var(--ds-font-mono); color: var(--ds-ink); }
+main .mk .range { height: 6px; background: var(--ds-surface-3); }
+main .mk .range-dot { width: 12px; height: 12px; border-color: var(--ds-glass-strong); background: var(--ds-ink); }
+main .mk .range-dot[data-kind='median'] { background: var(--ds-accent-ink); }
+main .mk .range-ends { gap: 4px 12px; font: 400 12px/1.4 var(--ds-font-text); color: var(--ds-ink-3); }
+main .mk .ring-row { font-size: 13px; color: var(--ds-ink-2); }
+main .mk .ring-row b { font-family: var(--ds-font-mono); font-weight: 500; }
+main .mk .ring circle { stroke: var(--ds-surface-3); }
+main .mk .ring circle + circle { stroke: var(--ds-soft); }
+main .mk .rank-row { font-size: 13px; }
+main .mk .rank-row b { font: 500 13px/1 var(--ds-font-mono); }
+main .mk .rank-bar { background: var(--ds-surface-3); }
+main .mk .rank-bar > span { background: var(--ds-soft); }
+
+/* Marketplace: the listing rows */
+main .mk .poster-avatar { width: 2rem; height: 2rem; border-radius: var(--ds-r-chip); background: var(--ds-surface-2); border: 1px solid var(--ds-rule); color: var(--ds-soft); }
+main .mk .poster code { font-size: 13px; }
+main .mk table[aria-label='Listings'] :is(th, td) { padding-inline: 12px; }
+main .mk table[aria-label='Listings'] td { vertical-align: middle; }
+main .mk table[aria-label='Listings'] td:nth-child(5) { white-space: normal; }
+main .mk table[aria-label='Listings'] .asset-side { min-width: 0; }
+main .mk .asset-name { font: 600 14.5px/1.35 var(--ds-font-text); color: var(--ds-ink); }
+main .mk .asset-meta { margin-top: 2px; font-size: 12.5px; line-height: 1.4; color: var(--ds-ink-3); }
+main .mk .class-badge { width: 1.75rem; height: 1.75rem; border-radius: var(--ds-r-chip); border: 1px solid rgba(169, 203, 255, 0.28); background: rgba(47, 91, 255, 0.18); font: 500 12.5px/1 var(--ds-font-mono); color: var(--ds-soft); }
+main .mk .asset-side[data-role='want']::before { color: var(--ds-ink-3); }
+
+/* Marketplace: posting a listing is four steps: the open one is lime, done ones ink-2 with a check, the rest dim (the phase strip's idea) */
+main .mk .stepper { gap: var(--ds-s4); margin: 0; }
+main .mk .stepper li { padding-top: 12px; border-top: 2px solid var(--ds-rule-2); }
+main .mk .stepper li + li::before { display: none; }
+main .mk .stepper li:has(> button[aria-current='step']) { border-top-color: var(--ds-focus); }
+main .mk .stepper button { display: flex; align-items: center; justify-content: flex-start; gap: 8px; width: 100%; min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; color: var(--ds-ink-3); font: 600 14px/1.3 var(--ds-font-text); text-align: left; }
+main .mk .stepper button[data-done] { color: var(--ds-ink-2); }
+main .mk .stepper button[aria-current='step'] { color: var(--ds-ink); }
+main .mk .stepper-dot, main .mk .stepper button[data-done] .stepper-dot, main .mk .stepper button[aria-current='step'] .stepper-dot { display: inline-grid; place-items: center; width: auto; height: auto; min-width: 1.25em; border: 0; border-radius: 0; background: none; color: inherit; font: 500 12px/1 var(--ds-font-mono); transform: none; }
+main .mk .stepper button[aria-current='step'] .stepper-dot { color: var(--ds-focus); }
+main .mk .step-nav { padding-top: var(--ds-s3); border-top: 1px solid var(--ds-rule); }
+main .mk .deal { gap: var(--ds-s3); }
+main .mk .deal-side { gap: 4px; padding: var(--ds-s4); border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); text-align: left; }
+main .mk .deal-side strong { font: 650 16px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+main .mk .deal-side > span:last-child { font: 400 13px/1.4 var(--ds-font-mono); color: var(--ds-ink-2); }
+main .mk .deal-tag { font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+main .mk .deal-arrow { color: var(--ds-ink-3); }
+
+/* ---------- a deal as the path of the buyer's voucher (licenses, codes): the stops follow the same marks as the phase strip ---------- */
+main .mk .deal-track { gap: var(--ds-s3); padding: var(--ds-s4); border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); }
+main .mk .deal-head .tone-tile { background: var(--ds-surface-3); }
+main .mk .deal-rail { --done: var(--ds-ink-2); --wait: var(--ds-focus); }
+main .mk .deal-in, main .mk .deal-out { background: var(--ds-rule-2); }
+main .mk .deal-in[data-on='true'], main .mk .deal-out[data-on='true'] { background: var(--done); }
+main .mk .deal-stop[data-state='active'] .deal-in[data-on='true'] { background: linear-gradient(90deg, var(--done), var(--wait)); }
+main .mk .deal-node { color: var(--ds-ink-3); background: var(--ds-surface-3); box-shadow: inset 0 0 0 1.5px var(--ds-rule-2); }
+main .mk .deal-stop[data-state='done'] .deal-node { color: var(--ds-ink-2); background: var(--ds-surface-3); box-shadow: inset 0 0 0 1.5px var(--ds-ink-3); }
+main .mk .deal-stop[data-state='done'] .deal-node::after { content: '✓'; content: '✓' / ''; position: absolute; top: -5px; right: -5px; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: var(--ds-ink-2); color: var(--ds-paper); font: 700 9px/1 var(--ds-font-text); }
+main .mk .deal-stop[data-state='active'] .deal-node { color: var(--ds-focus); background: rgba(200, 245, 60, 0.1); box-shadow: inset 0 0 0 2px var(--ds-focus), 0 0 0 4px rgba(200, 245, 60, 0.14); }
+main .mk .deal-stop[data-state='bad'] .deal-node { color: var(--ds-paper); background: var(--ds-default); box-shadow: none; }
+main .mk .deal-stop[data-state='warn'] .deal-node { color: var(--ds-paper); background: var(--ds-due); box-shadow: none; }
+main .mk .deal-stop::after { color: var(--ds-ink-3); }
+main .mk .deal-stop[data-state='done']::after { color: var(--ds-ink-2); font-weight: 500; }
+main .mk .deal-stop:is([data-state='active'], [data-state='bad'], [data-state='warn'])::after { color: var(--ds-ink); font-weight: 600; }
+main .mk .deal-end::after { color: var(--ds-ink); }
+main .mk .deal-end[data-arrived='true'] .avatar { box-shadow: 0 0 0 2px var(--ds-surface-2), 0 0 0 4px var(--ds-settled); }
+main .mk .deal-note { margin: 0; font-size: 14px; color: var(--ds-ink-2); }
+
+/* ---------- phones: a list row is a card; labelled cells; keys are 44 px ---------- */
+@media (max-width: 759px) {
+  main .mk .table-wrap :is(.list-table:has(.row-title), table[aria-label='Listings']) tbody td { padding: 0; border: 0; }
+  main .mk .list-table:has(.row-title) thead { display: none; }
+  main .mk .list-table:has(.row-title) tbody tr { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ds-s3) var(--ds-s4); padding: var(--ds-s4); border-bottom: 1px solid var(--ds-rule); }
+  main .mk .list-table:has(.row-title) tbody tr:last-child { border-bottom: 0; }
+  main .mk .list-table:has(.row-title) tbody td:is(:first-child, :last-child, [data-label='Issuer, debtor'], [data-label='Buyer, seller']) { grid-column: 1 / -1; }
+  main .mk .list-table:has(.row-title) tbody td:last-child { justify-self: stretch; align-self: end; }
+  main .mk[data-mk='orders'] .list-table tbody td:last-child, main .mk table[aria-label='Listings'] tbody td:last-child { grid-column: 1 / -1; }
+  main .mk :is(.list-table:has(.row-title), table[aria-label='Listings']) tbody td:last-child button { width: 100%; }
+  main .mk .list-table:has(.row-title) tbody td.num { text-align: left; }
+  main .mk table[aria-label='Listings'] tbody tr { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ds-s3) var(--ds-s4); padding: var(--ds-s4); border-bottom-color: var(--ds-rule); }
+  main .mk table[aria-label='Listings'] tbody td:nth-child(5) { text-align: left; }
+  /* the milestone and installment tables of one order or invoice: a card per row */
+  main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) { display: block; }
+  main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) tbody { display: block; }
+  main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ds-s3) var(--ds-s4); padding: var(--ds-s4); border-bottom: 1px solid var(--ds-rule); }
+  main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) tbody tr:last-child { border-bottom: 0; }
+  main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) tbody td { display: block; padding: 0; border: 0; min-width: 0; text-align: left; }
+  main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) tbody td:empty { display: none; }
+  main .mk .table-wrap table[aria-label='Milestones'] tbody td:is(:nth-child(3), :nth-child(5), :last-child) { grid-column: 1 / -1; }
+  main .mk .table-wrap table[aria-label='Installment schedule'] tbody td:last-child { grid-column: 1 / -1; }
+  main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) tbody td.ms-index { color: var(--ds-ink); font: 600 15px/1.3 var(--ds-font-mono); }
+  main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) tbody td input { width: 100%; margin-bottom: var(--ds-s2); }
+  main .mk .list-table tbody td[data-label]::before, main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) tbody td[data-label]::before, main .mk table[aria-label='Listings'] tbody td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+  main .mk .list-table tbody tr[aria-selected='true'] > :first-child { box-shadow: none; }
+  main .mk .list-table tbody tr[aria-selected='true'], main .mk table[aria-label='Listings'] tbody tr[aria-selected='true'] { background: rgba(47, 108, 240, 0.1); box-shadow: inset 3px 0 0 var(--ds-focus); }
+  main .mk .list-table tbody tr[aria-selected='true'] > *, main .mk table[aria-label='Listings'] tbody tr[aria-selected='true'] > * { background: none; box-shadow: none; }
+  main .mk :is(.form, .listing-form, .negotiation) { padding: var(--ds-s4); }
+  main .mk .negotiation .table-wrap { margin-inline: calc(var(--ds-s4) * -1); border-radius: 0; border-inline: 0; }
+}
+@media (max-width: 599px) {
+  main .mk .lead-steps { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); grid-template-columns: none; gap: var(--ds-s3); }
+  main .mk .lead-steps li { font-size: 14px; }
+  main .mk .pulse { grid-template-columns: minmax(0, 1fr); }
+  main .mk .pulse-wide, main .mk .pulse-wide ~ .pulse-card:nth-child(n + 4) { grid-column: auto; }
+  main .mk dl.kv { grid-template-columns: minmax(0, 1fr); }
+  main .mk dl.kv > dt { padding: 10px 0 0; border-bottom: 0; }
+  main .mk dl.kv > dd { padding-top: 2px; }
+  main .mk .signin-card button { width: 100%; }
+  main .mk .table-tools .state { margin-left: 0; }
+}
+@media (max-width: 759px), (pointer: coarse) {
+  main .mk button, main .mk :is(input:not([type='file'], [type='checkbox'], [type='radio']), select), main .mk details.tech summary { min-height: 2.75rem; }
+  main .mk .segmented button { min-height: 2.75rem; }
+  main .mk button.th-sort { min-height: 2.75rem; min-width: 2.75rem; }
+  main .mk :is(button.copy, small button, .state button) { min-height: 2.75rem; }
+  main .mk .stepper button { min-height: 2.75rem; }
+  main .mk .help-link, main .mk .next-step { display: inline-flex; align-items: center; min-height: 2.75rem; }
+}
+
+/* ---------- hover only where a pointer can hover ---------- */
+@media (hover: hover) and (pointer: fine) {
+  main .mk button:hover:not(:disabled) { border-color: var(--ds-rule-2); background: rgba(255, 255, 255, 0.08); color: var(--ds-ink); box-shadow: none; }
+  main .mk :is(button.glow, button[type='submit']):hover:not(:disabled) { border-color: transparent; background: linear-gradient(180deg, var(--ds-accent), var(--ds-accent-2)); box-shadow: var(--ds-glow); filter: brightness(1.08); }
+  main .mk .signin-card button:hover:not(:disabled) { background: linear-gradient(180deg, #ffffff, #dfe9f7); filter: brightness(0.96); box-shadow: none; }
+  main .mk .segmented button:hover:not(:disabled, [aria-pressed='true']) { background: rgba(255, 255, 255, 0.06); color: var(--ds-ink); }
+  main .mk button.th-sort:hover:not(:disabled) { background: none; color: var(--ds-ink); }
+  main .mk .stepper button:hover:not(:disabled) { background: none; color: var(--ds-ink); }
+  main .mk .table-wrap tbody tr:hover > * { background: rgba(255, 255, 255, 0.03); }
+  main .mk .table-wrap tbody tr[aria-selected='true']:hover > * { background: rgba(47, 108, 240, 0.14); }
+  main .mk table[aria-label='Listings'] tbody tr:hover { background: none; }
+  main .mk .file-pick:hover .file-zone { border-color: var(--ds-ink-3); background: var(--ds-paper); }
+  main .mk a:hover { text-decoration-color: var(--ds-focus); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main .mk :is(.views-pane, .market-pane, .step-pane, .skeleton), main .mk.market .market-pane { animation: none !important; }
+  main .mk * { transition-duration: 0.01ms !important; }
+}

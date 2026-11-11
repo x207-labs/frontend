@@ -7,6 +7,7 @@ import { readCache, useCachedAccount, writeCache } from '../account/cache'
 import { PhotoError, photoFromFile } from '../account/photo'
 import { UNSUPPORTED_MESSAGE, applyAccountData, describeAccountFailure, useAccountActions, useSigning } from '../account/useAccount'
 import type { AccountAction } from '../account/client'
+import { Button } from '../ds/components'
 import { displayAccount, initial } from '../lib/account'
 
 // FE-101: the same rules as the account service (backend/supabase/functions/x207-account/handler.ts `EMAIL`, `CONTROL`), so a value the form accepts is never
@@ -39,6 +40,10 @@ export function Settings() {
   const nameOk = trimmed.length >= 1 && trimmed.length <= 40 && !hasControl(trimmed)
   const emailOk = email.trim() === '' || (email.trim().length <= 254 && EMAIL.test(email.trim()))
   const who = account ?? ''
+  // v4: one glowing primary on the page, the save that has something to save (the name first); the others are quiet
+  const nameDirty = trimmed !== (cached.displayName ?? '')
+  const prefsDirty = email.trim() !== (cached.email ?? '') || reminder !== (cached.deadlineReminder ?? false)
+  const primary: 'name' | 'prefs' | null = nameDirty && nameOk ? 'name' : prefsDirty && emailOk ? 'prefs' : null
 
   async function run(action: AccountAction, data: Record<string, unknown>, done: string, after?: (r: Awaited<ReturnType<typeof call>>) => void) {
     setBusy(action)
@@ -69,7 +74,7 @@ export function Settings() {
     return <p className="state" role="status">{UNSUPPORTED_MESSAGE}</p>
   }
   return (
-    <div className="settings">
+    <div className="settings cl">
       <section className="settings-hero" aria-label="Profile">
         <span className="settings-photo" data-photo={cached.photo ? 'true' : undefined}>
           {cached.photo ? <img src={cached.photo} alt="Your profile photo" /> : <span aria-hidden="true">{initial(cached.displayName || who)}</span>}
@@ -91,9 +96,9 @@ export function Settings() {
               <span>{cached.photo ? 'Change photo' : 'Add a photo'}</span>
             </label>
             {cached.photo && (
-              <button
+              <Button
                 type="button"
-                className="quiet"
+                variant="quiet"
                 onClick={() => {
                   if (!account) return
                   writeCache(account, { photo: undefined })
@@ -101,7 +106,7 @@ export function Settings() {
                 }}
               >
                 Remove photo
-              </button>
+              </Button>
             )}
           </div>
           <NoteLine note={note} at="photo" />
@@ -126,9 +131,9 @@ export function Settings() {
             {name !== '' && !nameOk && <small className="state-error" role="alert">Use 1 to 40 characters, with no tabs or line breaks.</small>}
           </label>
           <div className="settings-actions">
-            <button type="submit" disabled={!nameOk || busy !== null || trimmed === (cached.displayName ?? '')}>
+            <Button type="submit" variant={primary === 'name' ? 'glow' : 'quiet'} disabled={!nameOk || busy !== null || !nameDirty}>
               {busy === 'upsert_profile' ? 'Waiting for wallet…' : 'Save name'}
-            </button>
+            </Button>
             <NoteLine note={note} at="upsert_profile" />
           </div>
         </form>
@@ -166,9 +171,9 @@ export function Settings() {
             <span>Remind me before a payment deadline{reminder && email.trim() === '' ? ' (add an email so there is somewhere to send it)' : ''}</span>
           </label>
           <div className="settings-actions">
-            <button type="submit" disabled={!emailOk || busy !== null}>
+            <Button type="submit" variant={primary === 'prefs' ? 'glow' : 'quiet'} disabled={!emailOk || busy !== null}>
               {busy === 'upsert_prefs' ? 'Waiting for wallet…' : 'Save preferences'}
-            </button>
+            </Button>
             <NoteLine note={note} at="upsert_prefs" />
           </div>
         </form>
@@ -182,9 +187,9 @@ export function Settings() {
           </p>
         </div>
         <div className="settings-actions">
-          <button
+          <Button
             type="button"
-            className="quiet"
+            variant="quiet"
             disabled={busy !== null}
             onClick={() =>
               void run('get', {}, 'Loaded from your account.', (r) => {
@@ -196,7 +201,7 @@ export function Settings() {
             }
           >
             {busy === 'get' ? 'Waiting for wallet…' : 'Load from my account'}
-          </button>
+          </Button>
           <NoteLine note={note} at="get" />
         </div>
       </section>

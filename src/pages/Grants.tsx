@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { useGrants, useMembers } from '../api/queries'
 import type { Grant, GrantEscrow, GrantStatus } from '../api/types'
-import { NavIcon } from '../components/icons'
 import { ItemTitle, Party } from '../components/ListBits'
-import { PAGE_HUE } from '../components/pageHue'
 import { QueryState } from '../components/QueryState'
+import { Kpi, StatusBadge, type StatusCode } from '../ds/components'
 import { formatCredit, formatExpiry, shortAccount } from '../lib/format'
 import { useWallet } from '../wallet/WalletContext'
 import { AccountSales } from './AccountSales'
@@ -13,7 +12,13 @@ import { AccountSales } from './AccountSales'
 // FE-073: written for the member, not the contract. The page opens on your own grants; looking up another member is a choice (grants are public).
 // Plain words for roles, classes and reasons, a status pill, three numbers on top, and the token-escrow rules folded away.
 const STATUS_LABEL: Record<GrantStatus, string> = { offered: 'Offered', active: 'Active', revoked: 'Revoked', expired: 'Expired' }
-const STATUS_TONE: Record<GrantStatus, string | undefined> = { offered: 'info', active: 'ok', revoked: 'bad', expired: undefined }
+/** The result code of a grant: offered is accepted and waiting for a renter (202), active is settled and running (200), revoked is a conflict (409). A grant that ran out has no code, only the word. */
+const STATUS_CODE: Record<GrantStatus, StatusCode | undefined> = { offered: 202, active: 200, revoked: 409, expired: undefined }
+function GrantState({ status }: { status: GrantStatus }) {
+  const code = STATUS_CODE[status]
+  const label = STATUS_LABEL[status] ?? status
+  return code === undefined ? <span className="pill">{label}</span> : <StatusBadge code={code} label={label} />
+}
 const REASON_LABEL: Record<string, string> = {
   grantor: 'ended by the owner',
   grantee: 'ended by the renter',
@@ -71,7 +76,7 @@ function Counterparty({ g }: { g: Row }) {
 
 // FE-083: who holds which access until when, drawn on one time axis. A lane runs from now to the end of the grant: solid while it is used,
 // dashed while it waits for a renter, struck through when it was ended early; a grant that ran out is a dot where it ended. The table under it says the same in words.
-const LANE_TONE: Record<GrantStatus, string> = { active: '#3fb56a', offered: '#3d8bff', revoked: '#e25a4f', expired: '#7a8798' }
+const LANE_TONE: Record<GrantStatus, string> = { active: 'var(--ds-settled)', offered: 'var(--ds-claim)', revoked: 'var(--ds-default)', expired: 'var(--ds-ink-3)' }
 const nsToMs = (ns: string) => {
   try {
     return Number(BigInt(ns) / 1_000_000n)
@@ -139,13 +144,13 @@ function GrantTable({ rows }: { rows: Row[] }) {
   const hasEscrow = rows.some((g) => g.escrow)
   return (
     <>
-      <div className="table-wrap">
-        <table className="list-table" aria-label="Grant list">
+      <div className="table-wrap ax-table ax-cards" data-cols={hasEscrow ? 'wide' : undefined}>
+        <table aria-label="Grant list">
           <thead>
             <tr>
               <th scope="col">Access</th>
               <th scope="col">With</th>
-              <th scope="col" className="num">Price</th>
+              <th scope="col" className="num">Price<small>credit</small></th>
               <th scope="col">Status</th>
               <th scope="col">Until</th>
               {hasEscrow && <th scope="col">Held item</th>}
@@ -154,7 +159,7 @@ function GrantTable({ rows }: { rows: Row[] }) {
           <tbody>
             {rows.map((g) => (
               <tr key={g.grantId}>
-                <td>
+                <td className="ax-first" data-label="Access">
                   <ItemTitle
                     icon="/access"
                     hue={LANE_TONE[g.status]}
@@ -162,24 +167,17 @@ function GrantTable({ rows }: { rows: Row[] }) {
                     sub={CLASS_LABEL[g.class] ?? g.class}
                   />
                 </td>
-                <td>
+                <td data-label="With">
                   <Counterparty g={g} />
                 </td>
-                <td className="num"><span className="amount">{formatCredit(g.unitPrice)}</span> <span className="muted">per {g.unit}</span></td>
-                <td>
-                  <span className="pill" data-tone={STATUS_TONE[g.status]}>
-                    {STATUS_LABEL[g.status] ?? g.status}
-                  </span>
-                  {g.revokeReason && (
-                    <>
-                      <br />
-                      <small className="muted">{REASON_LABEL[g.revokeReason] ?? g.revokeReason}</small>
-                    </>
-                  )}
+                <td className="num" data-label="Price"><span className="amount">{formatCredit(g.unitPrice)}</span> <span className="muted">per {g.unit}</span></td>
+                <td data-label="Status">
+                  <GrantState status={g.status} />
+                  {g.revokeReason && <small className="muted ax-reason">{REASON_LABEL[g.revokeReason] ?? g.revokeReason}</small>}
                 </td>
-                <td>{formatExpiry(g.expiresAt)}</td>
+                <td className="ax-when" data-label="Until">{formatExpiry(g.expiresAt)}</td>
                 {hasEscrow && (
-                  <td>
+                  <td data-label="Held item">
                     <EscrowCell escrow={g.escrow} />
                   </td>
                 )}
@@ -205,20 +203,11 @@ function GrantTable({ rows }: { rows: Row[] }) {
 function Figures({ rows }: { rows: Row[] }) {
   const count = (pick: (g: Row) => boolean) => rows.filter(pick).length
   return (
-    <dl className="figures figures-open" aria-label="Grant summary">
-      <div>
-        <dt>Active</dt>
-        <dd>{count((g) => g.status === 'active')}</dd>
-      </div>
-      <div>
-        <dt>Waiting for a renter</dt>
-        <dd>{count((g) => g.status === 'offered')}</dd>
-      </div>
-      <div>
-        <dt>Ended</dt>
-        <dd>{count((g) => g.status === 'revoked' || g.status === 'expired')}</dd>
-      </div>
-    </dl>
+    <div className="ds-kpis ax-kpis" role="group" aria-label="Grant summary">
+      <Kpi badge="200" tone="settled" label="Active" value={count((g) => g.status === 'active')} unit="grants" />
+      <Kpi badge="202" tone="claim" label="Waiting for a renter" value={count((g) => g.status === 'offered')} unit="grants" />
+      <Kpi label="Ended" value={count((g) => g.status === 'revoked' || g.status === 'expired')} unit="grants" note="Revoked or ran out" />
+    </div>
   )
 }
 
@@ -244,22 +233,19 @@ export function Grants() {
   const mine = wallet !== null && account === wallet
 
   return (
-    <>
-      <div className="page-lead">
-        <span className="tone-tile" aria-hidden="true" style={{ ['--tone' as string]: PAGE_HUE['/access'] }}>
-          <NavIcon name="/access" size={22} />
-        </span>
+    <div className="ax ax-grants">
+      <header className="ax-lede">
         <p>Who may use what, and until when. The owner keeps the password; the contract keeps the record.</p>
-        {/* FE-090: the same side panel as the other Marketplace pages, with the life of a grant as its steps */}
-        <ol className="lead-steps" aria-label="How it works">
+        {/* FE-090: the life of a grant as its steps */}
+        <ol className="ax-steps" aria-label="How it works">
           <li>Owner offers access</li>
           <li>Renter pays per day</li>
           <li>Ends on its date</li>
         </ol>
-      </div>
-      {/* FE-090: everything right of the side panel, in one column with even room between the parts */}
+      </header>
+      {/* FE-090: everything under the lead, in one column with even room between the parts */}
       <div className="grants-main">
-        <div className="field-pair grants-filter">
+        <div className="ax-pair grants-filter">
           <label>
             <span>Member</span>
             <select value={account ?? ''} onChange={(e) => setChosen(e.target.value)}>
@@ -303,6 +289,6 @@ export function Grants() {
         </QueryState>
         <AccountSales />
       </div>
-    </>
+    </div>
   )
 }

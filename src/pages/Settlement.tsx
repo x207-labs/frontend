@@ -6,21 +6,23 @@ import { useEpochSettlements } from '../api/queries'
 import type { SettlementItem } from '../api/types'
 import { DepositBranch } from '../components/DepositBranch'
 import { IntentsBalancePanel } from '../components/IntentsBalancePanel'
-import { ItemTitle, Party } from '../components/ListBits'
 import { NoEpoch } from '../components/NoEpoch'
 import { QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { WithdrawPanel } from '../components/WithdrawPanel'
 import { TxResult } from '../components/TxResult'
-import { useSelectedEpoch } from '../epoch'
-import { formatCredit } from '../lib/format'
-import { NEAR_NETWORK } from '../config'
+import { CIRCLE, NEAR_NETWORK } from '../config'
+import { Button, Kpi, Num, StatusBadge, type StatusCode } from '../ds/components'
+import { useEpochSelection, useSelectedEpoch } from '../epoch'
+import { formatCredit2, formatNumber, shortAccount } from '../lib/format'
+import { MONEY, NETWORK_NAME } from '../lib/network'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { claimTx, settleTx } from '../wallet/transactions'
 
-// FE-088: the page reads like a bill. On top, the two numbers a member comes for (what I owe now, what I can claim), large and unboxed.
+// FE-088: the page reads like a bill. On top, the two numbers a member comes for (what I owe now, what I can claim).
 // Under them, one bill per epoch: the amount, its state, the deadline and the buttons, in two columns (pay, claim) on a wide screen.
 // Then the Intents balance and the withdrawal side by side, and last the positions of every member in the epoch.
+// v4: a statement first (one sentence with the figures, the four totals as cards), the bills as quiet panels, and one glowing primary: the next payment, or the first claim when nothing is due.
 
 function useNow(intervalMs = 1000): number {
   const [now, setNow] = useState(() => Date.now())
@@ -39,13 +41,55 @@ function countdown(ms: number): string {
   return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`
 }
 
-const STATUS_TONE: Record<string, 'ok' | 'warn' | 'bad' | 'info'> = { due: 'warn', defaulted: 'bad', paid: 'ok', settled: 'ok', claimable: 'info', claimed: 'ok' }
+const phaseWord = (phase: string): string => phase.replace(/_/g, ' ')
 
-function sum(items: SettlementItem[]): string {
-  return items.reduce((total, i) => total + BigInt(i.amount ?? '0'), 0n).toString()
+/** The result code and the word of a settlement status (src/ds: 200 settled, 202 claimable, 402 due, 409 defaulted). */
+const BADGE: Record<string, { code: StatusCode; label: string }> = {
+  due: { code: 402, label: 'Due' },
+  defaulted: { code: 409, label: 'Defaulted' },
+  paid: { code: 200, label: 'Paid' },
+  settled: { code: 200, label: 'Settled' },
+  claimable: { code: 202, label: 'Claimable' },
+  claimed: { code: 200, label: 'Claimed' },
 }
 
-function DueRow({ item, account }: { item: SettlementItem; account: string }) {
+function SettlementBadge({ status, expired = false }: { status: string; expired?: boolean }) {
+  if (expired && status === 'due') return <StatusBadge code={409} label="Expired" />
+  const badge = BADGE[status]
+  return badge ? <StatusBadge code={badge.code} label={badge.label} /> : <span className="ds-status">{status}</span>
+}
+
+function sum(items: SettlementItem[]): bigint {
+  return items.reduce((total, i) => total + BigInt(i.amount ?? '0'), 0n)
+}
+
+/** What the member owes, can claim, has paid and has claimed, over every epoch where there is a position. */
+function duesOf(items: SettlementItem[]) {
+  const debts = items.filter((i) => i.role === 'debtor')
+  const credits = items.filter((i) => i.role === 'creditor')
+  const open = debts.filter((i) => i.status === 'due' || i.status === 'defaulted')
+  return {
+    debts,
+    credits,
+    owed: sum(open),
+    openCount: open.length,
+    toClaim: sum(credits.filter((i) => i.status === 'claimable')),
+    paid: sum(debts.filter((i) => i.status === 'paid')),
+    claimed: sum(credits.filter((i) => i.status === 'claimed')),
+  }
+}
+
+/** The dues of the signed-in member over every epoch (one query, shared by the statement and the bills). */
+function useMyDues(account: string | null) {
+  return useQuery({
+    queryKey: ['member-settlements', account],
+    queryFn: () => api.memberSettlements(account!),
+    enabled: account !== null,
+    retry: false,
+  })
+}
+
+function DueRow({ item, account, primary }: { item: SettlementItem; account: string; primary: boolean }) {
   const now = useNow()
   const { state, sign } = useSignTransaction()
   const client = useQueryClient()
@@ -63,17 +107,20 @@ function DueRow({ item, account }: { item: SettlementItem; account: string }) {
   }
 
   return (
-    <li className="bill" data-tone={expired ? 'bad' : payable ? 'warn' : 'ok'}>
+    <li className="bill" data-tone={expired ? 'default' : payable ? 'due' : 'settled'}>
       <div className="bill-head">
-        <ItemTitle icon="/settlement" hue={expired ? '#e25a4f' : '#e2801f'} title={`Epoch ${item.epoch}`} sub="Amount owed" />
-        <span className="pill" data-tone={expired ? 'bad' : STATUS_TONE[item.status] ?? 'info'}>{expired && item.status === 'due' ? 'expired' : item.status}</span>
+        <div className="bill-id">
+          <strong>Epoch {item.epoch}</strong>
+          <span>Amount owed</span>
+        </div>
+        <SettlementBadge status={item.status} expired={expired} />
       </div>
       <p className="bill-amount">
-        <strong>{formatCredit(item.amount)}</strong> credit
+        <Num>{formatCredit2(item.amount)}</Num> <small>credit</small>
       </p>
       <p className="bill-line">
-        Epoch {item.epoch}: net position <strong>{formatCredit(item.net)}</strong>, amount owed{' '}
-        <strong>{formatCredit(item.amount)}</strong> credit, status <code>{item.status}</code>
+        Epoch {item.epoch}: net position <strong>{formatCredit2(item.net)}</strong>, amount owed{' '}
+        <strong>{formatCredit2(item.amount)}</strong> credit, status <code>{item.status}</code>
       </p>
       {item.status === 'due' && deadline !== null && !expired && (
         <p className="bill-line">
@@ -83,12 +130,12 @@ function DueRow({ item, account }: { item: SettlementItem; account: string }) {
       {expired && <p className="state state-error" role="alert">Payment window expired.</p>}
       {(item.status === 'due' || item.status === 'defaulted') && (
         <div className="bill-actions">
-          <button type="button" onClick={() => void pay()} disabled={!payable || signing}>
+          <Button type="button" variant={primary && payable ? 'glow' : 'quiet'} onClick={() => void pay()} disabled={!payable || signing}>
             {signing ? 'Waiting for wallet…' : 'Pay residual'}
-          </button>
-          <button type="button" className="quiet" aria-expanded={other} onClick={() => setOther((v) => !v)} disabled={!payable}>
+          </Button>
+          <Button type="button" variant="quiet" aria-expanded={other} onClick={() => setOther((v) => !v)} disabled={!payable}>
             Pay with another asset
-          </button>
+          </Button>
         </div>
       )}
       {other && payable && <DepositBranch purpose="settle" account={account} epoch={item.epoch} onReady={setReady} />}
@@ -101,7 +148,7 @@ function DueRow({ item, account }: { item: SettlementItem; account: string }) {
 const EXPLORER = NEAR_NETWORK === 'mainnet' ? 'https://nearblocks.io/txns/' : 'https://testnet.nearblocks.io/txns/'
 
 // FE-010: creditor balance per epoch; claim only after finalize_epoch (ADR-24).
-function ClaimRow({ item, account }: { item: SettlementItem; account: string }) {
+function ClaimRow({ item, account, primary }: { item: SettlementItem; account: string; primary: boolean }) {
   const { state, sign } = useSignTransaction()
   const client = useQueryClient()
   const [claimed, setClaimed] = useState(false)
@@ -116,16 +163,19 @@ function ClaimRow({ item, account }: { item: SettlementItem; account: string }) 
   }
 
   return (
-    <li className="bill" data-tone={claimable ? 'info' : 'ok'}>
+    <li className="bill" data-tone={claimable ? 'claim' : 'settled'}>
       <div className="bill-head">
-        <ItemTitle icon="/settlement" hue="#2f9e8f" title={`Epoch ${item.epoch}`} sub="Balance to claim" />
-        <span className="pill" data-tone={STATUS_TONE[item.status] ?? 'info'}>{item.status}</span>
+        <div className="bill-id">
+          <strong>Epoch {item.epoch}</strong>
+          <span>Balance to claim</span>
+        </div>
+        <SettlementBadge status={item.status} />
       </div>
       <p className="bill-amount">
-        <strong>{formatCredit(item.amount)}</strong> credit
+        <Num>{formatCredit2(item.amount)}</Num> <small>credit</small>
       </p>
       <p className="bill-line">
-        Epoch {item.epoch}: balance <strong>{formatCredit(item.amount)}</strong> credit, status <code>{item.status}</code>
+        Epoch {item.epoch}: balance <strong>{formatCredit2(item.amount)}</strong> credit, status <code>{item.status}</code>
         {item.status === 'claimed' && item.destination && <> to <code>{item.destination}</code></>}
         {item.status === 'claimed' && item.txHash && (
           <> (<a href={`${EXPLORER}${item.txHash}`} target="_blank" rel="noreferrer">{item.txHash}</a>)</>
@@ -134,12 +184,12 @@ function ClaimRow({ item, account }: { item: SettlementItem; account: string }) 
       {claimable && item.claimableNow === false && <p className="state">Waiting for finalize_epoch before it can be claimed.</p>}
       {claimable && (
         <div className="bill-actions">
-          <button type="button" onClick={() => void claim('near')} disabled={!item.claimableNow || signing}>
+          <Button type="button" variant={primary ? 'glow' : 'quiet'} onClick={() => void claim('near')} disabled={!item.claimableNow || signing}>
             Claim to NEAR account
-          </button>
-          <button type="button" className="quiet" onClick={() => void claim('intents')} disabled={!item.claimableNow || signing}>
+          </Button>
+          <Button type="button" variant="quiet" onClick={() => void claim('intents')} disabled={!item.claimableNow || signing}>
             Claim to Intents balance
-          </button>
+          </Button>
         </div>
       )}
       {claimable && claimed && item.claimableNow && state.kind === 'done' && (
@@ -152,12 +202,7 @@ function ClaimRow({ item, account }: { item: SettlementItem; account: string }) 
 
 function MyDues() {
   const { account } = useWallet()
-  const query = useQuery({
-    queryKey: ['member-settlements', account],
-    queryFn: () => api.memberSettlements(account!),
-    enabled: account !== null,
-    retry: false,
-  })
+  const query = useMyDues(account)
   if (!account) return <SignInPrompt action="see your dues" />
   // FE-097: an account that has not joined gets member_not_found (404); that is an answer, not an error to retry (as on Home).
   const e = query.error
@@ -175,49 +220,37 @@ function MyDues() {
       empty="No dues."
     >
       {(data) => {
-        const debts = data.items.filter((i) => i.role === 'debtor')
-        const credits = data.items.filter((i) => i.role === 'creditor')
-        const owed = sum(debts.filter((i) => i.status === 'due' || i.status === 'defaulted'))
-        const toClaim = sum(credits.filter((i) => i.status === 'claimable'))
+        const { debts, credits } = duesOf(data.items)
+        // one glowing primary on the page: the first bill that can still be paid; when nothing is due, the first balance that can be claimed
+        const firstDue = debts.findIndex((i) => i.status === 'due')
+        const firstClaim = firstDue === -1 ? credits.findIndex((i) => i.status === 'claimable') : -1
         return (
-          <>
-            <dl className="settle-sum">
-              <div data-tone={owed !== '0' ? 'warn' : undefined}>
-                <dt>You owe</dt>
-                <dd><strong>{formatCredit(owed)}</strong> credit</dd>
-              </div>
-              <div data-tone={toClaim !== '0' ? 'ok' : undefined}>
-                <dt>You can claim</dt>
-                <dd><strong>{formatCredit(toClaim)}</strong> credit</dd>
-              </div>
-            </dl>
-            <div className="settle-cols">
-              <section className="settle-col" aria-labelledby="settle-pay">
-                <h3 id="settle-pay">To pay</h3>
-                {debts.length === 0 ? (
-                  <p className="state">No dues.</p>
-                ) : (
-                  <ul className="bills">
-                    {debts.map((item) => (
-                      <DueRow key={`${item.epoch}`} item={item} account={account} />
-                    ))}
-                  </ul>
-                )}
-              </section>
-              <section className="settle-col" aria-labelledby="settle-claim">
-                <h3 id="settle-claim">Balance to claim</h3>
-                {credits.length === 0 ? (
-                  <p className="state">No balance to claim.</p>
-                ) : (
-                  <ul className="bills">
-                    {credits.map((item) => (
-                      <ClaimRow key={`${item.epoch}`} item={item} account={account} />
-                    ))}
-                  </ul>
-                )}
-              </section>
-            </div>
-          </>
+          <div className="settle-cols">
+            <section className="settle-col" aria-labelledby="settle-pay">
+              <h3 id="settle-pay">To pay</h3>
+              {debts.length === 0 ? (
+                <p className="state">No dues.</p>
+              ) : (
+                <ul className="bills">
+                  {debts.map((item, i) => (
+                    <DueRow key={`${item.epoch}`} item={item} account={account} primary={i === firstDue} />
+                  ))}
+                </ul>
+              )}
+            </section>
+            <section className="settle-col" aria-labelledby="settle-claim">
+              <h3 id="settle-claim">Balance to claim</h3>
+              {credits.length === 0 ? (
+                <p className="state">No balance to claim.</p>
+              ) : (
+                <ul className="bills">
+                  {credits.map((item, i) => (
+                    <ClaimRow key={`${item.epoch}`} item={item} account={account} primary={i === firstClaim} />
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
         )
       }}
     </QueryState>
@@ -226,24 +259,71 @@ function MyDues() {
 
 export function Settlement() {
   const epoch = useSelectedEpoch()
+  const selected = useEpochSelection().selected
   const settlements = useEpochSettlements(epoch)
   const { account } = useWallet()
+  const dues = useMyDues(account)
   if (epoch === null) return <NoEpoch />
+  const totals = dues.data ? duesOf(dues.data.items) : null
   return (
-    <div className="settle">
-      <section className="settle-block" aria-labelledby="settle-dues">
-        <h2 id="settle-dues">Your dues</h2>
+    <div className="settle ep cl">
+      <header className="ep-head">
+        <p className="ep-eyebrow">
+          {CIRCLE}
+          {account ? ` · ${shortAccount(account)}` : ''} · epoch {epoch}
+          {selected ? ` · ${phaseWord(selected.phase)}` : ''}
+        </p>
+        {/* the page title is the h1 of the shell; this one names what the page is about */}
+        <h2 className="ep-title">What you owe and can claim</h2>
+        {totals && (
+          <>
+            <p className="ep-lede">
+              You owe {formatCredit2(totals.owed.toString())} credit and can claim {formatCredit2(totals.toClaim.toString())} credit.
+            </p>
+            <p className="ep-sub">
+              The totals cover every epoch where you have a position, not only epoch {epoch}. Amounts are in credit; payments and claims move as {MONEY} on {NETWORK_NAME}.
+            </p>
+          </>
+        )}
+      </header>
+      {totals && (
+        <section className="ep-section" aria-label="Headline figures">
+          <div className="ds-kpis ep-kpis cl-kpis">
+            <Kpi
+              badge="402"
+              label="You owe"
+              value={formatCredit2(totals.owed.toString())}
+              unit="credit"
+              tone={totals.owed > 0n ? 'due' : 'ink'}
+              note={totals.openCount > 0 ? `${formatNumber(totals.openCount, 0)} ${totals.openCount === 1 ? 'epoch' : 'epochs'} with a bill` : 'Nothing due'}
+            />
+            <Kpi
+              badge="202"
+              label="You can claim"
+              value={formatCredit2(totals.toClaim.toString())}
+              unit="credit"
+              tone={totals.toClaim > 0n ? 'claim' : 'ink'}
+              note={totals.toClaim > 0n ? 'Claim once its epoch is finalized' : 'Nothing to claim'}
+            />
+            <Kpi badge="200" label="Paid" value={formatCredit2(totals.paid.toString())} unit="credit" note="Settled by you" />
+            <Kpi badge="200" label="Claimed" value={formatCredit2(totals.claimed.toString())} unit="credit" note="Collected by you" />
+          </div>
+        </section>
+      )}
+      <section className="ep-section" aria-labelledby="settle-dues">
+        <h2 id="settle-dues" className="ep-h2">Your dues</h2>
         <MyDues />
       </section>
-      <section className="settle-block" aria-labelledby="settle-intents">
-        <h2 id="settle-intents">Intents balance</h2>
+      <section className="ep-section" aria-labelledby="settle-intents">
+        <h2 id="settle-intents" className="ep-h2">Intents balance</h2>
         <div className="settle-cols">
           <IntentsBalancePanel />
           {account && <WithdrawPanel account={account} />}
         </div>
       </section>
-      <section className="settle-block" aria-labelledby="settle-all">
-        <h2 id="settle-all">All positions in epoch {epoch}</h2>
+      <section className="ep-section" aria-labelledby="settle-all">
+        <h2 id="settle-all" className="ep-h2">All positions in epoch {epoch}</h2>
+        <p className="ep-sechint">Amounts in credit. A negative net position is what the member owes; a positive one is what it can claim.</p>
         <QueryState
           query={settlements}
           loadingLabel="Loading settlement"
@@ -251,24 +331,31 @@ export function Settlement() {
           empty="No settlement positions in this epoch."
         >
           {(data) => (
-            <div className="table-wrap"><table>
-              <thead>
-                <tr>
-                  <th scope="col">Member</th>
-                  <th scope="col">Status</th>
-                  <th scope="col" className="num">Net position</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((item) => (
-                  <tr key={item.account}>
-                    <td><Party account={item.account ?? ''} you={item.account === account} /></td>
-                    <td><span className="pill" data-tone={STATUS_TONE[item.status] ?? 'info'}>{item.status}</span></td>
-                    <td className="num">{formatCredit(item.net)}</td>
+            <div className="table-wrap ep-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Member</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" className="num">Net position</th>
                   </tr>
-                ))}
-              </tbody>
-            </table></div>
+                </thead>
+                <tbody>
+                  {data.items.map((item) => (
+                    <tr key={item.account}>
+                      <td>
+                        <span className="cl-party" title={item.account}>
+                          {shortAccount(item.account ?? '')}
+                          {item.account === account && <span className="you-tag">you</span>}
+                        </span>
+                      </td>
+                      <td><SettlementBadge status={item.status} /></td>
+                      <td className="num">{formatCredit2(item.net)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </QueryState>
       </section>

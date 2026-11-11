@@ -85,8 +85,8 @@ export function AccountSales() {
   else if (escrows.data.items.length === 0) body = <p className="state">No account sale in this circle yet.</p>
   else
     body = (
-      <div className="table-wrap sales-wrap">
-        <table className="list-table sales-list" aria-label="Account sales">
+      <div className="table-wrap ax-table ax-cards" data-cols="wide">
+        <table aria-label="Account sales">
           <thead>
             <tr>
               <th scope="col">Account sold</th>
@@ -102,11 +102,11 @@ export function AccountSales() {
           <tbody>
             {escrows.data.items.map((e, i) => (
               <tr key={e.grantId}>
-                <td>
+                <td className="ax-first" data-label="Account sold">
                   <ItemTitle icon="/access" hue={STATE_HUE[e.state] ?? PAGE_HUE['/access']} title={<code className="plain">{e.account}</code>} sub="NEAR account" />
                 </td>
                 <td className="num row-num" data-label="Grant">{e.grantId}</td>
-                <td className="sales-state"><span className="state-line" data-tone={STATE_TONE[e.state] ?? 'info'}>{STATE_LABEL[e.state] ?? e.state}</span></td>
+                <td className="sales-state" data-label="State"><span className="state-line" data-tone={STATE_TONE[e.state] ?? 'info'}>{STATE_LABEL[e.state] ?? e.state}</span></td>
                 <td data-label="Buyer">{e.newOwner ? <Party account={e.newOwner} /> : <span className="muted">no buyer yet</span>}</td>
                 <td className="sales-expiry" data-label="Expires">{expiry.has(e.grantId) ? formatExpiry(expiry.get(e.grantId)!) : 'not available'}</td>
                 <DetailCells item={e} withDetail={i < DETAIL_ROWS} finalizedHead={finalizedHead} epochsRead={epochsRead} />
@@ -118,9 +118,9 @@ export function AccountSales() {
     )
 
   return (
-    <section aria-labelledby="account-sales-title">
-      <h2 id="account-sales-title">Account sales</h2>
-      <p className="state">Whole NEAR accounts changing hands, held by the circle until the buyer pays.</p>
+    <section className="ax-section" aria-labelledby="account-sales-title">
+      <h2 id="account-sales-title" className="ax-h2">Account sales</h2>
+      <p className="ax-note">Whole NEAR accounts changing hands, held by the circle until the buyer pays.</p>
       {/* FE-073: the mechanism folds away; the list is what a visitor came for */}
       <details className="tech">
         <summary>How an account sale works</summary>

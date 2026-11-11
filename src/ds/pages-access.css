@@ -1,0 +1,426 @@
+/* v4 internal pages, access and governance group: Account transfers (/transfers), Rent access (/rent), Access grants (/access),
+   Governance (/governance), Help (/help). Loaded after styles.css. Recipe: src/ds/README.md, "Internal pages v4".
+   These pages are the calm 70%: one statement, a numbered step list, quiet panels, hairline tables with numbers in mono. The only energy is lime, which marks "now"
+   (the step a deal waits on, the chosen tab, the focus ring). Colour keeps its meaning: status colours only for status (code + word), blue for action.
+   Every page is wrapped in `.ax` (`.ax-transfers`, `.ax-rent`, `.ax-grants`, `.ax-gov`, `.ax-help`). Rules start with `main .ax` so they win over the older
+   sheet (including the FE-074 centring of the Marketplace group) and cannot reach the other pages. Every :hover sits under (hover: hover) and (pointer: fine). */
+
+/* ---------- frame ---------- */
+main .ax { display: grid; gap: var(--ds-s7); min-width: 0; padding-top: var(--ds-s3); }
+main .ax > * { min-width: 0; }
+main .ax .ax-section { display: grid; gap: var(--ds-s4); align-content: start; min-width: 0; }
+main .ax .ax-h2 { margin: 0; font: 600 var(--ds-fs-h3)/1.2 var(--ds-font-display); font-stretch: 108%; letter-spacing: -0.01em; color: var(--ds-ink); }
+main .ax .ax-h3 { margin: var(--ds-s2) 0 0; font: 600 15px/1.3 var(--ds-font-text); font-stretch: 100%; letter-spacing: 0; color: var(--ds-ink); }
+main .ax .ax-note { margin: 0; max-width: 70ch; font-size: var(--ds-fs-small); line-height: 1.5; color: var(--ds-ink-2); }
+main .ax h3 { margin: 0; font: 650 16px/1.3 var(--ds-font-text); font-stretch: 100%; letter-spacing: 0; color: var(--ds-ink); }
+main .ax p { overflow-wrap: anywhere; }
+main .ax a { color: var(--ds-accent-ink); }
+main .ax a.ds-btn { color: var(--ds-ink); }
+main .ax a.ds-btn[data-variant='glow'] { color: #fff; }
+
+/* identifiers and amounts in the data face; a code is bare mono, not a chip */
+main .ax code { padding: 0; border-radius: 0; background: none; font: 500 0.92em/inherit var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; color: inherit; overflow-wrap: anywhere; }
+main .ax code.plain, main .ax .muted { color: var(--ds-ink-3); font-weight: 400; }
+main .ax .muted { font-size: 13px; }
+main .ax pre { margin: 0; padding: 12px 14px; max-width: 100%; border-radius: var(--ds-r-ctl); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); font: 400 12.5px/1.55 var(--ds-font-mono); color: var(--ds-ink-2); white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: auto; }
+main .ax .amount { font-family: var(--ds-font-mono); font-weight: 500; font-variant-numeric: tabular-nums slashed-zero; color: var(--ds-ink); }
+
+/* ---------- the lede: one sentence and the steps of the deal ---------- */
+main .ax .ax-lede { display: grid; gap: var(--ds-s5); }
+main .ax .ax-lede > p { margin: 0; max-width: 62ch; font: 400 clamp(17px, 1.6vw, 20px)/1.45 var(--ds-font-text); color: var(--ds-ink); }
+main .ax .ax-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--ds-s4); margin: 0; padding: 0; list-style: none; counter-reset: axstep; }
+main .ax .ax-steps li { counter-increment: axstep; display: grid; align-content: start; gap: 4px; padding-top: 12px; border-top: 2px solid var(--ds-rule-2); font: 600 15px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+main .ax .ax-steps li::before { content: counter(axstep, decimal-leading-zero); font: 500 12px/1 var(--ds-font-mono); letter-spacing: 0.04em; color: var(--ds-ink-3); }
+
+/* facts row: label above value, hairline above and below (the .kv class keeps the generic definition-list rule of styles.css off these lists) */
+main .ax .ax-facts, main .ax .figures { display: flex; flex-wrap: wrap; gap: 14px 44px; margin: 0; padding: 16px 0; border-block: 1px solid var(--ds-rule); }
+main .ax .ax-facts > div, main .ax .figures > div { display: block; min-width: 0; padding: 0; border: 0; border-radius: 0; background: none; }
+main .ax .ax-facts dt, main .ax .figures dt { margin: 0 0 4px; padding: 0; font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+main .ax .ax-facts dd, main .ax .figures dd { margin: 0; padding: 0; text-align: left; font: 500 14px/1.35 var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; letter-spacing: 0; color: var(--ds-ink); overflow-wrap: anywhere; }
+
+/* a definition list of details (inside a disclosure): label left in mono caps, value right, hairlines */
+main .ax .ax-dl { display: grid; grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr); gap: 0 var(--ds-s5); margin: 0; padding: 0; border-top: 1px solid var(--ds-rule); }
+main .ax .ax-dl dt, main .ax .ax-dl dd { margin: 0; padding: 9px 0; border-bottom: 1px solid var(--ds-rule); text-align: left; }
+main .ax .ax-dl dt { font: 500 11px/1.6 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+main .ax .ax-dl dd { font: 500 13px/1.5 var(--ds-font-mono); color: var(--ds-ink); overflow-wrap: anywhere; }
+
+/* ---------- tabs: one segmented pill; the chosen view is lime ("now") ---------- */
+main .ax .view-tabs { gap: var(--ds-s4); margin: 0 0 var(--ds-s5); }
+main .ax .view-tabs::after { background: var(--ds-rule); }
+main .ax .segmented { display: inline-flex; margin: 0; padding: 3px; gap: 2px; border-radius: 999px; border: 1px solid var(--ds-rule); background: var(--ds-surface); }
+main .ax .segmented button { min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; box-shadow: none; color: var(--ds-ink-2); font: 600 14px/1 var(--ds-font-text); }
+main .ax .segmented button[aria-pressed='true'] { background: var(--ds-focus); color: var(--ds-eye); font-weight: 700; }
+main .ax .segmented button:disabled { background: transparent; color: var(--ds-ink-3); }
+
+/* ---------- forms: one quiet panel ---------- */
+main .ax .ax-form { display: grid; gap: var(--ds-s4); max-width: 46rem; margin: 0; padding: var(--ds-s5); border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule); background: var(--ds-surface); }
+main .ax .ax-form > * { min-width: 0; margin-block: 0; }
+main .ax :is(.ax-form, .grants-filter) label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; font: 600 13px/1.35 var(--ds-font-text); color: var(--ds-ink-2); }
+main .ax :is(.ax-form, .grants-filter) label > span { font: 600 13px/1.35 var(--ds-font-text); }
+main .ax :is(.ax-form, .grants-filter) label > small { font: 400 12.5px/1.55 var(--ds-font-text); color: var(--ds-ink-3); }
+main .ax :is(.ax-form, .grants-filter) :is(input:not([type='radio'], [type='checkbox']), select) { width: 100%; min-height: 44px; padding: 0 14px; border-radius: var(--ds-r-ctl); border: 1px solid var(--ds-rule); background-color: var(--ds-surface-2); color: var(--ds-ink); font-size: max(16px, 1rem); font-weight: 400; }
+main .ax :is(.ax-form, .grants-filter) select { padding-right: 2rem; }
+main .ax :is(.ax-form, .grants-filter) :is(input, select)::placeholder { color: var(--ds-ink-3); opacity: 1; }
+main .ax :is(.ax-form, .grants-filter) :is(input, select):focus { border-color: var(--ds-rule-2); box-shadow: none; }
+main .ax :is(.ax-form, .grants-filter) :is(input, select):focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+main .ax :is(.ax-form, .grants-filter) :is(input, select):disabled { background-color: transparent; opacity: 0.6; cursor: not-allowed; }
+main .ax .ax-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--ds-s4); }
+main .ax .ax-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+/* "Clear key now" is a link in the note under the voucher key, not a second primary button */
+main .ax label small button { display: inline; min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: var(--ds-accent-ink); font: 600 12.5px/1.55 var(--ds-font-text); text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+/* a design-system button that cannot be pressed reads as such */
+main .ax .ds-btn:disabled, main .ax .ds-btn[data-variant]:disabled { background: transparent; border: 1px solid var(--ds-rule); color: var(--ds-ink-3); box-shadow: none; filter: none; transform: none; cursor: not-allowed; }
+
+/* the sign-in card inside a form: the one way in, so it is the glowing key */
+main .ax .signin-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 12px 16px; max-width: none; margin: 0; padding: 16px 18px; border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); text-align: left; }
+main .ax .signin-card:not(:last-child) { margin-bottom: 0; }
+main .ax .signin-card > div { flex: 1 1 14rem; min-width: 0; }
+main .ax .signin-lock { width: 40px; height: 40px; border-radius: var(--ds-r-ctl); border: 1px solid var(--ds-rule); background: var(--ds-surface-3); color: var(--ds-soft); }
+main .ax .signin-card strong { font: 650 15px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+main .ax .signin-card p { margin: 2px 0 0; font-size: 14px; color: var(--ds-ink-2); }
+main .ax .signin-card button { min-height: 44px; padding: 0 18px; border-radius: var(--ds-r-ctl); border: 1px solid transparent; background: linear-gradient(180deg, var(--ds-accent), var(--ds-accent-2)); box-shadow: var(--ds-glow); color: #fff; font: 600 15px/1 var(--ds-font-text); }
+main .ax .signin-card button:disabled { background: transparent; border-color: var(--ds-rule); box-shadow: none; color: var(--ds-ink-3); }
+main .ax .signin-card .help-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--ds-accent-ink); font-size: 14px; }
+
+/* ---------- messages: plain sentences; a problem or a warning keeps its box ---------- */
+main .ax .state { justify-content: flex-start; max-width: 70ch; margin-inline: 0; text-align: left; font-size: 14px; line-height: 1.55; color: var(--ds-ink-2); }
+main .ax p.state { margin-inline: 0; }
+main .ax .state-error, main .ax .state-warn { border-radius: var(--ds-r-ctl); }
+main .ax .state .ds-status, main .ax p .ds-status { vertical-align: 1px; }
+
+/* a status that has no result code (a grant that ran out, a proposal that expired): the word, with a neutral dot */
+main .ax .pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 6px; border-radius: var(--ds-r-badge); border: 1px solid var(--ds-rule); background: rgba(255, 255, 255, 0.03); font: 500 12px/1.5 var(--ds-font-text); color: var(--ds-ink); white-space: nowrap; }
+main .ax .pill::before, main .ax .pill[data-tone]::before { content: ''; flex: none; width: 7px; height: 7px; margin: 0; border-radius: 50%; background: var(--tone, var(--ds-ink-3)); }
+
+/* ---------- disclosures ---------- */
+main .ax details.tech { border: 0; border-top: 1px solid var(--ds-rule); border-radius: 0; background: none; }
+main .ax details.tech:last-child, main .ax details.tech + :not(details) { border-bottom: 1px solid var(--ds-rule); }
+main .ax details.tech summary { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-s4); min-height: 44px; padding: 10px 0; color: var(--ds-ink-2); font: 600 14px/1.4 var(--ds-font-text); cursor: pointer; list-style: none; }
+main .ax details.tech summary::-webkit-details-marker { display: none; }
+main .ax details.tech summary::after, main .ax .ax-faq summary::after { content: ''; flex: none; width: 7px; height: 7px; border-right: 1.5px solid var(--ds-ink-3); border-bottom: 1.5px solid var(--ds-ink-3); transform: rotate(45deg) translate(-2px, -2px); transition: transform var(--ds-dur) var(--ds-ease); }
+main .ax details[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+main .ax details.tech > :not(summary) { margin: 0 0 var(--ds-s3); max-width: 70ch; font-size: 14px; line-height: 1.55; color: var(--ds-ink-2); }
+main .ax details.tech > pre, main .ax details.tech > dl { max-width: none; }
+main .ax details.tech[data-testid] > p:first-of-type { margin-top: 0; }
+
+/* ---------- a deal in progress: panel, head, the rail of steps ---------- */
+main .ax .actions { display: grid; gap: var(--ds-s4); margin: 0; padding: var(--ds-s5); list-style: none; border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule); background: var(--ds-surface); }
+main .ax .actions .actions { padding: 0; border: 0; border-radius: 0; background: none; }
+main .ax .actions > * { min-width: 0; margin-block: 0; }
+main .ax .ax-deal { display: grid; gap: var(--ds-s5); margin-top: var(--ds-s2); padding-top: var(--ds-s5); border-top: 1px solid var(--ds-rule); }
+main .ax .ax-deal > * { min-width: 0; margin-block: 0; }
+main .ax .ax-proof { display: grid; gap: var(--ds-s3); padding-top: var(--ds-s5); border-top: 1px solid var(--ds-rule); }
+main .ax .ax-proof > * { min-width: 0; margin-block: 0; }
+main .ax .ax-proof > div { margin: 0; }
+main .ax [data-testid='seller-txt-steps'], main .ax [data-testid='buyer-txt-steps'], main .ax [data-testid='trade-steps'], main .ax [data-testid='ticket-steps'] { display: grid; gap: var(--ds-s3); padding-top: var(--ds-s4); border-top: 1px solid var(--ds-rule); }
+main .ax .ax-todo { display: grid; margin: 0; padding: 0; list-style: none; counter-reset: todo; }
+main .ax .ax-todo > li { position: relative; display: block; counter-increment: todo; padding: 12px 0 12px 40px; border-top: 1px solid var(--ds-rule); font-size: 14px; line-height: 1.55; color: var(--ds-ink-2); }
+main .ax .ax-todo > li:last-child { border-bottom: 1px solid var(--ds-rule); }
+main .ax .ax-todo > li label { margin-top: 8px; }
+main .ax .ax-todo > li::before { content: counter(todo, decimal-leading-zero); position: absolute; left: 0; top: 14px; font: 500 12px/1.4 var(--ds-font-mono); color: var(--ds-ink-3); }
+
+main .ax .tone-tile, main .ax .provider-glyph, main .ax .pass-mark { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: var(--ds-r-ctl); border: 1px solid var(--ds-rule); background: var(--ds-surface-3); color: var(--ds-ink-2); box-shadow: none; }
+main .ax .deal-track { display: grid; gap: var(--ds-s4); padding: var(--ds-s4) var(--ds-s5) var(--ds-s5); border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); }
+main .ax .deal-head { gap: var(--ds-s3); }
+main .ax .deal-head .item-title { margin: 0; font: 600 16px/1.35 var(--ds-font-text); color: var(--ds-ink); }
+main .ax .deal-note { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ds-ink-2); }
+main .ax .deal-note + .deal-note { margin-top: calc(var(--ds-s2) * -1); }
+/* the rail: done = ink-2 with a check, now = lime, still to come = dim; the line fills as far as the deal has gone */
+main .ax .deal-rail { --node: 32px; --done: var(--ds-ink-2); --wait: var(--ds-focus); padding: 22px 0 38px; }
+main .ax .deal-in, main .ax .deal-out { background: var(--ds-rule-2); }
+main .ax .deal-in[data-on='true'], main .ax .deal-out[data-on='true'] { background: var(--done); }
+main .ax .deal-stop[data-state='active'] .deal-in[data-on='true'] { background: linear-gradient(90deg, var(--done), var(--wait)); }
+main .ax .deal-node { color: var(--ds-ink-3); background: var(--ds-surface-2); box-shadow: inset 0 0 0 1.5px var(--ds-rule-2); }
+main .ax .deal-stop[data-state='done'] .deal-node { color: var(--ds-ink-2); background: var(--ds-surface-3); box-shadow: inset 0 0 0 1.5px var(--ds-ink-3); }
+main .ax .deal-stop[data-state='done'] .deal-node svg { display: none; }
+main .ax .deal-stop[data-state='done'] .deal-node::before { content: ''; width: 10px; height: 6px; margin-top: -2px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); }
+main .ax .deal-stop[data-state='active'] .deal-node { color: var(--ds-eye); background: var(--ds-focus); box-shadow: 0 0 0 4px rgba(200, 245, 60, 0.18); }
+main .ax .deal-stop[data-state='bad'] .deal-node { color: var(--ds-eye); background: var(--ds-default); box-shadow: none; }
+main .ax .deal-stop[data-state='warn'] .deal-node { color: var(--ds-eye); background: var(--ds-due); box-shadow: none; }
+main .ax .deal-stop::after { top: calc(var(--node) + 0.5rem); color: var(--ds-ink-3); font: 500 12px/1.25 var(--ds-font-text); }
+main .ax .deal-stop[data-state='done']::after { color: var(--ds-ink-2); }
+main .ax .deal-stop:is([data-state='active'], [data-state='bad'], [data-state='warn'])::after { color: var(--ds-ink); font-weight: 600; }
+main .ax .deal-end::after { bottom: calc(100% + 0.4rem); color: var(--ds-ink-2); font: 500 12px/1.3 var(--ds-font-mono); }
+main .ax .deal-end[data-arrived='true'] .avatar { box-shadow: 0 0 0 2px var(--ds-surface-2), 0 0 0 4px var(--done); }
+
+/* a member: the avatar is a quiet disc (the name carries the identity) */
+main .ax .avatar { background: var(--ds-surface-3); color: var(--ds-ink-2); box-shadow: inset 0 0 0 1px var(--ds-rule-2); font-family: var(--ds-font-mono); font-weight: 500; }
+main .ax .party { gap: 8px; }
+main .ax .party-name { font: 500 14px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+main .ax .you-tag { padding: 0 6px; border-radius: var(--ds-r-badge); background: none; border: 1px solid var(--ds-rule-2); font: 500 11px/1.6 var(--ds-font-mono); color: var(--ds-ink-2); }
+main .ax .party-with { gap: 6px; }
+
+/* a ready listing, as one calm card */
+main .ax .item-cards { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+main .ax .item-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px var(--ds-s4); padding: 14px 16px; border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); }
+main .ax .item-title { margin: 0; font: 600 15px/1.35 var(--ds-font-text); color: var(--ds-ink); overflow-wrap: anywhere; }
+main .ax .item-meta { grid-column: 2 / -1; margin: 0; font-size: 13px; line-height: 1.5; color: var(--ds-ink-2); }
+
+/* ---------- Rent: provider tiles, the price, the pass, the days ---------- */
+main .ax .provider-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.25rem, 1fr)); gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
+main .ax .provider-tiles legend { margin-bottom: 8px; padding: 0; font: 600 13px/1.35 var(--ds-font-text); color: var(--ds-ink-2); }
+main .ax .ax-form label.provider-tile { position: relative; display: grid; justify-items: center; align-content: start; gap: 4px; padding: 16px 8px 14px; border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); color: var(--ds-ink); text-align: center; cursor: pointer; transform: none; transition: border-color var(--ds-dur) var(--ds-ease), background-color var(--ds-dur) var(--ds-ease); }
+main .ax .provider-tile strong { font: 650 14px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+main .ax .provider-tile small { font: 400 12px/1.35 var(--ds-font-text); color: var(--ds-ink-2); }
+main .ax .provider-glyph { position: relative; width: 44px; height: 44px; margin-bottom: 4px; border-radius: 12px; }
+main .ax .ax-form label.provider-tile:has(input:checked) { border-color: var(--ds-accent); background: rgba(47, 108, 240, 0.14); transform: none; }
+main .ax .ax-form label.provider-tile:has(input:checked)::before { content: ''; position: absolute; top: 9px; left: 10px; width: 9px; height: 5px; border-left: 2px solid var(--ds-accent-ink); border-bottom: 2px solid var(--ds-accent-ink); transform: rotate(-45deg); }
+main .ax .provider-tile:has(input:focus-visible) { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+main .ax .provider-tile[data-costly] .provider-glyph::after { top: -6px; right: -7px; width: 18px; height: 18px; background: var(--ds-due); color: #2b1c02; font: 700 11px/1 var(--ds-font-mono); box-shadow: 0 0 0 2px var(--ds-surface-2); }
+main .ax .rent-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0; font-size: 14px; color: var(--ds-ink-2); }
+main .ax .rent-price strong { font: var(--ds-display-weight) clamp(32px, 4vw, 44px)/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ds-ink); }
+main .ax .rent-price span { padding: 1px 9px; border-radius: var(--ds-r-badge); border: 1px solid var(--ds-rule-2); background: none; font: 500 12px/1.6 var(--ds-font-mono); color: var(--ds-ink-2); }
+main .ax .access-pass { display: grid; gap: 14px; padding: var(--ds-s5); border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); }
+main .ax .pass-head { display: flex; align-items: center; gap: var(--ds-s3); }
+main .ax .pass-mark { width: 44px; height: 44px; border-radius: 12px; }
+main .ax .pass-name { display: grid; flex: 1; min-width: 0; }
+main .ax .pass-name strong { font: 650 17px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+main .ax .pass-name small { font-size: 13px; color: var(--ds-ink-3); }
+main .ax .pass-ref { margin: 0; font-size: 14px; color: var(--ds-ink-2); overflow-wrap: anywhere; }
+main .ax .row-sub { max-width: none; overflow: visible; font: 500 11px/1.4 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); white-space: normal; text-overflow: clip; }
+main .ax .paid-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+main .ax .paid-day { gap: 6px; }
+main .ax .paid-day small { font: 400 11px/1.2 var(--ds-font-mono); color: var(--ds-ink-3); }
+main .ax .paid-day[data-today] small { font-weight: 600; color: var(--ds-ink); }
+main .ax .paid-track { height: 10px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); }
+main .ax .paid-fill { background: var(--ds-soft); }
+main .ax .paid-now { width: 2px; background: var(--ds-focus); }
+
+/* ---------- hairline tables, and cards on a narrow box ---------- */
+main .ax .table-wrap.ax-table { container-type: inline-size; background: none; border: 0; border-radius: 0; box-shadow: none; overflow-x: auto; }
+main .ax .ax-table table { width: 100%; border-collapse: collapse; }
+main .ax .ax-table th, main .ax .ax-table td { padding: 12px 16px 12px 0; border-bottom: 1px solid var(--ds-rule); vertical-align: middle; text-align: left; }
+main .ax .ax-table th:last-child, main .ax .ax-table td:last-child { padding-right: 0; }
+main .ax .ax-table thead th { vertical-align: bottom; border-bottom-color: var(--ds-rule-2); font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); white-space: nowrap; }
+main .ax .ax-table thead th small { display: block; margin-top: 2px; font: 400 11px/1.3 var(--ds-font-text); letter-spacing: 0; text-transform: none; color: var(--ds-ink-3); }
+main .ax .ax-table td { font-size: 14px; line-height: 1.4; color: var(--ds-ink-2); }
+main .ax .ax-table th.num, main .ax .ax-table td.num { text-align: right; }
+main .ax .ax-table td.num { font: 500 14px/1.4 var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; color: var(--ds-ink); }
+main .ax .ax-table td.num .muted { font: 400 12.5px/1.4 var(--ds-font-text); color: var(--ds-ink-3); }
+main .ax .ax-table td.num a { color: var(--ds-accent-ink); }
+main .ax .ax-table tbody tr:hover { background: none; }
+/* the open and the closed proposals are two tables: the same column widths, so they read as one list */
+main .ax .ax-table table[aria-label$=' proposals'] { table-layout: fixed; }
+main .ax .ax-table table[aria-label$=' proposals'] th:nth-child(1) { width: 4.5rem; }
+main .ax .ax-table table[aria-label$=' proposals'] th:nth-child(3) { width: 9.5rem; }
+main .ax .ax-table table[aria-label$=' proposals'] th:nth-child(4) { width: 12rem; }
+main .ax .ax-table table[aria-label$=' proposals'] th:nth-child(5) { width: 11rem; }
+main .ax .ax-table td code.plain { font-weight: 400; color: var(--ds-ink-2); }
+main .ax .ax-table .tone-tile { display: none; }
+main .ax .ax-table .row-title { display: block; }
+main .ax .ax-table .row-text strong { display: block; font: 600 14px/1.35 var(--ds-font-text); color: var(--ds-ink); }
+main .ax .ax-table .row-text strong code { font-weight: 600; color: var(--ds-ink); overflow-wrap: normal; white-space: nowrap; }
+main .ax .ax-table .row-id { margin-left: 6px; font: 400 12.5px/1 var(--ds-font-mono); color: var(--ds-ink-3); }
+main .ax .ax-table .row-sub { display: block; margin-top: 2px; font: 400 12.5px/1.4 var(--ds-font-text); letter-spacing: 0; text-transform: none; color: var(--ds-ink-3); }
+main .ax .ax-table .ax-when, main .ax .ax-table .sales-expiry { font-family: var(--ds-font-mono); font-size: 13px; font-variant-numeric: tabular-nums slashed-zero; color: var(--ds-ink); }
+main .ax .ax-table .ax-reason { display: block; margin-top: 4px; font: 400 12.5px/1.4 var(--ds-font-text); color: var(--ds-ink-3); }
+main .ax .ax-table .row-num { font: 500 14px/1.4 var(--ds-font-mono); color: var(--ds-ink); }
+main .ax .ax-table .row-num::before { content: '#'; color: var(--ds-ink-3); }
+main .ax .ax-table .ax-change strong { display: block; font: 600 14px/1.4 var(--ds-font-text); color: var(--ds-ink); }
+main .ax .ax-table .ax-change small { display: block; max-width: 70ch; margin-top: 2px; font: 400 13px/1.5 var(--ds-font-text); color: var(--ds-ink-3); }
+main .ax .ax-table td.ax-first > code { display: block; margin-top: 2px; }
+main .ax .ax-table .ax-who { font: 400 13px/1.4 var(--ds-font-mono); color: var(--ds-ink-2); overflow-wrap: anywhere; }
+main .ax .ax-table .state-line { display: inline-flex; align-items: baseline; gap: 8px; max-width: 20rem; color: var(--ds-ink); }
+main .ax .ax-table .state-line::before { background: var(--tone, var(--ds-ink-3)); }
+main .ax .state-line[data-tone='ok'] { --tone: var(--ds-settled); }
+main .ax .state-line[data-tone='warn'] { --tone: var(--ds-due); }
+main .ax .state-line[data-tone='bad'] { --tone: var(--ds-default); }
+main .ax .state-line[data-tone='info'] { --tone: var(--ds-claim); }
+@media (hover: hover) and (pointer: fine) {
+  main .ax .ax-table tbody tr:hover td { background: rgba(255, 255, 255, 0.03); }
+  main .ax .ax-table td.num a:hover { text-decoration-color: var(--ds-focus); }
+}
+/* a narrow box turns each row into a card: the first cell on top, each figure labelled by its column. Tables with eight columns turn earlier. */
+@container (max-width: 640px) {
+  main .ax .ax-cards table, main .ax .ax-cards tbody, main .ax .ax-cards tr, main .ax .ax-cards td { display: block; }
+  main .ax .ax-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  main .ax .ax-cards tr { display: grid; gap: 8px; padding: 16px 0; border-bottom: 1px solid var(--ds-rule); }
+  main .ax .ax-cards td, main .ax .ax-cards td.num { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 0; border: 0; text-align: right; }
+  main .ax .ax-cards td::before { content: attr(data-label); flex: none; margin-right: auto; font: 500 12px/1.4 var(--ds-font-text); color: var(--ds-ink-3); text-align: left; }
+  main .ax .ax-cards td, main .ax .ax-cards td.num { justify-content: flex-start; gap: 8px; }
+  main .ax .ax-cards td.ax-first, main .ax .ax-cards td.ax-change { display: block; text-align: left; }
+  main .ax .ax-cards td.ax-first::before { content: none; }
+  main .ax .ax-cards td.ax-change::before { display: block; margin-bottom: 2px; }
+  main .ax .ax-cards td[colspan] { display: block; text-align: left; }
+  main .ax .ax-cards td[colspan]::before { display: block; margin-bottom: 2px; }
+  main .ax .ax-cards .state-line { max-width: none; text-align: right; }
+}
+@container (max-width: 1000px) {
+  main .ax .ax-cards[data-cols='wide'] table, main .ax .ax-cards[data-cols='wide'] tbody, main .ax .ax-cards[data-cols='wide'] tr, main .ax .ax-cards[data-cols='wide'] td { display: block; }
+  main .ax .ax-cards[data-cols='wide'] thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  main .ax .ax-cards[data-cols='wide'] tr { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); align-items: start; gap: 14px 24px; padding: 16px 0; border-bottom: 1px solid var(--ds-rule); }
+  main .ax .ax-cards[data-cols='wide'] td, main .ax .ax-cards[data-cols='wide'] td.num { display: block; padding: 0; border: 0; text-align: left; }
+  main .ax .ax-cards[data-cols='wide'] td::before { content: attr(data-label); display: block; flex: none; margin-bottom: 2px; font: 500 12px/1.4 var(--ds-font-text); color: var(--ds-ink-3); text-align: left; }
+  main .ax .ax-cards[data-cols='wide'] td.ax-first { grid-column: 1 / -1; }
+  main .ax .ax-cards[data-cols='wide'] td.ax-first::before { content: none; }
+  main .ax .ax-cards[data-cols='wide'] td.sales-state { grid-column: 1 / -1; }
+  main .ax .ax-cards[data-cols='wide'] td[colspan] { grid-column: 1 / -1; }
+  main .ax .ax-cards[data-cols='wide'] .state-line { max-width: none; text-align: left; }
+}
+
+/* ---------- Access grants ---------- */
+main .ax .grants-main { gap: var(--ds-s6); }
+main .ax .grants-filter { max-width: 46rem; }
+main .ax .grants-note { margin: calc(var(--ds-s3) * -1) 0 0; max-width: 70ch; font-size: 14px; line-height: 1.5; color: var(--ds-ink-3); }
+main .ax .ax-kpis { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+main .ax .sales-ttl { max-width: 70ch; margin: 0; font-size: 14px; line-height: 1.5; color: var(--ds-ink-2); }
+main .ax .access-timeline { margin: 0; padding: var(--ds-s5); border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule); background: var(--ds-surface); }
+main .ax .access-timeline li, main .ax .lane-axis { grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr); }
+main .ax .lane-who small { font: 400 11px/1.3 var(--ds-font-mono); color: var(--ds-ink-3); }
+main .ax .lane-open { font-weight: 600; color: var(--ds-ink-2); }
+main .ax .lane-track { background: repeating-linear-gradient(90deg, transparent 0 calc(100% / 6 - 1px), var(--ds-rule) calc(100% / 6 - 1px) calc(100% / 6)); }
+main .ax .lane-track::after, main .ax .key-now::before { background: var(--ds-focus); opacity: 1; }
+main .ax .lane-dot { box-shadow: 0 0 0 3px var(--ds-surface); }
+main .ax .lane-ticks span { font: 400 11px/1.2 var(--ds-font-mono); color: var(--ds-ink-3); }
+main .ax .lane-key { gap: 6px var(--ds-s4); font: 400 12px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+
+/* ---------- Governance ---------- */
+main .ax .rule-next { margin: 0; padding: 18px 22px; border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule-2); border-left: 3px solid var(--ds-soft); background: var(--ds-surface); }
+main .ax .rule-next-title { margin: 0 0 8px; font: 500 12px/1.3 var(--ds-font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ds-soft); }
+main .ax .rule-next ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+main .ax .rule-next li { font-size: 15px; line-height: 1.5; color: var(--ds-ink-2); }
+main .ax .rule-next li strong { font-weight: 600; color: var(--ds-ink); }
+main .ax .ax-rules { --open: var(--ds-accent); --clear: var(--ds-soft); --pay: #7d8aa3; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ds-s4); }
+main .ax .ax-rule { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule); background: var(--ds-surface); }
+main .ax .ax-rule > figure { order: 2; margin-top: auto; border-top: 1px solid var(--ds-rule); }
+main .ax .ax-rule table.rules { width: 100%; border-collapse: collapse; }
+main .ax table.rules caption { padding: 20px 20px 8px; text-align: left; font: 600 18px/1.2 var(--ds-font-display); font-stretch: 108%; letter-spacing: -0.01em; color: var(--ds-ink); }
+main .ax table.rules th[scope='row'], main .ax table.rules td { padding: 12px 8px 12px 20px; border-bottom: 1px solid var(--ds-rule); vertical-align: top; }
+main .ax table.rules th[scope='row'] { font: 500 14px/1.4 var(--ds-font-text); letter-spacing: 0; text-transform: none; white-space: normal; color: var(--ds-ink-2); }
+main .ax table.rules th[scope='row'] code { display: block; margin: 2px 0 0; font: 400 11.5px/1.3 var(--ds-font-mono); color: var(--ds-ink-3); }
+main .ax table.rules td { padding-left: 8px; padding-right: 20px; text-align: right; white-space: nowrap; font: 500 14px/1.4 var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; color: var(--ds-ink); }
+main .ax table.rules tr:last-child > * { border-bottom: 0; }
+main .ax table.rules td .pill { display: flex; width: fit-content; max-width: 16rem; margin: 6px 0 0 auto; white-space: normal; text-align: left; font: 500 12px/1.4 var(--ds-font-text); }
+main .ax table.rules td .pill::before { background: var(--ds-due); }
+
+main .ax .epoch-life, main .ax .limit-formula { margin: 0; padding: 20px; }
+main .ax .life-head { gap: 4px 12px; margin-bottom: 16px; }
+main .ax .life-head strong { font: var(--ds-display-weight) 32px/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ds-ink); }
+main .ax .life-head span { font-size: 14px; color: var(--ds-ink-2); }
+main .ax .life-tag { font: 500 11px/1.2 var(--ds-font-mono); color: var(--ds-ink-3); }
+main .ax .life-seg { border-radius: 4px; font: 600 12px/1 var(--ds-font-mono); color: var(--ds-eye); text-overflow: ellipsis; }
+main .ax .life-seg[data-kind='open'] { border-radius: 8px 4px 4px 8px; color: #fff; }
+main .ax .life-seg[data-kind='pending'] { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--pay) 70%, transparent) 0 4px, transparent 4px 8px); box-shadow: inset 0 0 0 1px var(--pay); border-radius: 4px 8px 8px 4px; }
+main .ax .life-seg[data-fade='true'] { background: linear-gradient(90deg, color-mix(in srgb, var(--open) 55%, transparent), transparent); color: var(--ds-ink); font-weight: 500; border-radius: 8px 4px 4px 8px; }
+main .ax .life-ticks span { font: 500 11px/1.2 var(--ds-font-mono); color: var(--ds-ink-3); }
+main .ax .life-ticks span::before { border-left-color: var(--ds-rule-2); }
+main .ax .life-legend { gap: 6px var(--ds-s4); font-size: 13px; color: var(--ds-ink-2); }
+main .ax .life-legend b { font: 500 13px/1 var(--ds-font-mono); color: var(--ds-ink); }
+main .ax .formula-term { padding: 14px; border-radius: var(--ds-r-card); border: 1px solid var(--ds-rule); background: var(--ds-surface-2); }
+main .ax .formula-value { font: var(--ds-display-weight) 28px/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ds-ink); }
+main .ax .formula-label { font-size: 13px; color: var(--ds-ink-2); }
+main .ax .formula-meter { background: rgba(255, 255, 255, 0.08); }
+main .ax .formula-term + .formula-op + .formula-term { --open: var(--clear); }
+main .ax .formula-op { font: 500 20px/1 var(--ds-font-mono); color: var(--ds-ink-3); }
+main .ax .formula-cap { padding: 12px 14px; border-radius: var(--ds-r-card); border: 1px dashed var(--ds-rule-2); font-size: 14px; color: var(--ds-ink-2); }
+main .ax .formula-cap strong { font: 500 17px/1.2 var(--ds-font-mono); color: var(--ds-ink); }
+main .ax .limit-formula figcaption { font-size: 13px; color: var(--ds-ink-2); }
+
+/* ---------- Help: an editorial page ---------- */
+main .ax-help { gap: var(--ds-s8); }
+main .ax-idea { display: grid; grid-template-columns: minmax(0, 1fr) minmax(14rem, 22rem); gap: var(--ds-s6) var(--ds-s7); align-items: center; }
+main .ax-eyebrow { margin: 0 0 12px; font: 500 13px/1.4 var(--ds-font-mono); letter-spacing: 0.02em; color: var(--ds-ink-2); }
+main .ax-help .ax-title { margin: 0; max-width: 18ch; font: var(--ds-display-weight) var(--ds-fs-h2)/1.1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: var(--ds-display-tracking); color: var(--ds-ink); }
+main .ax-help .ax-cta { display: flex; flex-wrap: wrap; gap: 10px; margin: var(--ds-s5) 0 0; }
+main .ax-help .loop-motif { justify-self: end; width: 100%; max-width: 22rem; }
+main .ax-help .loop-motif * { color: var(--ds-soft) !important; } /* the motif is an explanation, not a status: one ink instead of three hues (its colours are inline) */
+main .ax-help .loop-motif marker path { fill: var(--ds-soft); }
+main .ax-help .loop-motif figcaption { color: var(--ds-ink-2); }
+main .ax-help .loop-motif figcaption strong { font: 500 17px/1 var(--ds-font-mono); color: var(--ds-ink); }
+main .ax-help .ax-flow { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ds-s4); margin: 0; padding: 0; list-style: none; counter-reset: flow; }
+main .ax-help .ax-flow-step { counter-increment: flow; display: grid; justify-items: start; align-content: start; gap: 6px; padding-top: 12px; border-top: 2px solid var(--ds-rule-2); }
+main .ax-help .ax-flow-step::before { content: counter(flow, decimal-leading-zero); font: 500 12px/1 var(--ds-font-mono); letter-spacing: 0.04em; color: var(--ds-ink-3); }
+main .ax-help .ax-flow-step .glyph { width: 40px; height: 40px; margin: 8px 0 2px; color: var(--ds-soft); }
+main .ax-help .glyph .glyph-sign { stroke: var(--ds-soft); }
+main .ax-help .glyph .glyph-coin { fill: none; stroke: var(--ds-soft); }
+main .ax-help .glyph .glyph-accent { fill: var(--ds-soft); }
+main .ax-help .glyph .glyph-dot { fill: var(--ds-ink-3); }
+main .ax-help .glyph .glyph-ring { stroke: var(--ds-rule-2); }
+main .ax-help .ax-flow-step h3 { margin: 0; font: 650 16px/1.3 var(--ds-font-text); }
+main .ax-help .ax-flow-step p { margin: 0; max-width: 28ch; font-size: 14px; line-height: 1.5; color: var(--ds-ink-2); }
+
+main .ax-help .ax-glossary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--ds-s7); margin: 0; padding: 0; border-top: 1px solid var(--ds-rule-2); }
+main .ax-help .ax-term { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 4px; margin: 0; padding: 14px 0; border: 0; border-bottom: 1px solid var(--ds-rule); border-radius: 0; background: none; scroll-margin-top: 6rem; }
+main .ax-help .ax-term dt { margin: 0; padding: 0; font: 650 15px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+main .ax-help .ax-term dd { margin: 0; padding: 0; max-width: 62ch; text-align: left; font: 400 14px/1.55 var(--ds-font-text); color: var(--ds-ink-2); }
+main .ax-help .ax-term[data-target='true'] { padding-left: 14px; box-shadow: inset 3px 0 0 var(--ds-focus); background: rgba(200, 245, 60, 0.05); }
+
+main .ax-help .ax-faq { display: grid; max-width: 52rem; border-top: 1px solid var(--ds-rule-2); }
+main .ax-help .ax-faq details { border-bottom: 1px solid var(--ds-rule); }
+main .ax-help .ax-faq summary { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-s4); min-height: 44px; padding: 14px 0; color: var(--ds-ink); font: 600 15px/1.4 var(--ds-font-text); cursor: pointer; list-style: none; }
+main .ax-help .ax-faq summary::-webkit-details-marker { display: none; }
+main .ax-help .ax-faq details p { max-width: 62ch; margin: 0 0 16px; font-size: 14.5px; line-height: 1.6; color: var(--ds-ink-2); animation: none; }
+
+/* every page: three small hairline lists per group instead of tiles in hues */
+main .ax-help .explore { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--ds-s5) var(--ds-s6); }
+main .ax-help .explore-group { gap: 0; }
+main .ax-help .explore-label { padding: 0 0 8px; border-bottom: 1px solid var(--ds-rule-2); font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+main .ax-help .explore ul { display: grid; gap: 0; }
+main .ax-help .explore li { width: auto; }
+main .ax-help .explore a { display: flex; align-items: center; justify-items: unset; align-content: unset; gap: 12px; height: auto; min-height: 44px; padding: 6px 0; border: 0; border-bottom: 1px solid var(--ds-rule); border-radius: 0; background: none; color: var(--ds-ink); text-align: left; text-decoration: none; }
+main .ax-help .explore-icon { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--ds-rule); background: var(--ds-surface-3); color: var(--ds-ink-2); transition: none; }
+main .ax-help .explore-icon svg { width: 16px; height: 16px; }
+main .ax-help .explore a strong { font: 500 14px/1.3 var(--ds-font-text); }
+@media (hover: hover) and (pointer: fine) {
+  main .ax-help .explore a:hover { border-color: var(--ds-rule); background: rgba(255, 255, 255, 0.03); text-decoration: none; }
+  main .ax-help .explore a:hover .explore-icon { transform: none; border-color: var(--ds-rule-2); color: var(--ds-ink); }
+  main .ax-help .ax-faq summary:hover, main .ax details.tech summary:hover { color: var(--ds-ink); }
+}
+
+/* ---------- Governance, wide: the rules two to a row, the epoch drawn beside its table ---------- */
+@media (min-width: 900px) {
+  main .ax .ax-rules { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  main .ax .ax-rule[data-group='Timing'] { grid-column: 1 / -1; }
+  main .ax .ax-rule[data-group='Credit limits'] { grid-row: span 2; }
+}
+@media (min-width: 1100px) {
+  main .ax .ax-rule[data-group='Timing'] { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); align-items: stretch; }
+  main .ax .ax-rule[data-group='Timing'] > table { grid-column: 1; grid-row: 1; align-self: center; }
+  main .ax .ax-rule[data-group='Timing'] > figure { grid-column: 2; grid-row: 1; order: 0; display: flex; flex-direction: column; justify-content: center; border-top: 0; border-left: 1px solid var(--ds-rule); padding: 20px 24px; }
+}
+
+/* ---------- tablet and phone ---------- */
+@media (max-width: 899px) {
+  main .ax-idea { grid-template-columns: minmax(0, 1fr); }
+  main .ax-help .loop-motif { justify-self: center; }
+  main .ax-help .ax-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  main .ax-help .ax-glossary { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 719px) {
+  main .ax { gap: var(--ds-s6); }
+  main .ax-help { gap: var(--ds-s7); }
+}
+@media (max-width: 559px) {
+  main .ax .view-tabs::after { display: none; }
+  main .ax .view-tabs .segmented { display: flex; flex: 1; }
+  main .ax .view-tabs .segmented button { flex: 1 1 auto; }
+  main .ax .ax-form, main .ax .actions { padding: var(--ds-s4); }
+  main .ax .ax-dl { grid-template-columns: minmax(0, 1fr); }
+  main .ax .ax-dl dt { padding-bottom: 0; border-bottom: 0; }
+  main .ax .ax-dl dd { padding-top: 2px; }
+  main .ax .access-timeline { padding: var(--ds-s4); }
+  main .ax .lane-ticks span:not(:first-child, :last-child) { display: none; } /* four dates do not fit a phone: the first and the last stay */
+  main .ax .access-timeline li, main .ax .lane-axis { grid-template-columns: minmax(5.5rem, 7rem) minmax(0, 1fr); }
+  main .ax table.rules td { white-space: normal; overflow-wrap: anywhere; }
+  main .ax table.rules caption { padding: 16px 16px 6px; }
+  main .ax table.rules th[scope='row'] { padding-left: 16px; }
+  main .ax table.rules td { padding-right: 16px; }
+  main .ax .epoch-life, main .ax .limit-formula { padding: 16px; }
+  main .ax .access-pass { padding: var(--ds-s4); }
+  main .ax-help .ax-flow { gap: var(--ds-s4) var(--ds-s3); }
+}
+@media (max-width: 419px) {
+  main .ax-help .ax-flow { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* a touch screen: every key, field, tab and link of these pages is at least 44 px */
+@media (pointer: coarse) {
+  main .ax .segmented button { min-height: 44px; }
+  main .ax .ax-table td.num a { display: inline-flex; align-items: center; min-height: 44px; }
+  main .ax label small button { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main .ax :is(.views-pane, .market-pane) { animation: none; }
+  main .ax .provider-tile, main .ax details.tech summary::after, main .ax .ax-faq summary::after { transition: none; }
+}

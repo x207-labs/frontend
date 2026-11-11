@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMember, useMembers } from '../api/queries'
+import type { MemberResponse } from '../api/types'
 import { DepositBranch } from '../components/DepositBranch'
 import { ExitPanel } from '../components/ExitPanel'
+import { MemberBadge } from '../components/MemberBadge'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { TxResult } from '../components/TxResult'
 import { CIRCLE } from '../config'
+import { Button } from '../ds/components'
 import { toAtomic } from '../lib/amount'
-import { formatCredit } from '../lib/format'
+import { formatCredit2, shortAccount } from '../lib/format'
+import { MONEY } from '../lib/network'
 import { OnboardingSteps } from '../onboarding/OnboardingSteps'
 import type { MemberState } from '../onboarding/steps'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
@@ -91,7 +95,7 @@ function JoinForm({ registered }: { registered: boolean }) {
         </>
       )}
       <label>
-        <span>Stake amount (USDT)</span>
+        <span>Stake amount ({MONEY})</span>
         <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" disabled={!account} />
         {amount && atomic === null && <small className="state-error" role="alert">Amount must be greater than 0.</small>}
       </label>
@@ -114,14 +118,14 @@ function JoinForm({ registered }: { registered: boolean }) {
         </p>
       )}
       <div>
-        <button type="submit" disabled={!canSend}>
+        <Button type="submit" variant="glow" disabled={!canSend}>
           {/* FE-089: a registered member only adds stake, so the button names only what will be signed */}
           {signing
             ? 'Waiting for wallet…'
             : needsJoin
               ? source === 'near' ? 'Sign join and stake' : 'Sign withdraw, join, and stake'
               : source === 'near' ? 'Sign stake' : 'Sign withdraw and stake'}
-        </button>
+        </Button>
       </div>
       {step && <p className="state" role="status">Step: {step}</p>}
       <TxResult state={state} />
@@ -141,38 +145,45 @@ function StatusPanel({ account }: { account: string }) {
   }
   if (member.data === undefined && member.isError) return <ErrorNotice error={member.error} onRetry={() => member.refetch()} />
   const m = member.data
-  const cell = (value: string | undefined) =>
+  const cell = (value: string | undefined, unit: string) =>
     m ? (
       <>
-        <strong>{formatCredit(value)}</strong> USDT
+        <span className="ds-num">{formatCredit2(value)}</span>
+        <small>{unit}</small>
       </>
     ) : (
       <Loading label="Loading" />
     )
-  // FE-089: the membership as four figures, a small label over each large number, no boxes.
+  // FE-089: the membership as four figures, a small label over each large number.
+  // v4: each figure is a Kpi card (the glass edge of src/ds/components.css) on a list of terms, so the definition list stays a list.
   return (
     <dl className="onboard-sum" aria-label="Onboarding status">
-      <div>
+      <div className="ds-kpi">
         <dt>Status</dt>
-        <dd>{m ? <span className="pill" data-tone={MEMBER_TONE[m.status] ?? 'info'}>{m.status}</span> : <Loading label="Loading" />}</dd>
+        <dd className="ds-value">{m ? <MemberBadge status={m.status} /> : <Loading label="Loading" />}</dd>
       </div>
-      <div>
+      <div className="ds-kpi">
         <dt>Stake</dt>
-        <dd>{cell(m?.stake)}</dd>
+        <dd className="ds-value">{cell(m?.stake, MONEY)}</dd>
       </div>
-      <div>
+      <div className="ds-kpi">
         <dt>Credit limit</dt>
-        <dd>{cell(m?.limit)}</dd>
+        <dd className="ds-value">{cell(m?.limit, 'credit')}</dd>
       </div>
-      <div>
+      <div className="ds-kpi">
         <dt>Headroom</dt>
-        <dd>{cell(m?.headroom)}</dd>
+        <dd className="ds-value">{cell(m?.headroom, 'credit')}</dd>
       </div>
     </dl>
   )
 }
 
-const MEMBER_TONE: Record<string, 'ok' | 'warn' | 'bad' | 'info'> = { active: 'ok', pending: 'info', suspended: 'bad', exited: 'warn' }
+/** The one sentence under the title, with the real numbers of the membership (nothing while the read API has not answered). */
+function ledeOf(account: string, m: MemberResponse | null | undefined): string | null {
+  if (m) return `${shortAccount(account)} is ${m.status} in ${CIRCLE}: ${formatCredit2(m.stake)} ${MONEY} staked, a credit limit of ${formatCredit2(m.limit)} credit and ${formatCredit2(m.headroom)} credit of headroom left.`
+  if (m === null) return `${shortAccount(account)} has not joined ${CIRCLE} yet. The four steps below go from test funds to a credit limit.`
+  return null
+}
 
 export function Onboarding() {
   const members = useMembers()
@@ -185,12 +196,22 @@ export function Onboarding() {
     : memberQuery.data === null
       ? { kind: 'none' }
       : { kind: 'loading' }
-  // FE-089: on a wide screen the steps on the left and the membership beside them; on a phone the membership first, then the steps.
-  // Leaving the circle is its own block under the steps, not part of the join step.
+  // FE-089: the membership first, then the steps; leaving the circle is its own block under the steps, not part of the join step.
+  // v4: a statement first (the sentence and the four figures as cards), then the steps.
+  const lede = account ? ledeOf(account, memberQuery.data) : null
   return (
-    <div className="onboard">
-      <aside className="onboard-me" aria-labelledby="onboard-me">
-        <h2 id="onboard-me">Your membership</h2>
+    <div className="onboard ep cl">
+      <section className="onboard-me" aria-labelledby="onboard-me">
+        <header className="ep-head">
+          <p className="ep-eyebrow">
+            {CIRCLE}
+            {account ? ` · ${shortAccount(account)}` : ''}
+            {memberQuery.data ? ` · ${memberQuery.data.status}` : ''}
+          </p>
+          {/* the page title is the h1 of the shell; this one names the block */}
+          <h2 id="onboard-me" className="ep-title">Your membership</h2>
+          {lede && <p className="ep-lede">{lede}</p>}
+        </header>
         {account && <StatusPanel account={account} />}
         <QueryState query={members} loadingLabel="Loading members">
           {(data) => (
@@ -199,7 +220,7 @@ export function Onboarding() {
             </p>
           )}
         </QueryState>
-      </aside>
+      </section>
       <div className="onboard-main">
         <OnboardingSteps account={account} member={memberState}>
           <JoinForm registered={registered} />
