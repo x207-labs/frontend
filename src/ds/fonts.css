@@ -1,0 +1,13 @@
+/* x207 design system: type, direction A "Agent Console" (owner-approved with the v4 landing, 2026-11-11).
+   All four families are SIL OFL 1.1 (licences next to the files) and self-hosted, so CSP `font-src 'self'` holds.
+   - Hubot Sans: display (headlines, big numbers), variable weight 200-900 and width 75-125%.
+   - Mona Sans: text, same axes.
+   - Monaspace Neon: data (amounts, ids, code), tabular figures.
+   - Monaspace Krypton: the agent's voice (what an agent signed or said). */
+@font-face { font-family: 'Hubot Sans'; src: url('./fonts/hubot-sans-latin-standard-normal.woff2') format('woff2'); font-weight: 200 900; font-stretch: 75% 125%; font-display: swap; }
+@font-face { font-family: 'Mona Sans'; src: url('./fonts/mona-sans-latin-standard-normal.woff2') format('woff2'); font-weight: 200 900; font-stretch: 75% 125%; font-display: swap; }
+@font-face { font-family: 'Monaspace Neon'; src: url('./fonts/monaspace-neon-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Monaspace Neon'; src: url('./fonts/monaspace-neon-latin-500-normal.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Monaspace Neon'; src: url('./fonts/monaspace-neon-latin-700-normal.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Monaspace Krypton'; src: url('./fonts/monaspace-krypton-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Monaspace Krypton'; src: url('./fonts/monaspace-krypton-latin-500-normal.woff2') format('woff2'); font-weight: 500; font-display: swap; }

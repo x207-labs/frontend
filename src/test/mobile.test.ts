@@ -56,22 +56,27 @@ describe('FE-058 mobile platform fixes', () => {
     expect(rule).toContain('-webkit-tap-highlight-color: transparent')
   })
 
-  it('TC-FE-062-01 landing.css: every :hover rule is inside (hover: hover) and (pointer: fine), except the reset that cancels the global button hover', () => {
+  it('TC-FE-062-01 landing.css: every :hover rule is inside a one-line (hover: hover) and (pointer: fine) block, so a tap never leaves a stuck hover (the v4 landing is styled by landing.css alone, with no global button hover to cancel)', () => {
     const bare = landing.replace(/\/\*[\s\S]*?\*\//g, '')
-    const stray = bare
-      .split('\n')
-      .filter((l) => l.includes(':hover') && !/^@media \(hover: hover\) and \(pointer: fine\) \{.*\}\s*$/.test(l))
-      .map((l) => l.split('{')[0].trim())
-    expect(stray).toEqual(['.lp button:hover:not(:disabled)'])
-    // Pausing the marquee on hover must not stick on a touch screen; focus and the active barter still pause it.
-    expect(bare).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{ \.lp \.shelf-row:hover \.shelf-track \{ animation-play-state: paused; \} \}/)
-    expect(bare).toContain('.lp .shelf-row:focus-within .shelf-track')
+    const hoverLines = bare.split('\n').filter((l) => l.includes(':hover'))
+    expect(hoverLines.length).toBeGreaterThanOrEqual(3)
+    const stray = hoverLines.filter((l) => !/^@media \(hover: hover\) and \(pointer: fine\) \{.*\}\s*$/.test(l)).map((l) => l.split('{')[0].trim())
+    expect(stray).toEqual([])
   })
 
-  it('TC-FE-062-02 landing.css: the page box has a dvh height; the story stage uses svh; the 640vh and 560vh story length is scroll distance, not a visible box', () => {
-    expect(landing).toMatch(/min-height: 100vh;\s*min-height: 100dvh;/)
-    expect(landing).toContain('height: 100svh')
-    expect(landing).toContain('height: 640vh')
+  it('TC-FE-062-02 landing.css: the page box has a dvh height; every pinned box has an svh twin after its vh; the 520vh story and the 340vh laptop section are scroll distance, not visible boxes', () => {
+    const bare = landing.replace(/\/\*[\s\S]*?\*\//g, '')
+    expect(bare).toMatch(/min-height: 100vh;\s*min-height: 100dvh;/)
+    expect(bare).toContain('height: 100svh')
+    expect(bare).toMatch(/\.lp \.story \{ height: 520vh;/)
+    expect(bare).toMatch(/\.lp \.next-dash \{ position: relative; height: 340vh;/)
+    // Any other bare vh must be followed, in the same rule, by the same value in svh or dvh.
+    const bareVh = bare.split('\n').flatMap((l) => [...l.matchAll(/([\w-]+):\s*(\d+)vh;/g)].map((m) => ({ line: l, prop: m[1], n: m[2] })))
+    expect(bareVh.length).toBeGreaterThan(0)
+    for (const { line, prop, n } of bareVh) {
+      const pinned = (prop === 'height' && n === '520' && line.includes('.story')) || (prop === 'height' && n === '340' && line.includes('.next-dash {'))
+      if (!pinned) expect(line, `${prop}: ${n}vh has an svh or dvh twin`).toMatch(new RegExp(`${prop}:\\s*${n}(?:s|d)vh;`))
+    }
   })
 
   it('TC-FE-063-03 on a touch screen (pointer: coarse) buttons, fields and navigation links are at least 44 px tall', () => {

@@ -1,0 +1,87 @@
+/* x207 design system tokens (v4, 2026-11-11). One source for the landing (`.lp`) and the app (`styles.css` maps its own names onto these).
+   Look: a calm night desk (groups A + C) with an electric floor and lime accents (group B), set in "Agent Console" type.
+   Colour roles, not hues: code reads --ds-settled, never "green". Every text colour passes WCAG AA on --ds-paper and --ds-surface. */
+:root {
+  /* surfaces, darkest to lightest */
+  --ds-paper: #060a14;
+  --ds-surface: #0d1424;
+  --ds-surface-2: #111a2e;
+  --ds-surface-3: #16213a;
+  --ds-glass: rgba(15, 23, 42, 0.58);
+  --ds-glass-strong: rgba(10, 16, 32, 0.82);
+  --ds-rule: rgba(190, 205, 235, 0.16);
+  --ds-rule-2: rgba(190, 205, 235, 0.26);
+
+  /* ink */
+  --ds-ink: #eef3fb;
+  --ds-ink-2: #a9b6cc;
+  --ds-ink-3: #8593ab;
+  --ds-soft: #a9cbff;          /* the soft blue second line of a headline */
+  --ds-agent-ink: #9fe3c2;     /* text an agent signed or said */
+
+  /* status: the x207 result codes */
+  --ds-settled: #5be3a0;       /* 200: paid, settled */
+  --ds-claim: #8fd3ff;         /* 202: accepted, claimable */
+  --ds-due: #ffc25c;           /* 402: payment due */
+  --ds-default: #ff8a8a;       /* 409: conflict, default */
+
+  /* action and focus */
+  --ds-accent: #2f6cf0;
+  --ds-accent-2: #1338c4;
+  --ds-accent-ink: #a9cbff;
+  --ds-focus: #c8f53c;
+
+  /* the floor (group B): bands, highlights and orbs */
+  --ds-floor-a: #3148ff;
+  --ds-floor-b: #1b2ad6;
+  --ds-lime: #c8f53c;
+  --ds-sun: #ffc738;
+  --ds-coral: #ff5a45;
+  --ds-sky: #a6dcff;
+  --ds-orb-edge: #c9d2ff;
+  --ds-eye: #0e1330;
+
+  /* type */
+  --ds-font-display: 'Hubot Sans', system-ui, sans-serif;
+  --ds-font-text: 'Mona Sans', system-ui, sans-serif;
+  --ds-font-mono: 'Monaspace Neon', ui-monospace, monospace;
+  --ds-font-agent: 'Monaspace Krypton', ui-monospace, monospace;
+  --ds-display-weight: 760;
+  --ds-display-stretch: 112%;
+  --ds-display-tracking: -0.025em;
+  /* type scale (px at 16px root): display / h1 / h2 / h3 / body / small / micro */
+  --ds-fs-display: clamp(40px, 6.2vw, 86px);
+  --ds-fs-h1: clamp(30px, 3.6vw, 48px);
+  --ds-fs-h2: clamp(24px, 2.6vw, 34px);
+  --ds-fs-h3: 20px;
+  --ds-fs-body: 16px;
+  --ds-fs-small: 14px;
+  --ds-fs-micro: 12px;
+
+  /* shape */
+  --ds-r-panel: 14px;
+  --ds-r-card: 12px;
+  --ds-r-ctl: 10px;
+  --ds-r-chip: 8px;
+  --ds-r-badge: 6px;
+  --ds-r-floor: 32px;
+
+  /* space (4px grid) */
+  --ds-s1: 4px;
+  --ds-s2: 8px;
+  --ds-s3: 12px;
+  --ds-s4: 16px;
+  --ds-s5: 24px;
+  --ds-s6: 32px;
+  --ds-s7: 48px;
+  --ds-s8: 72px;
+
+  /* depth */
+  --ds-shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.8);
+  --ds-glow: 0 0 0 1px rgba(169, 203, 255, 0.35) inset, 0 10px 30px -8px rgba(47, 108, 240, 0.75);
+
+  /* layout and motion */
+  --ds-col: 1120px;
+  --ds-ease: cubic-bezier(0.22, 0.78, 0.51, 0.94);
+  --ds-dur: 220ms;
+}

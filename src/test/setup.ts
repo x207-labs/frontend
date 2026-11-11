@@ -35,3 +35,8 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false,
   })
 }
+// v4 landing: jsdom has no canvas, and its getContext logs "not implemented" on every call. Answer null quietly: the landing then keeps its static markup
+// (no 2D canvas for the ring and the story, no WebGL for the laptop), which is what the tests check.
+if (typeof HTMLCanvasElement !== 'undefined') {
+  HTMLCanvasElement.prototype.getContext = (() => null) as unknown as HTMLCanvasElement['getContext']
+}

@@ -64,9 +64,10 @@ describe('TC-FE-059-02 the CSP opens the Privy host only when the build has a Pr
     expect(buildCsp({ ...base, VITE_PRIVY_APP_CLIENT_ID: 'client' })).not.toContain('privy') // a Client ID alone is not enough
     expect(buildCsp({ ...base, VITE_PRIVY_APP_ID: '  ' })).not.toContain('privy')
     // FE-066: the App ID alone turns it on; the Client ID is optional
-    expect(buildCsp({ ...base, VITE_PRIVY_APP_ID: 'app' })).toContain('frame-src https://auth.privy.io')
+    // v4 landing: 'self' stays in frame-src, or the landing's laptop could not show the same-origin dashboard in its iframe
+    expect(buildCsp({ ...base, VITE_PRIVY_APP_ID: 'app' })).toContain("frame-src 'self' https://auth.privy.io")
     const on = buildCsp({ ...base, VITE_PRIVY_APP_ID: 'app', VITE_PRIVY_APP_CLIENT_ID: 'client' })
-    expect(on).toContain('frame-src https://auth.privy.io')
+    expect(on).toContain("frame-src 'self' https://auth.privy.io")
     expect(on.split('; ').find((d) => d.startsWith('connect-src'))).toContain('https://auth.privy.io')
     expect(on).toMatch(/script-src 'self' 'wasm-unsafe-eval'/) // scripts still come from the own origin only
   })

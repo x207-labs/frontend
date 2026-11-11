@@ -58,7 +58,8 @@ export function buildCsp(env: Env, nonce?: string): string {
   connect.add(ACCOUNT_SERVICE_ORIGIN) // FE-068: the account service (Supabase Edge Function x207-account)
   return [
     "default-src 'self'",
-    ...(privy ? [`frame-src ${PRIVY_ORIGIN}`] : []),
+    // v4 landing: the laptop section shows the same-origin dashboard in an iframe, so 'self' must stay once frame-src is set (without it default-src 'self' already allows it).
+    ...(privy ? [`frame-src 'self' ${PRIVY_ORIGIN}`] : []),
     `script-src 'self' 'wasm-unsafe-eval'${nonce ? ` 'nonce-${nonce}'` : ''}`,
     `connect-src ${[...connect].join(' ')}`,
     `img-src 'self' data: ${NEAR_CONNECT_ICON_ORIGINS.join(' ')}`,

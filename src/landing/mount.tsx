@@ -1,13 +1,13 @@
-// FE-099: the landing uses the dashboard's four faces (FE-098), self-hosted because the CSP allows only 'self' fonts.
-import '@fontsource-variable/bricolage-grotesque'
-import '@fontsource-variable/geist'
-import '@fontsource-variable/fraunces/wght-italic.css'
-import '@fontsource-variable/geist-mono'
+// The v4 design system: "Agent Console" type and the --ds-* tokens, the same two files the app's boot.tsx imports.
+import '../ds/fonts.css'
+import '../ds/tokens.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import Landing from './Landing'
 
 // FE-044: "/" boots only this: no wallet, no query client, no dashboard styles.
+// The page rules of landing.css hang on `html.is-landing`; set it before the first paint so the dark page does not flash white (Landing also sets it, for the route inside the app).
+document.documentElement.classList.add('is-landing')
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Landing />

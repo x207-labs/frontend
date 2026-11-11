@@ -24,6 +24,14 @@ describe('batch 3 F4 content security policy of the build', () => {
     expect(csp).not.toContain('frame-src')
   })
 
+  it('v4 landing: the dashboard iframe of the laptop section is same-origin, so frame-src keeps \'self\' next to Privy, and without Privy no frame-src narrows default-src', () => {
+    const dir = (csp: string, name: string) => csp.split('; ').find((d) => d.startsWith(`${name} `)) ?? ''
+    expect(dir(buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh', VITE_PRIVY_APP_ID: 'app' }), 'frame-src')).toBe("frame-src 'self' https://auth.privy.io")
+    const plain = buildCsp({ VITE_X207_API_URL: 'https://x207.boxd.sh' })
+    expect(dir(plain, 'frame-src')).toBe('')
+    expect(dir(plain, 'default-src')).toBe("default-src 'self'")
+  })
+
   it('FE-038 the build nonce is the only addition to script-src: the wallet executor iframes need it, and unsafe-inline stays out', () => {
     const csp = buildCsp({ VITE_X207_API_URL: 'https://api.x207.example' }, 'AbC+/123==')
     expect(csp).toContain("script-src 'self' 'wasm-unsafe-eval' 'nonce-AbC+/123=='")

@@ -11,8 +11,11 @@ export const LIVE = {
   // FE-045: every "open the dashboard" link opens the live circle v018 (the picker still offers v013 for the epoch 8 history).
   // FE-056: the entry is the member's Home page; the public clearing stats are one click away in the same sidebar.
   dashboard: '/app?circle=v018',
+  // v4 landing: "Replay" under the story opens the clearing stats of epoch 8 itself, which ran on the older circle v013 (the picker's "history, epoch 8").
+  epoch8Stats: '/stats?circle=v013&epoch=8',
   github: 'https://github.com/x207-labs',
   repo: 'https://github.com/x207-labs/x207',
+  security: 'https://github.com/x207-labs/x207/blob/main/docs/security.md',
   claims: 'https://github.com/x207-labs/x207/blob/main/CLAIMS.md',
   barterEvidence: 'https://github.com/x207-labs/x207/blob/main/docs/barter-evidence.md',
   epoch8Run: 'https://github.com/x207-labs/x207/blob/main/docs/testnet-0.0.13-realistic.json',

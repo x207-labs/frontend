@@ -33,7 +33,7 @@ describe('dashboard shell', () => {
     watch.observe(document.body, { childList: true, subtree: true, characterData: true })
     const { calls } = renderApp('/')
     // The landing is a lazy chunk; its first import in a test run takes longer than the default second.
-    expect(await screen.findByRole('heading', { level: 1 }, { timeout: 8000 })).toHaveTextContent('x207 settles the net.')
+    expect(await screen.findByRole('heading', { level: 1 }, { timeout: 8000 })).toHaveTextContent('Many agent payments. One net settlement.')
     expect(screen.queryByRole('navigation', { name: 'Pages' })).not.toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: /dashboard/i })[0]).toHaveAttribute('href', '/app?circle=v018') // FE-045: the live circle; FE-056: opens on Home
     watch.disconnect()
