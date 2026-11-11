@@ -4,14 +4,40 @@ import { metrics } from '../api/fixtures'
 import { apiError, renderApp } from '../test/render'
 
 const fact = (term: string) => screen.getByText(term, { selector: 'dt' }).closest('div')!
+// v4: the headline figures are cards (Kpi), the rest stay in the "More figures" list
+const kpi = (label: string) => screen.getByText(label, { selector: '.ds-kpi header span' }).closest('.ds-kpi') as HTMLElement
 
 describe('clearing stats', () => {
   it('TC-FE-008-01 metrics of epoch 42', async () => {
     renderApp('/stats?epoch=42')
     expect(await screen.findByText('512 vouchers become 3 settlement transfers, one for each member with a net position.')).toBeInTheDocument()
-    expect(fact('Cleared ratio')).toHaveTextContent('0.71')
+    expect(kpi('Cleared ratio')).toHaveTextContent('71%')
+    expect(kpi('Cleared ratio')).toHaveTextContent('Ratio 0.71')
     expect(fact('Transfer savings')).toHaveTextContent('170.67')
     expect(fact('Graph density')).toHaveTextContent('0.4667')
+  })
+
+  it('v4 the page opens on a statement with the real numbers of the selected epoch, then the replay, then the figures', async () => {
+    renderApp('/stats?epoch=42')
+    expect(await screen.findByRole('heading', { name: 'Epoch 42 clearing result' })).toBeInTheDocument()
+    expect(screen.getByText('agents-main · epoch 42 · payment window')).toBeInTheDocument()
+    expect(screen.getByText('In epoch 42, 2,563.38 credit is owed across 512 vouchers; 1,820.00 is cancelled in loops and 45.00 is set to move.')).toBeInTheDocument()
+    // the replay of the same epoch, from its obligations and its report (no canvas in jsdom: the end figures and no controls)
+    const replay = await screen.findByRole('region', { name: 'Replay of epoch 42' })
+    expect(within(replay).getByText('Owed between members')).toBeInTheDocument()
+    expect(within(replay).getByText('412.74')).toBeInTheDocument()
+    expect(within(replay).queryByRole('button', { name: 'Replay' })).toBeNull()
+    // order on the page: statement, replay, figures, charts
+    const order = [screen.getByRole('heading', { name: 'Epoch 42 clearing result' }), replay, screen.getByRole('region', { name: 'Headline figures' }), screen.getByRole('heading', { name: 'Clearing result against graph density' })]
+    order.slice(1).forEach((el, i) => expect(order[i].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
+  })
+
+  it('v4 statementText speaks in the past tense once the epoch is finalized, and says why when there is no clearing result', async () => {
+    const { statementText } = await import('./ClearingStats')
+    const m = { ...metrics[42], epoch: 41, phase: 'finalized' } as never
+    expect(statementText(m, true, null, null)).toBe('In epoch 41, 2,563.38 credit was owed across 512 vouchers; 1,820.00 was cancelled in loops and 45.00 had to move.')
+    expect(statementText({ ...metrics[42], cleared: null } as never, false, null, null)).toBe('In epoch 42, 2,563.38 credit is owed across 512 vouchers.')
+    expect(statementText({ ...metrics[42], phase: 'cutoff', residualTransfers: null } as never, false, null, null, Date.parse('2026-11-09T10:00:00Z'))).toContain('is in progress (phase cutoff)')
   })
 
   it('TC-FE-008-02 one dot per epoch in each chart and a table row', async () => {
@@ -37,7 +63,8 @@ describe('clearing stats', () => {
     const open = { ...metrics[42], phase: 'open', clearedRatio: null, residualTransfers: null, transferSavings: null, cleared: null, debtReduction: null, clearingTimeSeconds: null }
     renderApp('/stats?epoch=42', (p) => (p.endsWith('/epochs/42/metrics') ? { status: 200, body: open } : undefined))
     expect(await screen.findByText(/vouchers registered, clearing not run yet/)).toBeInTheDocument()
-    expect(fact('Cleared ratio')).toHaveTextContent('not available')
+    expect(kpi('Cleared ratio')).toHaveTextContent('—')
+    expect(kpi('Cleared ratio')).toHaveTextContent('No clearing result yet')
   })
 
   it('TC-FE-008-04 empty', async () => {
@@ -120,7 +147,7 @@ describe('an epoch committed with vouchers and no clearing (epoch 1 of the testn
   it('the page says that no clearing was applied and shows a dash, not a ratio of 0', async () => {
     renderApp('/stats?epoch=42', (p) => (p.endsWith('/epochs/42/metrics') ? { status: 200, body: { ...metrics[42], phase: 'finalized', voucherCount: 210, cleared: '0', clearedRatio: 0, residualTransfers: 0 } } : undefined))
     expect(await screen.findByText(/no clearing was applied/)).toBeInTheDocument()
-    expect(within(fact('Cleared ratio')).getByText('—')).toBeInTheDocument()
+    expect(within(kpi('Cleared ratio')).getByText('—')).toBeInTheDocument()
   })
 })
 
@@ -153,9 +180,10 @@ describe('plural and the default note (epoch 7 of the testnet circle: one vouche
 
   it('FE-039 the stats page shows both figures with the numbers of the epoch', async () => {
     renderApp('/stats?epoch=42')
-    await screen.findByText('Transfers avoided', { selector: 'dt' })
-    expect(fact('Transfers avoided')).toHaveTextContent('509 of 512 (99.41%)')
-    expect(fact('Cash needed')).toHaveTextContent('45 of 2,563.38 credit (1.76%)')
+    await screen.findByText('Transfers avoided', { selector: '.ds-kpi header span' })
+    expect(kpi('Transfers avoided')).toHaveTextContent('509of 51299.41% of the vouchers need no transfer')
+    expect(kpi('Cash needed')).toHaveTextContent('45.00credit1.76% of the 2,563.38 credit owed')
+    expect(kpi('Cleared value')).toHaveTextContent('1,820.00credit')
     expect(screen.getByRole('link', { name: 'How they are computed' })).toHaveAttribute('href', expect.stringContaining('/help?epoch=42#term-transfers-avoided'))
   })
 

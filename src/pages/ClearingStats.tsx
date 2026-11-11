@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAllMetrics } from '../api/queries'
-import type { EpochMetrics } from '../api/types'
+import type { EpochItem, EpochMetrics } from '../api/types'
+import { EpochReplay } from '../components/EpochReplay'
 import { ErrorNotice, Loading } from '../components/QueryState'
 import { Scatter } from '../components/Scatter'
+import { Kpi } from '../ds/components'
 import { useEpochSelection } from '../epoch'
-import { EDGES_PRUNED_NOTE, formatCredit, formatNumber, formatPercent } from '../lib/format'
+import { EDGES_PRUNED_NOTE, formatCredit, formatCredit2, formatNumber, formatPercent } from '../lib/format'
 
 /** How many of the newest epochs the density charts show (FE-046: a circle with hundreds of epochs must not read them all). */
 const CHART_EPOCHS = 20
@@ -58,91 +60,62 @@ export function defaultNote(m: EpochMetrics): string | null {
   return `Default rate: ${formatPercent(m.defaultRate)} of the residual debt of ${formatCredit(m.netDebt)} credit was not paid in the payment window and was covered from the stake of the debtors.`
 }
 
-/** A thin bar for a figure that is a share of a whole (0 to 1). Decorative: the figure itself is in the text next to it. */
-function Meter({ share, tone }: { share: number; tone: 'blue' | 'green' | 'violet' }) {
-  const pct = Math.max(0, Math.min(1, share)) * 100
+/**
+ * The one sentence under the title, with the real numbers of the epoch: what was owed, what the loops cancelled, what had to move. An epoch without a clearing result says why instead.
+ * `final` is whether the epoch is finalized: a running epoch speaks in the present tense.
+ */
+export function statementText(m: EpochMetrics, final: boolean, deadline: string | null, cutoffAt: string | null, now = Date.now()): string {
+  if (noClearing(m)) return `${formatNumber(m.voucherCount, 0)} vouchers in epoch ${m.epoch}; no clearing was applied (the epoch was committed without a clearing result), so the obligations were left as they were.`
+  if (m.residualTransfers === null || m.voucherCount === 0) return noResultText(m, deadline, now, cutoffAt)
+  const owed = `In epoch ${m.epoch}, ${formatCredit2(m.totalVoucherValue)} credit ${final ? 'was' : 'is'} owed across ${formatNumber(m.voucherCount, 0)} ${m.voucherCount === 1 ? 'voucher' : 'vouchers'}`
+  if (m.cleared === null || m.netDebt === null) return `${owed}.`
+  return `${owed}; ${formatCredit2(m.cleared)} ${final ? 'was cancelled' : 'is cancelled'} in loops and ${formatCredit2(m.netDebt)} ${final ? 'had to move' : 'is set to move'}.`
+}
+
+/** `payment_window` -> `payment window` */
+const phaseWord = (phase: string): string => phase.replace(/_/g, ' ')
+
+function Statement({ m, selected, pruned }: { m: EpochMetrics; selected: EpochItem; pruned: boolean }) {
+  const final = selected.phase === 'finalized'
+  const showTransfers = !noClearing(m) && m.residualTransfers !== null && m.voucherCount > 0
   return (
-    <dd className="meter" data-tone={tone} aria-hidden="true">
-      <span style={{ width: `${Math.max(pct, 1.5)}%` }} />
-    </dd>
+    <header className="ep-head">
+      <p className="ep-eyebrow">
+        {m.circle} · epoch {m.epoch} · {phaseWord(selected.phase)}
+      </p>
+      {/* the page title is the h1 of the shell; this one names the epoch the page is about */}
+      <h2 className="ep-title">Epoch {m.epoch} clearing result</h2>
+      <p className="ep-lede">{statementText(m, final, selected.proposalDeadline, selected.cutoffAt ?? null)}</p>
+      {showTransfers && <p className="ep-sub">{transfersText(m.voucherCount, m.residualTransfers!)}</p>}
+      {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}
+    </header>
   )
 }
 
-// FE-070: the result of the epoch as a picture. Each small dot on the left is a voucher (one dot stands for several when there are many), the large dots on
-// the right are the settlement transfers that are left; the lines between them carry the flow. The sentence above says the same in words.
-const DOT_MAX = 128
-const COLS = 16
-function Compression({ vouchers, transfers }: { vouchers: number; transfers: number }) {
-  const per = Math.max(1, Math.ceil(vouchers / DOT_MAX))
-  const dots = Math.ceil(vouchers / per)
-  const rows = Math.ceil(dots / COLS)
-  const big = Math.min(transfers, 12)
-  const gap = 15
-  const left = { x: 24, y: 100 - ((rows - 1) * gap) / 2 }
-  const rightX = 560
-  const spread = Math.min(30, 150 / Math.max(big, 1))
-  const ty = (i: number) => 100 + (i - (big - 1) / 2) * spread * 1.6
-  return (
-    <figure className="compress">
-      <svg viewBox="0 0 640 200" role="img" aria-label={`${formatNumber(vouchers, 0)} vouchers settled as ${formatNumber(transfers, 0)} transfers`}>
-        {Array.from({ length: big }, (_, i) => (
-          <path key={`f${i}`} className="compress-flow" d={`M${left.x + (COLS - 1) * gap + 14} ${100} C 420 100, 440 ${ty(i)}, ${rightX - 18} ${ty(i)}`} stroke="var(--accent)" strokeOpacity="0.4" />
-        ))}
-        {Array.from({ length: dots }, (_, i) => (
-          <circle key={i} className="compress-dot" cx={left.x + (i % COLS) * gap} cy={left.y + Math.floor(i / COLS) * gap} r={4} style={{ animationDelay: `${(i % COLS) * 30 + Math.floor(i / COLS) * 20}ms` }} />
-        ))}
-        {Array.from({ length: big }, (_, i) => (
-          <circle key={`t${i}`} className="compress-big" cx={rightX} cy={ty(i)} r={Math.min(12, spread / 1.4 + 3)} style={{ animationDelay: `${600 + i * 80}ms` }} />
-        ))}
-      </svg>
-      <figcaption>
-        <span>
-          <strong>{formatNumber(vouchers, 0)}</strong> vouchers{per > 1 ? ` (one dot = ${per})` : ''}
-        </span>
-        <span>
-          <strong>{formatNumber(transfers, 0)}</strong> {transfers === 1 ? 'transfer' : 'transfers'}
-        </span>
-      </figcaption>
-    </figure>
-  )
-}
-
-function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline: string | null; cutoffAt: string | null; pruned: boolean }) {
+/** The headline figures as cards, then the rest one click away. */
+function Figures({ m }: { m: EpochMetrics }) {
   const eff = efficiency(m)
   const { search } = useLocation()
+  const cleared = noClearing(m) ? null : m.clearedRatio
   return (
-    <div className="headline">
-      <p className="headline-main">
-        {noClearing(m)
-          ? `${formatNumber(m.voucherCount, 0)} vouchers in epoch ${m.epoch}; no clearing was applied (the epoch was committed without a clearing result), so the obligations were left as they were.`
-          : m.residualTransfers === null || m.voucherCount === 0
-          ? noResultText(m, deadline, Date.now(), cutoffAt)
-          : transfersText(m.voucherCount, m.residualTransfers)}
-      </p>
-      {eff && m.residualTransfers !== null && <Compression vouchers={m.voucherCount} transfers={m.residualTransfers} />}
-      {/* FE-070: four figures up front, each with a meter where it is a share; the rest one click away, so the page reads as a picture first */}
-      <dl className="facts facts-main">
-        <div>
-          <dt>Transfers avoided</dt>
-          <dd>{eff ? `${formatNumber(eff.avoided, 0)} of ${formatNumber(m.voucherCount, 0)} (${formatPercent(eff.avoidedShare)})` : '—'}</dd>
-          {eff && <Meter share={eff.avoidedShare} tone="blue" />}
-        </div>
-        <div>
-          <dt>Cash needed</dt>
-          <dd>{eff ? `${formatCredit(eff.cashNeeded)} of ${formatCredit(m.totalVoucherValue)} credit (${formatPercent(eff.cashShare)})` : '—'}</dd>
-          {eff && <Meter share={eff.cashShare} tone="green" />}
-        </div>
-        <div>
-          <dt>Cleared ratio</dt>
-          <dd>{ratioText(m)}</dd>
-          {!noClearing(m) && m.clearedRatio !== null && <Meter share={m.clearedRatio} tone="violet" />}
-        </div>
-        <div>
-          <dt>Cleared value</dt>
-          <dd>{formatCredit(m.cleared)}</dd>
-        </div>
-      </dl>
-      <details className="more">
+    <section className="ep-section" aria-label="Headline figures">
+      <div className="ds-kpis ep-kpis">
+        <Kpi
+          label="Transfers avoided"
+          value={eff ? formatNumber(eff.avoided, 0) : '—'}
+          unit={eff ? `of ${formatNumber(m.voucherCount, 0)}` : undefined}
+          note={eff ? `${formatPercent(eff.avoidedShare)} of the vouchers need no transfer` : 'No clearing result yet'}
+        />
+        <Kpi
+          label="Cash needed"
+          value={eff ? formatCredit2(eff.cashNeeded) : '—'}
+          unit={eff ? 'credit' : undefined}
+          note={eff ? `${formatPercent(eff.cashShare)} of the ${formatCredit2(m.totalVoucherValue)} credit owed` : 'No clearing result yet'}
+        />
+        <Kpi label="Cleared ratio" value={cleared === null ? '—' : formatPercent(cleared)} note={cleared === null ? 'No clearing result yet' : `Ratio ${formatNumber(cleared)}: the share of what was owed`} />
+        <Kpi label="Cleared value" value={m.cleared === null ? '—' : formatCredit2(m.cleared)} unit={m.cleared === null ? undefined : 'credit'} note="Cancelled in loops" />
+      </div>
+      <details className="more ep-more">
         <summary>More figures</summary>
         <dl className="facts">
           <div>
@@ -167,13 +140,12 @@ function Headline({ m, deadline, cutoffAt, pruned }: { m: EpochMetrics; deadline
           </div>
         </dl>
       </details>
-      <p className="how-link">
+      <p className="ep-how">
         {/* FE-072: explained in the app's own Help, never on GitHub */}
         <Link to={{ pathname: '/help', search, hash: '#term-transfers-avoided' }}>How they are computed</Link>
       </p>
-      {pruned && <p className="state" role="note">{EDGES_PRUNED_NOTE}</p>}
       {defaultNote(m) && <p className="state">{defaultNote(m)}</p>}
-    </div>
+    </section>
   )
 }
 
@@ -216,50 +188,54 @@ export function ClearingStats() {
   const savingMax = Math.max(...savingPoints.map((p) => p.y), 1) * 1.15
 
   return (
-    <>
-      <Headline m={current} deadline={selected.proposalDeadline} cutoffAt={selected.cutoffAt ?? null} pruned={pruned.has(current.epoch)} />
-      <h2>Clearing result against graph density</h2>
-      <div className="scatter-row">
-        <Scatter title="Cleared ratio" xLabel="Graph density" yLabel="Cleared ratio" yMax={1} formatY={(v) => formatNumber(v)} points={ratioPoints} />
-        <Scatter title="Transfer savings" xLabel="Graph density" yLabel="Vouchers per transfer" yMax={savingMax} formatY={(v) => formatNumber(v, 0)} points={savingPoints} />
-      </div>
-      <details className="more">
-      <summary>Per epoch</summary>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Epoch</th>
-              <th scope="col" className="num">Density</th>
-              <th scope="col" className="num">Cleared ratio</th>
-              <th scope="col" className="num">Voucher</th>
-              <th scope="col" className="num">Residual transfers</th>
-              <th scope="col" className="num">Savings</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loaded.map((m) => pendingText(m) !== null ? (
-              <tr key={m.epoch} aria-current={m.epoch === selected.epoch ? 'true' : undefined}>
-                <td>{m.epoch}</td>
-                <td colSpan={5}>{pendingText(m)}</td>
+    <div className="ep ep-stats">
+      <Statement m={current} selected={selected} pruned={pruned.has(current.epoch)} />
+      <EpochReplay epoch={current.epoch} final={selected.phase === 'finalized'} />
+      <Figures m={current} />
+      <section className="ep-section" aria-labelledby="ep-density">
+        <h2 id="ep-density" className="ep-h2">Clearing result against graph density</h2>
+        <div className="scatter-row">
+          <Scatter title="Cleared ratio" xLabel="Graph density" yLabel="Cleared ratio" yMax={1} formatY={(v) => formatNumber(v)} points={ratioPoints} />
+          <Scatter title="Transfer savings" xLabel="Graph density" yLabel="Vouchers per transfer" yMax={savingMax} formatY={(v) => formatNumber(v, 0)} points={savingPoints} />
+        </div>
+      </section>
+      <details className="more ep-more ep-epochs">
+        <summary>Per epoch</summary>
+        <div className="table-wrap ep-table">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Epoch</th>
+                <th scope="col" className="num">Density</th>
+                <th scope="col" className="num">Cleared ratio</th>
+                <th scope="col" className="num">Voucher</th>
+                <th scope="col" className="num">Residual transfers</th>
+                <th scope="col" className="num">Savings</th>
               </tr>
-            ) : (
-              <tr key={m.epoch} aria-current={m.epoch === selected.epoch ? 'true' : undefined}>
-                <td>
-                  {m.epoch}
-                  {pruned.has(m.epoch) && <small className="state" title={EDGES_PRUNED_NOTE}> edges pruned on-chain</small>}
-                </td>
-                <td className="num">{formatNumber(m.graph.density, 4)}</td>
-                <td className="num" title={noClearing(m) ? 'No clearing was applied in this epoch' : undefined}>{ratioText(m)}</td>
-                <td className="num">{formatNumber(m.voucherCount, 0)}</td>
-                <td className="num">{formatNumber(m.residualTransfers, 0)}</td>
-                <td className="num">{formatNumber(m.transferSavings)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {loaded.map((m) => pendingText(m) !== null ? (
+                <tr key={m.epoch} aria-current={m.epoch === selected.epoch ? 'true' : undefined}>
+                  <td>{m.epoch}</td>
+                  <td colSpan={5}>{pendingText(m)}</td>
+                </tr>
+              ) : (
+                <tr key={m.epoch} aria-current={m.epoch === selected.epoch ? 'true' : undefined}>
+                  <td>
+                    {m.epoch}
+                    {pruned.has(m.epoch) && <small className="state" title={EDGES_PRUNED_NOTE}> edges pruned on-chain</small>}
+                  </td>
+                  <td className="num">{formatNumber(m.graph.density, 4)}</td>
+                  <td className="num" title={noClearing(m) ? 'No clearing was applied in this epoch' : undefined}>{ratioText(m)}</td>
+                  <td className="num">{formatNumber(m.voucherCount, 0)}</td>
+                  <td className="num">{formatNumber(m.residualTransfers, 0)}</td>
+                  <td className="num">{formatNumber(m.transferSavings)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </details>
-    </>
+    </div>
   )
 }

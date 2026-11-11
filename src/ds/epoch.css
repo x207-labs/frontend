@@ -1,0 +1,201 @@
+/* v4 internal pages: the epoch pages (Clearing results with the epoch replay, Epoch report).
+   Loaded after styles.css, so rules here win over the older ones. Recipe: src/ds/README.md, "Internal pages v4".
+   70% calm statement (.ep-*: eyebrow, title, one sentence, facts row, hairline tables) and 30% floor energy (.rp-*: the blue floor, the ring of agents, the tallies, the lime play pill).
+   Colour keeps its meaning: status colours only through StatusBadge / the code chips of the tip; lime marks "now" and focus; blue is the floor and the moved share. */
+
+/* ---------- page frame ---------- */
+.ep { display: grid; gap: var(--ds-s7); min-width: 0; padding-top: var(--ds-s3); }
+.ep > * { min-width: 0; }
+.ep-head { display: grid; gap: var(--ds-s3); }
+.ep-eyebrow { margin: 0; font: 500 13px/1.4 var(--ds-font-mono); letter-spacing: 0.02em; color: var(--ds-ink-2); }
+.ep-title { margin: 0; font: var(--ds-display-weight) var(--ds-fs-h2)/1.1 var(--ds-font-display); /* h2 scale: the shell already shows the page h1 */ font-stretch: var(--ds-display-stretch); letter-spacing: var(--ds-display-tracking); color: var(--ds-ink); }
+.ep-lede { margin: 0; max-width: 62ch; font: 400 clamp(17px, 1.6vw, 20px)/1.45 var(--ds-font-text); color: var(--ds-ink); }
+.ep-sub { margin: 0; max-width: 62ch; font-size: var(--ds-fs-small); line-height: 1.5; color: var(--ds-ink-2); }
+.ep-section { display: grid; gap: var(--ds-s4); align-content: start; }
+.ep-h2 { margin: 0; font: 600 var(--ds-fs-h3)/1.2 var(--ds-font-display); font-stretch: 108%; letter-spacing: -0.01em; color: var(--ds-ink); }
+.ep-sechint { margin: calc(var(--ds-s2) * -1) 0 0; max-width: 70ch; font-size: var(--ds-fs-small); line-height: 1.5; color: var(--ds-ink-3); }
+.ep-how { margin: 0; font-size: var(--ds-fs-small); }
+.ep-how a { display: inline-flex; align-items: center; min-height: 44px; }
+.ep-head > .state { margin-top: var(--ds-s2); }
+
+.ep + section[aria-label='Prune epoch'] { margin-top: var(--ds-s7); }
+
+/* facts row: label above value, hairline above and below (the .kv class keeps the generic definition-list rule of styles.css off these lists) */
+.ep .kv.ep-facts { display: flex; flex-wrap: wrap; gap: 14px 44px; margin: var(--ds-s2) 0 0; padding: 16px 0; border-block: 1px solid var(--ds-rule); }
+.ep .kv.ep-facts > div { display: block; min-width: 0; padding: 0; border: 0; }
+.ep .kv.ep-facts dt { margin: 0 0 4px; font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+.ep .kv.ep-facts dd { margin: 0; text-align: left; font: 500 14px/1.35 var(--ds-font-text); color: var(--ds-ink); overflow-wrap: anywhere; }
+.ep .kv.ep-facts dd.ds-num { font-family: var(--ds-font-mono); }
+
+/* ---------- Epoch report: the two big numbers, the bar, the legend ---------- */
+.ep-statement { display: grid; gap: var(--ds-s4); margin: var(--ds-s5) 0 0; }
+.ep-big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin: 0; }
+.ep-big .ds-num { font: var(--ds-display-weight) clamp(44px, 6vw, 72px)/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ds-ink); }
+.ep-big:first-of-type .ds-num { color: var(--ds-ink-2); }
+.ep-big small { font: 500 clamp(15px, 1.5vw, 18px)/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.ep-bar { display: flex; gap: 2px; height: 16px; border-radius: 999px; overflow: hidden; background: var(--ds-surface-3); }
+.ep-bar > span { display: block; flex: 0 1 auto; min-width: 3px; height: 100%; }
+[data-part='moved'] { --part: var(--ds-accent); }
+[data-part='loops'] { --part: var(--ds-lime); }
+[data-part='pairs'] { --part: #7d8aa3; }
+.ep-bar > span { background: var(--part); }
+.ep .kv.ep-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ds-s5); margin: 0; }
+.ep .kv.ep-legend > div { display: block; padding: 12px 0 0; border: 0; border-top: 2px solid var(--part, var(--ds-rule)); }
+.ep .kv.ep-legend dt { display: flex; align-items: center; gap: 8px; margin: 0; font: 600 14px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+.ep .kv.ep-legend dt i { flex: none; width: 10px; height: 10px; border-radius: 3px; background: var(--part); }
+.ep .kv.ep-legend dd { margin: 6px 0 0; text-align: left; font-size: 14px; line-height: 1.45; color: var(--ds-ink-2); }
+.ep .kv.ep-legend dd .ds-num { display: block; margin-bottom: 2px; font-size: 22px; font-weight: 500; color: var(--ds-ink); }
+.ep .kv.ep-legend dd small { font-size: 13px; color: var(--ds-ink-3); }
+
+/* how the epoch ran: lime marks the step the epoch is in now, the steps after it say "Not yet" */
+.ep-steps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--ds-s4); margin: 0; padding: 0; list-style: none; }
+.ep-steps li { display: grid; align-content: start; gap: 4px; padding-top: 12px; border-top: 2px solid var(--ds-rule-2); }
+.ep-steps li[data-state='now'] { border-top-color: var(--ds-focus); }
+.ep-steps b { display: flex; align-items: center; gap: 8px; font: 600 15px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+.ep-steps li[data-state='now'] b::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ds-focus); box-shadow: 0 0 10px var(--ds-focus); }
+.ep-steps li[data-state='todo'] b { color: var(--ds-ink-3); }
+.ep-steps span { font: 400 13px/1.4 var(--ds-font-text); color: var(--ds-ink-2); overflow-wrap: anywhere; }
+.ep-steps li[data-state='todo'] span { color: var(--ds-ink-3); }
+
+/* ---------- hairline tables: the member table and the per-epoch table ---------- */
+.ep .table-wrap.ep-table { background: none; border: 0; border-radius: 0; box-shadow: none; }
+.ep-table table { border-collapse: collapse; }
+.ep-table th, .ep-table td { padding: 12px 16px 12px 0; border-bottom: 1px solid var(--ds-rule); vertical-align: middle; }
+.ep-table th:last-child, .ep-table td:last-child { padding-right: 0; }
+.ep-table thead th { vertical-align: bottom; border-bottom-color: var(--ds-rule-2); font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+.ep-table tbody th[scope='row'] { font: 500 14px/1.35 var(--ds-font-text); letter-spacing: 0; text-transform: none; white-space: normal; color: var(--ds-ink); }
+.ep-table th.num, .ep-table td.num { text-align: right; }
+.ep-table td.num { font: 500 14px/1.35 var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; color: var(--ds-ink); }
+.ep-table td { font-size: 14px; line-height: 1.4; color: var(--ds-ink-2); }
+.ep-table tr[aria-current='true'] td, .ep-table tr[aria-current='true'] th { background: rgba(47, 108, 240, 0.1); }
+.ep-table small.state { display: inline; color: var(--ds-ink-3); }
+@media (hover: hover) and (pointer: fine) {
+  .ep-table tbody tr:hover td, .ep-table tbody tr:hover th { background: rgba(255, 255, 255, 0.03); }
+}
+
+/* the member table turns into one card per member on a phone: the member on top, each figure labelled by its column */
+@media (max-width: 640px) {
+  .ep-cards table, .ep-cards tbody, .ep-cards tr, .ep-cards th[scope='row'], .ep-cards td { display: block; }
+  .ep-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .ep-cards tr { display: grid; gap: 8px; padding: 16px 0; border-bottom: 1px solid var(--ds-rule); }
+  .ep-cards tbody th[scope='row'], .ep-cards td { padding: 0; border: 0; background: none; }
+  .ep-cards tbody th[scope='row'] { font-weight: 600; font-size: 16px; }
+  .ep-cards td { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; text-align: right; }
+  .ep-cards td::before { content: attr(data-label); flex: none; font: 500 12px/1.4 var(--ds-font-text); color: var(--ds-ink-3); text-align: left; }
+  .ep-cards td[data-label='Note'] { display: block; text-align: left; }
+  .ep-cards td[data-label='Note']::before { display: block; margin-bottom: 2px; }
+}
+
+/* ---------- Clearing results: figures, "more", the scatter charts ---------- */
+.ep-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ep-kpis .ds-value { flex-wrap: wrap; overflow-wrap: anywhere; }
+.ep-more { border-radius: 0; }
+.ep-more > summary { padding-left: 0; }
+.ep-more .facts { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0 var(--ds-s5); margin: 0; border-top: 1px solid var(--ds-rule); }
+.ep-more .facts > div { padding: 12px 0; border: 0; border-bottom: 1px solid var(--ds-rule); border-radius: 0; background: none; box-shadow: none; transition: none; }
+.ep-more .facts dt { margin: 0 0 4px; font: 500 11px/1.2 var(--ds-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-ink-3); }
+.ep-more .facts dd { margin: 0; font: 500 15px/1.35 var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; color: var(--ds-ink); }
+@media (hover: hover) and (pointer: fine) {
+  .ep-more .facts > div:hover { transform: none; border-color: var(--ds-rule); }
+}
+.ep .scatter { padding: var(--ds-s4) var(--ds-s4) var(--ds-s2); border-radius: var(--ds-r-panel); background: var(--ds-surface); border: 1px solid var(--ds-rule); box-shadow: none; }
+.ep .scatter figcaption { margin-bottom: var(--ds-s2); font: 600 14px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+.ep .scatter-row { gap: var(--ds-s4); }
+
+/* ---------- the epoch replay: the clearing floor ---------- */
+.rp { display: grid; gap: var(--ds-s3); }
+.rp-floor { position: relative; overflow: hidden; display: grid; gap: var(--ds-s3) var(--ds-s5); padding: var(--ds-s5); border-radius: var(--ds-r-floor); color: #fff;
+  background: radial-gradient(120% 95% at 50% 42%, var(--ds-floor-a), var(--ds-floor-b));
+  grid-template-columns: minmax(190px, 0.8fr) minmax(0, 1.7fr) minmax(190px, 240px); grid-template-areas: "say ring tally" "time time time"; }
+.rp-say { grid-area: say; align-self: center; min-width: 0; }
+.rp-meta { margin: 0; font: 500 12px/1.5 var(--ds-font-mono); color: rgba(255, 255, 255, 0.86); }
+.rp-step { margin: 14px 0 0; font: var(--ds-display-weight) clamp(26px, 2.8vw, 38px)/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: var(--ds-display-tracking); }
+.rp-caption { margin: 12px 0 0; max-width: 30ch; min-height: 7.5em; font: 400 15.5px/1.5 var(--ds-font-text); color: rgba(255, 255, 255, 0.92); }
+
+/* the ring sits in a darker inset of the floor, so the labels on the canvas keep their contrast */
+.rp-ring { grid-area: ring; position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 420px; border-radius: 24px; background: rgba(8, 12, 60, 0.4); }
+.rp-canvas { position: relative; flex: 1; min-height: 0; }
+.rp-ring canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; }
+.rp-ring canvas.is-dragging { cursor: grabbing; }
+.rp-hint { margin: 0; padding: 0 12px 10px; text-align: center; font: 500 11.5px/1.4 var(--ds-font-mono); color: rgba(255, 255, 255, 0.82); pointer-events: none; }
+
+/* the three figures of the epoch: owed (paper), cancelled in loops (lime), moved (floor blue); the colours are the Tally's own (src/ds/components.css) */
+.rp-floor .ds-tally { grid-area: tally; align-self: center; min-width: 0; }
+.rp-floor .ds-tally dd { overflow-wrap: anywhere; }
+.rp-floor .ds-tally small { font-variant-numeric: tabular-nums; }
+/* the moved block is floor blue like the floor it sits on, so it keeps a pale edge */
+.rp-floor .ds-tally > div[data-tone='floor'] { box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.5); }
+
+/* time: the lime pill, the position, the five chapters */
+.rp-time { grid-area: time; display: flex; align-items: center; gap: var(--ds-s3); padding: 6px; border-radius: 999px; background: rgba(8, 12, 60, 0.4); }
+.rp-floor .rp-play { flex: none; min-width: 96px; min-height: 44px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--ds-lime); color: var(--ds-eye); font: 700 15px/1 var(--ds-font-text); cursor: pointer; box-shadow: none; }
+.rp-floor .rp-play:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.rp-track { flex: 1; min-width: 0; display: grid; gap: 0; padding-right: var(--ds-s3); }
+.rp-track input[type='range'] { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; min-height: 28px; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: grab; box-shadow: none; }
+.rp-track input[type='range']:active { cursor: grabbing; }
+.rp-track input[type='range']:focus { box-shadow: none; }
+.rp-track input[type='range']::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.3); }
+.rp-track input[type='range']::-moz-range-track { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.3); }
+.rp-track input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border-radius: 50%; background: #fff; border: 5px solid var(--ds-lime); }
+.rp-track input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 5px solid var(--ds-lime); }
+.rp-track input[type='range']:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.rp-chapters { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.rp-floor .rp-chapters button { min-height: 44px; padding: 0 4px; border: 0; border-radius: 999px; background: none; box-shadow: none; color: rgba(255, 255, 255, 0.92); font: 500 13.5px/1.2 var(--ds-font-text); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-floor .rp-chapters button[aria-current='true'] { background: rgba(200, 245, 60, 0.18); color: var(--ds-lime); font-weight: 700; }
+.rp-floor .rp-chapters button:disabled { background: none; color: rgba(255, 255, 255, 0.55); cursor: not-allowed; }
+.rp-floor .rp-chapters button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+@media (hover: hover) and (pointer: fine) {
+  .rp-floor .rp-play:hover:not(:disabled) { background: #d8ff5a; box-shadow: none; }
+  .rp-floor .rp-chapters button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); box-shadow: none; }
+  .rp-floor .rp-chapters button[aria-current='true']:hover:not(:disabled) { background: rgba(200, 245, 60, 0.18); }
+}
+.rp-unit { margin: 0; max-width: 70ch; font-size: 13px; line-height: 1.5; color: var(--ds-ink-3); }
+.rp-state { margin: 0; }
+
+/* the read-out that follows the member under the pointer (the engine fills it) */
+.rp .scene-tip { position: absolute; z-index: 3; transform: translate(-50%, 0); pointer-events: none; min-width: 190px; padding: 10px 12px; border-radius: var(--ds-r-card); background: rgba(8, 12, 40, 0.95); border: 1px solid var(--ds-rule-2); color: var(--ds-ink); font-size: 13px; }
+.rp .scene-tip[hidden] { display: none; }
+.rp .scene-tip[data-side='above'] { transform: translate(-50%, -100%); }
+.rp .scene-tip dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; margin: 6px 0 8px; padding: 0; border: 0; background: none; }
+.rp .scene-tip dt { color: var(--ds-ink-2); font-size: 13px; }
+.rp .scene-tip dd { margin: 0; text-align: right; font-family: var(--ds-font-mono); font-variant-numeric: tabular-nums; }
+.rp .scene-tip .code { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: var(--ds-r-badge); border: 1px solid currentColor; font-size: 12px; }
+.rp .scene-tip .code b { font: 500 11px/1 var(--ds-font-mono); }
+.rp .s200 { color: var(--ds-settled); }
+.rp .s202 { color: var(--ds-claim); }
+.rp .s402 { color: var(--ds-due); }
+.rp .s409 { color: var(--ds-default); }
+.rp .s000 { color: var(--ds-ink-3); }
+
+/* ---------- tablet and phone ---------- */
+@media (max-width: 1000px) {
+  .ep-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ep-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rp-floor { grid-template-columns: minmax(0, 1fr); grid-template-areas: "say" "ring" "tally" "time"; padding: var(--ds-s4); border-radius: 28px; }
+  .rp-say { align-self: start; }
+  .rp-caption { max-width: 60ch; min-height: 4.6em; }
+  .rp-ring { min-height: 0; height: clamp(320px, 62vw, 480px); }
+  .rp-floor .ds-tally { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .ep { gap: var(--ds-s6); }
+  .ep .kv.ep-legend { grid-template-columns: minmax(0, 1fr); gap: var(--ds-s4); }
+  .ep-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rp-floor .ds-tally { grid-template-columns: minmax(0, 1fr); }
+  .rp-floor .ds-tally > div { padding: 12px 16px; }
+  .rp-time { flex-direction: column; align-items: stretch; border-radius: 24px; padding: 8px; }
+  .rp-floor .rp-play { width: 100%; }
+  .rp-track { padding-right: 0; }
+  .rp-track input[type='range'] { height: 44px; min-height: 44px; }
+  .rp-floor .rp-chapters button { font-size: 12px; padding: 0 2px; }
+}
+@media (max-width: 520px) {
+  .ep-kpis { grid-template-columns: minmax(0, 1fr); }
+  .rp-chapters { gap: 2px; }
+  .rp-floor .rp-chapters button { font-size: 11px; padding: 0 1px; }
+  .rp-ring { height: clamp(300px, 92vw, 380px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rp-ring canvas { cursor: default; }
+}

@@ -18,11 +18,13 @@ describe('FE-055 account menu', () => {
     expect(initial('0xabc')).toBe('A')
   })
 
-  it('signed in: shows the network badge and the account, menu closed', async () => {
+  it('signed in: shows the account with the menu closed, and the top bar names the network', async () => {
     renderApp('/stats', undefined, noPoll, createMockWallet('a.testnet', 'a.testnet'))
     const trigger = await screen.findByRole('button', { name: /Account menu for a.testnet/ })
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.getByText('Testnet')).toBeInTheDocument()
+    // v4: the network is the chip of the top bar (NetworkChip), not a badge of the account menu
+    expect(screen.getByText('NEAR testnet')).toBeInTheDocument()
+    expect(screen.queryByText('Testnet')).toBeNull()
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
@@ -83,10 +85,12 @@ describe('FE-055 account menu', () => {
     expect(screen.queryByRole('button', { name: /Account menu/ })).toBeNull()
   })
 
-  it('signed out: only the sign-in button, no menu and no badge', async () => {
+  it('signed out: only the sign-in button (the one glowing key) and no menu; the network chip is still there', async () => {
     renderApp('/stats', undefined, noPoll)
-    expect((await screen.findAllByRole('button', { name: 'Sign in with wallet' })).length).toBeGreaterThan(0)
+    const signIn = await screen.findAllByRole('button', { name: 'Sign in with wallet' })
+    expect(signIn.length).toBeGreaterThan(0)
+    expect(signIn[0]).toHaveAttribute('data-variant', 'glow')
     expect(screen.queryByRole('button', { name: /Account menu/ })).toBeNull()
-    expect(screen.queryByText('Testnet')).toBeNull()
+    expect(screen.getByText('NEAR testnet')).toBeInTheDocument()
   })
 })

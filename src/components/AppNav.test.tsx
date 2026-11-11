@@ -51,6 +51,25 @@ describe('FE-054 app frame', () => {
     expect(within(panel).getByRole('textbox')).toHaveFocus()
   })
 
+  it('v4: the logo at the top of the sidebar opens Home and keeps the circle in the address; the circle is named under it', async () => {
+    renderApp('/stats?epoch=41')
+    const rail = document.querySelector('aside.rail') as HTMLElement
+    const brand = within(rail).getByRole('link', { name: 'x207, Home' })
+    expect(brand).toHaveAttribute('href', '/app?epoch=41')
+    expect(brand.querySelector('svg.brand-logo')).not.toBeNull()
+    expect(brand.querySelector('svg.brand-mark')).not.toBeNull()
+    expect(rail.querySelector('.brand > span')).toHaveTextContent('agents-main')
+  })
+
+  it('v4: the top bar names the network, signed in or out, next to the search and the wallet', async () => {
+    renderApp('/stats')
+    const bar = document.querySelector('.topbar') as HTMLElement
+    const chip = await within(bar).findByText('NEAR testnet')
+    expect(chip).toHaveAttribute('title', expect.stringContaining('mock tokens'))
+    expect(within(bar).getByRole('button', { name: /Search pages/ })).toBeInTheDocument()
+    expect(within(bar).getAllByRole('button', { name: 'Sign in with wallet' })).toHaveLength(1)
+  })
+
   it('the sidebar is still one navigation named Pages with a labelled group per section', () => {
     renderApp('/stats')
     const nav = screen.getByRole('navigation', { name: 'Pages' })

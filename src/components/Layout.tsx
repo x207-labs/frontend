@@ -1,25 +1,31 @@
 import { useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { CIRCLE } from '../config'
 import { EpochProvider, useEpochSelection } from '../epoch'
+import { Logo } from '../landing/Logo'
+import { HomeEyebrow, HomeStatement } from '../pages/HomeLead'
 import { pages } from '../routes'
 import { Sidebar, TabBar } from './AppNav'
 import { CirclePicker } from './CirclePicker'
 import { DetailSlot, DetailSlotProvider } from './detail'
 import { EpochPicker } from './EpochPicker'
 import { LateEpochNotice } from './LateEpochNotice'
+import { NetworkChip } from './NetworkChip'
 import { PhaseStrip } from './PhaseStrip'
 import { AccountMenu } from './AccountMenu'
 import { CommandPalette } from './CommandPalette'
 import { DemoBanner, DemoToggle } from '../demo/DemoToggle'
 import { SelectMenu } from './SelectMenu'
 
+// v4: every page opens the same way: the title in display type, the tools beside it, then one sentence in the agent's voice. Home is the statement page: a mono
+// eyebrow (circle, the latest epoch with vouchers, its phase) above the title, and the sentence with the real numbers of that epoch where the others have their intro.
 function Header() {
   const { pathname } = useLocation()
   const { selected } = useEpochSelection()
   const page = pages.find((p) => p.path === pathname)
+  const home = pathname === '/app'
   return (
-    <header className="page-head">
+    <header className="page-head" data-page={home ? 'home' : undefined}>
+      {home && <HomeEyebrow />}
       <div className="page-title">
         <h1>{page?.title ?? 'Page not found'}</h1>
         <div className="page-tools">
@@ -29,7 +35,8 @@ function Header() {
         </div>
       </div>
       {/* FE-069: one plain sentence on what the page is for, so a first-time visitor knows why they are here */}
-      {page && <p className="page-intro">{page.intro}</p>}
+      {page && !home && <p className="page-intro">{page.intro}</p>}
+      {home && <HomeStatement />}
       {page?.perEpoch && <LateEpochNotice />}
       {page?.perEpoch && selected && <PhaseStrip phase={selected.phase} />}
     </header>
@@ -56,9 +63,13 @@ export function Layout() {
           <Sidebar />
           <div className="stage">
             <div className="topbar">
-              <p className="brand-compact">
-                x207 <span>{CIRCLE}</span>
-              </p>
+              <div className="topbar-id">
+                {/* under 840 px the sidebar is gone and the logo moves here */}
+                <p className="brand-compact">
+                  <Logo className="brand-logo" title="x207" />
+                </p>
+                <NetworkChip />
+              </div>
               <div className="topbar-tools">
                 <CommandPalette />
                 <DemoToggle />

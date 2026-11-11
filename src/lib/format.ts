@@ -13,6 +13,16 @@ export function formatCredit(raw: string | null | undefined): string {
   return `${sign}${whole}${fraction ? `.${fraction}` : ''}`
 }
 
+/** v4 epoch pages: a string amount in the smallest unit (6 decimals) as credit with exactly 2 decimals and thousands separators ("2563380000" -> "2,563.38"), rounded half away from zero.
+ * A leading "-" or "+" is kept; a result that rounds to 0.00 has no sign. `not available` for null. */
+export function formatCredit2(raw: string | null | undefined): string {
+  if (raw === null || raw === undefined) return 'not available'
+  const sign = raw.startsWith('-') ? '-' : raw.startsWith('+') ? '+' : ''
+  const cents = (BigInt(raw.replace(/^[-+]/, '') || '0') + 5000n) / 10000n
+  const text = `${grouped.format(cents / 100n)}.${String(cents % 100n).padStart(2, '0')}`
+  return cents === 0n ? text : `${sign}${text}`
+}
+
 const NS_PER_HOUR = 3_600_000_000_000n
 
 /** Nanoseconds (string or number) to a duration in hours; `null` if unreadable (FE-045, `max_escrow_ttl`). */

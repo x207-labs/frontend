@@ -2,10 +2,26 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { FEEDBACK_EVENT } from '../account/feedbackEvent'
 import { CIRCLE } from '../config'
+import { Logo } from '../landing/Logo'
 import { GROUPS, pages, type PageGroup } from '../routes'
 import { NavIcon } from './icons'
 
 const groupId = (group: string) => `nav-${group.replace(/\s+/g, '-')}`
+
+/** The loop-and-cross mark of the logo without the wordmark (the first 100 units of landing/Logo), for the icon rail. Colours come from `.logo-*` in app.css. */
+function BrandMark({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 100 100" aria-hidden="true">
+      <circle cx="50" cy="50" r="36" fill="none" className="logo-ink-line" strokeWidth="9" strokeDasharray="50.27 25.13" transform="rotate(50 50 50)" />
+      <g className="logo-ink">
+        <circle cx="50" cy="14" r="9" />
+        <circle cx="81.2" cy="68" r="9" />
+        <circle cx="18.8" cy="68" r="9" />
+      </g>
+      <path d="M40 40 60 60M60 40 40 60" fill="none" className="logo-teal-line" strokeWidth="9" strokeLinecap="round" />
+    </svg>
+  )
+}
 
 // FE-054: three forms of one navigation, chosen by CSS from the window width (DS-MOB: 840 and 1200 px).
 // 1200 px and up: the sidebar with its group labels. 840 to 1199 px: the same sidebar as an icon rail (the labels stay in the page for screen readers).
@@ -14,8 +30,13 @@ export function Sidebar() {
   const { search } = useLocation()
   return (
     <aside className="rail">
+      {/* v4: the logo of the landing. The wordmark from 1200 px; on the icon rail only the mark (the loop with the crossing), so it stays legible. */}
       <p className="brand">
-        x207 <span>{CIRCLE}</span>
+        <Link className="brand-link" to={{ pathname: '/app', search }} aria-label="x207, Home">
+          <Logo className="brand-logo" title="x207" />
+          <BrandMark className="brand-mark" />
+        </Link>
+        <span>{CIRCLE}</span>
       </p>
       <nav aria-label="Pages">
         {GROUPS.map((group) => (

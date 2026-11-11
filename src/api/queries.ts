@@ -28,17 +28,20 @@ export const useParamsHistory = () =>
 export const useRelayerFeeEvents = () => useQuery({ queryKey: ['events', 'relayer-fee'], queryFn: api.relayerFeeEvents })
 
 // Per-epoch hooks stay idle until an epoch is selected (TC-FE-002-05).
-export const useReport = (epoch: number | null) =>
+// `final`: the epoch is finalized, so its report and obligations cannot change; they are read once and not polled (same rule as the metrics, FE-046). The query key stays the same.
+export const useReport = (epoch: number | null, final = false) =>
   useQuery({
     queryKey: ['report', epoch],
     queryFn: () => api.report(epoch!),
     enabled: epoch !== null,
+    ...(final ? FINAL : {}),
   })
-export const useObligations = (epoch: number | null, stage: ObligationStage) =>
+export const useObligations = (epoch: number | null, stage: ObligationStage, final = false) =>
   useQuery({
     queryKey: ['obligations', epoch, stage],
     queryFn: () => api.obligations(epoch!, stage),
     enabled: epoch !== null,
+    ...(final ? FINAL : {}),
   })
 export const useEpochSettlements = (epoch: number | null, status?: string) =>
   useQuery({

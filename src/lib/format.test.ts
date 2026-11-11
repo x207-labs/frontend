@@ -1,7 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { formatCredit, formatNumber, formatPercent } from './format'
+import { formatCredit, formatCredit2, formatNumber, formatPercent } from './format'
 
 describe('format', () => {
+  it.each([
+    ['2563380000', '2,563.38'],
+    ['1820000000', '1,820.00'],
+    ['37500000', '37.50'],
+    ['-35000000', '-35.00'],
+    ['+45000000', '+45.00'],
+    ['0', '0.00'],
+    ['4999', '0.00'],
+    ['5000', '0.01'],
+    ['-4999', '0.00'],
+    ['-5000', '-0.01'],
+  ])('formatCredit2(%s) = %s', (raw, out) => {
+    expect(formatCredit2(raw)).toBe(out)
+  })
+  it('formatCredit2 of a null reads not available', () => {
+    expect(formatCredit2(null)).toBe('not available')
+  })
+
   it.each([
     ['1820000000', '1,820'],
     ['37500000', '37.5'],

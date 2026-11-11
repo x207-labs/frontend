@@ -1,9 +1,10 @@
-// The app's four faces (FE-098); the landing imports the same four in landing/mount.tsx.
-import '@fontsource-variable/bricolage-grotesque'
-import '@fontsource-variable/geist'
-import '@fontsource-variable/fraunces/wght-italic.css'
-import '@fontsource-variable/geist-mono'
+// The v4 design system: "Agent Console" type and the --ds-* tokens, shared with the landing (landing/mount.tsx imports the same two).
+import './ds/fonts.css'
+import './ds/tokens.css'
 import './styles.css'
+import './ds/components.css'
+import './ds/app.css'
+import './ds/epoch.css'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'

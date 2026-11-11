@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCachedAccount } from '../account/cache'
-import { NEAR_NETWORK } from '../config'
+import { Button } from '../ds/components'
 import { displayAccount, initial } from '../lib/account'
 import { useWallet } from '../wallet/WalletContext'
 import { NavIcon } from './icons'
 
-const NETWORK = NEAR_NETWORK === 'mainnet' ? 'Mainnet' : 'Testnet'
-
-// FE-055: the account at the top right. Signed out: one sign-in button. Signed in: the account (short form for long addresses), the network badge, and a menu with
-// copy address and disconnect. The menu opens with the keyboard too: Enter or Space on the account, the arrows between the items, Escape to close and give the focus back.
+// FE-055: the account at the top right. Signed out: one sign-in button. Signed in: the account (short form for long addresses) and a menu with
+// copy address and disconnect. v4: the network is named by the chip in the top bar (NetworkChip), signed in or not. The menu opens with the keyboard too: Enter or Space on the account, the arrows between the items, Escape to close and give the focus back.
 export function AccountMenu() {
   const { account, busy, error, login, logout } = useWallet()
   const cached = useCachedAccount(account) // FE-068: the display name the person saved in Settings
@@ -34,12 +32,13 @@ export function AccountMenu() {
   }, [copied])
 
   if (!account) {
+    // v4: the one glowing button of a signed-out screen. On a phone the words "with wallet" leave the eye but not the accessible name, so the key stays small.
     return (
       <div className="wallet">
         {error && <span className="wallet-error" role="alert">{error}</span>}
-        <button type="button" onClick={login} disabled={busy}>
-          {busy ? 'Opening wallet…' : 'Sign in with wallet'}
-        </button>
+        <Button type="button" variant="glow" className="wallet-signin" onClick={login} disabled={busy}>
+          <span>{busy ? 'Opening wallet…' : <>Sign in <span className="wallet-signin-more">with wallet</span></>}</span>
+        </Button>
       </div>
     )
   }
@@ -72,7 +71,6 @@ export function AccountMenu() {
 
   return (
     <div className="account" ref={root} onKeyDown={onKeyDown}>
-      <span className="net-badge" title={`The wallet is on NEAR ${NETWORK.toLowerCase()}`}>{NETWORK}</span>
       <button type="button" className="account-trigger" ref={trigger} aria-haspopup="menu" aria-expanded={open} aria-label={`Account menu for ${account}`} title={account} onClick={() => setOpen((o) => !o)}>
         {/* FE-087: the photo set in Settings, when there is one */}
         <span className="avatar" aria-hidden="true" data-photo={cached.photo ? 'true' : undefined}>{cached.photo ? <img src={cached.photo} alt="" /> : initial(cached.displayName || account)}</span>

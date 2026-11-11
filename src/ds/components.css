@@ -1,0 +1,69 @@
+/* x207 design system components (v4). Classes start with `ds-`; React wrappers are in components.tsx. They read only --ds-* tokens
+   (src/ds/tokens.css), so they look the same on the landing and inside the app. Hover lives under (hover: hover) and (pointer: fine). */
+
+/* panel: the quiet surface every block sits on */
+.ds-panel { min-width: 0; padding: var(--ds-s5); border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule); background: var(--ds-surface); }
+.ds-panel > header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--ds-s2) var(--ds-s4); margin-bottom: var(--ds-s4); }
+.ds-panel h3 { margin: 0; font: var(--ds-display-weight) 18px/1.2 var(--ds-font-display); font-stretch: 108%; letter-spacing: -0.01em; }
+.ds-panel .ds-sub { margin: 4px 0 0; color: var(--ds-ink-3); font-size: var(--ds-fs-small); }
+
+/* KPI: one number that matters, with a glass edge (group C) */
+.ds-kpi { position: relative; min-width: 0; padding: 14px 16px 15px; border-radius: var(--ds-r-panel); background: var(--ds-glass); border: 1px solid var(--ds-rule); box-shadow: var(--ds-shadow-card); }
+.ds-kpi::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(160deg, rgba(169, 203, 255, 0.45), transparent 40%, transparent 70%, rgba(169, 203, 255, 0.18));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.ds-kpi > header { display: flex; align-items: center; gap: var(--ds-s2); font-size: 13px; color: var(--ds-ink-2); }
+.ds-kpi > header b { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0 4px; border-radius: var(--ds-r-badge); background: rgba(169, 203, 255, 0.1); border: 1px solid var(--ds-rule); font: 500 11px/1 var(--ds-font-mono); color: var(--ds-soft); }
+.ds-kpi .ds-value { display: flex; align-items: baseline; gap: 6px; margin-top: 10px; font: var(--ds-display-weight) 34px/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.ds-kpi .ds-value small { font: 500 13px/1 var(--ds-font-text); color: var(--ds-ink-3); letter-spacing: 0; }
+.ds-kpi p { margin: 6px 0 0; font-size: 13px; color: var(--ds-ink-3); }
+.ds-kpi[data-tone='settled'] .ds-value { color: var(--ds-settled); }
+.ds-kpi[data-tone='claim'] .ds-value { color: var(--ds-claim); }
+.ds-kpi[data-tone='due'] .ds-value { color: var(--ds-due); }
+.ds-kpi[data-tone='default'] .ds-value { color: var(--ds-default); }
+.ds-kpis { display: grid; gap: var(--ds-s3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+
+/* status: the x207 result codes, always code + word, never colour alone */
+.ds-status { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 6px; border-radius: var(--ds-r-badge); border: 1px solid var(--ds-rule); background: rgba(255, 255, 255, 0.03); font: 500 12px/1.5 var(--ds-font-text); color: var(--ds-ink); white-space: nowrap; }
+.ds-status b { font: 500 11px/1 var(--ds-font-mono); color: var(--tone, var(--ds-ink-2)); }
+.ds-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--tone, var(--ds-ink-3)); }
+.ds-status[data-code='200'] { --tone: var(--ds-settled); }
+.ds-status[data-code='202'] { --tone: var(--ds-claim); }
+.ds-status[data-code='402'] { --tone: var(--ds-due); }
+.ds-status[data-code='409'] { --tone: var(--ds-default); }
+
+/* chip, eyebrow */
+.ds-chip { display: inline-flex; align-items: center; gap: 6px; padding: 1px 10px; border-radius: var(--ds-r-chip); background: rgba(47, 91, 255, 0.18); border: 1px solid rgba(169, 203, 255, 0.28); color: var(--ds-soft); font: 500 13px/1.6 var(--ds-font-mono); }
+.ds-eyebrow { display: inline-flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--ds-rule); background: rgba(255, 255, 255, 0.03); font-size: 12.5px; color: var(--ds-ink-2); }
+.ds-eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--ds-settled); box-shadow: 0 0 10px var(--ds-settled); }
+
+/* buttons: one glowing primary per screen; quiet and white for the rest */
+.ds-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: var(--ds-r-ctl); border: 1px solid var(--ds-rule-2); background: transparent; color: var(--ds-ink); font: 600 15px/1 var(--ds-font-text); text-decoration: none; cursor: pointer; transition: background-color var(--ds-dur) var(--ds-ease), transform var(--ds-dur) var(--ds-ease); }
+.ds-btn:active { transform: translateY(1px); }
+.ds-btn[data-variant='glow'] { border-color: transparent; background: linear-gradient(180deg, var(--ds-accent), var(--ds-accent-2)); color: #fff; box-shadow: var(--ds-glow); }
+.ds-btn[data-variant='white'] { border-color: transparent; background: linear-gradient(180deg, #ffffff, #dfe9f7); color: #0a1226; }
+.ds-btn .ds-arr { font-family: var(--ds-font-mono); font-size: 13px; opacity: 0.8; }
+@media (hover: hover) and (pointer: fine) {
+  .ds-btn:hover { background-color: rgba(255, 255, 255, 0.08); }
+  .ds-btn[data-variant='glow']:hover { filter: brightness(1.08); }
+}
+
+/* data and voice */
+.ds-num { font-family: var(--ds-font-mono); font-variant-numeric: tabular-nums slashed-zero; }
+.ds-agent { font-family: var(--ds-font-agent); color: var(--ds-agent-ink); }
+
+/* tallies: the colour blocks of the floor (group B) for the three big figures of an epoch */
+/* the landing's three blocks: owed paper white, cancelled lime, moved floor blue */
+.ds-tally { display: grid; gap: 10px; margin: 0; }
+.ds-tally > div { padding: 14px 16px; border-radius: 22px; color: var(--ds-eye); }
+.ds-tally > div[data-tone='paper'] { background: #fff; }
+.ds-tally > div[data-tone='lime'] { background: var(--ds-lime); }
+.ds-tally > div[data-tone='floor'] { background: linear-gradient(160deg, var(--ds-floor-a), var(--ds-floor-b)); color: #fff; }
+.ds-tally dt { font-size: 13px; font-weight: 500; }
+.ds-tally dd { margin: 6px 0 0; font: var(--ds-display-weight) clamp(30px, 3vw, 42px)/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.ds-tally dd small { display: block; margin-top: 6px; font: 400 12.5px/1.4 var(--ds-font-text); font-stretch: 100%; letter-spacing: 0; }
+.ds-tally > div[data-tone='paper'] small { color: #4a5175; }
+.ds-tally > div[data-tone='lime'] small { color: #3c4a10; }
+.ds-tally > div[data-tone='floor'] small { color: rgba(255, 255, 255, 0.88); }
+
+@media (prefers-reduced-motion: reduce) { .ds-btn { transition: none; } }
