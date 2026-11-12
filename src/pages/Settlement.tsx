@@ -17,6 +17,7 @@ import { useEpochSelection, useSelectedEpoch } from '../epoch'
 import { formatCredit2, formatNumber, shortAccount } from '../lib/format'
 import { MONEY, NETWORK_NAME } from '../lib/network'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
+import { resolveCircleTokens } from '../wallet/circleTokens'
 import { claimTx, settleTx } from '../wallet/transactions'
 
 // FE-088: the page reads like a bill. On top, the two numbers a member comes for (what I owe now, what I can claim).
@@ -101,7 +102,9 @@ function DueRow({ item, account, primary }: { item: SettlementItem; account: str
   const signing = state.kind === 'signing'
 
   async function pay() {
-    if (await sign(settleTx(item.epoch, item.amount))) {
+    // FE-110: pay in the token the circle contract accepts (`get_circle`), not a fixed account.
+    const { usdt } = await resolveCircleTokens()
+    if (await sign(settleTx(item.epoch, item.amount, usdt))) {
       await client.invalidateQueries({ queryKey: ['member-settlements', account] })
     }
   }

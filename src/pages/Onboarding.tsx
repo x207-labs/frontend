@@ -17,6 +17,7 @@ import { OnboardingSteps } from '../onboarding/OnboardingSteps'
 import type { MemberState } from '../onboarding/steps'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { JOIN_STORAGE_DEPOSIT, formatNear } from '@x207/core'
+import { resolveCircleTokens } from '../wallet/circleTokens'
 import { ftWithdrawTx, joinTx, stakeTx } from '../wallet/transactions'
 import type { FunctionCallTx } from '../wallet/types'
 
@@ -45,10 +46,12 @@ function JoinForm({ registered }: { registered: boolean }) {
 
   async function run() {
     if (!atomic || !account) return
+    // FE-110: the token the circle contract accepts, read from the contract (`get_circle`); the build config only if that read fails.
+    const tokens = await resolveCircleTokens()
     const txs: Array<[string, FunctionCallTx]> = []
-    if (source !== 'near') txs.push(['ft_withdraw', ftWithdrawTx(account, atomic)])
+    if (source !== 'near') txs.push(['ft_withdraw', ftWithdrawTx(account, atomic, tokens)])
     if (needsJoin) txs.push(['join', joinTx(pubkey, termsHash)])
-    txs.push(['stake', stakeTx(atomic)])
+    txs.push(['stake', stakeTx(atomic, tokens.usdt)])
     // One at a time: each transaction waits for the owner's signature (the wallet rejects a batch across receivers).
     for (const [name, tx] of txs) {
       setStep(name)

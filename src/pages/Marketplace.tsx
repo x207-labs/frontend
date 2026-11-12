@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom'
 import { api } from '../api/client'
 import { useListing, useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
+import { AppraisalBadge } from '../components/AppraisalBadge'
 import { AssetTemplateForm, type TemplateCheck } from '../components/AssetTemplateForm'
 import { CopyButton } from '../components/CopyButton'
 import { ResourceListingForm } from '../components/ResourceListingForm'
@@ -333,7 +334,10 @@ function ListingRow({ listing, selected, onSelect }: { listing: ListingView; sel
           {isHumanListing(listing.detail) && <span className="badge" data-testid="human-badge">human</span>}
         </div>
       </td>
-      <td><AssetSide side={listing.offer} role="give" /></td>
+      <td>
+        <AssetSide side={listing.offer} role="give" />
+        <AppraisalBadge appraisal={listing.appraisal} />
+      </td>
       <td><AssetSide side={listing.want} role="want" /></td>
       <td data-label="Discount"><span className="pill">{formatNumber(listing.discountBps / 100)}%{listing.acceptPayment ? ', payment allowed' : ''}</span></td>
       <td data-label="Valid until">{formatTime(listing.expiresAt)}<span className="asset-meta">{timeLeft(listing.expiresAt)}</span></td>

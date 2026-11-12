@@ -37,6 +37,7 @@ import type {
   BundleProposal,
   InvoiceList, InvoiceView, OnchainProofView, OrderList, OrderView, PurchaseView, RentChallenge, RentView, ListingCheck, ListingList,
   ListingView,
+  AppraisalView,
   MarketStats,
   OfferView,
 } from './types'
@@ -127,6 +128,8 @@ async function broker<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 const circle = `/x207/circles/${encodeURIComponent(CIRCLE)}`
+/** FE-111: path of an appraisal, or of its raw attestation evidence, on the read API. */
+export const appraisalPath = (id: string, part: '' | '/attestation' = '') => `/x207/appraisals/${encodeURIComponent(id)}${part}`
 
 export const api = {
   // FE-064: the test-funds faucet (BE-114). GET doubles as the "is it on" check: a backend without it answers 404.
@@ -169,6 +172,8 @@ export const api = {
     return get<ListingList>(`${circle}/listings${qs ? `?${qs}` : ''}`)
   },
   listing: (hash: string) => get<ListingView>(`${circle}/listings/${hash}`),
+  /** FE-111: one appraisal (BE-120); it is not under a circle. */
+  appraisal: (id: string) => get<AppraisalView>(appraisalPath(id)),
   createListing: (listing: object, signature: string) => post<ListingView>(`${circle}/listings`, { listing, signature }),
   checkListing: (listing: object, signature: string) => post<ListingCheck>(`${circle}/listings/check`, { listing, signature }),
   invoices: async (query: Record<string, string>): Promise<InvoiceList> => {

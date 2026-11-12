@@ -35,7 +35,7 @@ describe('settlement debtor', () => {
     await user.click(await screen.findByRole('button', { name: 'Pay residual' }))
     await waitFor(() => expect(wallet.txs).toHaveLength(1))
     expect(wallet.txs[0]).toMatchObject({
-      receiverId: 'usdt.tether-token.near', methodName: 'ft_transfer_call', deposit: '1',
+      receiverId: 'usdt.x207-deployer.testnet', methodName: 'ft_transfer_call', deposit: '1', // FE-110: the circle's own token (`get_circle`)
       args: { receiver_id: 'x207-circle.testnet', amount: '35000000', msg: '{"action":"settle","epoch":42}' },
     })
   })

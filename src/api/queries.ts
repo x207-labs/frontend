@@ -74,6 +74,9 @@ export const useListings = (query: Record<string, string>) =>
 /** One listing as it is now. Under the `listings` key, so an accept or a cancel (which refresh `listings`) refreshes it too. */
 export const useListing = (hash: string | null) =>
   useQuery({ queryKey: ['listings', 'one', hash], queryFn: () => api.listing(hash!), enabled: hash !== null })
+/** FE-111: a finished appraisal never changes, so it is fetched once. */
+export const useAppraisal = (id: string | null) =>
+  useQuery({ queryKey: ['appraisal', id], queryFn: () => api.appraisal(id!), enabled: id !== null, staleTime: Infinity, refetchInterval: false })
 export const useMarketStats = () => useQuery({ queryKey: ['market-stats'], queryFn: api.marketStats })
 export const useOffers = (hash: string | null) =>
   useQuery({ queryKey: ['offers', hash], queryFn: () => api.offers(hash!), enabled: hash !== null })

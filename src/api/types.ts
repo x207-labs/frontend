@@ -249,6 +249,45 @@ export type ListingView = {
   nonce: string
   signature: string
   status: ListingStatus
+  /** BE-120: only when `detail` names a finished NEAR AI Cloud appraisal (`appraisal=apr_...`); an older backend never sends it. */
+  appraisal?: ListingAppraisal
+}
+// FE-111: appraisal of a barter asset on NEAR AI Cloud (backend BE-120, `src/appraiser/`). Keys are snake_case, as the backend sends them.
+export type AppraisalVerdict = 'checked' | 'not_checked' | 'failed'
+export type ThirdPartyResult = 'passed' | 'failed' | 'not_checked'
+/** Short form inside a listing view. Credit values here are decimal strings (`"60"`, `"12.5"`), not atomic units. */
+export type ListingAppraisal = {
+  appraisal_id: string
+  model: string
+  value_credits: string
+  range: { low: string; high: string }
+  confidence: number
+  flags: string[]
+  verified: { signature: boolean; attestation: AppraisalVerdict }
+  rubric_hash: string
+  url: string
+}
+/** `GET /x207/appraisals/{appraisal}`; only the fields the dashboard shows. */
+export type AppraisalView = {
+  appraisal_id: string
+  status: 'pending' | 'done'
+  model: string
+  created_at: string
+  result: { value_credits: string; range: { low: string; high: string }; confidence: number; rationale: string; flags: string[] } | null
+  rubric: { version: string; hash: string }
+  evidence: { chat_id: string | null; signing_address: string | null; signing_algo: string | null; attestation_evidence: string | null }
+  attestation: {
+    fetched_at: string
+    report_binding: boolean
+    binding_reasons: string[]
+    tdx_quote: ThirdPartyResult
+    tdx_quote_checked_by: string | null
+    gpu_evidence: ThirdPartyResult
+    gpu_evidence_checked_by: string | null
+    compose_hash: string | null
+  } | null
+  verified: { signature: boolean; signature_reasons: string[]; attestation: AppraisalVerdict }
+  notes: string[]
 }
 /** BE-052: answer of the dry run `POST listings/check`; nothing is stored. */
 export type ListingCheck = { valid: true; listingHash: string; account: string; offerAssetType: string; expiresAt: number; stored: false }

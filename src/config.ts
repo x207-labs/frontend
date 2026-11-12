@@ -28,6 +28,25 @@ export const USE_FIXTURES = env.VITE_X207_USE_FIXTURES === 'true'
 export const NEAR_NETWORK: 'testnet' | 'mainnet' =
   env.VITE_NEAR_NETWORK === 'mainnet' ? 'mainnet' : 'testnet'
 export const CONTRACT_ID: string = chosen?.contract ?? ENV_CONTRACT_ID
+
+/**
+ * FE-110: the NEP-141 USDT token and the NEAR Intents contract of each network. The testnet circles use the mock token that anyone may mint.
+ * The circle contract names both itself (`get_circle`, see `wallet/circleTokens.ts`); these values are the fallback when that view cannot be read.
+ */
+export const NETWORK_TOKENS = {
+  testnet: { usdt: 'usdt.x207-deployer.testnet', intents: 'intents.testnet' },
+  mainnet: { usdt: 'usdt.tether-token.near', intents: 'intents.near' },
+} as const
+export type TokenIds = { usdt: string; intents: string }
+type TokenEnv = { VITE_X207_USDT_TOKEN_ID?: string; VITE_X207_INTENTS_ID?: string }
+/** The network default, unless `VITE_X207_USDT_TOKEN_ID` / `VITE_X207_INTENTS_ID` name another account (an empty value counts as unset). */
+export function tokenConfig(network: 'testnet' | 'mainnet', vars: TokenEnv): TokenIds {
+  return {
+    usdt: vars.VITE_X207_USDT_TOKEN_ID?.trim() || NETWORK_TOKENS[network].usdt,
+    intents: vars.VITE_X207_INTENTS_ID?.trim() || NETWORK_TOKENS[network].intents,
+  }
+}
+export const TOKENS: TokenIds = tokenConfig(NEAR_NETWORK, { VITE_X207_USDT_TOKEN_ID: env.VITE_X207_USDT_TOKEN_ID, VITE_X207_INTENTS_ID: env.VITE_X207_INTENTS_ID })
 export const INTENTS_EXPLORER_URL: string =
   env.VITE_X207_INTENTS_EXPLORER_URL ?? 'https://explorer.near-intents.org/transactions/'
 /** NEAR RPC for contract views (Intents balance, intents, pair list). Default: FastNEAR matching `VITE_NEAR_NETWORK`. */
