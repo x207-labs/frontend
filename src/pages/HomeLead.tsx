@@ -1,4 +1,6 @@
-import { CIRCLE, NEAR_NETWORK } from '../config'
+import { useMembers } from '../api/queries'
+import { CIRCLE, CONTRACT_ID, NEAR_NETWORK } from '../config'
+import { Mascot } from '../components/Mascot'
 import { formatCredit } from '../lib/format'
 import { MONEY } from '../lib/network'
 import { phaseWord, useVoucherScan } from './voucherScan'
@@ -7,12 +9,19 @@ import { phaseWord, useVoucherScan } from './voucherScan'
 export function HomeEyebrow() {
   const scan = useVoucherScan()
   const latest = scan.state === 'ready' ? scan.rows[0] : undefined
-  const live = latest !== undefined && latest.phase !== 'finalized'
+  const live = latest ? latest.phase !== 'finalized' : scan.state === 'ready' && scan.live !== null && scan.live.phase !== 'finalized'
   return (
     <p className="page-eyebrow" data-live={live || undefined}>
+      {/* v6.3: the logo of the circle (the mascot of its contract, as in the circle picker), with the live dot on it */}
+      <span className="eyebrow-logo" aria-hidden="true">
+        <Mascot id={CONTRACT_ID} size={22} mood="smile" />
+        <i />
+      </span>
       {latest
         ? `${CIRCLE} · epoch ${latest.epoch} · ${phaseWord(latest.phase)}`
-        : `${CIRCLE} · ${scan.state === 'ready' ? 'no epoch with vouchers' : scan.state === 'error' ? 'epochs not available' : 'reading epochs'}`}
+        : scan.state === 'ready' && scan.live
+          ? `${CIRCLE} · epoch ${scan.live.epoch} · ${phaseWord(scan.live.phase)}`
+          : `${CIRCLE} · ${scan.state === 'error' ? 'epochs not available' : 'reading epochs'}`}
     </p>
   )
 }
@@ -20,6 +29,7 @@ export function HomeEyebrow() {
 /** The sentence under the title of Home: the real numbers of the latest epoch that carried vouchers, with their units. */
 export function HomeStatement() {
   const scan = useVoucherScan()
+  const members = useMembers().data?.items.length
   if (scan.state === 'loading') return <p className="home-statement is-quiet" role="status">Reading the newest epochs…</p>
   if (scan.state === 'error') {
     return (
@@ -31,15 +41,11 @@ export function HomeStatement() {
   }
   const latest = scan.rows[0]
   if (!latest) {
+    // v6.3 (KISS): one short line, not a count of empty epochs
     return (
       <>
-        <p className="home-statement">
-          None of the newest <b>{scan.scanned}</b> epochs carried vouchers.
-        </p>
-        <p className="home-sub">
-          {scan.live ? `Epoch ${scan.live.epoch} is ${phaseWord(scan.live.phase)}. ` : ''}
-          Epochs without vouchers are left out of this page.
-        </p>
+        <p className="home-statement">{members ? `${members} ${members === 1 ? 'member' : 'members'}, no trades yet.` : 'No trades yet.'}</p>
+        <p className="home-sub">The first voucher signed in this circle shows up here.</p>
       </>
     )
   }

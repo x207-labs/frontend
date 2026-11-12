@@ -296,3 +296,148 @@ main:not([data-group='My account']) .page-head .phases { display: none; }
 .nav-icon { flex: none; }
 /* the menu button sits on the line of the logo, as the back button of an iOS bar */
 @media (max-width: 839px) { .topbar-id { display: flex; flex-direction: row; align-items: center; gap: 10px; } .topbar-id .net-chip { display: none; } }
+
+/* the network label: the NEAR mark with a live dot, a quiet pill */
+.net-chip { gap: 8px; padding: 4px 12px 4px 4px; border: 0; background: rgb(var(--ds-tint) / 0.06); color: var(--ds-ink); font: 500 13px/1.4 var(--ds-font-text); }
+.net-mark { position: relative; display: inline-grid; flex: none; }
+.net-mark img { width: 22px; height: 22px; border-radius: 50%; }
+.net-chip .net-mark i { position: absolute; right: -1px; bottom: -1px; width: 8px; height: 8px; border-radius: 50%; background: #28c840; box-shadow: 0 0 0 2px var(--ds-paper); }
+
+/* ================= v6.3 (2026-11-12): the iOS layout, after the iOS finance and report apps on Pinterest =================
+   A large title; one balance card that leads each page (a chip, a large figure with dimmed decimals, one sentence, pills with icons);
+   2x2 tiles with an icon; one bar with a legend for a split; grouped lists; 24 px corners, no borders. */
+.page-head h1 { font-size: clamp(30px, 3vw, 38px); font-weight: 700; letter-spacing: -0.025em; }
+.page-intro { font-size: 16.5px; }
+
+/* ---------- Home: the balance card ---------- */
+.home { display: grid; gap: 20px; }
+.home-hero { display: grid; gap: 24px; padding: 24px; border-radius: 24px; background: var(--ds-surface); }
+@media (min-width: 1100px) { .home-hero { grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr); align-items: center; padding: 28px; } }
+.home-hero .page-eyebrow { display: inline-flex; align-items: center; gap: 8px; width: fit-content; margin: 0 0 16px; padding: 5px 12px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 13.5px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.hero-label { margin: 0; font: 500 14.5px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.hero-figure { margin: 6px 0 12px; font: 700 clamp(46px, 5.2vw, 68px)/1 var(--ds-font-display); letter-spacing: -0.035em; color: var(--ds-ink); font-variant-numeric: tabular-nums; }
+.hero-cents { color: var(--ds-ink-3); }
+.hero-figure small { margin-left: 10px; font: 500 18px/1 var(--ds-font-text); letter-spacing: 0; color: var(--ds-ink-2); }
+.home-hero .home-statement { max-width: 46ch; margin: 0; font: 400 17px/1.45 var(--ds-font-text); letter-spacing: 0; color: var(--ds-ink-2); }
+.home-hero .home-statement b { font-weight: 600; color: var(--ds-ink); }
+.home-hero .home-sub { max-width: 52ch; margin: 6px 0 0; font: 400 14.5px/1.45 var(--ds-font-text); color: var(--ds-ink-3); }
+.home-hero .home-cta { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 0; }
+.home .ds-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 18px; font: 500 15px/1 var(--ds-font-text); }
+.home .ds-btn .nav-icon { width: 17px; height: 17px; padding: 0; background: none; }
+
+/* the split of what was owed: one bar and a legend, as a stacked bar of an iOS report */
+.hero-split { display: grid; gap: 14px; padding: 20px; border-radius: 20px; background: var(--ds-paper); }
+.split-bar { display: flex; gap: 4px; height: 16px; }
+.split-bar i { min-width: 4px; border-radius: 6px; }
+.split-legend { display: grid; margin: 0; padding: 0; list-style: none; }
+.split-legend li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid rgb(var(--ds-tint) / 0.08); font: 400 15px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.split-legend li:last-child { border-bottom: 0; padding-bottom: 0; }
+.split-legend li > i { width: 10px; height: 10px; border-radius: 3px; }
+.split-legend b { font-weight: 600; color: var(--ds-ink); font-variant-numeric: tabular-nums; }
+.split-legend small { min-width: 52px; padding: 2px 8px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 12.5px/1.4 var(--ds-font-text); color: var(--ds-ink-2); text-align: center; }
+[data-part='loops'] > i, .split-bar i[data-part='loops'] { background: var(--ds-settled); }
+[data-part='pairs'] > i, .split-bar i[data-part='pairs'] { background: var(--ds-claim); }
+[data-part='moved'] > i, .split-bar i[data-part='moved'] { background: var(--ds-due); }
+
+/* ---------- Home: you (a greeting, then three cards side by side) ---------- */
+.home-personal { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 1100px) { .home-personal { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); } }
+.home-personal .greet { margin: 0; font: 400 15px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.home-personal .greet strong { font-weight: 500; color: var(--ds-ink); }
+/* you: the mascot, the greeting, four figures in a row, one button */
+.home .home-you > header { justify-content: flex-start; }
+.home .home-you > header > div { flex: 1; min-width: 0; }
+.home .home-you > header h2 { font-size: 21px; }
+.home .ds-panel { padding: 20px; border: 0; border-radius: 24px; background: var(--ds-surface); }
+.home .ds-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.home .ds-panel > header h2 { margin: 0; font: 600 19px/1.3 var(--ds-font-text); letter-spacing: -0.01em; }
+.home .ds-panel .see-all { padding: 6px 12px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 13.5px/1 var(--ds-font-text); color: var(--ds-ink); text-decoration: none; }
+/* the figures of an account as tiles: the remaining limit across, the others two by two */
+.home .ds-panel .kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.home .ds-panel .kv > div { display: grid; align-content: start; gap: 4px; margin: 0; padding: 14px; border: 0; border-radius: 16px; background: var(--ds-paper); }
+.home .ds-panel .kv > div:first-child { grid-column: 1 / -1; }
+.home .ds-panel .kv dt { order: 0; font: 500 13.5px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.home .ds-panel .kv dd { order: 1; margin: 0; font: 600 22px/1.15 var(--ds-font-display); color: var(--ds-ink); text-align: left; }
+.home .ds-panel .kv dd .unit { font: 500 13px/1 var(--ds-font-text); color: var(--ds-ink-3); }
+.home .ds-panel .kv dd.kv-note { order: 2; font: 400 13px/1.35 var(--ds-font-text); color: var(--ds-ink-3); }
+.home .ds-panel .meter { margin: 12px 0 0; }
+.home .panel-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+/* to do: insight cards */
+.home .actions { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.home .actions .action { display: grid; gap: 8px; padding: 14px; border: 0; border-radius: 16px; background: var(--ds-paper); font: 400 15px/1.45 var(--ds-font-text); }
+.home .actions .action a { width: fit-content; padding: 8px 14px; border-radius: 10px; background: var(--ds-btn); color: var(--ds-btn-ink); font: 500 14px/1 var(--ds-font-text); text-decoration: none; }
+
+/* ---------- Home: the timeline with the circle in numbers beside it ---------- */
+.home-split { display: grid; gap: 20px; align-items: start; }
+@media (min-width: 1100px) { .home-split { grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); } .home-split .home-kpis { position: sticky; top: 84px; } }
+.home-split .home-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.home .sechead { display: grid; gap: 4px; margin-bottom: 8px; }
+.home .sechead h2 { margin: 0; font: 700 22px/1.25 var(--ds-font-display); letter-spacing: -0.015em; }
+.home .sechead p { margin: 0; max-width: 60ch; font: 400 14.5px/1.45 var(--ds-font-text); color: var(--ds-ink-3); }
+
+/* ---------- every page: tiles, tables and facts as iOS grouped cards ---------- */
+.ds-kpi { padding: 16px; border: 0; border-radius: 20px; background: var(--ds-surface); }
+.ds-kpi > header { display: flex; align-items: center; gap: 8px; }
+.ds-kpi > header > span:last-child { font: 500 14px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.ds-kpi-icon { display: grid; flex: none; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: rgb(var(--ds-tint) / 0.07); color: var(--ds-ink); }
+.ds-kpi-icon .nav-icon { width: 18px; height: 18px; padding: 0; background: none; }
+.ds-kpi .ds-value { margin-top: 10px; font-weight: 700; letter-spacing: -0.025em; }
+.ds-kpi > p { font: 400 13.5px/1.4 var(--ds-font-text); color: var(--ds-ink-3); }
+.table-wrap { border: 0; border-radius: 20px; background: var(--ds-surface); }
+.table-wrap thead th { font: 500 13px/1.3 var(--ds-font-text); color: var(--ds-ink-3); }
+.table-wrap tbody th, .table-wrap tbody td { font-size: 15px; }
+
+/* v6.3 KISS: four figures of you in one row; the figures read large */
+@media (min-width: 1100px) { .home .home-you .kv { grid-template-columns: repeat(4, minmax(0, 1fr)); } .home .home-you .kv > div:first-child { grid-column: auto; } }
+.home .ds-panel .kv dd .ds-num { font: inherit; }
+.home-split .home-kpis { grid-template-columns: minmax(0, 1fr); }
+.home .actions .tl-pill { width: fit-content; }
+
+/* ---------- the epoch pages (Clearing results, Epoch report, Who owes whom, Risk): the head of the epoch as a balance card ---------- */
+main .ep-head { padding: 24px 28px; border-radius: 24px; background: var(--ds-surface); }
+main .ep-head .ep-eyebrow { display: inline-flex; align-items: center; gap: 8px; width: fit-content; padding: 5px 12px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 13.5px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+main .ep-head h2, main .ep-head h1 { font-weight: 700; letter-spacing: -0.025em; }
+/* the folded parts: one quiet pill each */
+main details.more > summary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 15px/1.3 var(--ds-font-text); color: var(--ds-ink); cursor: pointer; list-style: none; }
+main details.more > summary::-webkit-details-marker { display: none; }
+main details.more[open] > summary { margin-bottom: 14px; }
+/* a member in a table: its mascot, then the short name */
+.member-cell { display: inline-flex; align-items: center; gap: 10px; font-weight: 500; }
+.member-cell .mascot { flex: none; }
+/* the tables of the epoch pages sit in a card, as an iOS grouped list */
+main .ep-table, main .ep-section > .table-wrap { padding: 4px 16px; border-radius: 20px; background: var(--ds-surface); }
+
+/* the cover of the balance card: the agents as a crowd of mascots that bob gently */
+.hero-cover { position: relative; min-height: 220px; border-radius: 20px; background: var(--ds-paper); overflow: hidden; }
+.hero-cover > span { position: absolute; width: var(--s); height: var(--s); transform: translate(-50%, -50%); animation: bob 4.2s var(--ds-ease) var(--d) infinite alternate; }
+.hero-cover .mascot { width: 100%; height: 100%; filter: drop-shadow(0 6px 12px rgb(0 0 0 / 0.18)); }
+@keyframes bob { from { translate: 0 0; } to { translate: 0 -6px; } }
+@media (prefers-reduced-motion: reduce) { .hero-cover > span { animation: none; } }
+
+/* the circle picker: the logo of the circle inside the field, and beside each circle in the list */
+.picker-field { position: relative; display: inline-flex; min-width: 0; }
+.picker-field .picker-logo { position: absolute; z-index: 1; top: 50%; left: 10px; display: grid; transform: translateY(-50%); pointer-events: none; }
+.picker-field select { padding-left: 42px; }
+.select-menu li .mascot { flex: none; margin-right: 10px; }
+.select-menu li { display: flex; align-items: center; }
+.select-menu li > span { flex: 1; }
+
+/* All pages: a pop-up in the middle, the pages of each group as a grid of rows */
+.sheet-backdrop[data-center] { align-items: center; justify-content: center; padding: 24px; background: rgb(0 0 0 / 0.45); backdrop-filter: blur(6px); }
+.sheet-backdrop[data-center] .sheet { width: min(760px, 100%); max-height: min(80vh, 760px); padding: 22px 22px 18px; border: 0; border-radius: 24px; background: var(--ds-paper); box-shadow: 0 24px 80px rgb(0 0 0 / 0.35); animation: pop-in 0.22s var(--ds-ease); }
+.sheet-backdrop[data-center] .sheet::before { content: none; }
+.sheet-backdrop[data-center] .sheet-head h2 { font: 700 22px/1.2 var(--ds-font-display); }
+.sheet-backdrop[data-center] nav[aria-label='All pages'] div[role='group'] { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px; }
+.sheet-backdrop[data-center] .nav-group { grid-column: 1 / -1; margin: 14px 4px 4px; }
+.sheet-backdrop[data-center] .sheet a { min-height: 48px; padding: 6px 10px; border-radius: 12px; color: var(--ds-ink); font-weight: 500; }
+.sheet-backdrop[data-center] .sheet a .nav-icon { width: 34px; height: 34px; padding: 8px; border-radius: 10px; background: rgb(var(--ds-tint) / 0.07); }
+.sheet-backdrop[data-center] .sheet-feedback { width: auto; margin-top: 14px; }
+@keyframes pop-in { from { transform: scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sheet-backdrop[data-center] .sheet { animation: none; } }
+
+/* the epoch chip of the balance card: the logo of the circle, a live dot on it while the epoch is not finalized */
+.home-hero .page-eyebrow { padding: 4px 14px 4px 4px; }
+.home-hero .page-eyebrow::before { content: none; }
+.eyebrow-logo { position: relative; display: inline-grid; flex: none; }
+.eyebrow-logo i { position: absolute; right: -1px; bottom: -1px; display: none; width: 8px; height: 8px; border-radius: 50%; background: #28c840; box-shadow: 0 0 0 2px var(--ds-surface); }
+.page-eyebrow[data-live] .eyebrow-logo i { display: block; }

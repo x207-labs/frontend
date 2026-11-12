@@ -2,31 +2,32 @@ import { useQuery } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { api } from '../api/client'
-import { useEpochs, useInvoices, useMember, useMembers, useOrders, useParams } from '../api/queries'
-import type { EpochItem, SettlementItem } from '../api/types'
-import { CircleMap } from '../components/CircleMap'
+import { useMember, useMembers, useParams } from '../api/queries'
+import { NavIcon } from '../components/icons'
+import { Mascot } from '../components/Mascot'
 import { EmptyHint } from '../components/EmptyHint'
 import { LoopMotif } from '../components/LoopMotif'
-import { PhaseStrip } from '../components/PhaseStrip'
 import { ErrorNotice, Loading } from '../components/QueryState'
 import { CONTRACT_ID, CIRCLE } from '../config'
-import { Button, Kpi, Num, StatusBadge, type StatusCode } from '../ds/components'
+import { Button, Kpi, Num } from '../ds/components'
 import { formatCredit, formatTime } from '../lib/format'
-import { currentEpoch, epochLengthText, epochOutcome, formatCredit2, homeActions, memberTotals, sumAmounts, type HomeAction } from '../lib/home'
+import { epochLengthText, epochOutcome, formatCredit2, homeActions, memberTotals, sumAmounts, type HomeAction } from '../lib/home'
 import { useProgress } from '../onboarding/progress'
 import { computeSteps, type MemberState, type StepId } from '../onboarding/steps'
 import { useWallet } from '../wallet/WalletContext'
 import { useCachedAccount } from '../account/cache'
 import { displayAccount } from '../lib/account'
 import { MONEY, NETWORK_NAME } from '../lib/network'
+import { HomeEyebrow, HomeStatement } from './HomeLead'
 import { phaseWord, useVoucherScan, type VoucherScan } from './voucherScan'
 
 type Ready = Extract<VoucherScan, { state: 'ready' }>
 
 /** A link drawn as a design-system button. Only one glowing primary per screen; every other action is quiet. */
-function LinkButton({ to, variant = 'quiet', children }: { to: { pathname: string; search?: string }; variant?: 'glow' | 'quiet'; children: ReactNode }) {
+function LinkButton({ to, variant = 'quiet', icon, children }: { to: { pathname: string; search?: string }; variant?: 'glow' | 'quiet'; icon?: string; children: ReactNode }) {
   return (
     <Link className="ds-btn" data-variant={variant} to={to}>
+      {icon && <NavIcon name={icon} size={17} />}
       {children}
     </Link>
   )
@@ -92,21 +93,20 @@ function Cta({ ready, search, signedIn, member, due }: { ready: Ready | null; se
   // The sign-in in the top bar is the glowing primary while nobody is signed in; once someone is, the most urgent thing on this page takes it.
   const join = signedIn && !member
   const statement = latest ? (
-    <LinkButton key="statement" variant={signedIn && member && !due ? 'glow' : 'quiet'} to={{ pathname: '/reports', search: withEpoch(search, latest.epoch) }}>
+    <LinkButton key="statement" icon="/reports" variant={signedIn && member && !due ? 'glow' : 'quiet'} to={{ pathname: '/reports', search: withEpoch(search, latest.epoch) }}>
       Read the epoch {latest.epoch} statement
     </LinkButton>
   ) : (
-    <LinkButton key="statement" variant={signedIn && member && !due ? 'glow' : 'quiet'} to={{ pathname: '/stats', search }}>
+    <LinkButton key="statement" icon="/stats" variant={signedIn && member && !due ? 'glow' : 'quiet'} to={{ pathname: '/stats', search }}>
       See the clearing results
     </LinkButton>
   )
   return (
     <div className="home-cta">
-      {join && <LinkButton variant="glow" to={{ pathname: '/onboarding', search }}>Join the circle</LinkButton>}
-      {signedIn && member && due && <LinkButton variant="glow" to={{ pathname: '/settlement', search }}>Pay what is due</LinkButton>}
+      {join && <LinkButton variant="glow" icon="/onboarding" to={{ pathname: '/onboarding', search }}>Join the circle</LinkButton>}
+      {signedIn && member && due && <LinkButton variant="glow" icon="/settlement" to={{ pathname: '/settlement', search }}>Pay what is due</LinkButton>}
       {statement}
-      {latest && <LinkButton to={{ pathname: '/stats', search: withEpoch(search, latest.epoch) }}>See how it cleared</LinkButton>}
-      <LinkButton to={{ pathname: '/help', search }}>How it works</LinkButton>
+      {!latest && <LinkButton icon="/help" to={{ pathname: '/help', search }}>How it works</LinkButton>}
     </div>
   )
 }
@@ -152,30 +152,113 @@ function Kpis({ ready }: { ready: Ready | null }) {
     <section className="home-kpis" aria-label="Circle in numbers">
       <Kpi
         badge="M"
+        icon={<NavIcon name="account" size={18} />}
         label="Members"
         value={totals ? totals.total : members.isError ? 'n/a' : '…'}
-        note={totals ? `${totals.active} active, ${totals.suspended} suspended. ${formatCredit2(totals.staked)} credit staked.` : members.isError ? 'The member list could not be read.' : undefined}
+        note={totals ? `${totals.active} active · ${formatCredit2(totals.staked)} credit staked` : members.isError ? 'The member list could not be read.' : undefined}
       />
       {latest ? (
         <>
-          <Kpi badge="V" label={`Vouchers, epoch ${latest.epoch}`} value={latest.vouchers.toLocaleString('en-US')} note={`Signed among ${latest.participants.toLocaleString('en-US')} members.`} />
-          <Kpi
-            badge="%"
-            label="Cancelled in loops"
-            value={latest.clearedRatio === null ? '-' : Math.round(latest.clearedRatio * 100)}
-            unit={latest.clearedRatio === null ? undefined : '%'}
-            note={latest.cancelled === null ? 'No clearing result yet.' : `${formatCredit2(latest.cancelled)} of ${formatCredit2(latest.owed)} credit.`}
-          />
-          <Kpi
-            badge="$"
-            label="Moved"
-            value={latest.moved === null ? '-' : formatCredit2(latest.moved)}
-            unit={latest.moved === null ? undefined : MONEY}
-            note={latest.movedPercent === null ? 'Nothing has moved yet.' : `${latest.movedPercent.toLocaleString('en-US')}% of what was owed.`}
-          />
+          <Kpi badge="V" icon={<NavIcon name="/reports" size={18} />} label={`Vouchers, epoch ${latest.epoch}`} value={latest.vouchers.toLocaleString('en-US')} note={`Signed among ${latest.participants.toLocaleString('en-US')} members.`} />
         </>
       ) : (
-        <Kpi badge="E" label="Epochs checked" value={ready ? ready.scanned : '…'} note={ready ? `None of them carried vouchers.${ready.live ? ` The live epoch is ${ready.live.epoch}.` : ''}` : undefined} />
+        null
+      )}
+    </section>
+  )
+}
+
+/** The split of what was owed in an epoch: cancelled in loops, netted between pairs, moved as cash. Amounts in the smallest unit. */
+function split(v: { owed: string; cancelled: string | null; moved: string | null }) {
+  try {
+    const owed = BigInt(v.owed)
+    if (owed <= 0n || v.cancelled === null || v.moved === null) return null
+    const cancelled = BigInt(v.cancelled)
+    const moved = BigInt(v.moved)
+    const netted = owed - cancelled - moved > 0n ? owed - cancelled - moved : 0n
+    const pct = (x: bigint) => Number((x * 1000n) / owed) / 10
+    return [
+      { key: 'loops', label: 'Cancelled in loops', raw: cancelled.toString(), pct: pct(cancelled) },
+      { key: 'pairs', label: 'Netted between pairs', raw: netted.toString(), pct: pct(netted) },
+      { key: 'moved', label: `Moved as ${MONEY}`, raw: moved.toString(), pct: pct(moved) },
+    ]
+  } catch {
+    return null
+  }
+}
+
+/** The cover of the balance card while there is no split to show: the agents of the circle as a small crowd of mascots, the same ones as the sidebar. */
+const SPOTS = [
+  { x: 50, y: 52, s: 96, mood: 'happy' },
+  { x: 22, y: 38, s: 64, mood: 'wink' },
+  { x: 78, y: 34, s: 68, mood: 'smile' },
+  { x: 12, y: 74, s: 52, mood: 'smirk' },
+  { x: 33, y: 80, s: 58, mood: 'smile' },
+  { x: 68, y: 80, s: 60, mood: 'surprised' },
+  { x: 89, y: 70, s: 50, mood: 'happy' },
+  { x: 38, y: 16, s: 40, mood: 'smile' },
+  { x: 64, y: 12, s: 36, mood: 'wink' },
+] as const
+const FILL = ['x207', 'solver.near', 'gpu.near', 'translator.near', 'summarizer.near', 'scraper.near', 'image.near', 'cleaner.near', 'oracle.near']
+
+function HeroCover() {
+  const members = useMembers()
+  const ids = [...(members.data?.items.map((m) => m.account) ?? []), ...FILL].slice(0, SPOTS.length)
+  return (
+    <div className="hero-cover" aria-hidden="true">
+      {SPOTS.map((p, i) => (
+        <span key={ids[i]} style={{ left: `${p.x}%`, top: `${p.y}%`, ['--s' as string]: `${p.s}px`, ['--d' as string]: `${i * 0.35}s` }}>
+          <Mascot id={ids[i]} size={p.s} mood={p.mood} />
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/** v6.3 (2026-11-12), after the balance card of an iOS finance app: the epoch as a chip, what was owed as one large figure, one sentence, the actions as
+ * pills with icons, and the split of that figure as one bar with a legend. */
+function HomeHero({ scan, cta }: { scan: VoucherScan; cta: ReactNode }) {
+  const latest = scan.state === 'ready' ? scan.rows[0] : undefined
+  const figure = latest ? formatCredit2(latest.owed) : null
+  const [whole, cents] = figure ? figure.split('.') : ['', '']
+  const parts = latest ? split(latest) : null
+  return (
+    <section className="home-hero" aria-label="Latest epoch">
+      <div className="hero-main">
+        <HomeEyebrow />
+        {latest && (
+          <>
+            <p className="hero-label">Owed between members</p>
+            <p className="hero-figure">
+              {whole}
+              <span className="hero-cents">.{cents}</span>
+              <small>credit</small>
+            </p>
+          </>
+        )}
+        <HomeStatement />
+        {cta}
+      </div>
+      {!parts && scan.state !== 'loading' && <HeroCover />}
+      {parts && (
+        <div className="hero-split">
+          <p className="hero-label">Where it went</p>
+          <div className="split-bar" role="img" aria-label={parts.map((p) => `${p.label} ${p.pct}%`).join(', ')}>
+            {parts.map((p) => (
+              <i key={p.key} data-part={p.key} style={{ flexGrow: Math.max(p.pct, 0.5) }} />
+            ))}
+          </div>
+          <ul className="split-legend">
+            {parts.map((p) => (
+              <li key={p.key} data-part={p.key}>
+                <i aria-hidden="true" />
+                <span>{p.label}</span>
+                <b>{formatCredit2(p.raw)}</b>
+                <small>{p.pct}%</small>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   )
@@ -190,17 +273,18 @@ function EpochTimeline({ scan }: { scan: VoucherScan }) {
   const ready = scan.state === 'ready' ? scan : null
   const rows = ready ? [...ready.rows].reverse() : []
   const live = ready?.live && !ready.rows.some((r) => r.epoch === ready.live!.epoch) ? ready.live : null
+  // v6.3 (KISS): with no epoch to show, the balance card already says "No trades yet", so the timeline stays out
+  if (ready && rows.length === 0) return null
   return (
     <section className="home-epochs" aria-labelledby="home-epochs-h">
       <div className="sechead">
         <h2 id="home-epochs-h">Timeline</h2>
-        {ready && <p>The epochs with vouchers among the newest {ready.scanned}. Amounts in credit; what moves is paid in {MONEY}.</p>}
+        {ready && <p>Every epoch with trades, oldest first.</p>}
       </div>
       {scan.state === 'loading' && <Loading label="Reading the newest epochs" />}
       {scan.state === 'error' && <ErrorNotice error={scan.error} onRetry={scan.retry} />}
       {ready && rows.length === 0 && (
         <p className="state">
-          None of the newest {ready.scanned} epochs carried vouchers.
           <EmptyHint what="vouchers" />
         </p>
       )}
@@ -212,10 +296,9 @@ function EpochTimeline({ scan }: { scan: VoucherScan }) {
               <li key={v.epoch}>
                 <p className="tl-time">Epoch {v.epoch} · {phaseWord(v.phase)}</p>
                 <p className="tl-bubble">
-                  {v.vouchers.toLocaleString('en-US')} {v.vouchers === 1 ? 'voucher' : 'vouchers'} among {v.participants.toLocaleString('en-US')} members, {formatCredit2(v.owed)} credit owed.{' '}
                   {v.cancelled === null || v.moved === null
-                    ? 'Clearing has no result yet.'
-                    : `Loops cancelled ${formatCredit2(v.cancelled)} (${Math.round((v.clearedRatio ?? 0) * 100)}%), so only ${formatCredit2(v.moved)} ${MONEY} ${v.phase === 'finalized' ? 'moved' : 'is due to move'}.`}
+                    ? `${formatCredit2(v.owed)} credit owed. Not cleared yet.`
+                    : `${formatCredit2(v.owed)} credit owed, only ${formatCredit2(v.moved)} ${MONEY} ${v.phase === 'finalized' ? 'moved' : 'to move'}.`}
                 </p>
                 <div className="tl-card">
                   <div className="tl-card-head">
@@ -225,15 +308,9 @@ function EpochTimeline({ scan }: { scan: VoucherScan }) {
                       {outcome ? outcome.label : phaseWord(v.phase)}
                     </span>
                   </div>
-                  <p className="tl-meta">
-                    {formatCredit2(v.owed)} owed · {formatCredit2(v.cancelled)} cancelled · {formatCredit2(v.moved)} moved{v.movedPercent === null ? '' : ` (${v.movedPercent.toFixed(1)}%)`}
-                  </p>
                   <p className="tl-actions">
                     <Link className="tl-btn" to={{ pathname: '/reports', search: withEpoch(search, v.epoch) }} aria-label={`Epoch ${v.epoch} statement`}>
                       Read the statement
-                    </Link>
-                    <Link className="tl-btn" data-variant="quiet" to={{ pathname: '/stats', search: withEpoch(search, v.epoch) }}>
-                      How it cleared
                     </Link>
                   </p>
                 </div>
@@ -259,10 +336,16 @@ function Overview({ scan, signedIn, member, due, personal }: { scan: VoucherScan
   const ready = scan.state === 'ready' ? scan : null
   return (
     <>
-      <Cta ready={ready} search={search} signedIn={signedIn} member={member} due={due} />
+      <HomeHero scan={scan} cta={<Cta ready={ready} search={search} signedIn={signedIn} member={member} due={due} />} />
       {personal}
-      <EpochTimeline scan={scan} />
-      <Kpis ready={ready} />
+      {/* the epochs on the left, the circle in numbers beside them (one column on a phone) */}
+      {/* with no trade yet the balance card says all there is; an empty timeline or a lone tile would only leave a hole */}
+      {(scan.state !== 'ready' || scan.rows.length > 0) && (
+        <div className="home-split">
+          <EpochTimeline scan={scan} />
+          <Kpis ready={ready} />
+        </div>
+      )}
       {/* v6: the technical facts of the circle (contract, epoch length) fold away; the timeline says what matters */}
       <details className="home-more">
         <summary>About this circle</summary>
@@ -299,13 +382,6 @@ function SignedOut() {
         <LoopMotif />
       </section>
       <StartHere account={null} member={{ kind: 'loading' }} />
-      <section className="ds-panel home-explore" aria-labelledby="home-explore">
-        <header>
-          <h2 id="home-explore">Explore without signing in</h2>
-          <LinkButton to={{ pathname: '/help', search }}>Help</LinkButton>
-        </header>
-        <CircleMap signedIn={false} />
-      </section>
     </div>
   )
 }
@@ -330,15 +406,6 @@ function usedPercent(debt: string, limit: string): number {
   }
 }
 
-// FE-077: the deadline as time left, not only a date.
-function untilText(iso: string, now: number): string {
-  const ms = Date.parse(iso) - now
-  if (!Number.isFinite(ms)) return ''
-  if (ms <= 0) return 'passed'
-  const h = Math.floor(ms / 3_600_000)
-  return h >= 48 ? `in ${Math.floor(h / 24)} days` : h >= 1 ? `in ${h} h` : `in ${Math.max(1, Math.floor(ms / 60_000))} min`
-}
-
 function Row({ label, children, note }: { label: ReactNode; children: ReactNode; note?: ReactNode }) {
   return (
     <div>
@@ -349,19 +416,8 @@ function Row({ label, children, note }: { label: ReactNode; children: ReactNode;
   )
 }
 
-function Position({ epoch, rows }: { epoch: EpochItem | null; rows: SettlementItem[] }) {
-  if (epoch === null) return <Row label="Position this epoch">not available</Row>
-  const mine = rows.find((s) => s.epoch === epoch.epoch)
-  if (!mine) return <Row label={`Position in epoch ${epoch.epoch}`} note={`The epoch is ${epoch.phase.replace('_', ' ')}. A position appears once clearing has run.`}>none yet</Row>
-  return (
-    <Row label={`Position in epoch ${epoch.epoch}`} note={`${mine.role === 'debtor' ? 'You owe' : 'You are owed'} ${formatCredit(mine.amount)} credit, status ${mine.status}.`}>
-      <Num>{formatCredit(mine.net)}</Num> <span className="unit">credit</span>
-    </Row>
-  )
-}
-
-const ACTION_BADGE = (key: string): { code: StatusCode; label: string } | null =>
-  key.startsWith('due-') ? { code: 402, label: 'Due' } : key.startsWith('default-') ? { code: 409, label: 'Defaulted' } : key.startsWith('claim-') ? { code: 202, label: 'Claimable' } : key === 'suspended' ? { code: 409, label: 'Suspended' } : null
+const ACTION_BADGE = (key: string): { tone: 'todo' | 'bad'; label: string } | null =>
+  key.startsWith('due-') ? { tone: 'todo', label: 'Due' } : key.startsWith('default-') ? { tone: 'bad', label: 'Defaulted' } : key.startsWith('claim-') ? { tone: 'todo', label: 'Claimable' } : key === 'suspended' ? { tone: 'bad', label: 'Suspended' } : null
 
 function Actions({ actions, failed }: { actions: HomeAction[]; failed: boolean }) {
   const { search } = useLocation()
@@ -376,7 +432,12 @@ function Actions({ actions, failed }: { actions: HomeAction[]; failed: boolean }
           const badge = ACTION_BADGE(a.key)
           return (
             <li key={a.key} className={`action action-${a.tone}`}>
-              {badge && <StatusBadge code={badge.code} label={badge.label} />}
+              {badge && (
+                <span className="tl-pill" data-tone={badge.tone}>
+                  <i aria-hidden="true" />
+                  {badge.label}
+                </span>
+              )}
               <span>{a.text}</span>
               <Link to={{ pathname: a.to, search }}>{a.cta}</Link>
             </li>
@@ -390,14 +451,9 @@ function Actions({ actions, failed }: { actions: HomeAction[]; failed: boolean }
 function Dashboard({ account }: { account: string }) {
   const { search } = useLocation()
   const member = useMember(account)
-  const epochs = useEpochs()
   const scan = useVoucherScan()
-  // FE-082: the same queries (and cache) as the Invoices and Service orders pages, for the counts on the trade map
-  const invoices = useInvoices({ party: account })
-  const orders = useOrders({ party: account })
   // the greeting is read once, when the page opens
   const [hello] = useState(() => greeting(new Date()))
-  const [now] = useState(() => Date.now())
   // FE-073: the name the person saved in Settings, else the short account, as the account menu shows it; a 64-hex implicit account in full ran off the line
   const cached = useCachedAccount(account)
   const name = cached.displayName || displayAccount(account)
@@ -414,78 +470,50 @@ function Dashboard({ account }: { account: string }) {
     return <Loading label="Loading your account" />
   }
   const rows = settlements.data?.items ?? []
-  const current = currentEpoch(epochs.data?.items ?? [])
   const dues = rows.filter((s) => s.status === 'due')
-  const next = dues.map((s) => s.due).filter((d): d is string => Boolean(d)).sort()[0] ?? current?.paymentDeadline ?? null
   const claimable = sumAmounts(rows.filter((s) => s.status === 'claimable'))
   const actions = homeActions(member.data, rows)
   const memberState: MemberState = member.data ? { kind: 'member', member: member.data } : { kind: 'none' }
   const used = member.data ? usedPercent(member.data.outstandingDebt, member.data.limit) : 0
 
-  // What is yours comes right after the buttons, ahead of the facts of the circle: a payment that is due must not sit below the fold.
+  // What is yours comes right after the balance card: a payment that is due must not sit below the fold. v6.3 (KISS): one card on you, one card on what to do.
   const personal = (
-    <>
-      {/* FE-069: a greeting line, so the page says whose it is at a glance */}
-      <div className="home-personal">
+    <div className="home-personal">
+      {member.data && (
+        <section className="ds-panel home-you" aria-labelledby="home-numbers">
+          <header>
+            <Mascot id={account} size={44} mood={dues.length > 0 ? 'surprised' : 'smile'} />
+            <div>
+              {/* FE-069: a greeting, so the page says whose it is at a glance */}
+              <p className="greet">
+                {hello}, <strong title={account}>{name}</strong>
+              </p>
+              <h2 id="home-numbers">Your account</h2>
+            </div>
+            <Link className="see-all" to={{ pathname: '/settings', search }}>Settings</Link>
+          </header>
+          <dl className="kv">
+            <Row label="Remaining limit" note={`Credit limit ${formatCredit(member.data.limit)} credit, ${used}% used.`}><Num>{formatCredit(member.data.headroom)}</Num> <span className="unit">credit</span></Row>
+            <Row label="Debt outstanding"><Num>{formatCredit(member.data.outstandingDebt)}</Num> <span className="unit">credit</span></Row>
+            <Row label="Stake"><Num>{formatCredit(member.data.stake)}</Num> <span className="unit">credit</span></Row>
+            <Row label="Claimable"><Num>{formatCredit(claimable)}</Num> <span className="unit">credit</span></Row>
+          </dl>
+        </section>
+      )}
+      {/* FE-073: for an account outside the circle the only action was "Join the circle", the join step the top button and Start here already show, so the panel is left out */}
+      {!notMember && <Actions actions={actions} failed={settlements.isError} />}
+      {notMember && (
         <p className="greet">
           {hello}, <strong title={account}>{name}</strong>
         </p>
-        {/* FE-073: for an account outside the circle the only action was "Join the circle", the join step the top button and Start here already show, so the panel is left out */}
-        {!notMember && <Actions actions={actions} failed={settlements.isError} />}
-
-        {member.data && (
-          <section className="ds-panel" aria-labelledby="home-numbers">
-            <header>
-              <h2 id="home-numbers">Your account</h2>
-              <Link className="see-all" to={{ pathname: '/settings', search }}>Settings</Link>
-            </header>
-            <dl className="kv">
-              <Row label="Remaining limit"><Num>{formatCredit(member.data.headroom)}</Num> <span className="unit">credit</span></Row>
-              <Row label="Credit limit"><Num>{formatCredit(member.data.limit)}</Num> <span className="unit">credit</span></Row>
-              <Row label="Debt outstanding" note={`${used}% used of the limit.`}><Num>{formatCredit(member.data.outstandingDebt)}</Num> <span className="unit">credit</span></Row>
-              <Row label="Stake"><Num>{formatCredit(member.data.stake)}</Num> <span className="unit">credit</span></Row>
-              <Row label="Claimable balance" note="Owed to you and not claimed yet."><Num>{formatCredit(claimable)}</Num> <span className="unit">credit</span></Row>
-            </dl>
-            <div className="meter" role="img" aria-label={`${used}% of the credit limit used`}>
-              <span style={{ width: `${used}%` }} />
-            </div>
-            <p className="panel-actions">
-              <LinkButton to={{ pathname: '/settlement', search }}>Pay and claim</LinkButton>
-              <LinkButton to={{ pathname: '/marketplace', search }}>Trade in the marketplace</LinkButton>
-            </p>
-          </section>
-        )}
-
-        <section className="ds-panel" aria-labelledby="home-epoch">
-          <header>
-            <h2 id="home-epoch">This epoch</h2>
-            <Link className="see-all" to={{ pathname: '/reports', search }}>Epoch report</Link>
-          </header>
-          {current && <PhaseStrip phase={current.phase} />}
-          <dl className="kv">
-            <Position epoch={current} rows={rows} />
-            <Row label="Payment deadline" note={next ? formatTime(next) : 'No payment is due right now.'}>
-              {next ? <strong>{untilText(next, now)}</strong> : <strong>none set</strong>}
-            </Row>
-          </dl>
-        </section>
-      </div>
-    </>
+      )}
+    </div>
   )
 
   return (
     <div className="home">
       <Overview scan={scan} signedIn member={!notMember} due={dues.length > 0} personal={personal} />
-
       <StartHere account={account} member={memberState} />
-
-      <section className="ds-panel home-explore" aria-labelledby="home-explore">
-        <header>
-          <h2 id="home-explore">Where to trade</h2>
-          <Link className="see-all" to={{ pathname: '/help', search }}>Help</Link>
-        </header>
-        <CircleMap signedIn counts={{ '/invoices': invoices.data?.items.length, '/orders': orders.data?.items.length }} />
-      </section>
     </div>
   )
 }

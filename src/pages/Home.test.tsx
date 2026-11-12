@@ -55,7 +55,7 @@ describe('FE-056 home page', () => {
     expect(calls().filter((p) => p.includes('/members/'))).toEqual([])
   })
 
-  it('with a wallet it shows the limits, the position, the deadline and the actions', async () => {
+  it('with a wallet it shows the limits and the actions; the action names the amount and the deadline', async () => {
     renderApp('/app', reply('/settlements', [settlement('due')]), false, createMockWallet(SCRAPER, SCRAPER))
     const actions = await screen.findByRole('region', { name: 'Actions to take' })
     expect(await within(actions).findByText(/pay 35 credit/)).toBeInTheDocument()
@@ -64,17 +64,15 @@ describe('FE-056 home page', () => {
     expect(numbers).toHaveTextContent('Remaining limit')
     // FE-069: the hero card says how much of the limit is used, and leads to the two main tasks
     expect(numbers).toHaveTextContent(/\d+% used/)
-    expect(within(numbers).getByRole('link', { name: 'Pay and claim' })).toHaveAttribute('href', expect.stringContaining('/settlement'))
-    const epochBlock = screen.getByRole('region', { name: 'This epoch' })
-    expect(epochBlock).toHaveTextContent('Payment deadline')
-    expect(epochBlock).toHaveTextContent('Nov 9, 2026')
+    expect(actions).toHaveTextContent('Nov 9, 2026')
+    // v6.3 (KISS): one way to pay on the page, the main button of the balance card
+    expect(screen.getByRole('link', { name: 'Pay what is due' })).toHaveAttribute('href', expect.stringContaining('/settlement'))
   })
 
   it('TC-FE-063-01 Home names one epoch, the live one (42), and has no epoch picker that points at another (41)', async () => {
     renderApp('/app', reply('/settlements', [settlement('due')]), false, createMockWallet(SCRAPER, SCRAPER))
     const actions = await screen.findByRole('region', { name: 'Actions to take' })
     expect(await within(actions).findByText(/Epoch 42: pay 35 credit/)).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'This epoch' })).toHaveTextContent('Position in epoch 42')
     expect(screen.queryByRole('combobox', { name: 'Epoch' })).toBeNull()
   })
 
@@ -176,9 +174,11 @@ describe('v4 home: the statement page', () => {
     const cards = screen.getByRole('region', { name: 'Circle in numbers' })
     await within(cards).findByText('512')
     expect(cards).toHaveTextContent('Members')
-    expect(cards).toHaveTextContent('6 active, 0 suspended')
-    expect(cards).toHaveTextContent('71%')
-    expect(cards).toHaveTextContent('45.00mock USDT')
+    expect(cards).toHaveTextContent('6 active · ')
+    // the split of what was owed is in the balance card, as one bar with a legend
+    const hero = screen.getByRole('region', { name: 'Latest epoch' })
+    expect(hero).toHaveTextContent('Cancelled in loops1,820.0071%')
+    expect(hero).toHaveTextContent('Moved as mock USDT45.001.7%')
   })
 
   it('v6: the epochs with vouchers are a timeline, oldest first: a sentence and a card with the outcome and a link to the statement', async () => {
@@ -187,7 +187,7 @@ describe('v4 home: the statement page', () => {
     expect(await within(list).findByRole('link', { name: 'Epoch 42 statement' })).toHaveAttribute('href', '/reports?epoch=42')
     expect([...list.querySelectorAll('.tl-time')].map((t) => t.textContent)).toEqual(['Epoch 40 · finalized', 'Epoch 41 · finalized', 'Epoch 42 · payment window'])
     const items = within(list).getAllByRole('listitem')
-    expect(items[2]).toHaveTextContent('512 vouchers among 6 members, 2,563.38 credit owed. Loops cancelled 1,820.00 (71%), so only 45.00 mock USDT is due to move.')
+    expect(items[2]).toHaveTextContent('2,563.38 credit owed, only 45.00 mock USDT to move.')
     expect(items[2]).toHaveTextContent('Payment window open')
     expect(items[1]).toHaveTextContent('Settled')
     expect(items[0]).toHaveTextContent('Default, covered from stake')
@@ -195,10 +195,11 @@ describe('v4 home: the statement page', () => {
 
   it('says so when none of the newest epochs carried vouchers, and shows no figures', async () => {
     renderApp('/app', noVouchers, false)
-    expect(await screen.findByText((_, el) => el?.classList.contains('home-statement') === true && el.textContent === 'None of the newest 3 epochs carried vouchers.')).toBeInTheDocument()
-    const section = screen.getByRole('region', { name: 'Timeline' })
-    expect(await within(section).findByText(/Nobody has posted vouchers/)).toBeInTheDocument()
-    expect(within(section).queryByText(/Settle epoch/)).toBeNull()
+    expect(await screen.findByText((_, el) => el?.classList.contains('home-statement') === true && el.textContent === '6 members, no trades yet.')).toBeInTheDocument()
+    // v6.3 (KISS): no empty timeline and no lone tile under the balance card
+    expect(screen.queryByRole('region', { name: 'Timeline' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Circle in numbers' })).toBeNull()
+    expect(screen.queryByText(/Settle epoch/)).toBeNull()
   })
 
   it('says so, with a retry, when the epochs cannot be read', async () => {
@@ -235,10 +236,10 @@ describe('v4 home: the statement page', () => {
     expect(glowing()).toEqual(['Join the circle'])
   })
 
-  it('a due payment in Actions to take carries the 402 code and word', async () => {
+  it('a due payment in Actions to take carries a plain Due pill, no result code', async () => {
     renderApp('/app', reply('/settlements', [settlement('due')]), false, createMockWallet(SCRAPER, SCRAPER))
     const actions = await screen.findByRole('region', { name: 'Actions to take' })
-    expect(await within(actions).findByText('402')).toBeInTheDocument()
-    expect(actions).toHaveTextContent('Due')
+    expect(await within(actions).findByText('Due')).toHaveClass('tl-pill')
+    expect(actions).not.toHaveTextContent('402')
   })
 })

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { EpochProvider, useEpochSelection } from '../epoch'
 import { Logo } from '../landing/Logo'
-import { HomeEyebrow, HomeStatement } from '../pages/HomeLead'
 import { AGENTS_PATH, pages } from '../routes'
 import { Sidebar } from './AppNav'
 import { NavIcon } from './icons'
@@ -28,7 +27,6 @@ function Header() {
   if (pathname === AGENTS_PATH || pathname.startsWith(`${AGENTS_PATH}/`)) return null
   return (
     <header className="page-head" data-page={home ? 'home' : undefined}>
-      {home && <HomeEyebrow />}
       <div className="page-title">
         <h1>{page?.title ?? 'Page not found'}</h1>
         <div className="page-tools">
@@ -39,7 +37,6 @@ function Header() {
       </div>
       {/* FE-069: one plain sentence on what the page is for, so a first-time visitor knows why they are here */}
       {page && !home && <p className="page-intro">{page.intro}</p>}
-      {home && <HomeStatement />}
       {page?.perEpoch && <LateEpochNotice />}
       {page?.perEpoch && selected && <PhaseStrip phase={selected.phase} />}
     </header>

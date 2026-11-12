@@ -25,11 +25,12 @@ export function Panel({ title, sub, aside, children, as: Tag = 'section' }: { ti
   )
 }
 
-export function Kpi({ badge, label, value, unit, note, tone = 'ink' }: { badge?: string; label: ReactNode; value: ReactNode; unit?: string; note?: ReactNode; tone?: Tone }) {
+export function Kpi({ badge, icon, label, value, unit, note, tone = 'ink' }: { badge?: string; icon?: ReactNode; label: ReactNode; value: ReactNode; unit?: string; note?: ReactNode; tone?: Tone }) {
   return (
     <div className="ds-kpi" data-tone={tone}>
       <header>
         {badge && <b aria-hidden="true">{badge}</b>}
+        {icon && <span className="ds-kpi-icon" aria-hidden="true">{icon}</span>}
         <span>{label}</span>
       </header>
       <div className="ds-value">
