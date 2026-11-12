@@ -4,6 +4,7 @@ import { FEEDBACK_EVENT } from '../account/feedbackEvent'
 import { CIRCLE } from '../config'
 import { Logo, LogoMark } from '../landing/Logo'
 import { GROUPS, pages, type PageGroup } from '../routes'
+import { PALETTE_EVENT } from './CommandPalette'
 import { NavIcon } from './icons'
 
 const groupId = (group: string) => `nav-${group.replace(/\s+/g, '-')}`
@@ -23,6 +24,11 @@ export function Sidebar() {
         </Link>
         <span>{CIRCLE}</span>
       </p>
+      {/* after Grok Bot: a search row on top of the sidebar; it opens the same page search as Cmd-K */}
+      <button type="button" className="rail-search" aria-haspopup="dialog" onClick={() => window.dispatchEvent(new Event(PALETTE_EVENT))}>
+        <NavIcon name="search" size={16} />
+        <span className="nav-label">Search</span>
+      </button>
       <nav aria-label="Pages">
         {GROUPS.map((group) => (
           <div key={group} role="group" aria-labelledby={groupId(group)}>

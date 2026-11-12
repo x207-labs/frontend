@@ -4,6 +4,9 @@ import { matchPages } from '../lib/palette'
 import type { PageRoute } from '../routes'
 import { NavIcon } from './icons'
 
+/** The search row of the sidebar opens the palette with this window event, so there stays one palette and one Cmd-K listener. */
+export const PALETTE_EVENT = 'x207:palette'
+
 // FE-057: Cmd-K (Ctrl-K on Windows and Linux) opens a search over every page. The button next to the account opens it too, which is the way in on a phone.
 // The input is a combobox: the arrows move through the pages, Enter opens one (the epoch and circle in the address are kept), Escape closes and gives the focus back.
 export function CommandPalette() {
@@ -17,8 +20,13 @@ export function CommandPalette() {
         setOpen((o) => !o)
       }
     }
+    const show = () => setOpen(true)
     document.addEventListener('keydown', key)
-    return () => document.removeEventListener('keydown', key)
+    window.addEventListener(PALETTE_EVENT, show)
+    return () => {
+      document.removeEventListener('keydown', key)
+      window.removeEventListener(PALETTE_EVENT, show)
+    }
   }, [])
 
   return (
