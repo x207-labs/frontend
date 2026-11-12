@@ -88,8 +88,8 @@ describe('FE-044 landing page facts', () => {
     const shown = [...container.querySelectorAll('.evidence > div')].map((d) => [d.querySelector('span')!.textContent, Number(d.querySelector('b')!.textContent)])
     expect(shown).toEqual([
       ['kinds can be offered', rows.All - rows.X],
-      ['have run on testnet', rows.testnet],
-      ['more in near-sandbox', rows.sandbox],
+      ['ran on testnet', rows.testnet],
+      ['in near-sandbox', rows.sandbox],
     ])
   })
 
