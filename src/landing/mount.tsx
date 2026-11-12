@@ -1,5 +1,4 @@
-// The v4 design system: "Agent Console" type and the --ds-* tokens, the same two files the app's boot.tsx imports.
-import '../ds/fonts.css'
+// The --ds-* tokens the canvas engines read (the app's boot.tsx imports the same file). The landing's own type comes with Landing.tsx.
 import '../ds/tokens.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'

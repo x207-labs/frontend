@@ -37,13 +37,14 @@ describe('FE-044 landing page facts', () => {
     expect(EPOCH8.moved).toBeLessThan(EPOCH8.netted)
     // the statement and its scale show exactly these figures: owed, moved, cancelled in loops, netted between pairs
     const { container } = render(<Landing />)
-    const statement = container.querySelector('.statement')!
-    expect(statement).toHaveTextContent('Owed between agents, 24 vouchers41.35credit')
-    expect(statement).toHaveTextContent('Moved on chain, 14 transfers7.75mock USDT')
-    expect(within(statement as HTMLElement).getByRole('img', { name: 'Of 41.35 owed: 7.75 moved, 21.80 cancelled in solver loops, 11.80 netted between pairs.' })).toBeInTheDocument()
-    expect(statement).toHaveTextContent('21.80 cancelled in loops by the solver')
-    expect(statement).toHaveTextContent('11.80 netted between pairs')
-    expect(statement).toHaveTextContent('Recomputed in your browser from the 24 vouchers: matches the read API. Net positions sum to zero. Mock USDT on NEAR testnet.')
+    const numbers = container.querySelector('#numbers') as HTMLElement
+    const fall = within(numbers).getByRole('img', { name: 'Of 41.35 owed: 7.75 moved, 21.80 cancelled in solver loops, 11.80 netted between pairs.' })
+    expect([...fall.querySelectorAll('.fall-col')].map((c) => c.textContent)).toEqual([
+      '41.35Owed', '−21.80Loops', '−11.80Pairs', '7.75Moved',
+    ])
+    expect(numbers.querySelector('.hero-fig')).toHaveTextContent('7.75USDT')
+    expect(numbers).toHaveTextContent('The solver cancelled 21.80 in 6 loops, and pairs netted 11.80 more.')
+    expect(numbers).toHaveTextContent('14 transfers settled the epoch: 18.7% of what was owed.')
   })
 
   // jsdom applies no media query, so the reduced-motion block of landing.css is read as text: it must stop every loop and the smooth scroll.
@@ -102,18 +103,18 @@ describe('FE-044 landing page facts', () => {
   })
 })
 
-describe('v4 landing page', () => {
-  it('has one h1 and the sections of the draft, each with its heading', () => {
+describe('v5 landing page', () => {
+  it('has one h1 and its sections in order, each with its heading', () => {
     const { container } = render(<Landing />)
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     expect(screen.getByRole('heading', { level: 1, name: 'Many agent payments. One net settlement.' })).toBeInTheDocument()
-    for (const name of ['Epoch 8 in two numbers', 'Agents pay with vouchers.', 'Loops cancel.', 'Every agent nets to one amount.', 'Debtors pay in once.', 'Creditors are paid.',
-      'Anything with value can pay.', 'Check it yourself.', 'What x207 is not.', 'Start from one line.', 'Step inside the live circle.']) {
+    for (const name of ['Agents pay one by one. x207 settles them together.', '41.35 owed. 7.75 moved.', 'Agents pay with vouchers.', 'Loops cancel.', 'One amount per agent.',
+      'Debtors pay in once.', 'Creditors are paid.', 'Anything with value can pay.', 'Settlement you can check.', 'Start from one line.', 'What x207 is not.', 'Step inside the live circle.']) {
       expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
     }
-    // the draft's order: hero, statement, story, floor, proof, limits, build, footer, laptop
+    // the order: a full-screen hero, the window under it, two-column intro, the numbers, the pinned story, barter, the card grid, build, FAQ, the closing call and the footer
     const order = [...container.querySelectorAll('main > *')].map((e) => e.id || e.className.split(' ')[0])
-    expect(order).toEqual(['hero', 'statement', 'story', 'barter', 'proof', 'limits', 'build', '', 'next'])
+    expect(order).toEqual(['hero', 'showcase', 'intro', 'numbers', 'how', 'barter', 'section', 'build', 'faq', 'next', 'foot'])
     expect(document.title).toContain('x207')
     // the first stop of the keyboard is the skip link, and it leads to the main content
     expect(screen.getByRole('link', { name: 'Skip to the content' })).toHaveAttribute('href', '#main')
@@ -123,51 +124,77 @@ describe('v4 landing page', () => {
   it('every dashboard link opens the live circle; Replay opens the clearing stats of epoch 8 itself', () => {
     render(<Landing />)
     const links = screen.getAllByRole('link', { name: /^Open (the )?dashboard$/ })
-    expect(links.map((a) => a.textContent)).toEqual(['Open dashboard', 'Open the dashboard ↗', 'Open the dashboard ↗'])
+    expect(links.map((a) => a.textContent)).toEqual(['Open dashboard', 'Open the dashboard', 'Open the dashboard'])
     for (const link of links) expect(link).toHaveAttribute('href', '/app?circle=v018')
     expect(LIVE.dashboard).toBe('/app?circle=v018')
-    expect(screen.getByRole('link', { name: 'Replay' })).toHaveAttribute('href', '/stats?circle=v013&epoch=8')
+    for (const link of screen.getAllByRole('link', { name: /^Replay( epoch 8)?$/ })) expect(link).toHaveAttribute('href', '/stats?circle=v013&epoch=8')
+  })
+
+  it('the bar menus open on click, close on Escape and give focus back to their button', async () => {
+    const user = userEvent.setup()
+    render(<Landing />)
+    const bar = screen.getByRole('navigation', { name: 'Site' })
+    const protocol = within(bar).getByRole('button', { name: 'Protocol' })
+    expect(protocol).toHaveAttribute('aria-expanded', 'false')
+    await user.click(protocol)
+    expect(protocol).toHaveAttribute('aria-expanded', 'true')
+    const menu = document.getElementById(protocol.getAttribute('aria-controls')!)!
+    expect(within(menu).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['#how', '#barter', '#faq'])
+    await user.keyboard('{Escape}')
+    expect(protocol).toHaveAttribute('aria-expanded', 'false')
+    expect(protocol).toHaveFocus()
+    const more = screen.getByRole('button', { name: 'More dashboard links' })
+    await user.click(more)
+    expect(within(document.getElementById(more.getAttribute('aria-controls')!)!).getByRole('link', { name: /Epoch 8 replay/ })).toHaveAttribute('href', LIVE.epoch8Stats)
   })
 
   it('says plainly that it is testnet with mock USDT and what it is not', () => {
     const { container } = render(<Landing />)
-    expect(screen.getByText(/x402 · NEAR testnet · epoch 8 replayed from chain data/)).toBeInTheDocument()
-    const limits = screen.getByRole('heading', { level: 2, name: 'What x207 is not.' }).closest('section')!
-    expect(within(limits).getByText('NEAR testnet with mock USDT. No mainnet transaction has been sent.')).toBeInTheDocument()
-    expect(within(limits).getByText(/The contracts are tested, not externally audited\./)).toBeInTheDocument()
-    expect(within(limits).getByText(/Epoch 8 burnt 109\.7 Tgas where 24 plain transfers burn 54\.9\./)).toBeInTheDocument()
-    expect(within(limits).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+    expect(screen.getByRole('link', { name: /Contract 0\.0\.18 is live on NEAR testnet\. See it on NearBlocks/ })).toHaveAttribute('href', LIVE.contractUrl)
+    const faq = screen.getByRole('heading', { level: 2, name: 'What x207 is not.' }).closest('section')!
+    expect(within(faq).getByText('NEAR testnet with mock USDT. No mainnet transaction has been sent.')).toBeInTheDocument()
+    expect(within(faq).getByText(/The contracts are tested, not externally audited\./)).toBeInTheDocument()
+    expect(within(faq).getByText(/Epoch 8 burnt 109\.7 Tgas where 24 plain transfers burn 54\.9\./)).toBeInTheDocument()
+    expect(within(faq).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
       'Not credit without cash', 'Not a gas saving on NEAR', 'Not for a star', 'Not on mainnet', 'Not audited',
     ])
-    expect(within(limits).getByRole('link', { name: 'security.md' })).toHaveAttribute('href', LIVE.security)
+    expect(within(faq).getByRole('link', { name: 'security.md' })).toHaveAttribute('href', LIVE.security)
     expect(container.querySelector('footer')).toHaveTextContent('x207 · hackathon prototype · NEAR testnet, mock USDT')
   })
 
-  it('the cards, the story and the proof show the numbers of epoch 8, and the recomputation matches on every row', () => {
+  it('the window, the faces, the story and the proof show the numbers of epoch 8, and the recomputation matches on every row', () => {
     const { container } = render(<Landing />)
-    const kpis = [...container.querySelectorAll('.kpi .v')].map((v) => v.textContent)
-    expect(kpis).toEqual(['15agents', '41.35credit owed', '52.7%', '7.75mock USDT'])
+    expect([...container.querySelectorAll('.win-stats dd.mono')].map((v) => v.textContent)).toEqual(['41.35', '52.7%', '7.75'])
+    expect(container.querySelectorAll('.win-side li')).toHaveLength(EPOCH8.members)
+    const deck = screen.getByRole('list', { name: 'The 15 agents of epoch 8 and their result codes' })
+    expect(within(deck).getAllByRole('listitem')).toHaveLength(EPOCH8.members)
+    expect(deck.querySelectorAll('li')[DEFAULTER]).toHaveTextContent('409 Covered from stake')
+    expect(deck.querySelectorAll('li')[DEFAULTER]).toHaveTextContent('−0.55')
+    expect(deck.querySelectorAll('li')[1]).toHaveTextContent('+0.55')
     expect(container.querySelector('.story')).toHaveTextContent('24 vouchers add up to 41.35 owed')
-    expect(container.querySelector('.story')).toHaveTextContent('0.55 comes out of the stake it locked when it joined')
-    const proof = screen.getByRole('heading', { level: 2, name: 'Check it yourself.' }).closest('section')!
+    expect(container.querySelector('.story')).toHaveTextContent('0.55 comes out of its stake')
+    const proof = container.querySelector('#proof') as HTMLElement
     const rows = within(proof).getAllByRole('listitem')
     expect(rows).toHaveLength(6)
     for (const row of rows) expect(row).toHaveTextContent(': matches the API')
     expect(proof).toHaveTextContent('x207-v013.testnet')
-    expect(proof).toHaveTextContent('8, committed 4 Nov 2026 08:35 UTC, payment deadline 08:50 UTC')
-    expect(proof).toHaveTextContent('curl https://x207.boxd.sh/x207/circles/agents-main/epochs/8')
   })
 
-  it('the barter floor shows the eight kinds and the three counts', () => {
+  it('the barter section lists every class of the catalog, the kinds of the chosen one with their status, and the three counts', async () => {
+    const user = userEvent.setup()
     const { container } = render(<Landing />)
-    const floor = container.querySelector('#barter')!
-    expect([...floor.querySelectorAll('.kinds li')].map((li) => li.textContent)).toEqual([
-      'API access', 'Datasets', 'GPU hours', 'Content licenses', 'One-time codes', 'Rent and access grants', 'Service orders', 'NEAR accounts',
-    ])
-    expect(floor.querySelectorAll('.kinds li.on')).toHaveLength(1)
+    const floor = container.querySelector('#barter') as HTMLElement
+    const chips = within(within(floor).getByRole('group', { name: 'Classes of the barter catalog' })).getAllByRole('button')
+    expect(chips.map((b) => b.getAttribute('title'))).toEqual(KIND_CLASSES.map((c) => c.name))
+    expect(chips.map((b) => b.textContent)).toEqual(['On-chain assets', 'Revocable access', 'Secrets', 'Compute & services', 'Digital goods', 'Refused'])
+    expect(chips.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false', 'false', 'false', 'false'])
+    expect(floor.querySelectorAll('.kinds li')).toHaveLength(KIND_CLASSES[0].kinds.length)
+    expect(floor.querySelector('.kinds li')).toHaveTextContent('nft:nep171NEAR: Ran on NEAR testnet')
+    await user.click(chips[5])
+    expect(chips[5]).toHaveAttribute('aria-pressed', 'true')
+    expect(floor.querySelectorAll('.kinds li[data-s="refused"]')).toHaveLength(9)
     expect([...floor.querySelectorAll('.evidence b')].map((b) => b.textContent)).toEqual(['85', '13', '13'])
-    expect(within(floor as HTMLElement).getByRole('link', { name: 'barter-evidence.md' })).toHaveAttribute('href', LIVE.barterEvidence)
-    expect(within(floor as HTMLElement).getByRole('img', { name: /Three agents trade in a loop/ })).toBeInTheDocument()
+    expect(within(floor).getByRole('link', { name: 'Explore every kind' })).toHaveAttribute('href', LIVE.barterEvidence)
   })
 
   it('the build tabs are a real tablist: one selected tab, arrows move between them, the panel follows and the copy button leaves out comments', async () => {
@@ -197,17 +224,11 @@ describe('v4 landing page', () => {
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('without a canvas or WebGL (jsdom) the page keeps its static markup: canvases are decorative and hidden, the laptop section is only its copy and its link', () => {
+  it('without a 2D canvas (jsdom) the page keeps its static markup: the three canvases are decorative and hidden, and the story still names every step', () => {
     const { container } = render(<Landing />)
     const canvases = [...container.querySelectorAll('canvas')]
-    expect(canvases).toHaveLength(2) // the hero ring and the story scene; the laptop's WebGL canvas is not rendered without WebGL
+    expect(canvases).toHaveLength(3) // the hero's field of agents, the window's ring, the story scene
     for (const c of canvases) expect(c).toHaveAttribute('aria-hidden', 'true')
-    const next = container.querySelector('#next')!
-    expect(next).toHaveClass('is-static')
-    expect(next.querySelector('canvas, iframe')).toBeNull()
-    expect(within(next as HTMLElement).getByRole('link', { name: 'Open the dashboard' })).toHaveAttribute('href', LIVE.dashboard)
-    expect(document.documentElement).not.toHaveAttribute('data-next')
-    // the story still names every step, and its chapter buttons are plain buttons
     expect(within(container.querySelector('.chapters') as HTMLElement).getAllByRole('button').map((b) => b.textContent)).toEqual(['Open', 'Clearing', 'Commit', 'Payment', 'Finalized'])
   })
 

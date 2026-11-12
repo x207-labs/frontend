@@ -19,6 +19,7 @@
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/geist-mono": "5.3.0",
     "@hot-labs/near-connect": "0.12.0",
+    "@noble/hashes": "1.8.0",
     "@peerfolio/privy-near-connect": "0.0.8",
     "@privy-io/js-sdk-core": "0.72.1",
     "@radix-ui/react-collapsible": "1.2.1",
@@ -27,11 +28,11 @@
     "@tanstack/react-query": "5.105.1",
     "@x207/core": "0.0.2",
     "animejs": "4.5.0",
+    "gsap": "3.15.1",
     "motion": "14.6.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "react-router-dom": "7.18.5",
-    "three": "0.186.1"
+    "react-router-dom": "7.18.5"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
@@ -42,7 +43,6 @@
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "@types/three": "0.186.0",
     "@vitejs/plugin-react": "6.1.2",
     "axe-core": "4.14.0",
     "buffer": "6.0.3",

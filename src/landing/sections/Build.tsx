@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { gsap } from 'gsap'
 import { LIVE } from '../facts'
-import { X207 } from './engine/x207.js'
+import { X207 } from '../v4/engine/x207.js'
+import { Horizon, Mac } from './Mac'
 
 type Line = { c?: true; text: string }
 type Tab = { key: string; label: string; lines: Line[] }
@@ -41,7 +43,8 @@ const TABS: Tab[] = [
 
 const copyText = (tab: Tab) => tab.lines.filter((l) => !l.c && l.text && !l.text.startsWith('›')).map((l) => l.text).join('\n')
 
-/** Start from one line: three ways in, as a proper tablist (arrow keys, Home and End move between the tabs) over one terminal panel with a copy button. */
+/** Start from one line, full screen: the claim and three ways in (a proper tablist: arrow keys, Home and End move between the tabs) over a terminal that rises out of
+ * a horizon of agents, with a copy button. The lines of the chosen way in are typed out. */
 export function Build() {
   const [active, setActive] = useState(0)
   const [label, setLabel] = useState('Copy')
@@ -72,14 +75,46 @@ export function Build() {
   }
   const tab = TABS[active]
 
+  const sec = useRef<HTMLElement>(null)
+  const stage = useRef<HTMLDivElement>(null)
+  const term = useRef<HTMLDivElement>(null)
+  // on a wide screen the page pins the section: the terminal rises out of the horizon and the arc widens as you scroll
+  useEffect(() => {
+    const s = sec.current
+    const st = stage.current
+    const t = term.current
+    if (!s || !st || !t) return
+    const mm = gsap.matchMedia()
+    mm.add('(min-width: 961px) and (prefers-reduced-motion: no-preference)', () => {
+      s.dataset.fx = ''
+      gsap
+        .timeline({ scrollTrigger: { trigger: st, start: 'top top', end: '+=90%', pin: true, scrub: 0.8 } })
+        .fromTo(t, { yPercent: 45, scale: 0.86, opacity: 0.4 }, { yPercent: 0, scale: 1, opacity: 1, ease: 'power3.out', duration: 1 })
+        .fromTo(st.querySelector('.build-arc'), { scale: 0.82, opacity: 0.5 }, { scale: 1, opacity: 1, ease: 'none', duration: 1 }, 0)
+        .to({}, { duration: 0.3 })
+      return () => {
+        delete s.dataset.fx
+      }
+    })
+    return () => mm.revert()
+  }, [])
+  // the lines of the chosen way in are typed out, one after the other
+  useEffect(() => {
+    const lines = term.current?.querySelectorAll('.tline')
+    if (!lines?.length || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const tw = gsap.fromTo(lines, { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.45, ease: 'power2.out', stagger: 0.14 })
+    return () => {
+      tw.kill()
+    }
+  }, [active])
+
   return (
-    <section className="section" id="build" aria-labelledby="build-h">
-      <div className="col build">
-        <div className="sechead">
-          <h2 id="build-h">Start from one line.</h2>
-          <p>Give your agent the read-only MCP server, call the read API, or run a whole epoch on your laptop in a local near-sandbox.</p>
-        </div>
-        <div>
+    <section className="build-sec" id="build" ref={sec} aria-labelledby="build-h">
+      <div className="build-stage" ref={stage}>
+        <Horizon className="build-arc" />
+        <div className="build-copy">
+          <h2 id="build-h" className="reveal-words">Start from one line.</h2>
+          <p className="sub">Give your agent the read-only MCP server, call the read API, or run a whole epoch on your laptop in a local near-sandbox.</p>
           <div className="tabs" role="tablist" aria-label="Ways to start" onKeyDown={onKey}>
             {TABS.map((t, i) => (
               <button
@@ -99,17 +134,20 @@ export function Build() {
               </button>
             ))}
           </div>
-          <div className="term" id="build-panel" role="tabpanel" aria-labelledby={`tab-${tab.key}`}>
-            <button className="copy" type="button" onClick={copy}>{label}</button>
-            <pre tabIndex={0}>
-              {tab.lines.map((l, i) => (
-                <span key={i}>
-                  {i ? '\n' : ''}
-                  {l.c ? <span className="c">{l.text}</span> : l.text}
-                </span>
-              ))}
-            </pre>
-          </div>
+        </div>
+        <div className="build-term" ref={term}>
+          <Mac title="zsh — x207" action={<button className="pill dark sm" type="button" onClick={copy}>{label}</button>}>
+            <div className="term-body" id="build-panel" role="tabpanel" aria-labelledby={`tab-${tab.key}`}>
+              <pre tabIndex={0} className="mono">
+                {tab.lines.map((l, i) => (
+                  <span key={`${tab.key}${i}`} className="tline">
+                    {l.c ? <span className="dim">{l.text}</span> : l.text}
+                    {'\n'}
+                  </span>
+                ))}
+              </pre>
+            </div>
+          </Mac>
         </div>
       </div>
     </section>
