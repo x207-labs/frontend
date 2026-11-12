@@ -2,6 +2,10 @@ import { useAllMetrics, useReport } from '../api/queries'
 import type { ClearingReport, EpochMetrics, EpochPhase, ReportMember } from '../api/types'
 import { NoEpoch } from '../components/NoEpoch'
 import { PrunePanel } from '../components/PrunePanel'
+import { Mascot, type Mood } from '../components/Mascot'
+
+/** The face of each member follows its result: happy when settled or claimable, surprised while it owes, sad when its stake covered it. */
+const MOOD: Record<200 | 202 | 402 | 409, Mood> = { 200: 'smile', 202: 'happy', 402: 'surprised', 409: 'sad' }
 import { QueryState } from '../components/QueryState'
 import { CONTRACT_ID } from '../config'
 import { StatusBadge, type StatusCode } from '../ds/components'
@@ -176,7 +180,12 @@ function Members({ members }: { members: ReportMember[] }) {
           <tbody>
             {members.map((m) => (
               <tr key={m.account}>
-                <th scope="row" data-label="Member">{shortAccount(m.account)}</th>
+                <th scope="row" data-label="Member">
+                  <span className="member-cell">
+                    <Mascot id={m.account} size={30} mood={MOOD[m.status]} />
+                    {shortAccount(m.account)}
+                  </span>
+                </th>
                 <td className="num" data-label="Net position (credit)">{formatCredit2(m.net)}</td>
                 <td className="num" data-label="Cleared (credit)">{m.cleared === undefined ? '' : formatCredit2(m.cleared)}</td>
                 <td data-label="Result">
@@ -217,7 +226,11 @@ export function Report207() {
       >
         {(data) => <Report report={data} metrics={metrics?.data} />}
       </QueryState>
-      <PrunePanel epoch={epoch} />
+      {/* v6.3 (KISS): pruning is upkeep of the contract, not something a member reads; it folds away */}
+      <details className="more ep-more">
+        <summary>Upkeep</summary>
+        <PrunePanel epoch={epoch} />
+      </details>
     </>
   )
 }

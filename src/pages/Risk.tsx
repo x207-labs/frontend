@@ -9,6 +9,7 @@ import { CIRCLE } from '../config'
 import { Kpi, StatusBadge } from '../ds/components'
 import { useEpochSelection, useSelectedEpoch } from '../epoch'
 import { formatCredit2, formatNumber, shortAccount } from '../lib/format'
+import { Mascot } from '../components/Mascot'
 import { MONEY } from '../lib/network'
 
 // Loss order (ADR-18): debtor stake, then the reserve fund, then haircut to direct creditors. The API carries stake and haircut;
@@ -252,7 +253,10 @@ export function Risk() {
               renderRow={(m) => (
                 <tr key={m.account}>
                   <td>
-                    <span title={m.account}>{shortAccount(m.account)}</span>
+                    <span className="member-cell" title={m.account}>
+                      <Mascot id={m.account} size={30} mood={m.status === 'suspended' ? 'sad' : undefined} />
+                      {shortAccount(m.account)}
+                    </span>
                     <EvmBadge account={m.account} />
                   </td>
                   <td>
@@ -270,7 +274,11 @@ export function Risk() {
           )}
         </QueryState>
       </section>
-      <LimitHistory />
+      {/* v6.3 (KISS): the block by block history of the limits is for an audit; it folds away */}
+      <details className="more ep-more">
+        <summary>Limit history</summary>
+        <LimitHistory />
+      </details>
       <Defaults />
     </div>
   )

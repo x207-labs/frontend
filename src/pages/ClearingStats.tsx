@@ -194,13 +194,17 @@ export function ClearingStats() {
       <Statement m={current} selected={selected} pruned={pruned.has(current.epoch)} />
       <EpochReplay epoch={current.epoch} final={selected.phase === 'finalized'} />
       <Figures m={current} />
-      <section className="ep-section" aria-labelledby="ep-density">
-        <h2 id="ep-density" className="ep-h2">Clearing result against graph density</h2>
-        <div className="scatter-row">
-          <Scatter title="Cleared ratio" xLabel="Graph density" yLabel="Cleared ratio" yMax={1} formatY={(v) => formatNumber(v)} points={ratioPoints} />
-          <Scatter title="Transfer savings" xLabel="Graph density" yLabel="Vouchers per transfer" yMax={savingMax} formatY={(v) => formatNumber(v, 0)} points={savingPoints} />
-        </div>
-      </section>
+      {/* v6.3 (KISS): the comparison with other epochs is for the curious; it folds away */}
+      <details className="more ep-more">
+        <summary>Compare with other epochs</summary>
+        <section className="ep-section" aria-labelledby="ep-density">
+          <h2 id="ep-density" className="ep-h2">Clearing result against graph density</h2>
+          <div className="scatter-row">
+            <Scatter title="Cleared ratio" xLabel="Graph density" yLabel="Cleared ratio" yMax={1} formatY={(v) => formatNumber(v)} points={ratioPoints} />
+            <Scatter title="Transfer savings" xLabel="Graph density" yLabel="Vouchers per transfer" yMax={savingMax} formatY={(v) => formatNumber(v, 0)} points={savingPoints} />
+          </div>
+        </section>
+      </details>
       <details className="more ep-more ep-epochs">
         <summary>Per epoch</summary>
         <div className="table-wrap ep-table">

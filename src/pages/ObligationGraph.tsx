@@ -2,13 +2,13 @@ import { useMemo, useState } from 'react'
 import { ApiError } from '../api/client'
 import { useObligations } from '../api/queries'
 import type { ObligationEdge, Obligations } from '../api/types'
-import { agentGlyph } from '../components/glyphs'
 import { NoEpoch } from '../components/NoEpoch'
 import { QueryState } from '../components/QueryState'
 import { CIRCLE } from '../config'
 import { Kpi } from '../ds/components'
 import { useEpochSelection, useSelectedEpoch } from '../epoch'
 import { decomposeCycles } from '../lib/cycles'
+import { Mascot } from '../components/Mascot'
 import { EDGES_PRUNED_NOTE, formatCredit, formatCredit2, formatNumber, formatPercent, shortAccount } from '../lib/format'
 
 // FE-070: one large map of the debts instead of three small ones. Each member is a node; each debt is a curved arrow from the debtor to the creditor whose
@@ -50,7 +50,6 @@ function curve(a: Point, b: Point): { d: string; mid: Point } {
   return { d: `M${s.x} ${s.y} Q${c.x} ${c.y} ${e.x} ${e.y}`, mid: { x: 0.25 * s.x + 0.5 * c.x + 0.25 * e.x, y: 0.25 * s.y + 0.5 * c.y + 0.25 * e.y } }
 }
 
-const initials = (account: string) => shortAccount(account).replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase()
 
 function FlowGraph({ title, edges, nodes, mode, focus }: { title: string; edges: ObligationEdge[]; nodes: string[]; mode: Mode; focus: Set<string> | null }) {
   const at = useMemo(() => positions(nodes), [nodes])
@@ -110,14 +109,10 @@ function FlowGraph({ title, edges, nodes, mode, focus }: { title: string; edges:
                 onMouseLeave={() => setHot(null)}
               >
                 <circle className="node-halo" cx={p.x} cy={p.y} r={NODE_R + 8} />
-                <circle className="node" cx={p.x} cy={p.y} r={NODE_R} />
-                {agentGlyph(n) ? (
-                  <path className="node-glyph" d={agentGlyph(n)!} transform={`translate(${p.x - 11} ${p.y - 11}) scale(${22 / 24})`} aria-hidden="true" />
-                ) : (
-                  <text className="node-initials" x={p.x} y={p.y + 5} textAnchor="middle" aria-hidden="true">
-                    {initials(n)}
-                  </text>
-                )}
+                {/* v6: each member is its mascot, the same face as in the sidebar */}
+                <g transform={`translate(${p.x - NODE_R} ${p.y - NODE_R})`}>
+                  <Mascot id={n} size={NODE_R * 2} />
+                </g>
                 <text className="tick" x={p.x} y={p.y + NODE_R + 20} textAnchor="middle">
                   {shortAccount(n)}
                 </text>
