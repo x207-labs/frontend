@@ -2,7 +2,9 @@
 // The negotiation panel (FE-020) is in components/Negotiation.tsx and opens from the listing row.
 import { useQueryClient } from '@tanstack/react-query'
 import { Mascot } from '../components/Mascot'
-import { useState } from 'react'
+import { MascotCrowd } from '../components/MascotCrowd'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import { api } from '../api/client'
 import { useListing, useListings, useMarketStats } from '../api/queries'
@@ -324,6 +326,46 @@ function timeLeft(iso: string): string {
   const h = Math.floor(ms / 3_600_000)
   return h >= 48 ? `${Math.floor(h / 24)} days left` : h >= 1 ? `${h} h left` : `${Math.max(1, Math.floor(ms / 60_000))} min left`
 }
+/** v6.4: the cover of the Marketplace, as the balance card of Home: one figure (the open listings), one line, one action, and the mascots of the circle. */
+function MarketCover({ onPost }: { onPost: () => void }) {
+  const open = useMarketStats().data?.listings.open
+  return (
+    <section className="home-hero market-cover" aria-label="Marketplace at a glance">
+      <div className="hero-main">
+        <p className="hero-label">Open listings</p>
+        <p className="hero-figure">{open ?? '…'}</p>
+        <p className="home-statement">Swap anything with value. Only the net is settled.</p>
+        <p className="home-cta">
+          <button type="button" className="tl-btn" onClick={onPost}>
+            Post a listing
+          </button>
+        </p>
+      </div>
+      <MascotCrowd />
+    </section>
+  )
+}
+
+function ListingSheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  const done = useRef(onClose)
+  done.current = onClose
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && done.current()
+    document.addEventListener('keydown', key)
+    return () => document.removeEventListener('keydown', key)
+  }, [])
+  // into <main>, not into the page column: fixed to the whole window (no ancestor box traps it), and still under `main .mk`, so the panel keeps its look
+  const host = document.getElementById('content') ?? document.body
+  return createPortal(
+    <div className="sheet-backdrop listing-sheet" data-center="" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="sheet market mk" role="dialog" aria-modal="true" aria-label="Listing">
+        {children}
+      </div>
+    </div>,
+    host,
+  )
+}
+
 function ListingRow({ listing, selected, onSelect }: { listing: ListingView; selected: boolean; onSelect: () => void }) {
   return (
     <tr aria-selected={selected} className="listing-row">
@@ -479,6 +521,7 @@ export function Marketplace() {
 
   return (
     <div className="market mk" data-mk="marketplace" data-view={view}>
+      <MarketCover onPost={() => setView('post')} />
       {/* v6.4 (KISS): the listings come first; the figures of the market fold away */}
       <details className="more market-top">
         <summary>Market stats</summary>
@@ -521,7 +564,12 @@ export function Marketplace() {
           />
         )}
       </QueryState>
-      {shown && <Negotiation listing={shown} voucherKey={voucherKey} onVoucherKey={setVoucherKey} onClose={() => setSelected(null)} />}
+      {/* v6.4: a listing opens in a pop-up in the middle of the screen; Escape or a click outside closes it */}
+      {shown && (
+        <ListingSheet onClose={() => setSelected(null)}>
+          <Negotiation listing={shown} voucherKey={voucherKey} onVoucherKey={setVoucherKey} onClose={() => setSelected(null)} />
+        </ListingSheet>
+      )}
       </section>
       <section className="market-pane" data-pane="mine" aria-label="Your intents">
         <OwnIntents />

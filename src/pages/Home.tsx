@@ -5,6 +5,7 @@ import { api } from '../api/client'
 import { useMember, useMembers, useParams } from '../api/queries'
 import { NavIcon } from '../components/icons'
 import { Mascot } from '../components/Mascot'
+import { MascotCrowd } from '../components/MascotCrowd'
 import { EmptyHint } from '../components/EmptyHint'
 import { LoopMotif } from '../components/LoopMotif'
 import { ErrorNotice, Loading } from '../components/QueryState'
@@ -187,34 +188,6 @@ function split(v: { owed: string; cancelled: string | null; moved: string | null
   }
 }
 
-/** The cover of the balance card while there is no split to show: the agents of the circle as a small crowd of mascots, the same ones as the sidebar. */
-const SPOTS = [
-  { x: 50, y: 52, s: 96, mood: 'happy' },
-  { x: 22, y: 38, s: 64, mood: 'wink' },
-  { x: 78, y: 34, s: 68, mood: 'smile' },
-  { x: 12, y: 74, s: 52, mood: 'smirk' },
-  { x: 33, y: 80, s: 58, mood: 'smile' },
-  { x: 68, y: 80, s: 60, mood: 'surprised' },
-  { x: 89, y: 70, s: 50, mood: 'happy' },
-  { x: 38, y: 16, s: 40, mood: 'smile' },
-  { x: 64, y: 12, s: 36, mood: 'wink' },
-] as const
-const FILL = ['x207', 'solver.near', 'gpu.near', 'translator.near', 'summarizer.near', 'scraper.near', 'image.near', 'cleaner.near', 'oracle.near']
-
-function HeroCover() {
-  const members = useMembers()
-  const ids = [...(members.data?.items.map((m) => m.account) ?? []), ...FILL].slice(0, SPOTS.length)
-  return (
-    <div className="hero-cover" aria-hidden="true">
-      {SPOTS.map((p, i) => (
-        <span key={ids[i]} style={{ left: `${p.x}%`, top: `${p.y}%`, ['--s' as string]: `${p.s}px`, ['--d' as string]: `${i * 0.35}s` }}>
-          <Mascot id={ids[i]} size={p.s} mood={p.mood} />
-        </span>
-      ))}
-    </div>
-  )
-}
-
 /** v6.3 (2026-11-12), after the balance card of an iOS finance app: the epoch as a chip, what was owed as one large figure, one sentence, the actions as
  * pills with icons, and the split of that figure as one bar with a legend. */
 function HomeHero({ scan, cta }: { scan: VoucherScan; cta: ReactNode }) {
@@ -239,7 +212,7 @@ function HomeHero({ scan, cta }: { scan: VoucherScan; cta: ReactNode }) {
         <HomeStatement />
         {cta}
       </div>
-      {!parts && scan.state !== 'loading' && <HeroCover />}
+      {!parts && scan.state !== 'loading' && <MascotCrowd />}
       {parts && (
         <div className="hero-split">
           <p className="hero-label">Where it went</p>
@@ -360,7 +333,7 @@ function Overview({ scan, signedIn, member, due, personal }: { scan: VoucherScan
 
 function SignedOut() {
   const { search } = useLocation()
-  const { busy, error, login } = useWallet()
+  const { error } = useWallet()
   const scan = useVoucherScan()
   return (
     <div className="home">
@@ -374,9 +347,9 @@ function SignedOut() {
               {error}
             </p>
           )}
+          {/* v6.4: the sign-in lives in the top bar and in Start here; one more here only made three of the same button */}
           <p className="cta-row">
-            <Button type="button" onClick={login} disabled={busy}>{busy ? 'Opening wallet…' : 'Sign in with wallet'}</Button>
-            <LinkButton to={{ pathname: '/help', search }}>How it works</LinkButton>
+            <LinkButton icon="/help" to={{ pathname: '/help', search }}>How it works</LinkButton>
           </p>
         </div>
         <LoopMotif />

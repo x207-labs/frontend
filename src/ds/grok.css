@@ -523,3 +523,26 @@ main .mk details.market-top[open] > summary { margin-bottom: 14px; }
 .home-welcome-copy h2 { font: 700 26px/1.25 var(--ds-font-display); letter-spacing: -0.02em; }
 .home-welcome-copy .cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
 .home > * + * { margin-top: 0; }
+
+/* ---------- v6.4: the Marketplace cover, the listing pop-up, and the sidebar that never cuts its search ---------- */
+main:has(.market-cover) .page-intro { display: none; }
+.market-cover { margin-bottom: 16px; }
+.market-cover .tl-btn { min-height: 42px; padding: 0 18px; border: 0; font-size: 15px; }
+/* a listing opens in a pop-up: no blue on the card that was opened */
+:root main .mk table[aria-label='Listings'] tbody tr[aria-selected='true'] { box-shadow: none; }
+:root main .mk table[aria-label='Listings'] tbody tr[aria-selected='true'] > * { background: none; box-shadow: none; }
+:root main .mk table[aria-label='Listings'] tbody tr[aria-selected='true'] td:is(:nth-child(2), :nth-child(3)) { background: var(--ds-paper); }
+.listing-sheet .sheet { width: min(860px, 100%); max-height: min(86vh, 900px); }
+.listing-sheet .sheet > * { margin-top: 0; }
+/* the sidebar: the logo and the search stay on top, only the list scrolls */
+@media (min-width: 840px) {
+  .rail { overflow: hidden; }
+  .rail nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+  .rail nav::-webkit-scrollbar { display: none; }
+}
+:root main .mk .market-cover .tl-btn { background: var(--ds-btn); color: var(--ds-btn-ink); }
+/* the listing pop-up: centred on the window, the page blurred behind it, the negotiation panel is the card */
+.listing-sheet { position: fixed; inset: 0; z-index: 60; }
+.listing-sheet .sheet { padding: 0; overflow-y: auto; background: none; box-shadow: none; }
+.listing-sheet .sheet > * { margin: 0; border-radius: 24px; box-shadow: 0 24px 80px rgb(0 0 0 / 0.4); }
+.sheet-backdrop.listing-sheet[data-center] .sheet { padding: 0; border: 0; background: none; box-shadow: none; }
