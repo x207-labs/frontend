@@ -1,31 +1,32 @@
-/* v4 design system (2026-11-11): the app wears the v4 landing's language (src/ds/tokens.css): a calm night desk in navy, one blue for action,
+/* v5 (2026-11-12): the app wears Grok Bot's dark desk: neutral greys, Apple's system type, light pills for the main action, colour only for
+   the x207 result codes. The values below follow src/ds/tokens.css. Before that, v4 design system (2026-11-11): the app wears the v4 landing's language (src/ds/tokens.css): a calm night desk in navy, one blue for action,
    lime for focus, status colours for the x207 result codes, "Agent Console" type. The names below stay (--paper, --sheet, --line, --ink ...)
    so every page, toast, onboarding step and the wallet popup follow without edits; their values come from the --ds-* tokens, written as hex
    here because src/test/contrast.test.ts reads them as text. Surfaces stay solid (FE-073): the border carries the edge. */
 :root {
   color-scheme: dark;
-  --paper: #060a14;      /* --ds-paper */
-  --sheet: #0d1424;      /* --ds-surface */
-  --glass: #0e1628;
-  --glass-strong: #0b1222;
-  --tile: #16213a;       /* --ds-surface-3 */
-  --line: #232a3a;       /* --ds-rule on --ds-paper */
-  --ink: #eef3fb;        /* --ds-ink */
-  --ink-soft: #a9b6cc;   /* --ds-ink-2, 9.6:1 on --paper */
+  --paper: #161616;      /* --ds-paper */
+  --sheet: #212121;      /* --ds-surface */
+  --glass: #1d1d1d;
+  --glass-strong: #141414;
+  --tile: #2a2a2a;       /* --ds-surface-3 */
+  --line: #2c2c2c;       /* --ds-rule on --ds-paper */
+  --ink: #f2f2f2;        /* --ds-ink */
+  --ink-soft: #a3a3a3;   /* --ds-ink-2, 9.6:1 on --paper */
   /* blue: --accent for rings and glows; --accent-ink is the readable blue for text on dark; --accent-fill carries white text (5.4:1). */
-  --accent: #3f7cff;
-  --accent-soft: #14244a;
-  --accent-ink: #a9cbff; /* --ds-accent-ink */
-  --accent-fill: #2a62e0;
+  --accent: #5b9bff;
+  --accent-soft: #2c2c2c;
+  --accent-ink: #9ec1ff; /* --ds-accent-ink */
+  --accent-fill: #3a3a3a;
   --tabbar-h: 3.5rem;
   --s200: #5be3a0;       /* --ds-settled */
   --s402: #ffc25c;       /* --ds-due */
   --s202: #8fd3ff;       /* --ds-claim */
   --s409: #ff8a8a;       /* --ds-default */
-  --focus: #c8f53c;      /* --ds-focus (lime) */
-  --lime: #c8f53c;
-  --radius: 14px;        /* --ds-r-panel */
-  --radius-card: 12px;   /* --ds-r-card */
+  --focus: #9ec1ff;      /* --ds-focus (lime) */
+  --lime: #9ec1ff;
+  --radius: 16px;        /* --ds-r-panel */
+  --radius-card: 14px;   /* --ds-r-card */
   --radius-ctl: 10px;    /* --ds-r-ctl */
   --shadow: none;
   --ease: cubic-bezier(0.22, 0.78, 0.51, 0.94);
@@ -33,12 +34,12 @@
   /* Type, direction A "Agent Console" (src/ds/fonts.css, self-hosted: the production CSP allows only font-src 'self').
      Display (titles, big figures): Hubot Sans, wide (112%). Body: Mona Sans. Voice (what an agent signed or said, the line under each page title): Monaspace Krypton.
      Data (ids, hashes, amounts): Monaspace Neon with tabular figures. */
-  --font-display: 'Hubot Sans', 'Mona Sans', 'Helvetica Neue', system-ui, sans-serif;
-  --font-body: 'Mona Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
-  --font-voice: 'Monaspace Krypton', ui-monospace, 'SF Mono', Menlo, monospace;
-  --mono: 'Monaspace Neon', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-  --display-weight: 760;
-  --display-stretch: 112%;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --font-voice: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --display-weight: 600;
+  --display-stretch: 100%;
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.5;

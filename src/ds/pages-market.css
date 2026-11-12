@@ -19,7 +19,7 @@ main .mk .views-pane > h2:first-child, main .mk .market-pane > h2:first-child, m
 main .mk h2 .pill { margin-left: 8px; vertical-align: middle; }
 main .mk code { padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.05); font: 500 0.86em/1.4 var(--ds-font-mono); overflow-wrap: anywhere; }
 main .mk code.plain { font-weight: 400; color: var(--ds-ink-2); }
-main .mk a { color: var(--ds-accent-ink); text-decoration-color: rgba(169, 203, 255, 0.4); text-underline-offset: 0.2em; }
+main .mk a { color: var(--ds-accent-ink); text-decoration-color: rgba(255, 255, 255, 0.40); text-underline-offset: 0.2em; }
 main .mk .next-step { font-weight: 600; }
 main .mk .muted { color: var(--ds-ink-3); font-size: 13px; }
 
@@ -149,7 +149,7 @@ main .mk .intents li p { flex: 1 1 18rem; margin: 0; font-size: 14px; line-heigh
 main .mk .avatar { background: color-mix(in srgb, var(--hue, var(--ds-ink-3)) 16%, var(--ds-surface-3)); box-shadow: inset 0 0 0 1px var(--ds-rule-2); color: var(--ds-ink); }
 main .mk .party-name { font: 600 14px/1.3 var(--ds-font-text); }
 main .mk .party-pair::before { background: var(--ds-rule-2); }
-main .mk :is(.you-tag, .badge) { padding: 1px 7px; border-radius: var(--ds-r-badge); border: 1px solid rgba(169, 203, 255, 0.28); background: rgba(47, 91, 255, 0.18); font: 500 11px/1.5 var(--ds-font-mono); color: var(--ds-soft); }
+main .mk :is(.you-tag, .badge) { padding: 1px 7px; border-radius: var(--ds-r-badge); border: 1px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.11); font: 500 11px/1.5 var(--ds-font-mono); color: var(--ds-soft); }
 main .mk .tone-tile { color: var(--ds-soft); background: var(--ds-surface-2); border: 1px solid var(--ds-rule); }
 
 /* FE-111: the NEAR AI Cloud appraisal of a listing, and its proof (a modal over the page) */
@@ -210,7 +210,7 @@ main .mk .market-top { display: block; margin: 0; }
 main .mk .pulse { gap: var(--ds-s3); }
 main .mk .pulse-card { position: relative; gap: var(--ds-s2); padding: 14px 16px 16px; border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule); background: var(--ds-glass); box-shadow: var(--ds-shadow-card); text-align: left; }
 main .mk .pulse-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
-  background: linear-gradient(160deg, rgba(169, 203, 255, 0.45), transparent 40%, transparent 70%, rgba(169, 203, 255, 0.18));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.45), transparent 40%, transparent 70%, rgba(255, 255, 255, 0.18));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
 main .mk .pulse-wide { background: var(--ds-glass); border-color: var(--ds-rule); }
 main .mk .pulse-card dt { font: 500 13px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
@@ -250,7 +250,7 @@ main .mk table[aria-label='Listings'] td:nth-child(5) { white-space: normal; }
 main .mk table[aria-label='Listings'] .asset-side { min-width: 0; }
 main .mk .asset-name { font: 600 14.5px/1.35 var(--ds-font-text); color: var(--ds-ink); }
 main .mk .asset-meta { margin-top: 2px; font-size: 12.5px; line-height: 1.4; color: var(--ds-ink-3); }
-main .mk .class-badge { width: 1.75rem; height: 1.75rem; border-radius: var(--ds-r-chip); border: 1px solid rgba(169, 203, 255, 0.28); background: rgba(47, 91, 255, 0.18); font: 500 12.5px/1 var(--ds-font-mono); color: var(--ds-soft); }
+main .mk .class-badge { width: 1.75rem; height: 1.75rem; border-radius: var(--ds-r-chip); border: 1px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.11); font: 500 12.5px/1 var(--ds-font-mono); color: var(--ds-soft); }
 main .mk .asset-side[data-role='want']::before { color: var(--ds-ink-3); }
 
 /* Marketplace: posting a listing is four steps: the open one is lime, done ones ink-2 with a check, the rest dim (the phase strip's idea) */
