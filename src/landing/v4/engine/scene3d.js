@@ -35,8 +35,9 @@ class EpochScene3D extends EpochScene {
     this.W = b.width; this.H = b.height;
     this.canvas.width = Math.round(b.width * dpr); this.canvas.height = Math.round(b.height * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    this.cx = this.W / 2; this.cy = this.H * 0.5;
-    this.F = Math.max(100, Math.min(this.W * (this.W < 520 ? 0.36 : 0.44), this.H * 0.56)); this.D = 3.3;
+    this.cx = this.W / 2; this.cy = this.H * (this.flat ? 0.46 : 0.5);
+    // the landing's story (flat) keeps the whole ring, its labels and the paying agents inside a shorter, wider canvas
+    this.F = Math.max(100, Math.min(this.W * (this.W < 520 ? 0.36 : 0.44), this.H * (this.flat ? 0.44 : 0.56))); this.D = 3.3;
     this.R = this.F;                                   // used by the base tooltip code
     this.kick();
   }
@@ -115,8 +116,10 @@ class EpochScene3D extends EpochScene {
   orb(px, py, rad, i, p, tint, mixT, dim, time, hot) {
     const x = this.ctx, out = this.outcome[i], v = this.r.net[i];
     x.globalAlpha = dim;
-    const g = x.createRadialGradient(px - rad * 0.35, py - rad * 0.42, rad * 0.08, px, py, rad);
-    g.addColorStop(0, tint ? S3.mixHex("#ffffff", tint, mixT * 0.3) : "#ffffff"); g.addColorStop(1, tint ? S3.mixHex("#c9d2ff", tint, mixT) : "#c9d2ff");
+    let g;
+    if (this.flat) g = tint ? S3.mixHex("#e8e8ec", tint, mixT * 0.6) : "#e8e8ec";   // landing story: solid faces, no gradient
+    else { g = x.createRadialGradient(px - rad * 0.35, py - rad * 0.42, rad * 0.08, px, py, rad);
+      g.addColorStop(0, tint ? S3.mixHex("#ffffff", tint, mixT * 0.3) : "#ffffff"); g.addColorStop(1, tint ? S3.mixHex("#c9d2ff", tint, mixT) : "#c9d2ff"); }
     x.beginPath(); x.arc(px, py, rad, 0, 6.2832); x.fillStyle = g; x.fill();
     if (hot) { x.beginPath(); x.arc(px, py, rad + 4, 0, 6.2832); x.lineWidth = 2.5; x.strokeStyle = "#c8f53c"; x.stroke(); }
     // eyes look at the pointer (or at the contract), blink now and then; happy when settled, cross when covered from stake
@@ -128,6 +131,11 @@ class EpochScene3D extends EpochScene {
       if (happy) { x.arc(ex, ey + rad * 0.1, rad * 0.15, Math.PI * 1.15, Math.PI * 1.85); x.stroke(); }
       else if (sad) { x.moveTo(ex + sx * rad * 0.14, ey + rad * 0.08); x.lineTo(ex - sx * rad * 0.14, ey - rad * 0.08); x.stroke(); }
       else { x.ellipse(ex, ey, rad * 0.1, blink ? rad * 0.02 : rad * 0.17, 0, 0, 6.2832); x.fill(); } }
+    // the mouth: a small smile, open when settled, a frown when covered from stake
+    const mx = px + lx * 0.6, my = py + ly * 0.6 + rad * 0.3; x.beginPath();
+    if (happy) { x.arc(mx, my - rad * 0.06, rad * 0.15, 0, Math.PI); x.closePath(); x.fill(); }
+    else if (sad) { x.arc(mx, my + rad * 0.08, rad * 0.13, Math.PI * 1.22, Math.PI * 1.78); x.stroke(); }
+    else { x.arc(mx, my - rad * 0.14, rad * 0.14, Math.PI * 0.22, Math.PI * 0.78); x.stroke(); }
     x.globalAlpha = 1;
   }
 
@@ -139,8 +147,9 @@ class EpochScene3D extends EpochScene {
     // the floor: guide rings, the circle of epoch 8, faint spokes
     this.ring(1.42, 0, c.rule, 1, 0.5, [2, 6]);
     this.ring(0.55, 0, c.rule, 1, 0.45);
-    const g = x.createLinearGradient(this.cx - this.F, 0, this.cx + this.F, 0); g.addColorStop(0, "rgba(169,203,255,0.7)"); g.addColorStop(0.5, "rgba(255,255,255,0.25)"); g.addColorStop(1, "rgba(47,91,255,0.8)");
-    this.ring(1, 0, g, 1.6, 0.9);
+    let g = "rgba(255,255,255,0.22)";
+    if (!this.flat) { g = x.createLinearGradient(this.cx - this.F, 0, this.cx + this.F, 0); g.addColorStop(0, "rgba(169,203,255,0.7)"); g.addColorStop(0.5, "rgba(255,255,255,0.25)"); g.addColorStop(1, "rgba(47,91,255,0.8)"); }
+    this.ring(1, 0, g, this.flat ? 1 : 1.6, 0.9);
     this.world.forEach(([wx, , wz]) => { const a = this.proj(wx * 0.62, 0, wz * 0.62), b = this.proj(wx * 0.95, 0, wz * 0.95); x.beginPath(); x.moveTo(a[0], a[1]); x.lineTo(b[0], b[1]); x.strokeStyle = c.rule; x.globalAlpha = 0.35; x.lineWidth = 1; x.stroke(); x.globalAlpha = 1; });
 
     // agents' shadows on the floor
@@ -165,10 +174,15 @@ class EpochScene3D extends EpochScene {
 
     // the circle contract: one glowing sphere in the middle (no light pillar, owner 2026-11-11), brightest once everything nets into it
     const core = this.proj(0, 0.3, 0), cr = 0.1 * this.F * core[2] * (0.9 + 0.15 * collapse);
-    const halo = x.createRadialGradient(core[0], core[1], 0, core[0], core[1], cr * 3.2); halo.addColorStop(0, `rgba(91,227,160,${0.18 + 0.3 * collapse})`); halo.addColorStop(1, "rgba(91,227,160,0)");
-    x.fillStyle = halo; x.beginPath(); x.arc(core[0], core[1], cr * 3.2, 0, 6.2832); x.fill();
-    const cg = x.createRadialGradient(core[0] - cr * 0.3, core[1] - cr * 0.35, cr * 0.1, core[0], core[1], cr); cg.addColorStop(0, "#ffffff"); cg.addColorStop(1, S3.mixHex("#a9cbff", "#5be3a0", collapse));
-    x.beginPath(); x.arc(core[0], core[1], cr, 0, 6.2832); x.fillStyle = cg; x.fill();
+    if (this.flat) {   // landing story: a plain white disc with a hairline, no halo, no gradient
+      x.beginPath(); x.arc(core[0], core[1], cr, 0, 6.2832); x.fillStyle = "#f2f2f2"; x.fill();
+      x.lineWidth = 1; x.strokeStyle = "rgba(255,255,255,0.35)"; x.beginPath(); x.arc(core[0], core[1], cr + 6, 0, 6.2832); x.stroke();
+    } else {
+      const halo = x.createRadialGradient(core[0], core[1], 0, core[0], core[1], cr * 3.2); halo.addColorStop(0, `rgba(91,227,160,${0.18 + 0.3 * collapse})`); halo.addColorStop(1, "rgba(91,227,160,0)");
+      x.fillStyle = halo; x.beginPath(); x.arc(core[0], core[1], cr * 3.2, 0, 6.2832); x.fill();
+      const cg = x.createRadialGradient(core[0] - cr * 0.3, core[1] - cr * 0.35, cr * 0.1, core[0], core[1], cr); cg.addColorStop(0, "#ffffff"); cg.addColorStop(1, S3.mixHex("#a9cbff", "#5be3a0", collapse));
+      x.beginPath(); x.arc(core[0], core[1], cr, 0, 6.2832); x.fillStyle = cg; x.fill();
+    }
     x.fillStyle = c.ink2; x.font = `500 ${small ? 10 : 11}px ${this.mono}`; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("circle contract", core[0], core[1] + cr + 16);
 
     // debts arch between the agents (far ones first)
@@ -212,8 +226,10 @@ class EpochScene3D extends EpochScene {
 }
 
 /* ---- HUD + scroll wiring (same contract as scene.js mountScene / mountStory) ---- */
-function mountStory3D(story) {
+function mountStory3D(story, opts = {}) {
   const root = story.querySelector("[data-scene3d]"), scene = new EpochScene3D(root);
+  scene.flat = !!opts.flat;   // the landing's story draws without gradients or glow
+  if (scene.flat) scene.resize();
   scene.bindDrag();
   const chapters = [...root.querySelectorAll("[data-chapter]")], steps = [...story.querySelectorAll(".chapter")];
   hud(scene, root);

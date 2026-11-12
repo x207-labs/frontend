@@ -2,7 +2,7 @@
 // of engine/x207.js, and epoch.test.ts keeps the two describing the same epoch. The proof panel recomputes from the 24 raw edges in the visitor's browser.
 import { BARTER, EPOCH8 } from '../facts'
 import { findCycles } from './engine/scene.js'
-import { fmt, recompute, X207 } from './engine/x207.js'
+import { fmt, recompute, X207, type Outcome } from './engine/x207.js'
 
 export const n2 = (x: number) => x.toFixed(2)
 const share = (x: number) => `${((x / EPOCH8.gross) * 100).toFixed(1)}%`
@@ -33,6 +33,18 @@ export const BARTER_FIG = {
   testnet: barter('testnet'),
   sandbox: barter('sandbox'),
 }
+
+/** The face colour of an agent: its result code's colour (200 settled, 202 claim, 409 default), grey when it had nothing to settle. */
+export const TONE: Record<Outcome, string> = {
+  paid: 'var(--ds-settled)',
+  claimed: 'var(--ds-settled)',
+  claimable: 'var(--ds-claim)',
+  defaulted: 'var(--ds-default)',
+  flat: 'var(--lp-ink-3)',
+}
+
+/** The mood of an agent's face: laughing once paid or claimed, smiling while its claim waits, sad when its debt was covered from its stake, flat with nothing to settle. */
+export const MOOD: Record<Outcome, 'happy' | 'smile' | 'sad' | 'flat'> = { paid: 'happy', claimed: 'happy', claimable: 'smile', defaulted: 'sad', flat: 'flat' }
 
 export type Check = { label: string; got: string; ok: boolean }
 

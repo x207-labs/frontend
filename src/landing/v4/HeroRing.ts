@@ -5,7 +5,28 @@ import { X207, fmt, name } from './engine/x207.js'
 import { findCycles, type Cycle } from './engine/scene.js'
 
 type Pt = [number, number]
-type Bez = [Pt, Pt, Pt]
+type Cubic = [Pt, Pt, Pt, Pt]
+
+const lerp = (A: Pt, B: Pt, t: number): Pt => [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t]
+/** The point at t of a cubic (de Casteljau). */
+const at = ([A, B, C, D]: Cubic, t: number): Pt => {
+  const ab = lerp(A, B, t)
+  const bc = lerp(B, C, t)
+  const cd = lerp(C, D, t)
+  return lerp(lerp(ab, bc, t), lerp(bc, cd, t), t)
+}
+/** The piece of a cubic between t0 and t1, as a cubic of its own. */
+const sub = (K: Cubic, t0: number, t1: number): Cubic => {
+  const left = ([A, B, C, D]: Cubic, t: number): Cubic => {
+    const ab = lerp(A, B, t)
+    const bc = lerp(B, C, t)
+    const cd = lerp(C, D, t)
+    const abc = lerp(ab, bc, t)
+    return [A, ab, abc, lerp(abc, lerp(bc, cd, t), t)]
+  }
+  const right = ([A, B, C, D]: Cubic, t: number): Cubic => left([D, C, B, A], 1 - t).reverse() as Cubic
+  return right(left(K, t1), t0 / t1)
+}
 
 const TAU = 6.2832
 const mix = (a: string, b: string, t: number) => {
@@ -58,13 +79,17 @@ export class HeroRing {
     this.ptr = null
   }
 
-  constructor(stage: HTMLElement, cap: HTMLElement, reduced: boolean) {
+  private readonly onLoop?: (k: number) => void
+
+  /** `onLoop` hears the index (in findCycles order) of the loop being cancelled, each time it changes. */
+  constructor(stage: HTMLElement, cap: HTMLElement, reduced: boolean, onLoop?: (k: number) => void) {
     const cv = stage.querySelector('canvas')
     const x = cv?.getContext('2d')
     if (!cv || !x) throw new Error('HeroRing needs a 2D canvas')
     this.cv = cv
     this.x = x
     this.cap = cap
+    this.onLoop = onLoop
     this.reduced = reduced
     this.cards = [...stage.querySelectorAll<HTMLElement>('[data-anchor]')]
     this.cycles = findCycles(this.E)
@@ -143,31 +168,32 @@ export class HeroRing {
     return [this.cx + this.R * Math.cos(a), this.cy + this.R * Math.sin(a), a]
   }
 
-  private bez(P: Pt, Q: Pt): Bez {
-    const mx = (P[0] + Q[0]) / 2
-    const my = (P[1] + Q[1]) / 2
-    return [P, [mx + (this.cx - mx) * 0.55, my + (this.cy - my) * 0.55], Q]
+  /** A debt from P to Q as a soft arc: pulled toward the middle of the ring in proportion to its length and bent a little to one side, so near neighbours get a
+   * shallow arc and long debts a wide sweep instead of a straight chord. Trimmed at the orbs' edges, so it starts and ends at the faces, not inside them. */
+  private cubic(P: Pt, Q: Pt): Cubic {
+    const dx = Q[0] - P[0]
+    const dy = Q[1] - P[1]
+    const len = Math.hypot(dx, dy) || 1
+    const k = 0.34 * Math.min(1, len / (1.4 * this.R))
+    const side = len * 0.14
+    const c = (A: Pt): Pt => [A[0] + (this.cx - A[0]) * k - (dy / len) * side, A[1] + (this.cy - A[1]) * k + (dx / len) * side]
+    const trim = Math.min(0.42, (this.or + 3) / (len * 1.08))
+    return sub([P, c(P), c(Q), Q], trim, 1 - trim)
   }
 
-  private pt([P, C, Q]: Bez, t: number): Pt {
-    const u = 1 - t
-    return [u * u * P[0] + 2 * u * t * C[0] + t * t * Q[0], u * u * P[1] + 2 * u * t * C[1] + t * t * Q[1]]
-  }
-
-  private curve(B: Bez, t1: number, w: number, col: string, a: number) {
+  /** Strokes a cubic with a gradient along it: faint where the debt starts, brighter where it lands. */
+  private stroke(C: Cubic, w: number, a0: number, a1: number, rgb: string) {
     const x = this.x
+    const g = x.createLinearGradient(C[0][0], C[0][1], C[3][0], C[3][1])
+    g.addColorStop(0, `rgba(${rgb},${a0})`)
+    g.addColorStop(1, `rgba(${rgb},${a1})`)
     x.beginPath()
-    for (let s = 0; s <= 24; s++) {
-      const [px, py] = this.pt(B, (t1 * s) / 24)
-      if (s) x.lineTo(px, py)
-      else x.moveTo(px, py)
-    }
+    x.moveTo(C[0][0], C[0][1])
+    x.bezierCurveTo(C[1][0], C[1][1], C[2][0], C[2][1], C[3][0], C[3][1])
     x.lineWidth = w
-    x.strokeStyle = col
-    x.globalAlpha = a
     x.lineCap = 'round'
+    x.strokeStyle = g
     x.stroke()
-    x.globalAlpha = 1
   }
 
   private draw(t: number) {
@@ -185,7 +211,8 @@ export class HeroRing {
     const inLoop = new Set(cyc.members)
     if (k !== this.k) {
       this.k = k
-      const path = cyc.members.map(name).concat(name(cyc.members[0])).join(' → ')
+      this.onLoop?.(k)
+      const path = cyc.members.map(name).concat(name(cyc.members[0])).join(' › ')
       const tag = (text: string) => Object.assign(document.createElement('span'), { className: 'k', textContent: text })
       this.cap.replaceChildren(tag('solver ›'), ` loop ${path} · −${fmt(cyc.amount)} on ${cyc.members.length} debts `, tag('· contract ›'), ' net positions unchanged ✓')
     }
@@ -213,35 +240,33 @@ export class HeroRing {
         x.globalAlpha = 1
       }
     })
-    // the circle: a quiet chrome ring
-    const rg = x.createLinearGradient(this.cx - this.R, this.cy - this.R, this.cx + this.R, this.cy + this.R)
-    rg.addColorStop(0, 'rgba(169,203,255,0.55)')
-    rg.addColorStop(0.5, 'rgba(255,255,255,0.18)')
-    rg.addColorStop(1, 'rgba(47,91,255,0.6)')
+    // the circle: one hairline
     x.beginPath()
     x.arc(this.cx, this.cy, this.R, 0, TAU)
-    x.strokeStyle = rg
-    x.lineWidth = 2
+    x.strokeStyle = 'rgba(255,255,255,0.13)'
+    x.lineWidth = 1
     x.stroke()
-    // debts, with beads running along them
-    const w = (a: number) => Math.max(0.8, Math.min(5, a / 90))
-    this.E.forEach(([d, c, a], i) => {
-      const B = this.bez([P[d][0], P[d][1]], [P[c][0], P[c][1]])
-      const on = hot.has(i)
-      this.curve(B, 1 - (this.or + 3) / (this.R * 1.1), w(a), on ? '#5be3a0' : '#a9cbff', on ? 0.25 + 0.7 * glow : 0.26)
+    // the debts: thin, even curves; the loop being cancelled is drawn brighter, with one bead running along it
+    this.E.forEach(([d, c], i) => {
+      if (hot.has(i)) return
+      this.stroke(this.cubic([P[d][0], P[d][1]], [P[c][0], P[c][1]]), 1.1, 0.04, 0.26, '255,255,255')
+    })
+    this.E.forEach(([d, c], i) => {
+      if (!hot.has(i)) return
+      const C = this.cubic([P[d][0], P[d][1]], [P[c][0], P[c][1]])
+      this.stroke(C, 1.6, 0.15 + 0.35 * glow, 0.4 + 0.55 * glow, '255,255,255')
       if (!reduced) {
-        const q = (t * (0.16 + (a % 7) * 0.012) + this.phase[i]) % 1
-        const [bx, by] = this.pt(B, q * 0.92)
+        const [bx, by] = at(C, (t * 0.45 + this.phase[i]) % 1)
         x.beginPath()
-        x.arc(bx, by, on ? 3.2 : 2.1, 0, TAU)
-        x.fillStyle = on ? '#c8f53c' : '#dbe7ff'
-        x.globalAlpha = on ? 0.95 : 0.55
+        x.arc(bx, by, 2.2, 0, TAU)
+        x.fillStyle = '#ffffff'
+        x.globalAlpha = 0.9 * glow
         x.fill()
         x.globalAlpha = 1
       }
     })
     // centre
-    x.fillStyle = 'rgba(169,203,255,0.55)'
+    x.fillStyle = 'rgba(255,255,255,0.45)'
     x.font = `500 12px ${this.agentFont}`
     x.textAlign = 'center'
     x.textBaseline = 'middle'
@@ -294,6 +319,18 @@ export class HeroRing {
           x.ellipse(ex, ey, rad * 0.1, blink ? rad * 0.02 : rad * 0.17, 0, 0, TAU)
           x.fill()
         }
+      }
+      // the mouth: a small smile, open when the agent is in the loop being cancelled
+      const mx = px + lx * 0.6
+      const my = py + ly * 0.6 + rad * 0.3
+      x.beginPath()
+      if (happy) {
+        x.arc(mx, my - rad * 0.06, rad * 0.15, 0, Math.PI)
+        x.closePath()
+        x.fill()
+      } else {
+        x.arc(mx, my - rad * 0.14, rad * 0.14, Math.PI * 0.22, Math.PI * 0.78)
+        x.stroke()
       }
       x.fillStyle = on ? '#c8f53c' : 'rgba(169,182,204,0.85)'
       x.font = `500 ${this.W < 520 ? 10 : 11}px ${this.monoFont}`
