@@ -143,7 +143,8 @@ export function AllPages({ onClose }: { onClose: () => void }) {
     if (pathname !== at.current) done.current()
   }, [pathname])
   return (
-    <div className="sheet-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    // v6.3: a pop-up in the middle of the screen, as the plugin list of Grok Bot: the pages as a grid by group
+    <div className="sheet-backdrop" data-center="" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label="All pages">
         <div className="sheet-head">
           <h2>All pages</h2>
