@@ -23,6 +23,12 @@ const S3 = (() => {
 class EpochScene3D extends EpochScene {
   /* the landing's story (flat) writes its names and figures in Apple's system type, like the rest of the landing */
   readTheme() { super.readTheme(); if (this.flat) this.font = this.mono = APPLE_FONT; }
+  /** flat: agent i's line to the contract, rising from the agent and swirling a little into the coin, sampled and projected (agent first) */
+  spoke(i) {
+    const [wx, , wz] = this.world[i], P0 = [wx * 0.9, S3.LIFT, wz * 0.9], P2 = [wx * 0.05, 0.28, wz * 0.05], C = [wx * 0.42 - wz * 0.16, 0.5, wz * 0.42 + wx * 0.16];
+    const pts = []; for (let s = 0; s <= 28; s++) { const t = s / 28, u = 1 - t; pts.push(this.proj(u * u * P0[0] + 2 * u * t * C[0] + t * t * P2[0], u * u * P0[1] + 2 * u * t * C[1] + t * t * P2[1], u * u * P0[2] + 2 * u * t * C[2] + t * t * P2[2])); }
+    return pts;
+  }
   /* called by the base constructor before subclass fields exist: initialise lazily */
   ensure() {
     if (this.cam) return;
@@ -157,6 +163,27 @@ class EpochScene3D extends EpochScene {
     // agents' shadows on the floor
     this.world.forEach(([wx, , wz]) => { const [sx, sy, k] = this.proj(wx, 0, wz), r = (small ? 8 : 11) * k * this.rs; x.beginPath(); x.ellipse(sx, sy, r * 0.95, r * 0.34, 0, 0, 6.2832); x.fillStyle = "rgba(0,0,0,0.5)"; x.fill(); });
 
+    // flat: every agent is a member of the contract, so each one has its line to it. While vouchers come in, each is carried from its debtor to the
+    // contract (it is registered there); while loops cancel, the contract reaches out to the members of the loop it checks. From the commit on, the
+    // net lines below take over.
+    let pulse = 0;
+    if (this.flat && collapse < 1) {
+      const fade = 1 - collapse, lit = new Array(this.n).fill(0);
+      this.cycles.forEach((cy, kk) => { const gl = this.glowOf(kk, p); if (gl > 0) cy.members.forEach((m) => (lit[m] = Math.max(lit[m], gl))); });
+      for (let i = 0; i < this.n; i++) {
+        const pts = this.spoke(i), kk = (pts[0][2] + pts[28][2]) / 2, dim = this.hover == null || this.hover === i ? 1 : 0.2;
+        this.polyline(pts, 0, 1, 1 * kk, c.ink, (0.13 + 0.55 * lit[i]) * fade * dim);
+        if (lit[i] > 0 && !this.reduced) { const [bx, by, bk] = this.at(pts, 1 - ((time * 0.6 + i * 0.17) % 1)); x.save(); x.shadowColor = "#fff"; x.shadowBlur = 8; x.beginPath(); x.arc(bx, by, 2 * bk, 0, 6.2832); x.fillStyle = "#fff"; x.globalAlpha = lit[i] * fade; x.fill(); x.restore(); }
+      }
+      if (p < 1.05 && !this.reduced) this.E.forEach((e, i) => {
+        const rv = this.reveal(i, p); if (rv <= 0 || rv >= 1) return;
+        const pts = this.spoke(e[0]), [bx, by, bk] = this.at(pts, rv);
+        this.polyline(pts, Math.max(0, rv - 0.25), rv, 1.6 * bk, c.ink, 0.7 * fade);
+        x.save(); x.shadowColor = "#fff"; x.shadowBlur = 10; x.beginPath(); x.arc(bx, by, 2.6 * bk, 0, 6.2832); x.fillStyle = "#fff"; x.globalAlpha = fade; x.fill(); x.restore();
+        if (rv > 0.8) pulse = Math.max(pulse, (rv - 0.8) / 0.2);
+      });
+    }
+
     // net lines along the floor to the contract, and the payments flowing on them
     if (collapse > 0) {
       const hub = 0.12;
@@ -166,8 +193,7 @@ class EpochScene3D extends EpochScene {
         const A = this.proj(wx * 0.94, 0.02, wz * 0.94), B = this.proj(wx * hub, 0.02, wz * hub), from = v < 0 ? A : B, to = v < 0 ? B : A;
         const col = out === "defaulted" ? c.bad : v < 0 ? c.due : out === "claimed" ? c.settled : c.claim, lw = Math.max(1.2, Math.sqrt(Math.abs(v)) * 0.42 * this.vk) * ((A[2] + B[2]) / 2);
         if (this.flat) {   // landing: a thin curve that rises from the agent and swirls a little into the coin, one even width, payments as glowing beads
-          const P0 = [wx * 0.9, S3.LIFT, wz * 0.9], P2 = [wx * 0.05, 0.28, wz * 0.05], C = [wx * 0.42 - wz * 0.16, 0.5, wz * 0.42 + wx * 0.16];
-          const pts = []; for (let s2 = 0; s2 <= 28; s2++) { const t = s2 / 28, u = 1 - t; pts.push(this.proj(u * u * P0[0] + 2 * u * t * C[0] + t * t * P2[0], u * u * P0[1] + 2 * u * t * C[1] + t * t * P2[1], u * u * P0[2] + 2 * u * t * C[2] + t * t * P2[2])); }
+          const pts = this.spoke(i);
           if (v > 0) pts.reverse();   // a creditor is paid from the contract: its curve runs from the coin out to the agent
           const kk = (pts[0][2] + pts[28][2]) / 2;
           this.polyline(pts, 0, 1, 1 * kk, col, 0.22 * collapse * dim);
@@ -222,7 +248,7 @@ class EpochScene3D extends EpochScene {
     }
 
     if (this.flat) {   // the contract as a glass NEAR coin, over the debts so they show through it
-      nearCoin(x, core[0], core[1], cr * 1.45, this.reduced ? 0.6 : time);
+      nearCoin(x, core[0], core[1], cr * 1.45, this.reduced ? 0.6 : time, pulse);
       x.fillStyle = c.ink2; x.font = `500 ${small ? 11 : 12.5}px ${APPLE_FONT}`; x.textAlign = "center"; x.textBaseline = "middle";
       x.fillText("circle contract", core[0], core[1] + cr * 1.45 + 20);
     }
@@ -254,7 +280,7 @@ const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica
 /* ---- the landing's contract: a glass coin with the NEAR mark, drawn in 2.5D and turning a little ---- */
 // the NEAR "N" mark (near.org brand asset), in a 93 x 92 box
 const NEAR_N = typeof Path2D === "undefined" ? null : new Path2D("M72.2 4.6 53.4 32.5c-1.3 1.9 1.2 4.2 3 2.6l18.5-16.1c.5-.4 1.2-.1 1.2.6v50.3c0 .7-.9 1-1.3.5l-56-67C17 1.2 14.4 0 11.7 0h-2C4.8 0 0 4.8 0 10.6v70.8C0 87.2 4.8 92 10.6 92c3.7 0 7.1-1.9 9.1-5.1l18.8-27.9c1.3-1.9-1.2-4.2-3-2.6l-18.5 16c-.5.4-1.2.1-1.2-.6V21.9c0-.7.9-1 1.3-.5l56 67c1.8 2.2 4.5 3.4 7.2 3.4h2c5.8 0 10.6-4.8 10.6-10.6V10.6C92.9 4.8 88.1 0 82.3 0c-3.7 0-7.2 1.9-10.1 4.6Z");
-function nearCoin(x, cx, cy, r, time) {
+function nearCoin(x, cx, cy, r, time, pulse = 0) {
   const s = 0.86 + 0.1 * Math.sin(time * 0.7);    // the face narrows and widens: the coin turns about its vertical axis
   const rx = r * s, t = r * 0.14;                  // half width of the face, thickness of the rim
   const face = () => { x.beginPath(); x.ellipse(cx, cy, rx, r, 0, 0, 6.2832); };
@@ -280,6 +306,8 @@ function nearCoin(x, cx, cy, r, time) {
   // a bright edge and an inner ring, like the polished lip of a glass disc
   face(); x.strokeStyle = "rgba(255,255,255,0.75)"; x.lineWidth = 1.4; x.stroke();
   x.beginPath(); x.ellipse(cx, cy, rx * 0.84, r * 0.84, 0, 0, 6.2832); x.strokeStyle = "rgba(255,255,255,0.22)"; x.lineWidth = 1; x.stroke();
+  // a ring that swells out of the lip each time a voucher lands on the contract
+  if (pulse > 0) { x.beginPath(); x.ellipse(cx, cy, rx * (1 + 0.35 * pulse), r * (1 + 0.35 * pulse), 0, 0, 6.2832); x.strokeStyle = `rgba(255,255,255,${(0.6 * (1 - pulse)).toFixed(3)})`; x.lineWidth = 1.5; x.stroke(); }
   // the NEAR mark, white, with a faint glow
   if (NEAR_N) {
     const k = (r * 0.78) / 92;
