@@ -107,7 +107,7 @@ describe('FE-056 home page', () => {
       expect(await screen.findByText(`Signed in as ${displayAccount(implicit)}.`)).toBeInTheDocument()
       expect(screen.getByRole('region', { name: 'Start here' })).not.toHaveTextContent(implicit)
       expect(screen.getByText('Shenhan', { selector: '.greet strong' })).toBeInTheDocument()
-      expect(document.querySelector('.account-trigger .avatar')).toHaveTextContent('S')
+      expect(document.querySelector('.account-trigger .avatar svg.mascot')).not.toBeNull()
     } finally {
       resetCache()
     }

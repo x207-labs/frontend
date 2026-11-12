@@ -1,26 +1,18 @@
 import type { ReactNode } from 'react'
+import { Mascot } from './Mascot'
 import { shortAccount } from '../lib/format'
 import { useCachedAccount } from '../account/cache'
-import { AgentIcon, NavIcon } from './icons'
+import { NavIcon } from './icons'
 
 // FE-081: the pieces of a list row. A row reads left to right: what it is (a tinted icon tile, a bold title, a muted line), who is on it (avatars),
 // how far it got (a bar with one segment per step) and where it stands (the status pill). Colour encodes the member or the step state, never decoration.
 
-/** Eight hues for member avatars; a member keeps the same hue on every page because the hue comes from the account name. */
-const AVATAR_HUES = ['#3d8bff', '#2f9e8f', '#e2801f', '#c75bd6', '#3fb56a', '#e25a4f', '#8b6cf0', '#d4a72c']
-
-function hueOf(account: string): string {
-  let h = 0
-  for (const c of account) h = (h * 31 + c.charCodeAt(0)) >>> 0
-  return AVATAR_HUES[h % AVATAR_HUES.length]
-}
-
 /** A member's avatar alone: on its own hue, showing its work (a chip for a GPU seller) or, when the name says nothing, its initials. */
 export function Avatar({ account }: { account: string }) {
   const photo = useCachedAccount(account).photo // FE-087: only the person's own account can have one; it is set in Settings and kept in this browser
-  const initials = shortAccount(account).replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase() || '?'
   if (photo) return <span className="avatar" aria-hidden="true" title={account} data-photo="true"><img src={photo} alt="" /></span>
-  return <span className="avatar" aria-hidden="true" title={account} style={{ ['--hue' as string]: hueOf(account) }}>{AgentIcon({ account }) ?? initials}</span>
+  // v6: a member is its mascot, the same face as in the sidebar
+  return <span className="avatar" aria-hidden="true" title={account} data-mascot="true"><Mascot id={account} size={28} /></span>
 }
 
 /** A member: the avatar, then the short name. The full account is in the title for hover and copy. */

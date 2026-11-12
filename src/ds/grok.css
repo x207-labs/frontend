@@ -548,3 +548,8 @@ main:has(.market-cover) .page-intro { display: none; }
 .sheet-backdrop.listing-sheet[data-center] .sheet { padding: 0; border: 0; background: none; box-shadow: none; }
 /* the logo is a plain link to the landing page: no hover fill */
 .rail a.brand-link, .rail a.brand-link:hover, .rail a.brand-link:active { background: none; box-shadow: none; transform: none; }
+/* the main button's text always follows the theme (an older rule set it to white, invisible on the light pill) */
+:root main a.ds-btn[data-variant='glow'], :root main button.ds-btn[data-variant='glow'] { color: var(--ds-btn-ink); }
+/* an avatar that is a mascot needs no tile behind it */
+.avatar[data-mascot], .account-trigger .avatar:not([data-photo]) { display: inline-grid; place-items: center; padding: 0; border: 0; background: none; box-shadow: none; }
+.settings-photo .mascot, .profile-photo .mascot { width: 64px; height: 64px; }
