@@ -174,16 +174,13 @@ class EpochScene3D extends EpochScene {
 
     // the circle contract: one glowing sphere in the middle (no light pillar, owner 2026-11-11), brightest once everything nets into it
     const core = this.proj(0, 0.3, 0), cr = 0.1 * this.F * core[2] * (0.9 + 0.15 * collapse);
-    if (this.flat) {   // landing story: a plain white disc with a hairline, no halo, no gradient
-      x.beginPath(); x.arc(core[0], core[1], cr, 0, 6.2832); x.fillStyle = "#f2f2f2"; x.fill();
-      x.lineWidth = 1; x.strokeStyle = "rgba(255,255,255,0.35)"; x.beginPath(); x.arc(core[0], core[1], cr + 6, 0, 6.2832); x.stroke();
-    } else {
+    if (!this.flat) {   // the landing story (flat) draws its contract later, as a glass coin over the debts
       const halo = x.createRadialGradient(core[0], core[1], 0, core[0], core[1], cr * 3.2); halo.addColorStop(0, `rgba(91,227,160,${0.18 + 0.3 * collapse})`); halo.addColorStop(1, "rgba(91,227,160,0)");
       x.fillStyle = halo; x.beginPath(); x.arc(core[0], core[1], cr * 3.2, 0, 6.2832); x.fill();
       const cg = x.createRadialGradient(core[0] - cr * 0.3, core[1] - cr * 0.35, cr * 0.1, core[0], core[1], cr); cg.addColorStop(0, "#ffffff"); cg.addColorStop(1, S3.mixHex("#a9cbff", "#5be3a0", collapse));
       x.beginPath(); x.arc(core[0], core[1], cr, 0, 6.2832); x.fillStyle = cg; x.fill();
     }
-    x.fillStyle = c.ink2; x.font = `500 ${small ? 10 : 11}px ${this.mono}`; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("circle contract", core[0], core[1] + cr + 16);
+    x.fillStyle = c.ink2; x.font = `500 ${small ? 10 : 11}px ${this.mono}`; x.textAlign = "center"; x.textBaseline = "middle"; if (!this.flat) x.fillText("circle contract", core[0], core[1] + cr + 16);
 
     // debts arch between the agents (far ones first)
     if (p < 3) {
@@ -201,6 +198,12 @@ class EpochScene3D extends EpochScene {
       if (!this.reduced) this.cycles.forEach((cy, kk) => { const gl = this.glowOf(kk, p); if (gl <= 0) return;
         const u = (((p - 1) * this.K - kk) * 2.2) % 1, pos = u * cy.edgeIdx.length, idx = Math.floor(pos), i = cy.edgeIdx[idx];
         const [bx, by, bk] = this.at(this.arch(i, lift(this.E[i][2])), (pos - idx) * tEnd); x.beginPath(); x.arc(bx, by, 4.6 * bk, 0, 6.2832); x.fillStyle = "#c8f53c"; x.globalAlpha = gl; x.fill(); x.globalAlpha = 1; });
+    }
+
+    if (this.flat) {   // the contract as a glass NEAR coin, over the debts so they show through it
+      nearCoin(x, core[0], core[1], cr * 1.45, this.reduced ? 0.6 : time);
+      x.fillStyle = c.ink2; x.font = `500 ${small ? 10 : 11}px ${this.mono}`; x.textAlign = "center"; x.textBaseline = "middle";
+      x.fillText("circle contract", core[0], core[1] + cr * 1.45 + 20);
     }
 
     // agents: orbs with eyes, sorted far to near, labels outside the circle
@@ -223,6 +226,45 @@ class EpochScene3D extends EpochScene {
       x.globalAlpha = 1;
     });
   }
+}
+
+/* ---- the landing's contract: a glass coin with the NEAR mark, drawn in 2.5D and turning a little ---- */
+// the NEAR "N" mark (near.org brand asset), in a 93 x 92 box
+const NEAR_N = typeof Path2D === "undefined" ? null : new Path2D("M72.2 4.6 53.4 32.5c-1.3 1.9 1.2 4.2 3 2.6l18.5-16.1c.5-.4 1.2-.1 1.2.6v50.3c0 .7-.9 1-1.3.5l-56-67C17 1.2 14.4 0 11.7 0h-2C4.8 0 0 4.8 0 10.6v70.8C0 87.2 4.8 92 10.6 92c3.7 0 7.1-1.9 9.1-5.1l18.8-27.9c1.3-1.9-1.2-4.2-3-2.6l-18.5 16c-.5.4-1.2.1-1.2-.6V21.9c0-.7.9-1 1.3-.5l56 67c1.8 2.2 4.5 3.4 7.2 3.4h2c5.8 0 10.6-4.8 10.6-10.6V10.6C92.9 4.8 88.1 0 82.3 0c-3.7 0-7.2 1.9-10.1 4.6Z");
+function nearCoin(x, cx, cy, r, time) {
+  const s = 0.86 + 0.1 * Math.sin(time * 0.7);    // the face narrows and widens: the coin turns about its vertical axis
+  const rx = r * s, t = r * 0.14;                  // half width of the face, thickness of the rim
+  const face = () => { x.beginPath(); x.ellipse(cx, cy, rx, r, 0, 0, 6.2832); };
+  x.save();
+  // a soft shadow on the floor
+  x.beginPath(); x.ellipse(cx - t * 0.4, cy + r * 1.3, r * 0.72, r * 0.12, 0, 0, 6.2832); x.fillStyle = "rgba(0,0,0,0.45)"; x.fill();
+  // the glass rim: the face pushed back to the left, frosted, with fine reeding
+  x.beginPath(); x.ellipse(cx - t, cy + t * 0.12, rx, r, 0, 1.5708, 4.7124); x.lineTo(cx, cy - r); x.ellipse(cx, cy, rx, r, 0, 4.7124, 1.5708, true); x.closePath();
+  x.fillStyle = "rgba(220,224,235,0.22)"; x.fill();
+  x.strokeStyle = "rgba(255,255,255,0.18)"; x.lineWidth = 1;
+  for (let a = 1.7; a < 4.6; a += 0.11) { const ex = cx + rx * Math.cos(a), ey = cy + r * Math.sin(a); x.beginPath(); x.moveTo(ex, ey); x.lineTo(ex - t, ey + t * 0.12); x.stroke(); }
+  // the glass face: mostly clear, frosted at the top left
+  face(); const g = x.createLinearGradient(cx - rx, cy - r, cx + rx, cy + r);
+  g.addColorStop(0, "rgba(255,255,255,0.34)"); g.addColorStop(0.5, "rgba(255,255,255,0.1)"); g.addColorStop(1, "rgba(255,255,255,0.05)");
+  x.fillStyle = g; x.fill();
+  // a diagonal sheen, clipped to the face
+  x.save(); face(); x.clip();
+  x.translate(cx, cy); x.rotate(-0.6 + 0.15 * Math.sin(time * 0.7));
+  const sh = x.createLinearGradient(-r, 0, r, 0);
+  sh.addColorStop(0.32, "rgba(255,255,255,0)"); sh.addColorStop(0.42, "rgba(255,255,255,0.32)"); sh.addColorStop(0.47, "rgba(255,255,255,0.08)"); sh.addColorStop(0.55, "rgba(255,255,255,0.18)"); sh.addColorStop(0.62, "rgba(255,255,255,0)");
+  x.fillStyle = sh; x.fillRect(-r * 1.2, -r * 1.2, r * 2.4, r * 2.4);
+  x.restore();
+  // a bright edge and an inner ring, like the polished lip of a glass disc
+  face(); x.strokeStyle = "rgba(255,255,255,0.75)"; x.lineWidth = 1.4; x.stroke();
+  x.beginPath(); x.ellipse(cx, cy, rx * 0.84, r * 0.84, 0, 0, 6.2832); x.strokeStyle = "rgba(255,255,255,0.22)"; x.lineWidth = 1; x.stroke();
+  // the NEAR mark, white, with a faint glow
+  if (NEAR_N) {
+    const k = (r * 0.78) / 92;
+    x.translate(cx, cy); x.scale(s, 1); x.scale(k, k); x.translate(-46.5, -46);
+    x.shadowColor = "rgba(255,255,255,0.55)"; x.shadowBlur = 14;
+    x.fillStyle = "rgba(255,255,255,0.94)"; x.fill(NEAR_N);
+  }
+  x.restore();
 }
 
 /* ---- HUD + scroll wiring (same contract as scene.js mountScene / mountStory) ---- */
