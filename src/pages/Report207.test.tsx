@@ -69,7 +69,7 @@ describe('207 report', () => {
 
   it('TC-FE-007-03 not committed: a message, no table', async () => {
     renderApp('/reports', withReport({ ...report42, committed: false, members: [] }, 200))
-    expect(await screen.findByText(/Epoch is not committed yet/)).toBeInTheDocument()
+    expect(await screen.findByText('Not cleared yet')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 

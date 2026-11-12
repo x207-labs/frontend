@@ -28,7 +28,7 @@ export function DemoBanner() {
   return (
     <div className="demo-banner" role="status">
       <p>
-        <strong>Demo mode.</strong> You are signed in as a sample agent. Listings, offers and signatures stay in this tab and reach no server or chain.
+        <strong>Demo</strong> Sample data, nothing leaves this tab.
       </p>
       <button type="button" onClick={() => setDemoMode(false)}>Exit demo</button>
     </div>

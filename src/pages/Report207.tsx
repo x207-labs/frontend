@@ -1,4 +1,5 @@
 import { useAllMetrics, useReport } from '../api/queries'
+import { EmptyState } from '../components/EmptyState'
 import { CircleLogo } from '../components/CircleLogo'
 import type { ClearingReport, EpochMetrics, EpochPhase, ReportMember } from '../api/types'
 import { NoEpoch } from '../components/NoEpoch'
@@ -224,7 +225,7 @@ export function Report207() {
         query={report}
         loadingLabel="Loading report"
         isEmpty={(d) => !d.committed || d.members.length === 0}
-        empty="Epoch is not committed yet, so there is no clearing report."
+        empty={<EmptyState id={CONTRACT_ID} title="Not cleared yet" line={`The report of epoch ${epoch} shows up once it clears.`} />}
       >
         {(data) => <Report report={data} metrics={metrics?.data} />}
       </QueryState>
