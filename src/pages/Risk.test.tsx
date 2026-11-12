@@ -11,7 +11,7 @@ const defaulted = {
 describe('risk', () => {
   it('TC-FE-012-01 table of status, stake, limit, headroom, history', async () => {
     renderApp('/risk')
-    const row = (await screen.findByText('scraper')).closest('tr')!
+    const row = (await within(screen.getByRole('main')).findByText('scraper')).closest('tr')!
     expect(within(row).getByText('active')).toBeInTheDocument()
     expect(row).toHaveTextContent('37.5')
     expect(row).toHaveTextContent('35')
@@ -53,7 +53,7 @@ describe('risk', () => {
   it('a suspended member shows with limit 0', async () => {
     const suspended = members.map((m) => (m.account.startsWith('scraper') ? { ...m, status: 'suspended', limit: '0', headroom: '0' } : m))
     renderApp('/risk', (p) => (p.endsWith('/members') ? { status: 200, body: { items: suspended, nextCursor: null } } : undefined))
-    const row = (await screen.findByText('scraper')).closest('tr')!
+    const row = (await within(screen.getByRole('main')).findByText('scraper')).closest('tr')!
     expect(within(row).getByText('suspended')).toBeInTheDocument()
     expect(within(row).getAllByText('0.00').length).toBeGreaterThanOrEqual(2)
   })

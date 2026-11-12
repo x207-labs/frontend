@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { EpochProvider, useEpochSelection } from '../epoch'
 import { Logo } from '../landing/Logo'
 import { HomeEyebrow, HomeStatement } from '../pages/HomeLead'
-import { pages } from '../routes'
-import { Sidebar, TabBar } from './AppNav'
+import { AGENTS_PATH, pages } from '../routes'
+import { Sidebar } from './AppNav'
+import { NavIcon } from './icons'
 import { CirclePicker } from './CirclePicker'
 import { DetailSlot, DetailSlotProvider } from './detail'
 import { EpochPicker } from './EpochPicker'
@@ -23,6 +24,8 @@ function Header() {
   const { selected } = useEpochSelection()
   const page = pages.find((p) => p.path === pathname)
   const home = pathname === '/app'
+  // v6: an agent page carries its own head (the mascot and the name), as a bot does in Grok Bot
+  if (pathname === AGENTS_PATH || pathname.startsWith(`${AGENTS_PATH}/`)) return null
   return (
     <header className="page-head" data-page={home ? 'home' : undefined}>
       {home && <HomeEyebrow />}
@@ -47,7 +50,11 @@ export function Layout() {
   const { pathname } = useLocation()
   const main = useRef<HTMLElement>(null)
   const first = useRef(true)
-  const title = pages.find((p) => p.path === pathname)?.title
+  const agent = pathname.startsWith(`${AGENTS_PATH}/`) ? decodeURIComponent(pathname.slice(AGENTS_PATH.length + 1)) : null
+  const title = pages.find((p) => p.path === pathname)?.title ?? (agent ?? (pathname === AGENTS_PATH ? 'Members' : undefined))
+  // v6: under 840 px the sidebar is a full-screen list, opened by the menu button of the top bar and closed by any page change (iOS: a list, then the page)
+  const [list, setList] = useState<string | null>(null)
+  const listOpen = list === pathname
   const group = pages.find((p) => p.path === pathname)?.group // FE-074: the CSS centres the content of the Marketplace pages
   // FE-031: each page has its own title, and a change of page moves the focus to the content, so a keyboard or screen reader user does not stay in the navigation
   useEffect(() => {
@@ -60,10 +67,13 @@ export function Layout() {
       <a className="skip-link" href="#content" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
       <DetailSlotProvider>
         <div className="shell">
-          <Sidebar />
+          <Sidebar open={listOpen} />
           <div className="stage">
             <div className="topbar">
               <div className="topbar-id">
+                <button type="button" className="list-toggle" aria-controls="sidebar" aria-expanded={listOpen} aria-label={listOpen ? 'Close the list' : 'Open the list'} onClick={() => setList(listOpen ? null : pathname)}>
+                  <NavIcon name={listOpen ? 'close' : 'menu'} size={18} />
+                </button>
                 {/* under 840 px the sidebar is gone and the logo moves here */}
                 <p className="brand-compact">
                   <Logo className="brand-logo" title="x207" />
@@ -86,7 +96,6 @@ export function Layout() {
             </main>
             <DetailSlot />
           </div>
-          <TabBar />
         </div>
         <SelectMenu />
       </DetailSlotProvider>

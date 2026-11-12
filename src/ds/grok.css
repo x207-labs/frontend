@@ -126,3 +126,76 @@ main .mk .list-table tbody td[data-label]::before, main .mk .table-wrap table:is
 .rail a .nav-icon, .sheet a .nav-icon { box-sizing: border-box; width: 24px; height: 24px; padding: 4px; border-radius: 7px; background: rgb(var(--ds-tint) / 0.06); }
 .rail a.active .nav-icon, .sheet a.active .nav-icon { background: var(--ds-btn); color: var(--ds-btn-ink); }
 @media (min-width: 840px) and (max-width: 1199px) { .rail a .nav-icon { width: 28px; height: 28px; padding: 5px; } .rail a.active { background: none; } }
+
+/* ================= v6 (2026-11-12): the Grok Bot app, light and dark: a grouped list in the sidebar, agents as mascots, timelines ================= */
+
+/* ---------- sidebar: rows with a tile or a mascot, a name and one plain line ---------- */
+.rail .nav-label { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.rail .nav-title { overflow: hidden; font: 500 14px/1.25 var(--ds-font-text); color: var(--ds-ink); text-overflow: ellipsis; white-space: nowrap; }
+.rail .nav-hint { overflow: hidden; font: 400 12.5px/1.3 var(--ds-font-text); color: var(--ds-ink-3); text-overflow: ellipsis; white-space: nowrap; }
+.rail .nav-hint[data-tone='todo'] { color: var(--ds-accent-ink); }
+.rail .nav-hint[data-tone='bad'] { color: var(--ds-default); }
+.rail .you-mark, .agent-head .you-mark, .agents-list .you-mark { font-weight: 400; color: var(--ds-ink-3); }
+.rail .nav-note { margin: 2px 10px 6px; font: 400 12.5px/1.3 var(--ds-font-text); color: var(--ds-ink-3); }
+.rail .mascot { flex: none; }
+.rail a.agent-row .mascot { width: 30px; height: 30px; }
+.rail a .nav-icon { width: 30px; height: 30px; padding: 6px; border-radius: 9px; }
+.rail a.active { background: rgb(var(--ds-tint) / 0.08); }
+.rail a.active .nav-icon { background: var(--ds-btn); color: var(--ds-btn-ink); }
+.rail .see-all-row .nav-label, .rail .rail-row .nav-label { font: 500 14px/1.25 var(--ds-font-text); color: var(--ds-ink-2); }
+/* the foot: the marketplace, every page, and you */
+.rail .rail-foot { display: flex; flex-direction: column; gap: 1px; margin-top: 14px; padding-top: 10px; border-top: 0.5px solid rgb(var(--ds-tint) / 0.08); }
+.rail .rail-row, .rail .rail-me { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; margin: 0; padding: 4px 10px; border: 0; border-radius: 10px; background: transparent; box-shadow: none; color: var(--ds-ink); font: 500 14px/1.25 var(--ds-font-text); text-align: left; text-decoration: none; }
+.rail .rail-row .nav-icon { box-sizing: border-box; width: 30px; height: 30px; padding: 6px; border-radius: 9px; background: rgb(var(--ds-tint) / 0.06); }
+.rail .rail-me .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rail .rail-me .mascot { margin-left: 2px; }
+@media (hover: hover) and (pointer: fine) { .rail .rail-row:hover, .rail .rail-me:hover { background: rgb(var(--ds-tint) / 0.05); filter: none; } }
+@media (min-width: 840px) {
+  .rail { display: flex; flex-direction: column; }
+  .rail::before, .rail > * { flex: none; } /* a flex column would squeeze the traffic lights to nothing */
+}
+@media (min-width: 840px) and (max-width: 1199px) {
+  .rail a, .rail .rail-row, .rail .rail-me { justify-content: center; width: 2.75rem; min-height: 2.75rem; margin-inline: auto; padding: 0; }
+  .rail a .nav-icon { width: 30px; height: 30px; padding: 6px; }
+  .rail .nav-note { display: none; }
+}
+@media (min-width: 1200px) {
+  .rail { width: auto; }
+  .rail a { min-height: 44px; padding: 5px 10px; gap: 10px; }
+  .rail a.see-all-row { min-height: 36px; }
+}
+
+/* ---------- under 840 px: the sidebar is a full-screen list (iOS), opened by the menu button of the top bar ---------- */
+.list-toggle { display: inline-grid; place-items: center; width: 36px; height: 36px; min-height: 36px; padding: 0; border: 0; border-radius: 999px; }
+.topbar .list-toggle { background: rgb(var(--ds-tint) / 0.06); color: var(--ds-ink); }
+@media (min-width: 840px) { .topbar .list-toggle { display: none; } }
+@media (max-width: 839px) {
+  .rail[data-open] { position: fixed; z-index: 40; inset: 0; display: flex; flex-direction: column; width: auto; height: 100vh; height: 100dvh; margin: 0; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); overflow-y: auto; border: 0; border-radius: 0; background: var(--ds-side); animation: list-in 0.32s var(--ds-ease); }
+  .rail[data-open]::before { margin-left: 2px; }
+  .rail[data-open] .nav-label { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+  .rail[data-open] .nav-group { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+  .rail[data-open] .brand > span { display: none; }
+  .rail[data-open] a { min-height: 52px; }
+  .rail[data-open] ~ .stage .list-toggle { position: fixed; z-index: 41; top: 12px; right: 16px; }
+  main { padding-bottom: calc(2.5rem + env(safe-area-inset-bottom)); }
+}
+@keyframes list-in { from { transform: translateX(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- v6.1: a wide sidebar with large rows, as in the Grok Bot app (a quarter of the window, 40 px mascots, 16 px names) ---------- */
+@media (min-width: 1200px) {
+  .shell { grid-template-columns: 320px minmax(0, 1fr); }
+  .rail { padding: 14px 12px; }
+  .rail .rail-search { min-height: 40px; padding: 0 12px; font-size: 16px; }
+  .rail .nav-group { margin: 18px 12px 6px; font-size: 13.5px; }
+  .rail a { min-height: 58px; padding: 7px 10px; gap: 12px; border-radius: 12px; }
+  .rail a .nav-icon, .rail .rail-row .nav-icon { width: 40px; height: 40px; padding: 9px; border-radius: 12px; }
+  .rail a.agent-row .mascot { width: 40px; height: 40px; }
+  .rail .nav-title { font-size: 16px; line-height: 1.3; }
+  .rail .nav-hint { font-size: 14px; line-height: 1.35; }
+  .rail a.see-all-row { min-height: 44px; }
+  .rail .see-all-row .nav-label, .rail .rail-row .nav-label, .rail .rail-me .nav-label { font-size: 16px; }
+  .rail .rail-row, .rail .rail-me { min-height: 48px; gap: 12px; padding: 4px 10px; }
+  .rail .rail-me .mascot { width: 34px; height: 34px; margin-left: 3px; }
+  .brand .brand-logo > span { font-size: 19px; }
+  .brand .brand-logo img { width: 32px; height: 32px; }
+}
