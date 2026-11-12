@@ -1,6 +1,8 @@
 // FE-070: the idea of x207 in one moving picture. Three members owe each other in a loop; the loop cancels and two small payments are left.
 // Before: A owes B 10, B owes C 8, C owes A 7. Clearing cancels 7 round the loop, so A pays B 3, B pays C 1, and C pays nothing.
 // The animation is CSS only and stops on the "after" picture when the reader prefers reduced motion.
+import { Mascot } from './Mascot'
+
 const NODES = [
   { id: 'A', x: 160, y: 40, color: '#3987e5' },
   { id: 'B', x: 272, y: 178, color: '#d95926' },
@@ -57,9 +59,9 @@ export function LoopMotif({ className = '' }: { className?: string }) {
           )
         })}
         {NODES.map((n) => (
-          <g key={n.id} style={{ color: n.color }}>
-            <circle className="loop-node" cx={n.x} cy={n.y} r={R} />
-            <text className="loop-initial" x={n.x} y={n.y + 5} textAnchor="middle">{n.id}</text>
+          // v6: the three members are mascots; the ones left paying look surprised, the one that pays nothing smiles
+          <g key={n.id} transform={`translate(${n.x - R - 4} ${n.y - R - 4})`}>
+            <Mascot id={`loop-${n.id}`} size={(R + 4) * 2} mood={n.id === 'C' ? 'happy' : 'smile'} />
           </g>
         ))}
       </svg>

@@ -4,7 +4,7 @@ import {
 } from '@phosphor-icons/react'
 import { agentGlyph, PROVIDER_GLYPHS } from './glyphs'
 
-// v6 (2026-11-12): the icons are Phosphor (regular weight), one per page and per action, keyed by the route path or the action name.
+// v6 (2026-11-12): the icons are Phosphor (bold weight, so they never read thin), one per page and per action, keyed by the route path or the action name.
 const ICONS: Record<string, PhosphorIcon> = {
   '/app': House,
   '/stats': ChartBar,
@@ -62,5 +62,5 @@ export function ProviderIcon({ provider, size = 20 }: { provider: string; size?:
 
 export function NavIcon({ name, size = 22 }: { name: string; size?: number }) {
   const Icon = ICONS[name] ?? DotsThree
-  return <Icon className="nav-icon" size={size} weight="regular" aria-hidden="true" focusable="false" />
+  return <Icon className="nav-icon" size={size} weight="bold" aria-hidden="true" focusable="false" />
 }

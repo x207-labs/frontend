@@ -490,3 +490,36 @@ main .mk .pulse-card { border: 0; border-radius: 20px; background: var(--ds-surf
 main .mk .filters :is(input, select), main .mk .table-tools input { border-radius: 12px; }
 main .mk details.market-top > summary { margin-bottom: 0; }
 main .mk details.market-top[open] > summary { margin-bottom: 14px; }
+
+/* the demo banner: one quiet line with its exit, under the top bar with room around it */
+:root .demo-banner { display: flex; align-items: center; gap: 12px; width: fit-content; max-width: 100%; margin: 14px 0 6px; padding: 6px 6px 6px 14px; border: 0; border-radius: 999px; background: rgb(255 194 92 / 0.12); }
+:root .demo-banner p { margin: 0; font: 400 14px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+:root .demo-banner strong { margin-right: 6px; font-weight: 600; color: var(--ds-due); }
+:root .demo-banner button { min-height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); font: 500 13px/1 var(--ds-font-text); }
+
+/* an empty page: a large mascot, a short title, one line */
+.state:has(> .empty-state) { margin: 0; padding: 0; }
+.empty-state { display: grid; justify-items: center; gap: 8px; padding: 40px 24px; border-radius: 24px; background: var(--ds-surface); text-align: center; }
+.empty-state .mascot { margin-bottom: 8px; animation: bob 4s var(--ds-ease) infinite alternate; }
+.empty-title { font: 700 24px/1.2 var(--ds-font-display); letter-spacing: -0.02em; color: var(--ds-ink); }
+.empty-line { max-width: 36ch; font: 400 16px/1.45 var(--ds-font-text); color: var(--ds-ink-2); }
+@media (prefers-reduced-motion: reduce) { .empty-state .mascot { animation: none; } }
+
+/* the replay: a flat floor, no gradient; an empty unit line takes no room */
+:root .rp-floor { background: var(--ds-surface); }
+:root .rp-ring { background: var(--ds-paper); }
+.rp-unit:empty { display: none; }
+
+/* room to breathe: the parts of the balance card and of the welcome card stand apart */
+.home-hero .hero-main { display: grid; align-content: center; gap: 14px; }
+.home-hero .hero-main > * { margin: 0; }
+.home-hero .page-eyebrow { margin: 0 0 6px; }
+.home-hero .hero-figure { margin: 0 0 4px; }
+.home-hero .home-statement { font-size: 19px; }
+.home-hero .home-cta { margin-top: 12px; }
+.home-welcome { padding: 32px; border-radius: 24px; }
+.home-welcome-copy { display: grid; align-content: center; gap: 16px; }
+.home-welcome-copy > * { margin: 0; }
+.home-welcome-copy h2 { font: 700 26px/1.25 var(--ds-font-display); letter-spacing: -0.02em; }
+.home-welcome-copy .cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.home > * + * { margin-top: 0; }
