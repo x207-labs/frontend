@@ -1,5 +1,5 @@
 import { JOIN_STORAGE_DEPOSIT as JOIN_DEPOSIT, PRUNE_MAX_ITEMS_PER_CALL } from '@x207/core'
-import { CIRCLE, CONTRACT_ID } from '../config'
+import { CIRCLE, CONTRACT_ID, TOKENS, type TokenIds } from '../config'
 import type { FunctionCallTx } from './types'
 
 const TGAS = 10n ** 12n
@@ -17,25 +17,24 @@ export function joinTx(pubkeyVoucher: string, termsHash: string): FunctionCallTx
   }
 }
 
-const USDT_ID = 'usdt.tether-token.near'
-const INTENTS_ID = 'intents.near'
+// FE-110: no fixed token. Callers pass the circle's own tokens (`resolveCircleTokens()`); the default is the build config (`TOKENS`), which follows the network.
 const ONE_YOCTO = '1'
 
-/** `ft_withdraw` USDT from `intents.near` to a NEAR account without `msg` (ADR-19). */
-export function ftWithdrawTx(receiverId: string, amount: string): FunctionCallTx {
+/** `ft_withdraw` USDT from the NEAR Intents contract to a NEAR account without `msg` (ADR-19). */
+export function ftWithdrawTx(receiverId: string, amount: string, tokens: TokenIds = TOKENS): FunctionCallTx {
   return {
-    receiverId: INTENTS_ID,
+    receiverId: tokens.intents,
     methodName: 'ft_withdraw',
-    args: { token: USDT_ID, receiver_id: receiverId, amount },
+    args: { token: tokens.usdt, receiver_id: receiverId, amount },
     gas: (50n * TGAS).toString(),
     deposit: ONE_YOCTO,
   }
 }
 
 /** `ft_transfer_call` USDT to the circle contract with the stake `msg`. */
-export function stakeTx(amount: string): FunctionCallTx {
+export function stakeTx(amount: string, usdt: string = TOKENS.usdt): FunctionCallTx {
   return {
-    receiverId: USDT_ID,
+    receiverId: usdt,
     methodName: 'ft_transfer_call',
     args: { receiver_id: CONTRACT_ID, amount, msg: JSON.stringify({ action: 'stake' }) },
     gas: (100n * TGAS).toString(),
@@ -44,9 +43,9 @@ export function stakeTx(amount: string): FunctionCallTx {
 }
 
 /** `ft_transfer_call` USDT to the circle contract with the settle epoch `msg` (SD-014, Contract Interface Spec 4.1). */
-export function settleTx(epoch: number, amount: string): FunctionCallTx {
+export function settleTx(epoch: number, amount: string, usdt: string = TOKENS.usdt): FunctionCallTx {
   return {
-    receiverId: USDT_ID,
+    receiverId: usdt,
     methodName: 'ft_transfer_call',
     args: { receiver_id: CONTRACT_ID, amount, msg: JSON.stringify({ action: 'settle', epoch }) },
     gas: (100n * TGAS).toString(),

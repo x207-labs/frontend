@@ -262,6 +262,11 @@ export function chainFixture(methodName: string): FixtureReply {
       return rpcResult([{ debtor: near('scraper'), creditor: near('gpu') }])
     case 'get_max_escrow_ttl':
       return rpcResult('259200000000000') // 72 hours, the default of CT-129
+    case 'get_circle': // FE-110: the testnet circles (v013..v018) answer these two accounts
+      return rpcResult({
+        circle_id: 'agents-main', contract_id: 'x207-circle.testnet', network: 'x207:agents-main', owner_id: 'x207-deployer.testnet',
+        usdt_token_id: 'usdt.x207-deployer.testnet', intents_id: 'intents.testnet', unit: 'credit', decimals: 6, member_count: 3,
+      })
     default:
       return { status: 200, body: { jsonrpc: '2.0', id: 'x207', error: { cause: { name: 'UNKNOWN_METHOD' } } } }
   }

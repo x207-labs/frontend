@@ -65,7 +65,7 @@ describe('NEAR Connect', () => {
     ])
     expect(BigInt(wallet.txs[0].deposit)).toBe(CORE_JOIN_DEPOSIT)
     // Onboarding and settlement use the same signing helper: the stake fills network, receiver, and gas too.
-    expect(wallet.txs[1]).toMatchObject({ network: 'testnet', methodName: 'ft_transfer_call', receiverId: 'usdt.tether-token.near' })
+    expect(wallet.txs[1]).toMatchObject({ network: 'testnet', methodName: 'ft_transfer_call', receiverId: 'usdt.x207-deployer.testnet' })
     expect(wallet.txs[1].gas).not.toBe('')
   })
 

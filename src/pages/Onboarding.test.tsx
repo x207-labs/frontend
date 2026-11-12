@@ -72,9 +72,10 @@ describe('onboarding F1', () => {
     await user.click(screen.getByRole('button', { name: /withdraw, join, and stake/ }))
     await waitFor(() => expect(wallet.txs).toHaveLength(3))
     expect(wallet.txs.map((t) => `${t.receiverId}.${t.methodName}`)).toEqual([
-      'intents.near.ft_withdraw', 'x207-circle.testnet.join', 'usdt.tether-token.near.ft_transfer_call',
+      // FE-110: the tokens the circle contract names in `get_circle` (the testnet mock USDT and intents.testnet), not the mainnet accounts
+      'intents.testnet.ft_withdraw', 'x207-circle.testnet.join', 'usdt.x207-deployer.testnet.ft_transfer_call',
     ])
-    expect(wallet.txs[0].args).toEqual({ token: 'usdt.tether-token.near', receiver_id: NEW_ACCOUNT, amount: '50000000' })
+    expect(wallet.txs[0].args).toEqual({ token: 'usdt.x207-deployer.testnet', receiver_id: NEW_ACCOUNT, amount: '50000000' })
     expect(wallet.txs[0].args).not.toHaveProperty('msg')
     expect(wallet.txs[1].args).toEqual({ circle_id: 'agents-main', pubkey_voucher: PUBKEY, terms_hash: HASH })
     expect(BigInt(wallet.txs[1].deposit)).toBeGreaterThanOrEqual(JOIN_STORAGE_DEPOSIT)

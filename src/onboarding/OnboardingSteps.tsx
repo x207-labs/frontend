@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { onboardingPayload } from '../account/onboardingSync'
 import { describeAccountFailure, useAccountActions, useSigning } from '../account/useAccount'
-import { NEAR_NETWORK } from '../config'
+import { NEAR_NETWORK, NETWORK_TOKENS } from '../config'
 import { Button } from '../ds/components'
 import './onboarding.css'
 import { FaucetPanel } from './FaucetPanel'
@@ -13,7 +13,8 @@ import { STEP_IDS, computeSteps, type Acknowledged, type MemberState, type StepI
 
 export const FAUCET_URL = 'https://near-faucet.io/'
 /** The USDT of the testnet deployments is a mock token anyone can `mint` (Deployment Testnet note); the real USDT is not on testnet. */
-export const MOCK_USDT_ID = 'usdt.x207-deployer.testnet'
+// FE-110: one source with the transaction builders (`NETWORK_TOKENS` in config.ts).
+export const MOCK_USDT_ID = NETWORK_TOKENS.testnet.usdt
 
 const TITLES: Record<StepId, string> = {
   login: 'Sign in',
