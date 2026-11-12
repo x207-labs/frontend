@@ -21,6 +21,8 @@ const S3 = (() => {
 })();
 
 class EpochScene3D extends EpochScene {
+  /* the landing's story (flat) writes its names and figures in Apple's system type, like the rest of the landing */
+  readTheme() { super.readTheme(); if (this.flat) this.font = this.mono = APPLE_FONT; }
   /* called by the base constructor before subclass fields exist: initialise lazily */
   ensure() {
     if (this.cam) return;
@@ -210,7 +212,7 @@ class EpochScene3D extends EpochScene {
 
     if (this.flat) {   // the contract as a glass NEAR coin, over the debts so they show through it
       nearCoin(x, core[0], core[1], cr * 1.45, this.reduced ? 0.6 : time);
-      x.fillStyle = c.ink2; x.font = `500 ${small ? 10 : 11}px ${this.mono}`; x.textAlign = "center"; x.textBaseline = "middle";
+      x.fillStyle = c.ink2; x.font = `500 ${small ? 11 : 12.5}px ${APPLE_FONT}`; x.textAlign = "center"; x.textBaseline = "middle";
       x.fillText("circle contract", core[0], core[1] + cr * 1.45 + 20);
     }
 
@@ -235,6 +237,8 @@ class EpochScene3D extends EpochScene {
     });
   }
 }
+
+const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif';
 
 /* ---- the landing's contract: a glass coin with the NEAR mark, drawn in 2.5D and turning a little ---- */
 // the NEAR "N" mark (near.org brand asset), in a 93 x 92 box
@@ -279,7 +283,7 @@ function nearCoin(x, cx, cy, r, time) {
 function mountStory3D(story, opts = {}) {
   const root = story.querySelector("[data-scene3d]"), scene = new EpochScene3D(root);
   scene.flat = !!opts.flat;   // the landing's story draws without gradients or glow
-  if (scene.flat) scene.resize();
+  if (scene.flat) { scene.readTheme(); scene.resize(); }
   scene.bindDrag();
   const chapters = [...root.querySelectorAll("[data-chapter]")], steps = [...story.querySelectorAll(".chapter")];
   hud(scene, root);
