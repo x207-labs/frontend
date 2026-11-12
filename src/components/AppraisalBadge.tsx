@@ -5,7 +5,7 @@ import { useAppraisal } from '../api/queries'
 import { API_URL } from '../config'
 import { appraisalSteps, isListingAppraisal } from '../lib/appraisal'
 
-// FE-111: a listing whose `detail` names a NEAR AI Cloud appraisal (backend BE-119) shows a badge with the appraised value, and a "proof" button that
+// FE-111: a listing whose `detail` names a NEAR AI Cloud appraisal (backend BE-120) shows a badge with the appraised value, and a "proof" button that
 // opens what was checked, step by step, with links to the raw JSON. The wording follows backend/README.md word for word: the signature is checked by
 // x207 itself, the TDX quote and the GPU evidence only by third-party verifiers. Nothing here says more than that.
 

@@ -1,12 +1,12 @@
 import type { AppraisalView, ListingAppraisal, ThirdPartyResult } from '../api/types'
 
-// FE-111: reading a NEAR AI Cloud appraisal (backend BE-119). The wording follows backend/README.md: the signature is checked by x207 itself, the TDX quote
+// FE-111: reading a NEAR AI Cloud appraisal (backend BE-120; its first commits say BE-119). The wording follows backend/README.md: the signature is checked by x207 itself, the TDX quote
 // and the GPU evidence only by third-party verifiers.
 
 const APPRAISAL_ID = /^apr_[0-9a-f]{24}$/
 const isText = (v: unknown): v is string => typeof v === 'string'
 
-/** An older backend sends no `appraisal`; an odd one must not break the listing table, so anything not shaped like BE-119 shows no badge. */
+/** An older backend sends no `appraisal`; an odd one must not break the listing table, so anything not shaped like BE-120 shows no badge. */
 export function isListingAppraisal(a: unknown): a is ListingAppraisal {
   if (typeof a !== 'object' || a === null) return false
   const x = a as Partial<ListingAppraisal>
@@ -28,7 +28,7 @@ const LABEL = {
   gpu: 'NVIDIA GPU evidence (checked by a third party)',
 } as const
 
-/** The four checks of BE-119, each on its own line, as `scripts/verify-appraisal.ts` reports them. Without an attestation report the last three are skipped. */
+/** The four checks of BE-120, each on its own line, as `scripts/verify-appraisal.ts` reports them. Without an attestation report the last three are skipped. */
 export function appraisalSteps(v: AppraisalView): AppraisalStep[] {
   const a = v.attestation
   const signature: AppraisalStep = { key: 'signature', label: LABEL.signature, result: v.verified.signature ? 'pass' : 'fail', note: reasons(v.verified.signature_reasons) }

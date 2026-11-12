@@ -172,7 +172,7 @@ export const api = {
     return get<ListingList>(`${circle}/listings${qs ? `?${qs}` : ''}`)
   },
   listing: (hash: string) => get<ListingView>(`${circle}/listings/${hash}`),
-  /** FE-111: one appraisal (BE-119); it is not under a circle. */
+  /** FE-111: one appraisal (BE-120); it is not under a circle. */
   appraisal: (id: string) => get<AppraisalView>(appraisalPath(id)),
   createListing: (listing: object, signature: string) => post<ListingView>(`${circle}/listings`, { listing, signature }),
   checkListing: (listing: object, signature: string) => post<ListingCheck>(`${circle}/listings/check`, { listing, signature }),

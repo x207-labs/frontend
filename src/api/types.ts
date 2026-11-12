@@ -249,10 +249,10 @@ export type ListingView = {
   nonce: string
   signature: string
   status: ListingStatus
-  /** BE-119: only when `detail` names a finished NEAR AI Cloud appraisal (`appraisal=apr_...`); an older backend never sends it. */
+  /** BE-120: only when `detail` names a finished NEAR AI Cloud appraisal (`appraisal=apr_...`); an older backend never sends it. */
   appraisal?: ListingAppraisal
 }
-// FE-111: appraisal of a barter asset on NEAR AI Cloud (backend BE-119, `src/appraiser/`). Keys are snake_case, as the backend sends them.
+// FE-111: appraisal of a barter asset on NEAR AI Cloud (backend BE-120, `src/appraiser/`). Keys are snake_case, as the backend sends them.
 export type AppraisalVerdict = 'checked' | 'not_checked' | 'failed'
 export type ThirdPartyResult = 'passed' | 'failed' | 'not_checked'
 /** Short form inside a listing view. Credit values here are decimal strings (`"60"`, `"12.5"`), not atomic units. */

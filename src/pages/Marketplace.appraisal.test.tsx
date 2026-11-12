@@ -7,7 +7,7 @@ import { APPRAISAL_CLAIM } from '../components/AppraisalBadge'
 import { appraisalSteps } from '../lib/appraisal'
 import { apiError, renderApp, type Override } from '../test/render'
 
-// FE-111: the appraisal badge of a listing (backend BE-119). The values are those of a real appraisal of 2026-11-12 (apr_6edab5eac2b78e65d41ea3b2).
+// FE-111: the appraisal badge of a listing (backend BE-120). The values are those of a real appraisal of 2026-11-12 (apr_6edab5eac2b78e65d41ea3b2).
 const ID = 'apr_6edab5eac2b78e65d41ea3b2'
 const brief: ListingAppraisal = {
   appraisal_id: ID,
