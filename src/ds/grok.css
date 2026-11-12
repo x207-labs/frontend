@@ -19,6 +19,10 @@ body { background: #0b0b0b; }
 .brand { margin-bottom: 14px; }
 .brand .brand-logo > span { display: inline; font: 600 17px/1 var(--ds-font-display); letter-spacing: -0.02em; color: var(--ds-ink); } /* the wordmark beside the agents, not the circle line under it */
 .brand .brand-logo img { width: 28px; height: 28px; }
+/* styles.css sets every span of .brand to block, the logo too, so the wordmark fell under the mark: put it back in line, centred beside the agents */
+@media (min-width: 1200px) { .brand .brand-logo { display: inline-flex; align-items: center; gap: 8px; } }
+.brand-compact .brand-logo { display: inline-flex; align-items: center; gap: 8px; }
+.brand-compact .brand-logo > span { display: inline; }
 .brand > span { font: 400 12px/1.3 var(--ds-font-text); letter-spacing: 0; color: var(--ds-ink-3); }
 .nav-group { margin: 16px 10px 4px; font: 500 12px/1.3 var(--ds-font-text); letter-spacing: 0; text-transform: none; color: var(--ds-ink-3); }
 .rail a, .sheet a { border-radius: 10px; color: rgba(255, 255, 255, 0.72); font-weight: 500; }
