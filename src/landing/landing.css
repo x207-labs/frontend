@@ -506,6 +506,10 @@ html.is-landing body { margin: 0; color: var(--lp-ink); background: var(--lp-bg)
 .lp .qa details { border-bottom: 1px solid var(--lp-line); }
 .lp .faq-grid { height: calc(100vh - 64px); height: calc(100dvh - 64px); min-height: 560px; background: var(--lp-bg); }
 .lp .faq-grid .rows-left { display: flex; flex-direction: column; gap: 18px; min-height: 0; align-self: stretch; }
+.lp .faq-head { display: grid; gap: 18px; margin-block: auto; } /* the claim in the middle of the column, the counter at its foot */
+.lp .faq-head .sub { margin-top: 0; }
+.lp .faq-logo { width: 64px; height: 64px; border-radius: 18px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.lp .faq-grid .faq-count { margin-top: 0; }
 .lp .faq-grid .qa { display: flex; flex-direction: column; }
 .lp .faq-grid .qa details { display: flex; flex-direction: column; justify-content: center; flex: 1 1 0; min-height: 0; transition: flex-grow 0.5s var(--lp-ease); }
 .lp .faq-grid .qa details[open] { flex-grow: 2.2; }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { EPOCH8, LIVE } from '../facts'
-import { Logo } from '../Logo'
+import { Logo, LogoMark } from '../Logo'
 import { X207 } from '../v4/engine/x207.js'
 import { MOOD, TONE } from '../v4/epoch'
 import { Cta, Face, Horizon } from './Mac'
@@ -59,8 +59,11 @@ export function Faq() {
     <section className="rows-sec" id="faq" aria-labelledby="faq-h">
       <div className="rows-grid faq-grid" ref={grid}>
         <div className="rows-left">
-          <h2 id="faq-h" className="reveal-words">What x207 is not.</h2>
-          <p className="sub">Stated before you ask: the edges of a hackathon prototype on NEAR testnet.</p>
+          <div className="faq-head">
+            <LogoMark className="faq-logo" />
+            <h2 id="faq-h" className="reveal-words">What x207 is not.</h2>
+            <p className="sub">Stated before you ask: the edges of a hackathon prototype on NEAR testnet.</p>
+          </div>
           <p className="faq-count mono" aria-hidden="true">
             <b>{String(on + 1).padStart(2, '0')}</b> / {String(items.length).padStart(2, '0')}
           </p>
