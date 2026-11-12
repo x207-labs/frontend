@@ -185,14 +185,22 @@ class EpochScene3D extends EpochScene {
     // debts arch between the agents (far ones first)
     if (p < 3) {
       const lift = (a) => (0.16 + Math.min(0.42, (a * this.ak) / 950)) * (1 - collapse), tEnd = 0.93;
-      const arches = this.E.map((e, i) => { const pts = this.arch(i, lift(e[2])); return { i, pts, z: pts[10][3] }; }).sort((a, b) => a.z - b.z);
-      arches.forEach(({ i, pts }) => {
+      const orbR = (k) => (small ? 9 : 12) * k * this.rs;
+      // flat (landing): each debt ends exactly at the edge of the creditor's orb, so the arrow touches it; elsewhere it stops at 93% of the arch
+      const tipOf = (pts) => {
+        if (!this.flat) return tEnd;
+        const n = pts.length - 1, Q = pts[n], r = orbR(Q[2]) + 2;
+        for (let s = n - 1; s > 0; s--) { const d = Math.hypot(pts[s][0] - Q[0], pts[s][1] - Q[1]); if (d >= r) { const d1 = Math.hypot(pts[s + 1][0] - Q[0], pts[s + 1][1] - Q[1]); return (s + (d - r) / Math.max(1e-6, d - d1)) / n; } }
+        return tEnd;
+      };
+      const arches = this.E.map((e, i) => { const pts = this.arch(i, lift(e[2])); return { i, pts, z: pts[10][3], tip: tipOf(pts) }; }).sort((a, b) => a.z - b.z);
+      arches.forEach(({ i, pts, tip }) => {
         const e = this.E[i], rv = this.reveal(i, p); if (rv <= 0) return;
         const amt = this.amountOf(i, p), dim = this.touches(i) ? 1 : 0.1, fade = (1 - collapse) * dim, k = pts[10][2], f = this.fog(k);
         let glow = 0; this.cycles.forEach((cy, kk) => { if (cy.edgeIdx.includes(i)) glow = Math.max(glow, this.glowOf(kk, p)); });
-        const end = tEnd * (p < 1 ? rv : 1);
+        const end = tip * (p < 1 ? rv : 1);
         if (amt > 0.5) { this.polyline(pts, 0, end, w(amt) * k, c.ink, 0.58 * fade * f); if (p >= 1 || rv > 0.98) this.arrow(pts, end, w(amt), c.ink, 0.8 * fade * f); }
-        if (glow > 0) { this.polyline(pts, 0, tEnd, (w(e[2]) + 2.5) * k, c.settled, 0.85 * glow * dim); this.arrow(pts, tEnd, w(e[2]) + 2, c.settled, glow * dim); }
+        if (glow > 0) { this.polyline(pts, 0, tip, (w(e[2]) + 2.5) * k, c.settled, 0.85 * glow * dim); this.arrow(pts, tip, w(e[2]) + 2, c.settled, glow * dim); }
         if (p < 1 && rv > 0 && rv < 1 && !this.reduced) { const [bx, by, bk] = this.at(pts, end); x.beginPath(); x.arc(bx, by, 3.4 * bk, 0, 6.2832); x.fillStyle = "#dbe7ff"; x.globalAlpha = dim; x.fill(); x.globalAlpha = 1; }
       });
       if (!this.reduced) this.cycles.forEach((cy, kk) => { const gl = this.glowOf(kk, p); if (gl <= 0) return;
