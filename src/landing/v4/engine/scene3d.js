@@ -125,7 +125,7 @@ class EpochScene3D extends EpochScene {
     const x = this.ctx, out = this.outcome[i], v = this.r.net[i];
     x.globalAlpha = dim;
     let g;
-    if (this.flat) g = tint ? S3.mixHex("#e8e8ec", tint, mixT * 0.6) : "#e8e8ec";   // landing story: solid faces, no gradient
+    if (this.flat || this.plain) g = tint ? S3.mixHex("#e8e8ec", tint, mixT * 0.6) : "#e8e8ec";   // landing story and the v6 dashboard: solid faces, no gradient
     else { g = x.createRadialGradient(px - rad * 0.35, py - rad * 0.42, rad * 0.08, px, py, rad);
       g.addColorStop(0, tint ? S3.mixHex("#ffffff", tint, mixT * 0.3) : "#ffffff"); g.addColorStop(1, tint ? S3.mixHex("#c9d2ff", tint, mixT) : "#c9d2ff"); }
     x.beginPath(); x.arc(px, py, rad, 0, 6.2832); x.fillStyle = g; x.fill();
@@ -156,7 +156,7 @@ class EpochScene3D extends EpochScene {
     this.ring(1.42, 0, c.rule, 1, 0.5, [2, 6]);
     this.ring(0.55, 0, c.rule, 1, 0.45);
     let g = "rgba(255,255,255,0.22)";
-    if (!this.flat) { g = x.createLinearGradient(this.cx - this.F, 0, this.cx + this.F, 0); g.addColorStop(0, "rgba(169,203,255,0.7)"); g.addColorStop(0.5, "rgba(255,255,255,0.25)"); g.addColorStop(1, "rgba(47,91,255,0.8)"); }
+    if (!this.flat && !this.plain) { g = x.createLinearGradient(this.cx - this.F, 0, this.cx + this.F, 0); g.addColorStop(0, "rgba(169,203,255,0.7)"); g.addColorStop(0.5, "rgba(255,255,255,0.25)"); g.addColorStop(1, "rgba(47,91,255,0.8)"); }
     this.ring(1, 0, g, this.flat ? 1 : 1.6, 0.9);
     this.world.forEach(([wx, , wz]) => { const a = this.proj(wx * 0.62, 0, wz * 0.62), b = this.proj(wx * 0.95, 0, wz * 0.95); x.beginPath(); x.moveTo(a[0], a[1]); x.lineTo(b[0], b[1]); x.strokeStyle = c.rule; x.globalAlpha = 0.35; x.lineWidth = 1; x.stroke(); x.globalAlpha = 1; });
 
@@ -213,7 +213,9 @@ class EpochScene3D extends EpochScene {
 
     // the circle contract: one glowing sphere in the middle (no light pillar, owner 2026-11-11), brightest once everything nets into it
     const core = this.proj(0, 0.3, 0), cr = 0.1 * this.F * core[2] * (0.9 + 0.15 * collapse);
-    if (!this.flat) {   // the landing story (flat) draws its contract later, as a glass coin over the debts
+    if (this.plain && !this.flat) {   // the v6 dashboard: the contract as one solid disc, no halo
+      x.beginPath(); x.arc(core[0], core[1], cr, 0, 6.2832); x.fillStyle = S3.mixHex("#e8e8ec", "#5be3a0", collapse); x.fill();
+    } else if (!this.flat) {   // the landing story (flat) draws its contract later, as a glass coin over the debts
       const halo = x.createRadialGradient(core[0], core[1], 0, core[0], core[1], cr * 3.2); halo.addColorStop(0, `rgba(91,227,160,${0.18 + 0.3 * collapse})`); halo.addColorStop(1, "rgba(91,227,160,0)");
       x.fillStyle = halo; x.beginPath(); x.arc(core[0], core[1], cr * 3.2, 0, 6.2832); x.fill();
       const cg = x.createRadialGradient(core[0] - cr * 0.3, core[1] - cr * 0.35, cr * 0.1, core[0], core[1], cr); cg.addColorStop(0, "#ffffff"); cg.addColorStop(1, S3.mixHex("#a9cbff", "#5be3a0", collapse));
@@ -356,6 +358,7 @@ function mountStory3D(story, opts = {}) {
    opts: { data, subMoved } as in scene.js mountScene. destroy() undoes the drag and the controls. ---- */
 function mountScene3D(root, opts = {}) {
   const scene = new EpochScene3D(root, opts.data);
+  scene.plain = !!opts.plain;   // the v6 dashboard: solid colours only, no gradient and no glow
   scene.bindDrag();
   return mountScene(root, { ...opts, scene });
 }

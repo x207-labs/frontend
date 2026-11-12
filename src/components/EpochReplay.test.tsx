@@ -48,9 +48,8 @@ describe('epoch replay on live data', () => {
     expect(within(replay).queryByRole('button')).toBeNull()
     expect(within(replay).queryByRole('slider')).toBeNull()
     expect(engine.mount).not.toHaveBeenCalled()
-    // the screen reader gets the figures in words, and the unit is said under the floor
+    // the screen reader gets the figures in words (v6.4: the footnote on units is gone, the tiles name them)
     expect(within(replay).getByText(/6 members on a ring and 2 vouchers between them\. 412\.74 credit owed, 0\.00 cancelled in loops, 2\.74 moved as mock USDT/)).toBeInTheDocument()
-    expect(within(replay).getByText(/mock USDT on NEAR testnet/)).toBeInTheDocument()
   })
 
   it('says so when the epoch has no vouchers, instead of a broken canvas', async () => {
