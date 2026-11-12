@@ -83,19 +83,15 @@ export function Face({ tone, size = 28, mood = 'smile', mono = false, round = fa
   )
 }
 
-/** The pair of calls to action: a white pill with a dark arrow chip inside (on hover the chip floods the pill and a new arrow slides in), and a glass pill with a play chip. */
+/** The pair of calls to action: a glowing blue pill set in a dark ring, with a chevron, and a glass pill with a play chip. */
 export function Cta({ go, watch }: { go: { href: string; label: string }; watch: { href: string; label: string } }) {
   return (
     <div className="cta">
       <a className="cta-go" href={go.href}>
         <span className="cta-label">{go.label}</span>
-        <span className="cta-chip" aria-hidden="true">
-          {[0, 1].map((k) => (
-            <svg key={k} width="12" height="12" viewBox="0 0 14 14">
-              <path d="M4 10 10 4M5 4h5v5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          ))}
-        </span>
+        <svg className="cta-chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+          <path d="M4.2 2 8.2 6l-4 4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </a>
       <a className="cta-glass" href={watch.href}>
         <span className="cta-play" aria-hidden="true">

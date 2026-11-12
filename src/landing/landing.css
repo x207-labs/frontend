@@ -71,7 +71,6 @@ html.is-landing body { margin: 0; color: var(--lp-ink); background: var(--lp-bg)
 .lp .split.aurora .plane { margin-left: 2px; transition: transform 0.3s var(--lp-ease); }
 @media (hover: hover) and (pointer: fine) { .lp .split.aurora:hover { filter: saturate(1.15) brightness(1.03); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 10px 32px rgba(91, 140, 255, 0.4); } .lp .split.aurora .pill:hover { background: transparent; } .lp .split.aurora:hover .plane { transform: translate(2px, -2px); } }
 
-
 /* macOS menu: translucent, blurred, a hairline and a deep shadow; the item under the pointer turns system blue */
 .lp .menu { position: absolute; top: calc(100% + 10px); left: 0; z-index: 2; min-width: 290px; padding: 5px; border-radius: 12px; background: rgba(30, 30, 32, 0.78); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.8), 0 22px 60px rgba(0, 0, 0, 0.55); backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); opacity: 0; visibility: hidden; transform: translateY(-4px) scale(0.98); transform-origin: top left; transition: opacity 0.16s, transform 0.16s var(--lp-ease), visibility 0s 0.16s; }
 .lp .menu::before { content: ""; position: absolute; inset: -12px 0 auto; height: 12px; }
@@ -121,19 +120,16 @@ html.is-landing body { margin: 0; color: var(--lp-ink); background: var(--lp-bg)
 .lp .lede { max-width: 700px; margin-top: 18px; font-size: clamp(16px, 1.5vw, 18px); line-height: 1.6; color: var(--lp-lede); }
 .lp .near { white-space: nowrap; color: var(--lp-ink); }
 .lp .near img { display: inline-block; width: 1.05em; height: 1.05em; margin-right: 0.3em; border-radius: 0.28em; vertical-align: -0.2em; }
-.lp .cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 28px; }
+.lp .cta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px; margin-top: 28px; }
 /* the calls to action: a white pill and its arrow bubble that merge on hover, and a liquid-glass pill with a play chip */
-.lp .cta-go { position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 12px; height: 40px; padding: 0 4px 0 18px; overflow: hidden; border-radius: 999px; background: #fff; color: #0a0a0a; font-size: 14px; font-weight: 500; text-decoration: none; transition: color 0.45s var(--lp-ease), transform 0.2s var(--lp-ease); }
-.lp .cta-go::before { content: ""; position: absolute; z-index: -1; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 999px; background: #0a0a0a; transition: width 0.55s var(--lp-ease); }
-.lp .cta-chip { position: relative; display: grid; place-items: center; width: 32px; height: 32px; overflow: hidden; border-radius: 50%; color: #fff; }
-.lp .cta-chip svg { position: absolute; transition: transform 0.5s var(--lp-ease); }
-.lp .cta-chip svg + svg { transform: translate(-200%, 200%); }
+.lp .cta-go { display: inline-flex; align-items: center; gap: 12px; height: 48px; margin: 6px; padding: 0 20px 0 26px; border-radius: 999px; color: #fff; font-size: 15px; font-weight: 500; letter-spacing: 0.01em; text-decoration: none; background: radial-gradient(70% 100% at 50% 130%, rgba(170, 245, 235, 0.95), rgba(170, 245, 235, 0) 62%), linear-gradient(180deg, #74baff, #3f8bff); box-shadow: 0 0 0 6px rgba(70, 86, 110, 0.6), 0 0 0 7px rgba(255, 255, 255, 0.06), 0 0 30px rgba(80, 160, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -8px 16px rgba(30, 90, 220, 0.3); text-shadow: 0 1px 2px rgba(20, 60, 160, 0.35); transition: box-shadow 0.3s var(--lp-ease), transform 0.2s var(--lp-ease), filter 0.3s; }
+.lp .cta-chev { transition: transform 0.3s var(--lp-ease); }
+@media (hover: hover) and (pointer: fine) { .lp .cta-go:hover { filter: brightness(1.06); box-shadow: 0 0 0 6px rgba(80, 100, 130, 0.7), 0 0 0 7px rgba(255, 255, 255, 0.08), 0 0 44px rgba(80, 160, 255, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -8px 16px rgba(30, 90, 220, 0.3); } .lp .cta-go:hover .cta-chev { transform: translateX(3px); } }
 .lp .cta-play { transition: background 0.25s, color 0.25s; }
-.lp .cta-glass { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); color: #fff; font-size: 14px; font-weight: 500; text-decoration: none; transition: background 0.25s, border-color 0.25s, transform 0.2s var(--lp-ease); }
-.lp .cta-play { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); }
+.lp .cta-glass { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px 0 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); color: #fff; font-size: 14px; font-weight: 500; text-decoration: none; transition: background 0.25s, border-color 0.25s, transform 0.2s var(--lp-ease); }
+.lp .cta-play { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); }
 .lp .cta-go:active, .lp .cta-glass:active { transform: scale(0.97); }
 .lp .cta-go:focus-visible, .lp .cta-glass:focus-visible { outline-offset: 3px; }
-@media (hover: hover) and (pointer: fine) { .lp .cta-go:hover { color: #fff; } .lp .cta-go:hover::before { width: calc(100% - 8px); } .lp .cta-go:hover .cta-chip svg:first-child { transform: translate(200%, -200%); } .lp .cta-go:hover .cta-chip svg + svg { transform: none; } }
 @media (hover: hover) and (pointer: fine) { .lp .cta-glass:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.16); } .lp .cta-glass:hover .cta-play { background: #fff; color: #0a0a0a; } }
 .lp .hero-copy > * { animation: lp-rise 0.9s var(--lp-ease) both; }
 .lp .hero-copy > :nth-child(2) { animation-delay: 0.06s; } .lp .hero-copy > :nth-child(3) { animation-delay: 0.12s; } .lp .hero-copy > :nth-child(4) { animation-delay: 0.18s; }
