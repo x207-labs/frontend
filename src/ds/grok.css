@@ -1,0 +1,106 @@
+/* v5 (2026-11-12): the app as Grok Bot's dark desk (x.ai/bot). Loaded last, so it wins over styles.css and the v4 sheets.
+   A window on near-black: the sidebar a shade darker than the page, rows with 10px corners, a light pill for the main action and a dark pill for the
+   rest, cards at #212121 with a hairline ring, Apple's system type, no glow and no gradient. Colour only names an x207 result code. */
+
+body { background: #0b0b0b; }
+
+/* ---------- the window: sidebar and page side by side, rounded, on near-black ---------- */
+@media (min-width: 840px) {
+  .shell { padding: 10px; }
+  .rail { top: 10px; height: calc(100vh - 20px); height: calc(100dvh - 20px); margin: 0; padding: 14px 8px; border: 0; border-radius: 16px 0 0 16px; background: #121212; box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06); }
+  .stage { min-height: calc(100vh - 20px); min-height: calc(100dvh - 20px); border-radius: 0 16px 16px 0; background: var(--paper); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+  .topbar { border-top-right-radius: 16px; }
+}
+/* the window's traffic lights above the logo */
+.rail::before { content: ''; display: block; width: 12px; height: 12px; margin: 2px 0 16px 8px; border-radius: 50%; background: #ff5f57; box-shadow: 20px 0 0 #febc2e, 40px 0 0 #28c840; }
+@media (min-width: 840px) and (max-width: 1199px) { .rail::before { margin-inline: auto; transform: translateX(-20px) scale(0.8); } }
+
+/* ---------- sidebar rows ---------- */
+.brand { margin-bottom: 14px; }
+.brand .brand-logo > span { display: inline; font: 600 17px/1 var(--ds-font-display); letter-spacing: -0.02em; color: var(--ds-ink); } /* the wordmark beside the agents, not the circle line under it */
+.brand .brand-logo img { width: 28px; height: 28px; }
+.brand > span { font: 400 12px/1.3 var(--ds-font-text); letter-spacing: 0; color: var(--ds-ink-3); }
+.nav-group { margin: 16px 10px 4px; font: 500 12px/1.3 var(--ds-font-text); letter-spacing: 0; text-transform: none; color: var(--ds-ink-3); }
+.rail a, .sheet a { border-radius: 10px; color: rgba(255, 255, 255, 0.72); font-weight: 500; }
+.rail a.active, .sheet a.active { background: rgba(255, 255, 255, 0.08); color: #fff; font-weight: 500; }
+.rail a.active::before, .sheet a.active::before { content: none; }
+.tab[aria-current='page'] { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.tab[aria-current='page']::before { content: none; }
+.tabbar, .sheet { background: #1a1a1a; border-color: rgba(255, 255, 255, 0.08); }
+@media (hover: hover) and (pointer: fine) { .rail a:hover:not(.active), .sheet a:hover:not(.active) { background: rgba(255, 255, 255, 0.05); color: #fff; } }
+
+/* ---------- top bar ---------- */
+.topbar { background: var(--paper); border-bottom-color: rgba(255, 255, 255, 0.06); }
+.net-chip { border-radius: 999px; font: 500 12px/1.5 var(--ds-font-text); }
+.net-chip i { background: #28c840; }
+.palette-trigger, .demo-toggle, .account-trigger { border-radius: 999px; background: #262626; border-color: rgba(255, 255, 255, 0.08); color: var(--ds-ink); }
+.palette-trigger kbd { font-family: var(--ds-font-text); }
+
+/* ---------- buttons: a light pill for the main action, a dark pill for the rest ---------- */
+:where(.shell, .sheet-backdrop, .palette-backdrop) button { border-radius: 999px; background: #f0f0f0; color: #141414; font-weight: 500; }
+:where(.shell) button.quiet, :where(.shell) button.copy { background: #262626; color: var(--ds-ink); border-color: rgba(255, 255, 255, 0.12); }
+:where(.shell) button:disabled { background: transparent; color: var(--ds-ink-3); border-color: rgba(255, 255, 255, 0.1); }
+:where(.shell) button.th-sort, :where(.shell) .tabbar button, :where(.shell) .palette-trigger, :where(.shell) .demo-toggle, :where(.shell) .account-trigger { background: transparent; }
+:where(.shell) .palette-trigger, :where(.shell) .demo-toggle, :where(.shell) .account-trigger { background: #262626; color: var(--ds-ink); }
+.ds-btn { border-radius: 999px; border-color: rgba(255, 255, 255, 0.12); background: #262626; font-weight: 500; }
+.ds-btn[data-variant='glow'], .ds-btn[data-variant='white'] { border-color: transparent; background: #f0f0f0; color: #141414; box-shadow: none; }
+@media (hover: hover) and (pointer: fine) {
+  :where(.shell) button:hover:not(:disabled) { filter: brightness(0.94); }
+  button.ds-btn:hover:not(:disabled), a.ds-btn:hover { background-color: #2f2f2f; }
+  button.ds-btn[data-variant='glow']:hover:not(:disabled), a.ds-btn[data-variant='glow']:hover, .ds-btn[data-variant='white']:hover { background: #ffffff; box-shadow: none; filter: none; }
+}
+
+/* ---------- cards: #212121, 16px corners, a hairline ring, no glass and no glow ---------- */
+.panel, .card, .ds-panel, .ds-kpi, .home-table, .form, .table-wrap { background: var(--sheet); border-color: rgba(255, 255, 255, 0.08); box-shadow: none; }
+.panel, .card, .ds-panel, .ds-kpi, .home-table { border-radius: 16px; }
+.ds-kpi::before { content: none; }
+.ds-kpi > header b { background: rgba(255, 255, 255, 0.08); color: var(--ds-ink); }
+.ds-chip { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.1); color: var(--ds-ink); }
+.ds-eyebrow i { box-shadow: none; }
+.ds-tally > div[data-tone='paper'] { background: #f0f0f0; }
+.ds-tally > div[data-tone='lime'] { background: #2a2a2a; color: var(--ds-ink); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.ds-tally > div[data-tone='lime'] small { color: var(--ds-ink-2); }
+.ds-tally > div[data-tone='paper'] small { color: #555; }
+.ds-tally > div[data-tone='floor'] { background: #3a3a3a; }
+
+/* ---------- page header: a plain title, one plain sentence ---------- */
+.page-head h1 { font-size: clamp(26px, 2.6vw, 34px); font-weight: 600; letter-spacing: -0.02em; }
+.page-intro { font-family: var(--ds-font-text); color: var(--ds-ink-2); }
+.page-eyebrow { font: 500 13px/1.5 var(--ds-font-text); }
+.page-eyebrow[data-live]::before { background: #28c840; box-shadow: none; }
+.picker label { font: 500 12px/1 var(--ds-font-text); letter-spacing: 0; text-transform: none; }
+.picker select { border-radius: 999px; background-color: #262626; border-color: rgba(255, 255, 255, 0.08); }
+.phases { background: #1d1d1d; border-color: rgba(255, 255, 255, 0.08); }
+.phases li.now { background: #f0f0f0; color: #141414; box-shadow: none; }
+.phases li.now::before, .phases li.now .phase-mark::before { background: #141414; }
+
+/* ---------- tables and facts: sentence-case labels, no mono caps ---------- */
+.home-table thead th, .home-facts dt, th { font-family: var(--ds-font-text); letter-spacing: 0; text-transform: none; }
+.home-facts dd { font-family: var(--ds-font-text); }
+.sechead h2, .home .ds-panel h2, .ds-panel h3 { font-weight: 600; font-stretch: 100%; }
+
+/* the labels the v4 pages set in mono caps: sentence case in the system type */
+.ep .kv.ep-facts dt,
+.ep-table thead th,
+.ep-more .facts dt,
+main .ax .ax-facts dt, main .ax .figures dt,
+main .ax .ax-dl dt,
+main .ax .row-sub,
+main .ax .ax-table thead th,
+main .ax .rule-next-title,
+main .ax-help .explore-label,
+.cl .figure-label,
+.cl .table-wrap:not(.ep-table) thead th,
+.cl .table-tools label span,
+.cl-floor .flow-title,
+.risk-pick > span,
+.risk-low,
+.settle-col > h3,
+main .mk .filters label,
+main .mk .side legend,
+main .mk .table-wrap thead th,
+main .mk dl.figures dt,
+main .mk dl.kv > dt,
+main .mk .deal-tag,
+main .mk .list-table tbody td[data-label]::before, main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) tbody td[data-label]::before, main .mk table[aria-label='Listings'] tbody td[data-label]::before,
+.step-badge { font-family: var(--ds-font-text); letter-spacing: 0; text-transform: none; }
