@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { CircleLogo } from '../components/CircleLogo'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { ApiError, api } from '../api/client'
@@ -272,6 +273,7 @@ export function Settlement() {
     <div className="settle ep cl">
       <header className="ep-head">
         <p className="ep-eyebrow">
+          <CircleLogo />
           {CIRCLE}
           {account ? ` · ${shortAccount(account)}` : ''} · epoch {epoch}
           {selected ? ` · ${phaseWord(selected.phase)}` : ''}

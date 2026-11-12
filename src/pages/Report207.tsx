@@ -1,4 +1,5 @@
 import { useAllMetrics, useReport } from '../api/queries'
+import { CircleLogo } from '../components/CircleLogo'
 import type { ClearingReport, EpochMetrics, EpochPhase, ReportMember } from '../api/types'
 import { NoEpoch } from '../components/NoEpoch'
 import { PrunePanel } from '../components/PrunePanel'
@@ -54,6 +55,7 @@ function Statement({ report, metrics }: { report: ClearingReport; metrics: Epoch
   return (
     <header className="ep-head">
       <p className="ep-eyebrow">
+        <CircleLogo />
         {report.circle} · epoch {report.epoch} · {report.phase.replace(/_/g, ' ')}
       </p>
       {/* the page title is the h1 of the shell; this one names the epoch the page is about */}

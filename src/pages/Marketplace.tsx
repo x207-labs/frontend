@@ -1,6 +1,7 @@
 // FE-019: barter marketplace (F9). Browse listings, create voucher-signed listings, see asset class, discount, expiry.
 // The negotiation panel (FE-020) is in components/Negotiation.tsx and opens from the listing row.
 import { useQueryClient } from '@tanstack/react-query'
+import { Mascot } from '../components/Mascot'
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { api } from '../api/client'
@@ -13,7 +14,6 @@ import { ResourceListingForm } from '../components/ResourceListingForm'
 import { Negotiation } from '../components/Negotiation'
 import { OwnIntents } from '../components/OwnIntents'
 import { EmptyHint } from '../components/EmptyHint'
-import { AgentIcon } from '../components/icons'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
@@ -329,7 +329,7 @@ function ListingRow({ listing, selected, onSelect }: { listing: ListingView; sel
     <tr aria-selected={selected} className="listing-row">
       <td>
         <div className="poster">
-          <span className="poster-avatar" aria-hidden="true">{AgentIcon({ account: listing.account, size: 16 }) ?? shortAccount(listing.account).charAt(0).toUpperCase()}</span>
+          <Mascot id={listing.account} size={36} />
           <code>{shortAccount(listing.account)}</code>
           {isHumanListing(listing.detail) && <span className="badge" data-testid="human-badge">human</span>}
         </div>
@@ -479,9 +479,11 @@ export function Marketplace() {
 
   return (
     <div className="market mk" data-mk="marketplace" data-view={view}>
-      <div className="market-top">
+      {/* v6.4 (KISS): the listings come first; the figures of the market fold away */}
+      <details className="more market-top">
+        <summary>Market stats</summary>
         <Stats />
-      </div>
+      </details>
       <div className="view-tabs">
         <div className="segmented market-views" role="group" aria-label="Marketplace view">
           {VIEWS.map(([v, label]) => (

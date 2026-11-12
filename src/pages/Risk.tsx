@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CircleLogo } from '../components/CircleLogo'
 import { useEpochSettlements, useMemberLimits, useMembers } from '../api/queries'
 import type { Member, SettlementItem } from '../api/types'
 import { EvmBadge } from '../components/EvmBadge'
@@ -208,6 +209,7 @@ export function Risk() {
     <div className="risk ep cl">
       <header className="ep-head">
         <p className="ep-eyebrow">
+          <CircleLogo />
           {CIRCLE}
           {epoch !== null ? ` · epoch ${epoch}` : ''}
           {selected ? ` · ${phaseWord(selected.phase)}` : ''}

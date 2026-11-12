@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { CircleLogo } from '../components/CircleLogo'
 import { ApiError } from '../api/client'
 import { useObligations } from '../api/queries'
 import type { ObligationEdge, Obligations } from '../api/types'
@@ -189,6 +190,7 @@ function Head({ epoch, phase, sums, pruned }: { epoch: number; phase: string | u
   return (
     <header className="ep-head">
       <p className="ep-eyebrow">
+        <CircleLogo />
         {CIRCLE} · epoch {epoch}
         {phase ? ` · ${phaseWord(phase)}` : ''}
       </p>

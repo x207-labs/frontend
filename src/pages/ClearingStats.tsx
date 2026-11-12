@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CircleLogo } from '../components/CircleLogo'
 import { Link, useLocation } from 'react-router-dom'
 import { useAllMetrics } from '../api/queries'
 import type { EpochItem, EpochMetrics } from '../api/types'
@@ -81,6 +82,7 @@ function Statement({ m, selected, pruned }: { m: EpochMetrics; selected: EpochIt
   return (
     <header className="ep-head">
       <p className="ep-eyebrow">
+        <CircleLogo />
         {m.circle} · epoch {m.epoch} · {phaseWord(selected.phase)}
       </p>
       {/* the page title is the h1 of the shell; this one names the epoch the page is about */}
