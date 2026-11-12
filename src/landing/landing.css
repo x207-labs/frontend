@@ -504,6 +504,17 @@ html.is-landing body { margin: 0; color: var(--lp-ink); background: var(--lp-bg)
 /* ================= faq, closing, footer ================= */
 /* the limits: fourmula rows like Barter and the checks; the open one is lit */
 .lp .qa details { border-bottom: 1px solid var(--lp-line); }
+.lp .faq-grid { height: calc(100vh - 64px); height: calc(100dvh - 64px); min-height: 560px; background: var(--lp-bg); }
+.lp .faq-grid .rows-left { display: flex; flex-direction: column; gap: 18px; min-height: 0; align-self: stretch; }
+.lp .faq-grid .qa { display: flex; flex-direction: column; }
+.lp .faq-grid .qa details { display: flex; flex-direction: column; justify-content: center; flex: 1 1 0; min-height: 0; transition: flex-grow 0.5s var(--lp-ease); }
+.lp .faq-grid .qa details[open] { flex-grow: 2.2; }
+.lp .faq-grid .qa summary.row { padding-block: 0; border-bottom: 0; }
+.lp .faq-grid .qa details > p { padding-bottom: 0; }
+.lp .faq-count { margin-top: auto; font-size: 13px; color: var(--lp-ink-3); }
+.lp .faq-count b { font-size: 44px; font-weight: 600; letter-spacing: -0.04em; color: #fff; }
+.lp .qa summary.row { color: rgba(255, 255, 255, 0.2); }
+.lp .qa summary .plus { color: var(--lp-ink-3); }
 .lp .qa summary { list-style: none; }
 .lp .qa summary::-webkit-details-marker { display: none; }
 .lp .qa details[open] > summary { color: #fff; }
@@ -564,6 +575,9 @@ html.is-landing body { margin: 0; color: var(--lp-ink); background: var(--lp-bg)
   .lp .minis div:nth-child(2) { border-right: 0; } .lp .minis div:nth-child(-n + 2) { border-bottom: 1px solid var(--lp-line); }
   .lp .fall { height: 300px; min-height: 0; }
   .lp .rows-left { position: static; min-height: 0; }
+  .lp .faq-grid { height: auto; min-height: 0; }
+  .lp .faq-grid .qa details { flex: none; }
+  .lp .faq-grid .qa summary.row { padding-block: 22px; }
   .lp .rows-right, .lp .evidence { border-left: 0; border-top: 1px solid var(--lp-line); }
   .lp .row, .lp .frow { grid-template-columns: 36px minmax(0, 1fr) auto; padding-block: 22px; }
   .lp .frow { grid-template-columns: 36px minmax(0, 1fr); }

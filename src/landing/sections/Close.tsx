@@ -1,10 +1,15 @@
+import { useEffect, useRef, useState } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { EPOCH8, LIVE } from '../facts'
 import { Logo } from '../Logo'
 import { X207 } from '../v4/engine/x207.js'
 import { MOOD, TONE } from '../v4/epoch'
 import { Cta, Face, Horizon } from './Mac'
 
-/** What x207 is not, stated before anyone asks, as an FAQ after x.ai. The gas figures are the measured ones of epoch 8 (facts.ts). */
+gsap.registerPlugin(ScrollTrigger)
+
+/** What x207 is not, stated before anyone asks. On a wide screen the scroll walks through the limits one at a time. The gas figures are the measured ones of epoch 8 (facts.ts). */
 export function Faq() {
   const items = [
     {
@@ -28,17 +33,48 @@ export function Faq() {
       body: <>The contracts are tested, not externally audited. Known issues are listed in <a href={LIVE.security}>security.md</a>.</>,
     },
   ]
+  const [on, setOn] = useState(0)
+  const grid = useRef<HTMLDivElement>(null)
+
+  // wide screens with motion: the section is pinned under the bar and the scroll walks through the limits one by one; each one lights up and
+  // opens while the one before it closes. Elsewhere a tap opens a limit.
+  useEffect(() => {
+    const g = grid.current
+    if (!g) return
+    const mm = gsap.matchMedia()
+    mm.add('(min-width: 961px) and (prefers-reduced-motion: no-preference)', () => {
+      const st = ScrollTrigger.create({
+        trigger: g,
+        start: 'top 64px',
+        end: `+=${items.length * 55}%`,
+        pin: true,
+        onUpdate: (self) => setOn(Math.min(items.length - 1, Math.floor(self.progress * items.length + 1e-6))),
+      })
+      return () => st.kill()
+    })
+    return () => mm.revert()
+  }, [items.length])
+
   return (
     <section className="rows-sec" id="faq" aria-labelledby="faq-h">
-      <div className="rows-grid">
+      <div className="rows-grid faq-grid" ref={grid}>
         <div className="rows-left">
           <h2 id="faq-h" className="reveal-words">What x207 is not.</h2>
           <p className="sub">Stated before you ask: the edges of a hackathon prototype on NEAR testnet.</p>
+          <p className="faq-count mono" aria-hidden="true">
+            <b>{String(on + 1).padStart(2, '0')}</b> / {String(items.length).padStart(2, '0')}
+          </p>
         </div>
         <div className="rows-right qa">
           {items.map((it, i) => (
-            <details key={it.title} open={i === 0}>
-              <summary className="row">
+            <details key={it.title} open={i === on}>
+              <summary
+                className="row"
+                onClick={(e) => {
+                  e.preventDefault()
+                  setOn(i === on ? -1 : i)
+                }}
+              >
                 <span className="row-n mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
                 <h3 className="row-t">{it.title}</h3>
                 <span className="plus" aria-hidden="true" />
