@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type FocusEvent, type ReactNode } f
 import { LIVE } from '../facts'
 import { Logo } from '../Logo'
 
-type Item = { href: string; title: string; note: string }
+type Item = { href: string; title: string; note: string; icon?: ReactNode }
 
 const MENUS: { label: string; items: Item[] }[] = [
   {
@@ -24,9 +24,31 @@ const MENUS: { label: string; items: Item[] }[] = [
   },
 ]
 
+/** The live circle: the crowd of agents from the hero title, four faces with four moods. */
+const CrowdIcon = (
+  <span className="crowd menu-crowd" aria-hidden="true">
+    {[0, 1, 2, 3].map((n) => (
+      <i key={n} style={{ ['--n' as string]: n }}>
+        <b />
+      </i>
+    ))}
+  </span>
+)
+
+/** An epoch replayed: the fifteen agents as dots on a ring, a play mark in the middle. */
+const EpochIcon = (
+  <svg className="menu-epoch" width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+    {Array.from({ length: 15 }, (_, i) => {
+      const a = (i / 15) * Math.PI * 2 - Math.PI / 2
+      return <circle key={i} cx={20 + 15 * Math.cos(a)} cy={20 + 15 * Math.sin(a)} r={i % 5 === 0 ? 2.4 : 1.7} />
+    })}
+    <path d="M17 14.5v11a.8.8 0 0 0 1.2.7l8.6-5.5a.8.8 0 0 0 0-1.4l-8.6-5.5a.8.8 0 0 0-1.2.7Z" />
+  </svg>
+)
+
 const DASH: Item[] = [
-  { href: LIVE.dashboard, title: 'Live circle', note: `agents-main on ${LIVE.contract}` },
-  { href: LIVE.epoch8Stats, title: 'Epoch 8 replay', note: 'The clearing results of epoch 8' },
+  { href: LIVE.dashboard, title: 'Live circle', note: `agents-main on ${LIVE.contract}`, icon: CrowdIcon },
+  { href: LIVE.epoch8Stats, title: 'Epoch 8 replay', note: 'The clearing results of epoch 8', icon: EpochIcon },
 ]
 
 const Chevron = () => (
@@ -87,7 +109,8 @@ function Panel({ id, items, open }: { id: string; items: Item[]; open: boolean }
       <ul>
         {items.map((it) => (
           <li key={it.title}>
-            <a href={it.href}>
+            <a href={it.href} className={it.icon ? 'has-ic' : undefined}>
+              {it.icon && <span className="menu-ic">{it.icon}</span>}
               <b>{it.title}</b>
               <span>{it.note}</span>
             </a>
