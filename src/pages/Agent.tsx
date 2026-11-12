@@ -187,7 +187,7 @@ export function Agent() {
   return (
     <div className="agent-page">
       <header className="agent-head">
-        <Mascot id={account} size={44} />
+        <Mascot id={account} size={44} mood={agent?.mood} />
         <div>
           <h1>
             {name}
@@ -231,7 +231,7 @@ export function Agents() {
         {shown.map((a) => (
           <li key={a.account}>
             <Link to={{ pathname: agentPath(a.account), search }} title={a.account}>
-              <Mascot id={a.account} size={36} />
+              <Mascot id={a.account} size={36} mood={a.mood} />
               <span>
                 <b>
                   {a.name}

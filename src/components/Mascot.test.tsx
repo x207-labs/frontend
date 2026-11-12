@@ -13,8 +13,18 @@ describe('Mascot', () => {
     for (const id of ids) expect(MASCOT_COLORS).toContain(mascotOf(id).color)
   })
 
-  it('is decorative', () => {
-    const { container } = render(<Mascot id="bob.testnet" />)
-    expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+  it('is decorative, has a face (two eyes and a mouth), and the face follows the mood it is given', () => {
+    const { container, rerender } = render(<Mascot id="bob.testnet" />)
+    const svg = container.querySelector('svg')!
+    expect(svg).toHaveAttribute('aria-hidden', 'true')
+    expect(svg).toHaveAttribute('data-mood', mascotOf('bob.testnet').mood)
+    rerender(<Mascot id="bob.testnet" mood="smile" />)
+    expect(svg.querySelectorAll('.mascot-face ellipse')).toHaveLength(2)
+    expect(svg.querySelectorAll('.mascot-face path')).toHaveLength(1) // the mouth
+    rerender(<Mascot id="bob.testnet" mood="surprised" />)
+    expect(svg).toHaveAttribute('data-mood', 'surprised')
+    expect(svg.querySelectorAll('.mascot-face ellipse')).toHaveLength(3) // the open mouth
+    rerender(<Mascot id="bob.testnet" mood="wink" />)
+    expect(svg.querySelectorAll('.mascot-face ellipse')).toHaveLength(1) // one eye shut
   })
 })

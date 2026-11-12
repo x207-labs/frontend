@@ -45,7 +45,7 @@ function Members() {
       {error && <p className="nav-note">Members not available</p>}
       {shown.map((a) => (
         <NavLink key={a.account} className="agent-row" to={{ pathname: agentPath(a.account), search }} title={a.account}>
-          <Mascot id={a.account} size={30} />
+          <Mascot id={a.account} size={30} mood={a.mood} />
           <span className="nav-label">
             <span className="nav-title">
               {a.name}

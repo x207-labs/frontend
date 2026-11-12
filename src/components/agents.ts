@@ -5,9 +5,10 @@ import { api } from '../api/client'
 import type { EpochItem, Member, ReportMember } from '../api/types'
 import { displayAccount } from '../lib/account'
 import { formatCredit2 } from '../lib/home'
+import type { Mood } from './Mascot'
 
 export type Tone = 'todo' | 'ok' | 'bad' | 'quiet'
-export type Agent = { account: string; name: string; member: Member; result?: ReportMember; line: string; tone: Tone }
+export type Agent = { account: string; name: string; member: Member; result?: ReportMember; line: string; tone: Tone; mood?: Mood }
 
 /** The first label of a NEAR name ("scraper.x207-circle.near" -> "scraper"); a long implicit or EVM account keeps its start and end. */
 export function shortName(account: string): string {
@@ -18,15 +19,16 @@ export function shortName(account: string): string {
 const abs = (raw: string) => raw.replace(/^[-+]/, '')
 
 /** One plain line on where an agent stands: its result in the reported epoch, else its membership. */
-export function agentLine(member: Member, result?: ReportMember): { line: string; tone: Tone } {
+/** The face of the mascot follows the line: surprised while it owes, happy when it is paid or can claim, sad when its stake covered a default. */
+export function agentLine(member: Member, result?: ReportMember): { line: string; tone: Tone; mood?: Mood } {
   if (result) {
     const amount = formatCredit2(result.amount ?? abs(result.net))
-    if (result.status === 402) return { line: `Owes ${amount}`, tone: 'todo' }
-    if (result.status === 202) return result.settlement === 'claimed' ? { line: `Claimed ${amount}`, tone: 'ok' } : { line: `Can claim ${amount}`, tone: 'todo' }
-    if (result.status === 409) return { line: 'Closed from stake', tone: 'bad' }
-    return { line: abs(result.net).replace(/0/g, '') === '' ? 'Nothing to settle' : 'Paid', tone: 'ok' }
+    if (result.status === 402) return { line: `Owes ${amount}`, tone: 'todo', mood: 'surprised' }
+    if (result.status === 202) return result.settlement === 'claimed' ? { line: `Claimed ${amount}`, tone: 'ok', mood: 'happy' } : { line: `Can claim ${amount}`, tone: 'todo', mood: 'happy' }
+    if (result.status === 409) return { line: 'Closed from stake', tone: 'bad', mood: 'sad' }
+    return abs(result.net).replace(/0/g, '') === '' ? { line: 'Nothing to settle', tone: 'ok' } : { line: 'Paid', tone: 'ok', mood: 'happy' }
   }
-  if (member.status === 'suspended') return { line: 'Suspended', tone: 'bad' }
+  if (member.status === 'suspended') return { line: 'Suspended', tone: 'bad', mood: 'sad' }
   if (member.status === 'exited') return { line: 'Left the circle', tone: 'quiet' }
   if (member.status === 'pending') return { line: 'Joining', tone: 'quiet' }
   return { line: `${formatCredit2(member.headroom)} credit free`, tone: 'quiet' }
