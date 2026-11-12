@@ -165,6 +165,17 @@ class EpochScene3D extends EpochScene {
         const [wx, , wz] = this.world[i], out = this.outcome[i], q = this.payOf(i, p), dim = this.hover == null || this.hover === i ? 1 : 0.14;
         const A = this.proj(wx * 0.94, 0.02, wz * 0.94), B = this.proj(wx * hub, 0.02, wz * hub), from = v < 0 ? A : B, to = v < 0 ? B : A;
         const col = out === "defaulted" ? c.bad : v < 0 ? c.due : out === "claimed" ? c.settled : c.claim, lw = Math.max(1.2, Math.sqrt(Math.abs(v)) * 0.42 * this.vk) * ((A[2] + B[2]) / 2);
+        if (this.flat) {   // landing: a thin curve that rises from the agent and swirls a little into the coin, one even width, payments as glowing beads
+          const P0 = [wx * 0.9, S3.LIFT, wz * 0.9], P2 = [wx * 0.05, 0.28, wz * 0.05], C = [wx * 0.42 - wz * 0.16, 0.5, wz * 0.42 + wx * 0.16];
+          const pts = []; for (let s2 = 0; s2 <= 28; s2++) { const t = s2 / 28, u = 1 - t; pts.push(this.proj(u * u * P0[0] + 2 * u * t * C[0] + t * t * P2[0], u * u * P0[1] + 2 * u * t * C[1] + t * t * P2[1], u * u * P0[2] + 2 * u * t * C[2] + t * t * P2[2])); }
+          if (v > 0) pts.reverse();   // a creditor is paid from the contract: its curve runs from the coin out to the agent
+          const kk = (pts[0][2] + pts[28][2]) / 2;
+          this.polyline(pts, 0, 1, 1 * kk, col, 0.22 * collapse * dim);
+          if (q > 0) this.polyline(pts, 0, q, 1.8 * kk, col, (out === "claimable" ? 0.55 : 0.95) * dim);
+          if (q > 0.02 && !this.reduced) for (let b = 0; b < 3; b++) { const [bx, by, bk] = this.at(pts, ((time * 0.45 + b / 3 + i * 0.13) % 1) * q);
+            x.save(); x.shadowColor = col; x.shadowBlur = 8; x.beginPath(); x.arc(bx, by, 2.2 * bk, 0, 6.2832); x.fillStyle = col; x.globalAlpha = 0.95 * dim; x.fill(); x.restore(); }
+          return;
+        }
         const seg = (t0, t1, alpha, dash, width) => { x.beginPath(); x.moveTo(from[0] + (to[0] - from[0]) * t0, from[1] + (to[1] - from[1]) * t0); x.lineTo(from[0] + (to[0] - from[0]) * t1, from[1] + (to[1] - from[1]) * t1);
           x.lineWidth = width; x.strokeStyle = col; x.globalAlpha = alpha * dim; x.setLineDash(dash); x.lineCap = "butt"; x.stroke(); x.setLineDash([]); x.globalAlpha = 1; };
         seg(0, 1, 0.38 * collapse, [2, 5], 1.2);
