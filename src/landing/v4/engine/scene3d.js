@@ -45,7 +45,7 @@ class EpochScene3D extends EpochScene {
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.cx = this.W / 2; this.cy = this.H * (this.flat ? 0.46 : 0.5);
     // the landing's story (flat) keeps the whole ring, its labels and the paying agents inside a shorter, wider canvas
-    this.F = Math.max(100, Math.min(this.W * (this.W < 520 ? 0.36 : 0.44), this.H * (this.flat ? 0.44 : 0.56))); this.D = 3.3;
+    this.F = Math.max(100, Math.min(this.W * (this.W < 520 ? (this.flat ? 0.3 : 0.36) : 0.44), this.H * (this.flat ? 0.44 : 0.56))); this.D = 3.3;
     this.R = this.F;                                   // used by the base tooltip code
     this.kick();
   }

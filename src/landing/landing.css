@@ -547,7 +547,7 @@ html.is-landing body { margin: 0; color: var(--lp-ink); background: var(--lp-bg)
   .lp .nav-links, .lp .nav-end > .pill.dark { display: none; }
   .lp .nav-row { justify-content: space-between; }
   .lp .burger { display: grid; }
-  .lp .sheet { position: fixed; inset: 64px 0 auto; display: block; max-height: calc(100dvh - 64px); overflow: auto; padding: 8px 16px 28px; background: rgba(10, 10, 10, 0.96); border-bottom: 1px solid var(--lp-line); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: opacity 0.2s, transform 0.2s var(--lp-ease), visibility 0s 0.2s; }
+  .lp .sheet { position: fixed; inset: 64px 0 auto; height: calc(100dvh - 64px); display: block; overflow: auto; padding: 8px 16px 28px; background: #0a0a0a; border-bottom: 1px solid var(--lp-line); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: opacity 0.2s, transform 0.2s var(--lp-ease), visibility 0s 0.2s; }
   .lp .sheet[data-open] { opacity: 1; visibility: visible; transform: none; transition: opacity 0.2s, transform 0.2s var(--lp-ease); }
   .lp .sheet nav { display: grid; gap: 20px; }
   .lp .sheet nav div { display: grid; }
@@ -568,13 +568,24 @@ html.is-landing body { margin: 0; color: var(--lp-ink); background: var(--lp-bg)
   .lp .row, .lp .frow { grid-template-columns: 36px minmax(0, 1fr) auto; padding-block: 22px; }
   .lp .frow { grid-template-columns: 36px minmax(0, 1fr); }
   .lp .kinds, .lp .qa details > p { padding-left: max(16px, 3vw); }
-  .lp .build-stage { padding-top: 72px; gap: 28px; }
+  .lp .build-stage { grid-template-columns: minmax(0, 1fr); padding-top: 72px; gap: 28px; }
+  .lp .build-copy { max-width: 100%; }
+  .lp .build-copy h2, .lp .closing-copy h2 { font-size: clamp(36px, 10vw, 56px); }
+  .lp .build-term { width: 100%; }
+  .lp .build-term .term-body pre { min-height: 38vh; min-height: 38svh; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12.5px; padding: 20px; }
+  .lp .xsplit { gap: 32px; }
+  .lp .xchips { margin-top: 24px; }
+  .lp .xlead { margin-top: 24px; font-size: 16px; }
+  .lp .xbtn { margin-top: 28px; }
+  .lp .xhead { margin-bottom: 32px; }
+  .lp .stage-say { gap: 14px; }
+  .lp .chapters-text { min-height: 0; }
   .lp .win-body { grid-template-columns: minmax(0, 1fr); }
   .lp .win-side { display: none; }
   .lp .win-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(220px, 1fr) auto; }
   .lp .feed ol li:nth-child(n + 4) { display: none; }
   .lp .replay, .lp .drag-hint { display: none; }
-  .lp .stage-ring { inset: 44% 0 0 0; }
+  .lp .stage-ring { inset: 34% 0 96px 0; }
   .lp .stage::after { display: none; }
   .lp .stage-say { top: 0; bottom: auto; left: 0; width: 100%; border-right: 0; background: none; padding: 76px 16px 0; grid-template-rows: auto auto; align-content: start; gap: 14px; }
   .lp .chapters-text { min-height: 190px; align-content: start; }
@@ -589,9 +600,21 @@ html.is-landing body { margin: 0; color: var(--lp-ink); background: var(--lp-bg)
   .lp .fall { height: 240px; gap: 8px; }
   .lp .fall-fig { font-size: 13px; }
   .lp .foot-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .lp .foot-cols > svg { grid-column: 1 / -1; }
+  .lp .foot-cols > .logo { grid-column: 1 / -1; }
 }
 @media (max-width: 560px) {
+  .lp .tabs { max-width: 100%; }
+  .lp .tally dt { font-size: 10.5px; line-height: 1.3; }
+  .lp .tally .tally-ic { display: none; }
+  .lp .tally dd span { font-size: 20px; }
+  .lp .closing-pill { width: 88vw; height: 104px; margin-bottom: 36px; }
+  .lp .closing-pill > span { width: 86%; height: 60%; }
+  .lp .closing-pill .face { width: 34px; height: 34px; margin-left: -9px; }
+  .lp .closing-pill .face:nth-child(n + 7) { display: none; }
+  .lp .closing-stage { padding-block: 72px; }
+  .lp .xcard { padding: 20px; }
+  .lp .xfig { min-height: 220px; padding: 14px; }
+  .lp .fv-board { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px 4px; }
   .lp .badge-more { display: none; }
   .lp .badge { top: 80px; }
   .lp .hero h1 { font-size: 36px; }
