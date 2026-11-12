@@ -68,11 +68,11 @@ describe('FE-054 app frame', () => {
     expect(document.querySelector('aside.rail')).not.toHaveAttribute('data-open')
   })
 
-  it('v4: the logo at the top of the sidebar opens Home and keeps the circle in the address; the circle is named under it', async () => {
+  it('v6.4: the logo at the top of the sidebar leads to the landing page; the circle is named under it', async () => {
     renderApp('/stats?epoch=41')
     const rail = document.querySelector('aside.rail') as HTMLElement
-    const brand = within(rail).getByRole('link', { name: 'x207, Home' })
-    expect(brand).toHaveAttribute('href', '/app?epoch=41')
+    const brand = within(rail).getByRole('link', { name: 'x207, landing page' })
+    expect(brand).toHaveAttribute('href', '/')
     expect(brand.querySelector('.brand-logo img')).toHaveAttribute('src', '/logo/logo-x207.webp')
     expect(brand.querySelector('img.brand-mark')).toHaveAttribute('src', '/logo/logo-x207.webp')
     expect(rail.querySelector('.brand > span')).toHaveTextContent('agents-main')

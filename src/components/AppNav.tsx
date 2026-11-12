@@ -74,7 +74,8 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
     <aside className="rail" id="sidebar" data-open={open || undefined}>
       {/* v4: the logo of the landing. The wordmark from 1200 px; on the icon rail only the mark (the three agents), so it stays legible. */}
       <p className="brand">
-        <Link className="brand-link" to={{ pathname: '/app', search }} aria-label="x207, Home">
+        {/* v6.4: the logo leads back to the landing page (no query: "/" with ?circle= would open the dashboard) */}
+        <Link className="brand-link" to="/" aria-label="x207, landing page">
           <Logo className="brand-logo" title="x207" />
           <LogoMark className="brand-mark" />
         </Link>
