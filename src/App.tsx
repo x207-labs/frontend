@@ -4,7 +4,8 @@ import { FeedbackButton } from './account/FeedbackButton'
 import { Layout } from './components/Layout'
 import { LEGACY_ROUTES } from './legacyRoutes'
 import { RequireWallet } from './components/RequireWallet'
-import { pages } from './routes'
+import { Agent, Agents } from './pages/Agent'
+import { AGENTS_PATH, pages } from './routes'
 import { rootOpensDashboard } from './rootPath'
 
 const Landing = lazy(() => import('./landing/Landing'))
@@ -52,6 +53,9 @@ export function App() {
         {pages.map(({ path, title, needsWallet, Page }) => (
           <Route key={path} path={path} element={needsWallet ? <RequireWallet title={title}><Page /></RequireWallet> : <Page />} />
         ))}
+        {/* v6: the agents of the circle, as Grok Bot lists its bots */}
+        <Route path={AGENTS_PATH} element={<Agents />} />
+        <Route path={`${AGENTS_PATH}/:account`} element={<Agent />} />
         {Object.entries(LEGACY_ROUTES).map(([from, to]) => (
           <Route key={from} path={from} element={<Redirect to={to} />} />
         ))}
