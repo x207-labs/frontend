@@ -117,8 +117,14 @@ function DashSplit() {
   const { open, setOpen, wrap, btn } = useDisclosure()
   const id = useId()
   return (
-    <div className="dd split" {...wrap}>
-      <a className="pill white" href={LIVE.dashboard}>Open dashboard</a>
+    <div className="dd split aurora" {...wrap}>
+      <a className="pill white" href={LIVE.dashboard}>
+        Open dashboard
+        <svg className="plane" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M14.6 1.4 1.8 6.6c-.6.2-.6 1.1 0 1.3l4.7 1.6 1.6 4.7c.2.6 1.1.6 1.3 0L14.6 1.4Z" fill="currentColor" />
+          <path d="M6.5 9.5 10 6" stroke="#dfe6ff" strokeWidth="1.2" strokeLinecap="round" />
+        </svg>
+      </a>
       <button ref={btn} type="button" className="pill white caret" aria-label="More dashboard links" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
         <Chevron />
       </button>
