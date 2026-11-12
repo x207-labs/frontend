@@ -176,7 +176,15 @@ main .mk .list-table tbody td[data-label]::before, main .mk .table-wrap table:is
   .rail[data-open] .nav-group { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
   .rail[data-open] .brand > span { display: none; }
   .rail[data-open] a { min-height: 52px; }
-  .rail[data-open] ~ .stage .list-toggle { position: fixed; z-index: 41; top: 12px; right: 16px; }
+  .rail[data-open]::before { display: none; }
+  .rail[data-open] .brand { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px; }
+  .rail[data-open] .brand-logo { display: inline-flex; align-items: center; gap: 8px; }
+  .rail[data-open] .brand-logo > span { display: inline; font: 600 19px/1 var(--ds-font-display); }
+  .rail[data-open] .list-done { min-height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); font: 600 15px/1 var(--ds-font-text); }
+  .rail[data-open] .nav-title { font-size: 16px; }
+  .rail[data-open] .nav-hint { font-size: 14px; }
+  .rail[data-open] a .nav-icon, .rail[data-open] .mascot { width: 38px; height: 38px; }
+  .rail[data-open] a .nav-icon { padding: 8px; border-radius: 11px; }
   main { padding-bottom: calc(2.5rem + env(safe-area-inset-bottom)); }
 }
 @keyframes list-in { from { transform: translateX(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -278,3 +286,13 @@ main .mk .list-table tbody td[data-label]::before, main .mk .table-wrap table:is
 .home-more > summary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.06); font: 500 15px/1.3 var(--ds-font-text); color: var(--ds-ink-2); cursor: pointer; list-style: none; }
 .home-more > summary::-webkit-details-marker { display: none; }
 .home-more[open] > summary { margin-bottom: 12px; }
+
+/* ---------- v6.2: larger reading type and fewer technical strips ---------- */
+/* the pages were set at 11 to 13 px in many places; on a desktop the whole page column is drawn 10% larger (CSS zoom), so every label grows together */
+@media (min-width: 840px) { main, .detail { zoom: 1.1; } }
+/* the strip of the six epoch phases stays only where a member acts on it (Pay and claim); the eyebrow above each page already names the phase */
+main:not([data-group='My account']) .page-head .phases { display: none; }
+/* Phosphor icons are filled shapes: no stroke to thicken */
+.nav-icon { flex: none; }
+/* the menu button sits on the line of the logo, as the back button of an iOS bar */
+@media (max-width: 839px) { .topbar-id { display: flex; flex-direction: row; align-items: center; gap: 10px; } .topbar-id .net-chip { display: none; } }

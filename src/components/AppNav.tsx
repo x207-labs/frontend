@@ -65,7 +65,7 @@ function Members() {
   )
 }
 
-export function Sidebar({ open = false }: { open?: boolean }) {
+export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: () => void }) {
   const { search } = useLocation()
   const { account } = useWallet()
   const [all, setAll] = useState(false)
@@ -79,6 +79,12 @@ export function Sidebar({ open = false }: { open?: boolean }) {
           <LogoMark className="brand-mark" />
         </Link>
         <span>{CIRCLE}</span>
+        {/* on a phone the list covers the page; Done gives it back, as in iOS */}
+        {open && onClose && (
+          <button type="button" className="list-done" onClick={onClose}>
+            Done
+          </button>
+        )}
       </p>
       {/* after Grok Bot: a search row on top of the sidebar; it opens the same page search as Cmd-K */}
       <button type="button" className="rail-search" aria-haspopup="dialog" onClick={() => window.dispatchEvent(new Event(PALETTE_EVENT))}>

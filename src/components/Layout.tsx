@@ -67,7 +67,7 @@ export function Layout() {
       <a className="skip-link" href="#content" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
       <DetailSlotProvider>
         <div className="shell">
-          <Sidebar open={listOpen} />
+          <Sidebar open={listOpen} onClose={() => setList(null)} />
           <div className="stage">
             <div className="topbar">
               <div className="topbar-id">
