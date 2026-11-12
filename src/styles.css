@@ -1,30 +1,30 @@
-/* v5 (2026-11-12): the app wears Grok Bot's dark desk: neutral greys, Apple's system type, light pills for the main action, colour only for
+/* v6 (2026-11-12): light and dark after the Grok Bot app (light first, so src/test/contrast.test.ts reads the light values). v5: the app wore Grok Bot's dark desk: neutral greys, Apple's system type, light pills for the main action, colour only for
    the x207 result codes. The values below follow src/ds/tokens.css. Before that, v4 design system (2026-11-11): the app wears the v4 landing's language (src/ds/tokens.css): a calm night desk in navy, one blue for action,
    lime for focus, status colours for the x207 result codes, "Agent Console" type. The names below stay (--paper, --sheet, --line, --ink ...)
    so every page, toast, onboarding step and the wallet popup follow without edits; their values come from the --ds-* tokens, written as hex
    here because src/test/contrast.test.ts reads them as text. Surfaces stay solid (FE-073): the border carries the edge. */
 :root {
-  color-scheme: dark;
-  --paper: #161616;      /* --ds-paper */
-  --sheet: #212121;      /* --ds-surface */
-  --glass: #1d1d1d;
-  --glass-strong: #141414;
-  --tile: #2a2a2a;       /* --ds-surface-3 */
-  --line: #2c2c2c;       /* --ds-rule on --ds-paper */
-  --ink: #f2f2f2;        /* --ds-ink */
-  --ink-soft: #a3a3a3;   /* --ds-ink-2, 9.6:1 on --paper */
+  color-scheme: light dark;
+  --paper: #fafafa;      /* --ds-paper */
+  --sheet: #f2f2f2;      /* --ds-surface */
+  --glass: #f6f6f6;
+  --glass-strong: #ffffff;
+  --tile: #ebebeb;       /* --ds-surface-3 */
+  --line: #e3e3e3;       /* --ds-rule on --ds-paper */
+  --ink: #141414;        /* --ds-ink */
+  --ink-soft: #5c5c5c;   /* --ds-ink-2, 9.6:1 on --paper */
   /* blue: --accent for rings and glows; --accent-ink is the readable blue for text on dark; --accent-fill carries white text (5.4:1). */
-  --accent: #5b9bff;
-  --accent-soft: #2c2c2c;
-  --accent-ink: #9ec1ff; /* --ds-accent-ink */
-  --accent-fill: #3a3a3a;
+  --accent: #0a6cdf;
+  --accent-soft: #e6e6e6;
+  --accent-ink: #0a5fc4; /* --ds-accent-ink */
+  --accent-fill: #141414;
   --tabbar-h: 3.5rem;
-  --s200: #5be3a0;       /* --ds-settled */
-  --s402: #ffc25c;       /* --ds-due */
-  --s202: #8fd3ff;       /* --ds-claim */
-  --s409: #ff8a8a;       /* --ds-default */
-  --focus: #9ec1ff;      /* --ds-focus (lime) */
-  --lime: #9ec1ff;
+  --s200: #137a3a;       /* --ds-settled */
+  --s402: #9a5200;       /* --ds-due */
+  --s202: #0a63c9;       /* --ds-claim */
+  --s409: #c62828;       /* --ds-default */
+  --focus: #0a6cdf;      /* --ds-focus (lime) */
+  --lime: #0a6cdf;
   --radius: 16px;        /* --ds-r-panel */
   --radius-card: 14px;   /* --ds-r-card */
   --radius-ctl: 10px;    /* --ds-r-ctl */
@@ -44,6 +44,30 @@
   font-size: 16px;
   line-height: 1.5;
   color: var(--ink);
+}
+
+/* v6 (2026-11-12): the app follows the system theme, as Grok Bot does: light by default (above), the dark desk when the system is dark. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #161616;
+    --sheet: #212121;
+    --glass: #1d1d1d;
+    --glass-strong: #141414;
+    --tile: #2a2a2a;
+    --line: #2c2c2c;
+    --ink: #f2f2f2;
+    --ink-soft: #a3a3a3;
+    --accent: #5b9bff;
+    --accent-soft: #2c2c2c;
+    --accent-ink: #9ec1ff;
+    --accent-fill: #3a3a3a;
+    --s200: #5be3a0;
+    --s402: #ffc25c;
+    --s202: #8fd3ff;
+    --s409: #ff8a8a;
+    --focus: #9ec1ff;
+    --lime: #9ec1ff;
+  }
 }
 
 * { box-sizing: border-box; }

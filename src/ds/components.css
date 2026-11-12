@@ -13,7 +13,7 @@
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.45), transparent 40%, transparent 70%, rgba(255, 255, 255, 0.18));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
 .ds-kpi > header { display: flex; align-items: center; gap: var(--ds-s2); font-size: 13px; color: var(--ds-ink-2); }
-.ds-kpi > header b { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0 4px; border-radius: var(--ds-r-badge); background: rgba(255, 255, 255, 0.10); border: 1px solid var(--ds-rule); font: 500 11px/1 var(--ds-font-mono); color: var(--ds-soft); }
+.ds-kpi > header b { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0 4px; border-radius: var(--ds-r-badge); background: rgb(var(--ds-tint) / 0.10); border: 1px solid var(--ds-rule); font: 500 11px/1 var(--ds-font-mono); color: var(--ds-soft); }
 .ds-kpi .ds-value { display: flex; align-items: baseline; gap: 6px; margin-top: 10px; font: var(--ds-display-weight) 34px/1 var(--ds-font-display); font-stretch: var(--ds-display-stretch); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .ds-kpi .ds-value small { font: 500 13px/1 var(--ds-font-text); color: var(--ds-ink-3); letter-spacing: 0; }
 .ds-kpi p { margin: 6px 0 0; font-size: 13px; color: var(--ds-ink-3); }
@@ -24,7 +24,7 @@
 .ds-kpis { display: grid; gap: var(--ds-s3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
 
 /* status: the x207 result codes, always code + word, never colour alone */
-.ds-status { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 6px; border-radius: var(--ds-r-badge); border: 1px solid var(--ds-rule); background: rgba(255, 255, 255, 0.03); font: 500 12px/1.5 var(--ds-font-text); color: var(--ds-ink); white-space: nowrap; }
+.ds-status { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 6px; border-radius: var(--ds-r-badge); border: 1px solid var(--ds-rule); background: rgb(var(--ds-tint) / 0.03); font: 500 12px/1.5 var(--ds-font-text); color: var(--ds-ink); white-space: nowrap; }
 .ds-status b { font: 500 11px/1 var(--ds-font-mono); color: var(--tone, var(--ds-ink-2)); }
 .ds-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--tone, var(--ds-ink-3)); }
 .ds-status[data-code='200'] { --tone: var(--ds-settled); }
@@ -33,8 +33,8 @@
 .ds-status[data-code='409'] { --tone: var(--ds-default); }
 
 /* chip, eyebrow */
-.ds-chip { display: inline-flex; align-items: center; gap: 6px; padding: 1px 10px; border-radius: var(--ds-r-chip); background: rgba(255, 255, 255, 0.11); border: 1px solid rgba(255, 255, 255, 0.28); color: var(--ds-soft); font: 500 13px/1.6 var(--ds-font-mono); }
-.ds-eyebrow { display: inline-flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--ds-rule); background: rgba(255, 255, 255, 0.03); font-size: 12.5px; color: var(--ds-ink-2); }
+.ds-chip { display: inline-flex; align-items: center; gap: 6px; padding: 1px 10px; border-radius: var(--ds-r-chip); background: rgb(var(--ds-tint) / 0.11); border: 1px solid rgb(var(--ds-tint) / 0.28); color: var(--ds-soft); font: 500 13px/1.6 var(--ds-font-mono); }
+.ds-eyebrow { display: inline-flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--ds-rule); background: rgb(var(--ds-tint) / 0.03); font-size: 12.5px; color: var(--ds-ink-2); }
 .ds-eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--ds-settled); box-shadow: 0 0 10px var(--ds-settled); }
 
 /* buttons: one glowing primary per screen; quiet and white for the rest */
@@ -44,7 +44,7 @@
 .ds-btn[data-variant='white'] { border-color: transparent; background: linear-gradient(180deg, #ffffff, #dfe9f7); color: #0a1226; }
 .ds-btn .ds-arr { font-family: var(--ds-font-mono); font-size: 13px; opacity: 0.8; }
 @media (hover: hover) and (pointer: fine) {
-  .ds-btn:hover { background-color: rgba(255, 255, 255, 0.08); }
+  .ds-btn:hover { background-color: rgb(var(--ds-tint) / 0.08); }
   .ds-btn[data-variant='glow']:hover { filter: brightness(1.08); }
 }
 

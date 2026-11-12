@@ -1,14 +1,14 @@
-/* v5 (2026-11-12): the app as Grok Bot's dark desk (x.ai/bot). Loaded last, so it wins over styles.css and the v4 sheets.
+/* v6 (2026-11-12): light and dark with the system (colours from src/ds/tokens.css: --ds-desk, --ds-side, --ds-tint, --ds-btn...). v5: the app as Grok Bot's dark desk (x.ai/bot). Loaded last, so it wins over styles.css and the v4 sheets.
    A window on near-black: the sidebar a shade darker than the page, rows with 10px corners, a light pill for the main action and a dark pill for the
    rest, cards at #212121 with a hairline ring, Apple's system type, no glow and no gradient. Colour only names an x207 result code. */
 
-body { background: #0b0b0b; }
+body { background: var(--ds-desk); }
 
 /* ---------- the window: sidebar and page side by side, rounded, on near-black ---------- */
 @media (min-width: 840px) {
   .shell { padding: 10px; }
-  .rail { top: 10px; height: calc(100vh - 20px); height: calc(100dvh - 20px); margin: 0; padding: 14px 8px; border: 0; border-radius: 16px 0 0 16px; background: #121212; box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06); }
-  .stage { min-height: calc(100vh - 20px); min-height: calc(100dvh - 20px); border-radius: 0 16px 16px 0; background: var(--paper); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+  .rail { top: 10px; height: calc(100vh - 20px); height: calc(100dvh - 20px); margin: 0; padding: 14px 8px; border: 0; border-radius: 16px 0 0 16px; background: var(--ds-side); box-shadow: inset -1px 0 0 rgb(var(--ds-tint) / 0.06); }
+  .stage { min-height: calc(100vh - 20px); min-height: calc(100dvh - 20px); border-radius: 0 16px 16px 0; background: var(--paper); box-shadow: inset 0 0 0 1px rgb(var(--ds-tint) / 0.06); }
   .topbar { border-top-right-radius: 16px; }
 }
 /* the window's traffic lights above the logo */
@@ -25,44 +25,44 @@ body { background: #0b0b0b; }
 .brand-compact .brand-logo > span { display: inline; }
 .brand > span { font: 400 12px/1.3 var(--ds-font-text); letter-spacing: 0; color: var(--ds-ink-3); }
 .nav-group { margin: 16px 10px 4px; font: 500 12px/1.3 var(--ds-font-text); letter-spacing: 0; text-transform: none; color: var(--ds-ink-3); }
-.rail a, .sheet a { border-radius: 10px; color: rgba(255, 255, 255, 0.72); font-weight: 500; }
-.rail a.active, .sheet a.active { background: rgba(255, 255, 255, 0.08); color: #fff; font-weight: 500; }
+.rail a, .sheet a { border-radius: 10px; color: rgb(var(--ds-tint) / 0.72); font-weight: 500; }
+.rail a.active, .sheet a.active { background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); font-weight: 500; }
 .rail a.active::before, .sheet a.active::before { content: none; }
-.tab[aria-current='page'] { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.tab[aria-current='page'] { background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); }
 .tab[aria-current='page']::before { content: none; }
-.tabbar, .sheet { background: #1a1a1a; border-color: rgba(255, 255, 255, 0.08); }
-@media (hover: hover) and (pointer: fine) { .rail a:hover:not(.active), .sheet a:hover:not(.active) { background: rgba(255, 255, 255, 0.05); color: #fff; } }
+.tabbar, .sheet { background: var(--ds-side); border-color: rgb(var(--ds-tint) / 0.08); }
+@media (hover: hover) and (pointer: fine) { .rail a:hover:not(.active), .sheet a:hover:not(.active) { background: rgb(var(--ds-tint) / 0.05); color: var(--ds-ink); } }
 
 /* ---------- top bar ---------- */
-.topbar { background: var(--paper); border-bottom-color: rgba(255, 255, 255, 0.06); }
+.topbar { background: var(--paper); border-bottom-color: rgb(var(--ds-tint) / 0.06); }
 .net-chip { border-radius: 999px; font: 500 12px/1.5 var(--ds-font-text); }
 .net-chip i { background: #28c840; }
-.palette-trigger, .demo-toggle, .account-trigger { border-radius: 999px; background: #262626; border-color: rgba(255, 255, 255, 0.08); color: var(--ds-ink); }
+.palette-trigger, .demo-toggle, .account-trigger { border-radius: 999px; background: var(--ds-btn-2); border-color: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); }
 .palette-trigger kbd { font-family: var(--ds-font-text); }
 
 /* ---------- buttons: a light pill for the main action, a dark pill for the rest ---------- */
-:where(.shell, .sheet-backdrop, .palette-backdrop) button { border-radius: 999px; background: #f0f0f0; color: #141414; font-weight: 500; }
-:where(.shell) button.quiet, :where(.shell) button.copy { background: #262626; color: var(--ds-ink); border-color: rgba(255, 255, 255, 0.12); }
-:where(.shell) button:disabled { background: transparent; color: var(--ds-ink-3); border-color: rgba(255, 255, 255, 0.1); }
+:where(.shell, .sheet-backdrop, .palette-backdrop) button { border-radius: 999px; background: var(--ds-btn); color: var(--ds-btn-ink); font-weight: 500; }
+:where(.shell) button.quiet, :where(.shell) button.copy { background: var(--ds-btn-2); color: var(--ds-ink); border-color: rgb(var(--ds-tint) / 0.12); }
+:where(.shell) button:disabled { background: transparent; color: var(--ds-ink-3); border-color: rgb(var(--ds-tint) / 0.1); }
 :where(.shell) button.th-sort, :where(.shell) .tabbar button, :where(.shell) .palette-trigger, :where(.shell) .demo-toggle, :where(.shell) .account-trigger { background: transparent; }
-:where(.shell) .palette-trigger, :where(.shell) .demo-toggle, :where(.shell) .account-trigger { background: #262626; color: var(--ds-ink); }
-.ds-btn { border-radius: 999px; border-color: rgba(255, 255, 255, 0.12); background: #262626; font-weight: 500; }
-.ds-btn[data-variant='glow'], .ds-btn[data-variant='white'] { border-color: transparent; background: #f0f0f0; color: #141414; box-shadow: none; }
+:where(.shell) .palette-trigger, :where(.shell) .demo-toggle, :where(.shell) .account-trigger { background: var(--ds-btn-2); color: var(--ds-ink); }
+.ds-btn { border-radius: 999px; border-color: rgb(var(--ds-tint) / 0.12); background: var(--ds-btn-2); font-weight: 500; }
+.ds-btn[data-variant='glow'], .ds-btn[data-variant='white'] { border-color: transparent; background: var(--ds-btn); color: var(--ds-btn-ink); box-shadow: none; }
 @media (hover: hover) and (pointer: fine) {
   :where(.shell) button:hover:not(:disabled) { filter: brightness(0.94); }
-  button.ds-btn:hover:not(:disabled), a.ds-btn:hover { background-color: #2f2f2f; }
-  button.ds-btn[data-variant='glow']:hover:not(:disabled), a.ds-btn[data-variant='glow']:hover, .ds-btn[data-variant='white']:hover { background: #ffffff; box-shadow: none; filter: none; }
+  button.ds-btn:hover:not(:disabled), a.ds-btn:hover { background-color: var(--ds-btn-2-hover); }
+  button.ds-btn[data-variant='glow']:hover:not(:disabled), a.ds-btn[data-variant='glow']:hover, .ds-btn[data-variant='white']:hover { background: var(--ds-btn); box-shadow: none; filter: none; }
 }
 
 /* ---------- cards: #212121, 16px corners, a hairline ring, no glass and no glow ---------- */
-.panel, .card, .ds-panel, .ds-kpi, .home-table, .form, .table-wrap { background: var(--sheet); border-color: rgba(255, 255, 255, 0.08); box-shadow: none; }
+.panel, .card, .ds-panel, .ds-kpi, .home-table, .form, .table-wrap { background: var(--sheet); border-color: rgb(var(--ds-tint) / 0.08); box-shadow: none; }
 .panel, .card, .ds-panel, .ds-kpi, .home-table { border-radius: 16px; }
 .ds-kpi::before { content: none; }
-.ds-kpi > header b { background: rgba(255, 255, 255, 0.08); color: var(--ds-ink); }
-.ds-chip { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.1); color: var(--ds-ink); }
+.ds-kpi > header b { background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); }
+.ds-chip { background: rgb(var(--ds-tint) / 0.06); border-color: rgb(var(--ds-tint) / 0.1); color: var(--ds-ink); }
 .ds-eyebrow i { box-shadow: none; }
-.ds-tally > div[data-tone='paper'] { background: #f0f0f0; }
-.ds-tally > div[data-tone='lime'] { background: #2a2a2a; color: var(--ds-ink); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.ds-tally > div[data-tone='paper'] { background: #f0f0f0; } /* fixed: a light tile in both themes */
+.ds-tally > div[data-tone='lime'] { background: var(--ds-surface-2); color: var(--ds-ink); box-shadow: inset 0 0 0 1px rgb(var(--ds-tint) / 0.08); }
 .ds-tally > div[data-tone='lime'] small { color: var(--ds-ink-2); }
 .ds-tally > div[data-tone='paper'] small { color: #555; }
 .ds-tally > div[data-tone='floor'] { background: #3a3a3a; }
@@ -73,10 +73,10 @@ body { background: #0b0b0b; }
 .page-eyebrow { font: 500 13px/1.5 var(--ds-font-text); }
 .page-eyebrow[data-live]::before { background: #28c840; box-shadow: none; }
 .picker label { font: 500 12px/1 var(--ds-font-text); letter-spacing: 0; text-transform: none; }
-.picker select { border-radius: 999px; background-color: #262626; border-color: rgba(255, 255, 255, 0.08); }
-.phases { background: #1d1d1d; border-color: rgba(255, 255, 255, 0.08); }
-.phases li.now { background: #f0f0f0; color: #141414; box-shadow: none; }
-.phases li.now::before, .phases li.now .phase-mark::before { background: #141414; }
+.picker select { border-radius: 999px; background-color: var(--ds-btn-2); border-color: rgb(var(--ds-tint) / 0.08); }
+.phases { background: var(--ds-surface); border-color: rgb(var(--ds-tint) / 0.08); }
+.phases li.now { background: var(--ds-btn); color: var(--ds-btn-ink); box-shadow: none; }
+.phases li.now::before, .phases li.now .phase-mark::before { background: var(--ds-btn-ink); }
 
 /* ---------- tables and facts: sentence-case labels, no mono caps ---------- */
 .home-table thead th, .home-facts dt, th { font-family: var(--ds-font-text); letter-spacing: 0; text-transform: none; }
@@ -116,13 +116,13 @@ main .mk .list-table tbody td[data-label]::before, main .mk .table-wrap table:is
 .ds-kpi header b { display: none; } /* the one-letter badges said nothing the label does not */
 .home-facts > div:nth-child(2) { display: none; } /* the network id (x207:<circle>) is for integrators; the contract stays */
 
-.rail .rail-search { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; margin: 0 0 6px; padding: 0 10px; border: 0.5px solid rgba(255, 255, 255, 0.08); border-radius: 10px; background: rgba(255, 255, 255, 0.06); color: var(--ds-ink-3); font: 400 14px/1 var(--ds-font-text); text-align: left; box-shadow: none; }
+.rail .rail-search { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; margin: 0 0 6px; padding: 0 10px; border: 0.5px solid rgb(var(--ds-tint) / 0.08); border-radius: 10px; background: rgb(var(--ds-tint) / 0.06); color: var(--ds-ink-3); font: 400 14px/1 var(--ds-font-text); text-align: left; box-shadow: none; }
 .rail .rail-search .nav-icon { flex: none; }
-@media (hover: hover) and (pointer: fine) { .rail .rail-search:hover { background: rgba(255, 255, 255, 0.09); color: var(--ds-ink); } }
+@media (hover: hover) and (pointer: fine) { .rail .rail-search:hover { background: rgb(var(--ds-tint) / 0.09); color: var(--ds-ink); } }
 @media (min-width: 840px) { .topbar .palette-trigger { display: none; } .rail .rail-search { width: 2.75rem; justify-content: center; padding: 0; } }
 @media (min-width: 1200px) { .rail .rail-search { width: 100%; justify-content: flex-start; padding: 0 10px; } }
 
 /* each page icon sits on a small rounded tile, like the avatars of the Grok Bot list; the open page gets the light tile */
-.rail a .nav-icon, .sheet a .nav-icon { box-sizing: border-box; width: 24px; height: 24px; padding: 4px; border-radius: 7px; background: rgba(255, 255, 255, 0.06); }
-.rail a.active .nav-icon, .sheet a.active .nav-icon { background: #f0f0f0; color: #141414; }
+.rail a .nav-icon, .sheet a .nav-icon { box-sizing: border-box; width: 24px; height: 24px; padding: 4px; border-radius: 7px; background: rgb(var(--ds-tint) / 0.06); }
+.rail a.active .nav-icon, .sheet a.active .nav-icon { background: var(--ds-btn); color: var(--ds-btn-ink); }
 @media (min-width: 840px) and (max-width: 1199px) { .rail a .nav-icon { width: 28px; height: 28px; padding: 5px; } .rail a.active { background: none; } }

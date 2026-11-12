@@ -70,7 +70,7 @@
 .ep-table tr[aria-current='true'] td, .ep-table tr[aria-current='true'] th { background: rgba(47, 108, 240, 0.1); }
 .ep-table small.state { display: inline; color: var(--ds-ink-3); }
 @media (hover: hover) and (pointer: fine) {
-  .ep-table tbody tr:hover td, .ep-table tbody tr:hover th { background: rgba(255, 255, 255, 0.03); }
+  .ep-table tbody tr:hover td, .ep-table tbody tr:hover th { background: rgb(var(--ds-tint) / 0.03); }
 }
 
 /* the member table turns into one card per member on a phone: the member on top, each figure labelled by its column */
