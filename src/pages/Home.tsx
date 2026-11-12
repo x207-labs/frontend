@@ -10,7 +10,7 @@ import { LoopMotif } from '../components/LoopMotif'
 import { PhaseStrip } from '../components/PhaseStrip'
 import { ErrorNotice, Loading } from '../components/QueryState'
 import { CONTRACT_ID, CIRCLE } from '../config'
-import { Button, Kpi, Num, StatusBadge, Tally, type StatusCode } from '../ds/components'
+import { Button, Kpi, Num, StatusBadge, type StatusCode } from '../ds/components'
 import { formatCredit, formatTime } from '../lib/format'
 import { currentEpoch, epochLengthText, epochOutcome, formatCredit2, homeActions, memberTotals, sumAmounts, type HomeAction } from '../lib/home'
 import { useProgress } from '../onboarding/progress'
@@ -181,93 +181,74 @@ function Kpis({ ready }: { ready: Ready | null }) {
   )
 }
 
-// The three figures of the epoch the page leads with: the 30% of floor energy. Owed in white, cancelled in loops in lime, moved in blue (the same blocks as the landing).
-function EpochTally({ ready }: { ready: Ready }) {
-  const latest = ready.rows[0]
-  if (!latest) return null
-  return (
-    <section className="home-tally" aria-labelledby="home-tally-h">
-      <div className="sechead">
-        <h2 id="home-tally-h">Epoch {latest.epoch} in three figures</h2>
-        <p>What was owed, what cancelled in loops, and what moved as cash.</p>
-      </div>
-      <div className="epoch-tally">
-        <Tally
-          items={[
-            { tone: 'paper', label: 'Owed between members', value: <>{formatCredit2(latest.owed)}<small>credit, {latest.vouchers.toLocaleString('en-US')} vouchers</small></> },
-            {
-              tone: 'lime',
-              label: 'Cancelled in loops',
-              value: latest.cancelled === null ? <>-<small>no clearing result yet</small></> : <>{formatCredit2(latest.cancelled)}<small>credit, {Math.round((latest.clearedRatio ?? 0) * 100)}% of owed</small></>,
-            },
-            {
-              tone: 'floor',
-              label: `Moved as ${MONEY}`,
-              value: latest.moved === null ? <>-<small>nothing yet</small></> : <>{formatCredit2(latest.moved)}<small>{latest.movedPercent === null ? '' : `${latest.movedPercent.toLocaleString('en-US')}% of owed, `}{MONEY}</small></>,
-            },
-          ]}
-        />
-      </div>
-    </section>
-  )
-}
+const OUTCOME_TONE = { 200: 'ok', 402: 'todo', 409: 'bad' } as const
 
-function EpochsTable({ scan }: { scan: VoucherScan }) {
+/** v6 (2026-11-12): the epochs as a timeline, after the Grok Bot app: the oldest first, the live one last. Each epoch is a time, one plain sentence and a card
+ * with its result and the two things to read. */
+function EpochTimeline({ scan }: { scan: VoucherScan }) {
   const { search } = useLocation()
+  const ready = scan.state === 'ready' ? scan : null
+  const rows = ready ? [...ready.rows].reverse() : []
+  const live = ready?.live && !ready.rows.some((r) => r.epoch === ready.live!.epoch) ? ready.live : null
   return (
     <section className="home-epochs" aria-labelledby="home-epochs-h">
       <div className="sechead">
-        <h2 id="home-epochs-h">Epochs with vouchers</h2>
-        {scan.state === 'ready' && (
-          <p>
-            The newest {scan.scanned} epochs were checked; the ones without vouchers are left out. Amounts in credit, moved in {MONEY}.
-          </p>
-        )}
+        <h2 id="home-epochs-h">Timeline</h2>
+        {ready && <p>The epochs with vouchers among the newest {ready.scanned}. Amounts in credit; what moves is paid in {MONEY}.</p>}
       </div>
       {scan.state === 'loading' && <Loading label="Reading the newest epochs" />}
       {scan.state === 'error' && <ErrorNotice error={scan.error} onRetry={scan.retry} />}
-      {scan.state === 'ready' && scan.rows.length === 0 && (
+      {ready && rows.length === 0 && (
         <p className="state">
-          None of the newest {scan.scanned} epochs carried vouchers.
+          None of the newest {ready.scanned} epochs carried vouchers.
           <EmptyHint what="vouchers" />
         </p>
       )}
-      {scan.state === 'ready' && scan.rows.length > 0 && (
-        <div className="table-wrap home-table">
-          <table aria-label="Epochs with vouchers">
-            <thead>
-              <tr>
-                <th scope="col">Epoch</th>
-                <th scope="col" className="r">Vouchers</th>
-                <th scope="col" className="r col-wide">Members</th>
-                <th scope="col" className="r">Owed<small>credit</small></th>
-                <th scope="col" className="r col-tablet">Cancelled in loops<small>credit</small></th>
-                <th scope="col" className="r">Moved<small>{MONEY}</small></th>
-                <th scope="col" className="r col-wide">Moved, of owed</th>
-                <th scope="col" className="col-tablet">Outcome</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scan.rows.map((v) => {
-                const outcome = epochOutcome(v)
-                return (
-                  <tr key={v.epoch}>
-                    <th scope="row" className="epoch-cell">
-                      <Link to={{ pathname: '/reports', search: withEpoch(search, v.epoch) }} aria-label={`Epoch ${v.epoch} statement`}>{v.epoch}</Link>
-                    </th>
-                    <td className="r">{v.vouchers.toLocaleString('en-US')}</td>
-                    <td className="r col-wide">{v.participants.toLocaleString('en-US')}</td>
-                    <td className="r">{formatCredit2(v.owed)}</td>
-                    <td className="r col-tablet">{formatCredit2(v.cancelled)}</td>
-                    <td className="r">{formatCredit2(v.moved)}</td>
-                    <td className="r col-wide">{v.movedPercent === null ? '-' : `${v.movedPercent.toFixed(1)}%`}</td>
-                    <td className="col-tablet">{outcome ? <StatusBadge code={outcome.code} label={outcome.label} /> : <span className="phase-text">{phaseWord(v.phase)}</span>}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+      {(rows.length > 0 || live) && (
+        <ol className="tl" aria-label="Epochs with vouchers">
+          {rows.map((v) => {
+            const outcome = epochOutcome(v)
+            return (
+              <li key={v.epoch}>
+                <p className="tl-time">Epoch {v.epoch} · {phaseWord(v.phase)}</p>
+                <p className="tl-bubble">
+                  {v.vouchers.toLocaleString('en-US')} {v.vouchers === 1 ? 'voucher' : 'vouchers'} among {v.participants.toLocaleString('en-US')} members, {formatCredit2(v.owed)} credit owed.{' '}
+                  {v.cancelled === null || v.moved === null
+                    ? 'Clearing has no result yet.'
+                    : `Loops cancelled ${formatCredit2(v.cancelled)} (${Math.round((v.clearedRatio ?? 0) * 100)}%), so only ${formatCredit2(v.moved)} ${MONEY} ${v.phase === 'finalized' ? 'moved' : 'is due to move'}.`}
+                </p>
+                <div className="tl-card">
+                  <div className="tl-card-head">
+                    <h3>Settle epoch {v.epoch}</h3>
+                    <span className="tl-pill" data-tone={outcome ? OUTCOME_TONE[outcome.code] : 'quiet'}>
+                      <i aria-hidden="true" />
+                      {outcome ? outcome.label : phaseWord(v.phase)}
+                    </span>
+                  </div>
+                  <p className="tl-meta">
+                    {formatCredit2(v.owed)} owed · {formatCredit2(v.cancelled)} cancelled · {formatCredit2(v.moved)} moved{v.movedPercent === null ? '' : ` (${v.movedPercent.toFixed(1)}%)`}
+                  </p>
+                  <p className="tl-actions">
+                    <Link className="tl-btn" to={{ pathname: '/reports', search: withEpoch(search, v.epoch) }} aria-label={`Epoch ${v.epoch} statement`}>
+                      Read the statement
+                    </Link>
+                    <Link className="tl-btn" data-variant="quiet" to={{ pathname: '/stats', search: withEpoch(search, v.epoch) }}>
+                      How it cleared
+                    </Link>
+                  </p>
+                </div>
+              </li>
+            )
+          })}
+          {live && (
+            <li>
+              <p className="tl-time">Now · epoch {live.epoch}</p>
+              <p className="tl-bubble">
+                Epoch {live.epoch} is {phaseWord(live.phase)}.{live.empty ? ' No vouchers yet.' : ''} Vouchers signed now are settled when it ends.
+              </p>
+            </li>
+          )}
+        </ol>
       )}
     </section>
   )
@@ -280,10 +261,13 @@ function Overview({ scan, signedIn, member, due, personal }: { scan: VoucherScan
     <>
       <Cta ready={ready} search={search} signedIn={signedIn} member={member} due={due} />
       {personal}
-      <Facts ready={ready} />
+      <EpochTimeline scan={scan} />
       <Kpis ready={ready} />
-      {ready && <EpochTally ready={ready} />}
-      <EpochsTable scan={scan} />
+      {/* v6: the technical facts of the circle (contract, epoch length) fold away; the timeline says what matters */}
+      <details className="home-more">
+        <summary>About this circle</summary>
+        <Facts ready={ready} />
+      </details>
     </>
   )
 }
