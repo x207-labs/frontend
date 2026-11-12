@@ -4,7 +4,7 @@
     {
       "id": "x207privy",
       "name": "Email or Google",
-      "icon": "https://x207.vercel.app/favicon.svg",
+      "icon": "https://x207.vercel.app/apple-touch-icon.png",
       "description": "A NEAR wallet behind an email or Google login. Powered by Privy.",
       "website": "https://x207.vercel.app",
       "version": "1.0.0",

@@ -56,8 +56,8 @@ describe('FE-054 app frame', () => {
     const rail = document.querySelector('aside.rail') as HTMLElement
     const brand = within(rail).getByRole('link', { name: 'x207, Home' })
     expect(brand).toHaveAttribute('href', '/app?epoch=41')
-    expect(brand.querySelector('svg.brand-logo')).not.toBeNull()
-    expect(brand.querySelector('svg.brand-mark')).not.toBeNull()
+    expect(brand.querySelector('.brand-logo img')).toHaveAttribute('src', '/logo/logo-x207.webp')
+    expect(brand.querySelector('img.brand-mark')).toHaveAttribute('src', '/logo/logo-x207.webp')
     expect(rail.querySelector('.brand > span')).toHaveTextContent('agents-main')
   })
 

@@ -26,7 +26,7 @@ export function privyWalletEntry(origin: string): WalletManifestEntry {
   return {
     id: PRIVY_WALLET_ID,
     name: 'Email or Google',
-    icon: `${origin}/favicon.svg`,
+    icon: `${origin}/apple-touch-icon.png`,
     description: 'A NEAR wallet behind an email or Google login. Powered by Privy.',
     website: origin,
     version: '1.0.0',

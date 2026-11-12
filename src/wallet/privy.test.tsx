@@ -52,7 +52,7 @@ describe('TC-FE-059-01 the Privy wallet is one more entry of the wallet list', (
     expect(entry.permissions.allowsOpen).toEqual(['https://x207.vercel.app'])
     expect(entry.metadata.signPageURL).toBe('https://x207.vercel.app/sign')
     expect(entry.website).toBe('https://x207.vercel.app')
-    expect(entry.icon).toBe('https://x207.vercel.app/favicon.svg')
+    expect(entry.icon).toBe('https://x207.vercel.app/apple-touch-icon.png')
     expect(text).not.toContain('x207-dashboard')
   })
 })
