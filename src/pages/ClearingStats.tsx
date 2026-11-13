@@ -5,8 +5,8 @@ import type { EpochItem, EpochMetrics } from '../api/types'
 import { EpochReplay } from '../components/EpochReplay'
 import { ErrorNotice, Loading } from '../components/QueryState'
 import { Scatter } from '../components/Scatter'
-import { Kpi } from '../ds/components'
-import { useEpochSelection } from '../epoch'
+import { Button, Kpi } from '../ds/components'
+import { useEpochSelection, type SkippedEmpty } from '../epoch'
 import { EDGES_PRUNED_NOTE, formatCredit, formatCredit2, formatNumber, formatPercent } from '../lib/format'
 
 /** How many of the newest epochs the density charts show (FE-046: a circle with hundreds of epochs must not read them all). */
@@ -92,6 +92,20 @@ function Statement({ m, selected, pruned }: { m: EpochMetrics; selected: EpochIt
   )
 }
 
+/** FE-118: the page opened on an older epoch because the newer finalized ones cleared nothing; say so, and offer the newest one. */
+function SkippedNote({ selected, skipped, select }: { selected: EpochItem; skipped: SkippedEmpty; select: (epoch: number) => void }) {
+  return (
+    <p className="ep-default-note" role="note">
+      <span>
+        Latest epoch with clearing: {selected.epoch} · latest epoch: {skipped.latest.epoch} (empty)
+      </span>
+      <Button type="button" onClick={() => select(skipped.latest.epoch)}>
+        Open epoch {skipped.latest.epoch}
+      </Button>
+    </p>
+  )
+}
+
 /** The headline figures as cards, then the rest one click away. */
 function Figures({ m }: { m: EpochMetrics }) {
   const eff = efficiency(m)
@@ -152,10 +166,10 @@ function Figures({ m }: { m: EpochMetrics }) {
 }
 
 export function ClearingStats() {
-  const { query, selected, resolving } = useEpochSelection()
+  const { query, items, selected, skipped, select, resolving } = useEpochSelection()
   // FE-046: the charts use the newest CHART_EPOCHS epochs and the selected one; finalized ones are read once, the rest follow the poll.
   // FE-047: nothing is read before an epoch is selected, then CHART_WAVE at a time (the selected epoch first), each wave after the previous one answered.
-  const items = query.data?.items ?? []
+  // FE-118: `items` holds the selected epoch even when it is older than the first page of the list.
   const charted = items.filter((e, i) => i < CHART_EPOCHS || e.epoch === selected?.epoch)
   const order = selected ? [...charted.filter((e) => e.epoch === selected.epoch), ...charted.filter((e) => e.epoch !== selected.epoch)] : []
   const [shown, setShown] = useState(CHART_WAVE)
@@ -191,6 +205,7 @@ export function ClearingStats() {
 
   return (
     <div className="ep ep-stats">
+      {skipped && <SkippedNote selected={selected} skipped={skipped} select={select} />}
       <Statement m={current} selected={selected} pruned={pruned.has(current.epoch)} />
       <EpochReplay epoch={current.epoch} final={selected.phase === 'finalized'} />
       <Figures m={current} />

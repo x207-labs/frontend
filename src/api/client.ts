@@ -136,6 +136,8 @@ export const api = {
   faucetInfo: () => get<import('../onboarding/faucet').FaucetInfo>('/x207/faucet'),
   faucetClaim: (accountId: string) => post<import('../onboarding/faucet').FaucetGrant>('/x207/faucet', { account_id: accountId }),
   epochs: () => get<Paged<EpochItem>>(`${circle}/epochs`),
+  /** FE-118: a later page of the epoch list (cursor from `nextCursor`), to find an epoch older than the first page. */
+  epochsPage: (cursor: string, limit: number) => get<Paged<EpochItem>>(`${circle}/epochs?limit=${limit}&cursor=${encodeURIComponent(cursor)}`),
   members: () => get<Paged<Member>>(`${circle}/members`),
   member: (account: string) =>
     get<MemberResponse>(`${circle}/members/${encodeURIComponent(account)}`),

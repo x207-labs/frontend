@@ -220,7 +220,9 @@ function EpochsTable({ scan }: { scan: VoucherScan }) {
         <h2 id="home-epochs-h">Epochs with vouchers</h2>
         {scan.state === 'ready' && (
           <p>
-            The newest {scan.scanned} epochs were checked; the ones without vouchers are left out. Amounts in credit, moved in {MONEY}.
+            The newest {scan.scanned} epochs were checked
+            {scan.older !== null ? `, and epoch ${scan.older}, the latest with clearing` : ''}; the ones without vouchers are left out. Amounts in credit, moved in{' '}
+            {MONEY}.
           </p>
         )}
       </div>

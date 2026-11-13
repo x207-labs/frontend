@@ -11,6 +11,9 @@
 .ep-title { margin: 0; font: var(--ds-display-weight) var(--ds-fs-h2)/1.1 var(--ds-font-display); /* h2 scale: the shell already shows the page h1 */ font-stretch: var(--ds-display-stretch); letter-spacing: var(--ds-display-tracking); color: var(--ds-ink); }
 .ep-lede { margin: 0; max-width: 62ch; font: 400 clamp(17px, 1.6vw, 20px)/1.45 var(--ds-font-text); color: var(--ds-ink); }
 .ep-sub { margin: 0; max-width: 62ch; font-size: var(--ds-fs-small); line-height: 1.5; color: var(--ds-ink-2); }
+/* FE-118: the default passed over empty epochs; one quiet line saying so, with the way to the newest one */
+.ep-default-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0; font: 500 13px/1.4 var(--ds-font-mono); color: var(--ds-ink-2); }
+.ep-default-note .ds-btn { min-height: 2rem; padding: 0 12px; font-size: 13px; }
 .ep-section { display: grid; gap: var(--ds-s4); align-content: start; }
 .ep-h2 { margin: 0; font: 600 var(--ds-fs-h3)/1.2 var(--ds-font-display); font-stretch: 108%; letter-spacing: -0.01em; color: var(--ds-ink); }
 .ep-sechint { margin: calc(var(--ds-s2) * -1) 0 0; max-width: 70ch; font-size: var(--ds-fs-small); line-height: 1.5; color: var(--ds-ink-3); }

@@ -26,7 +26,8 @@ export type Member = {
 export type MemberResponse = Amounts & Member & { circle: string }
 
 /** `edgesUnavailable`: the contract pruned the pairs of this epoch, so the indexer's figures come from what it read before the prune. */
-export type EpochItem = { epoch: number; phase: EpochPhase; proposalDeadline: string | null; cutoffAt?: string | null; paymentDeadline?: string | null; edgesUnavailable?: boolean }
+// FE-118: `cleared` (the cleared total, atomic units) and `edgeCount` are in the list of the read API; an older read API leaves them out.
+export type EpochItem = { epoch: number; phase: EpochPhase; proposalDeadline: string | null; cutoffAt?: string | null; paymentDeadline?: string | null; edgesUnavailable?: boolean; cleared?: string | null; edgeCount?: number | null }
 
 export type ObligationEdge = {
   debtor: string
