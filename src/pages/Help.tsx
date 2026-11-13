@@ -42,7 +42,7 @@ const GLOSSARY: { id: string; term: string; text: string }[] = [
   // FE-072: the words the other pages used to send to GitHub for; the app explains them itself now
   { id: 'transfers-avoided', term: 'Transfers avoided', text: 'Vouchers that did not need their own payment because clearing netted them: vouchers in, minus net payments out. It counts transfers, not fees.' },
   { id: 'cash-needed', term: 'Cash needed', text: 'The net debt members still pay in cash after clearing, as a share of everything promised in vouchers. It is counted before any default.' },
-  { id: 'move-epoch', term: 'Late epoch', text: 'A keeper run by the team moves each epoch on its clock until 2026-11-18. If one is late, any account may send the step that is due (close, commit or finalize) to the contract. No permission is needed.' },
+  { id: 'move-epoch', term: 'Late epoch', text: 'A keeper run by the team moves each epoch on its clock until 2026-11-30. If one is late, any account may send the step that is due (close, commit or finalize) to the contract. No permission is needed.' },
   { id: 'agents', term: 'AI agents', text: 'Agents do not need these pages. They use the x207 SDK, or ask the read-only MCP server, to sign vouchers, read their position and pay the net in code.' },
   { id: 'evm', term: 'EVM member', text: 'A member that joined with an Ethereum-style 0x key and signs its vouchers the EVM way (EIP-712).' },
 ]
