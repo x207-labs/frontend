@@ -43,7 +43,7 @@ describe('keamanan frontend: sumber', () => {
 
   it('TC-FE-SEC-13 the voucher key is not stored: localStorage holds only the wallet connection marker', () => {
     for (const [file, text] of Object.entries(files)) {
-      for (const m of text.matchAll(/(?:localStorage|sessionStorage)\.setItem\(([^,)]+)/g)) expect(m[1], file).toMatch(/^(CONNECTED_FLAG|PROGRESS_KEY|ACCOUNT_CACHE_KEY|DEMO_FLAG|DEMO_DB_KEY|DEMO_SIGNED_OUT)$/) // PROGRESS_KEY (FE-060): two booleans per account id; ACCOUNT_CACHE_KEY (FE-068): display name, email, reminder flag; DEMO_* (FE-100): the demo switch, the sample tables, the demo sign-out flag; no secret
+      for (const m of text.matchAll(/(?:localStorage|sessionStorage)\.setItem\(([^,)]+)/g)) expect(m[1], file).toMatch(/^(CONNECTED_FLAG|PROGRESS_KEY|ACCOUNT_CACHE_KEY|DEMO_FLAG|DEMO_DB_KEY|DEMO_SIGNED_OUT|TOUR_PROGRESS_KEY|TOUR_PROMPT_KEY)$/) // PROGRESS_KEY (FE-060): two booleans per account id; ACCOUNT_CACHE_KEY (FE-068): display name, email, reminder flag; DEMO_* (FE-100): the demo switch, the sample tables, the demo sign-out flag; TOUR_* (FE-121): the tour step and the prompted flag; no secret
       expect(text, file).not.toMatch(/indexedDB|document\.cookie|console\.(log|debug|info)\(.*(key|Key)/)
     }
   })

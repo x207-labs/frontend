@@ -16,7 +16,8 @@ const WORDS = [
   'jendela', 'anggota', 'kontrak', 'halaman', 'lewati', 'tampilkan', 'konfirmasi', 'dikirim', 'dibayar', 'ditolak', 'harus', 'bukan', 'karena', 'sebelum', 'setelah', 'lisensi', 'sewa',
   'akses', 'penerbit', 'jaminan', 'tonggak', 'penawaran', 'batas', 'nilai', 'masuk', 'keluar', 'gagal', 'berhasil', 'memuat', 'simpan', 'hapus', 'kirim', 'unduh', 'cari', 'pilih',
 ]
-const PATTERN = new RegExp(`(?<![A-Za-z_])(${WORDS.join('|')})(?![A-Za-z_])`, 'i')
+// FE-121: a word glued to a digit is a name (the testnet account dan2), not the Indonesian word
+const PATTERN = new RegExp(`(?<![A-Za-z0-9_])(${WORDS.join('|')})(?![A-Za-z0-9_])`, 'i')
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

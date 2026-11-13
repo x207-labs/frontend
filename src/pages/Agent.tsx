@@ -227,7 +227,7 @@ export function Agents() {
       <input className="agents-filter" type="search" placeholder="Search members" aria-label="Search members" value={query} onChange={(e) => setQuery(e.target.value)} />
       {loading && <Loading label="Reading members" />}
       {error && <p className="state state-error" role="alert">The member list could not be read.</p>}
-      <ul className="agents-list" aria-label="Members">
+      <ul className="agents-list" data-tour="agents" aria-label="Members">
         {shown.map((a) => (
           <li key={a.account}>
             <Link to={{ pathname: agentPath(a.account), search }} title={a.account}>

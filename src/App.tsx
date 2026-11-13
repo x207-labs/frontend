@@ -4,6 +4,7 @@ import { FeedbackButton } from './account/FeedbackButton'
 import { Layout } from './components/Layout'
 import { LEGACY_ROUTES } from './legacyRoutes'
 import { RequireWallet } from './components/RequireWallet'
+import { TourLauncher } from './tour/TourLauncher'
 import { Agent, Agents } from './pages/Agent'
 import { AGENTS_PATH, pages } from './routes'
 import { rootOpensDashboard } from './rootPath'
@@ -59,9 +60,12 @@ export function App() {
         {Object.entries(LEGACY_ROUTES).map(([from, to]) => (
           <Route key={from} path={from} element={<Redirect to={to} />} />
         ))}
+        {/* FE-121: /tour opens the guided tour over the dashboard (TourLauncher sends it on to /app) */}
+        <Route path="/tour" element={null} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+    <TourLauncher /> {/* FE-121: the guided tour, its chunk loaded on first start */}
     <FeedbackButton /> {/* FE-068: last in the page, so the skip link stays the first stop of the keyboard */}
     </>
   )

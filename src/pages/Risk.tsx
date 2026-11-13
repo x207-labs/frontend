@@ -219,7 +219,7 @@ export function Risk() {
         {ready && <p className="ep-lede">{ledeOf(list.length, total(list, 'stake'), epoch, defaulted)}</p>}
       </header>
       {ready && (
-        <section className="ep-section" aria-label="Headline figures">
+        <section className="ep-section" data-tour="credit" aria-label="Headline figures">
           <div className="ds-kpis ep-kpis cl-kpis">
             <Kpi label="Members" value={formatNumber(list.length, 0)} note="Admitted to the circle" />
             <Kpi label="Stake" value={formatCredit2(total(list, 'stake').toString())} unit={MONEY} note="Held behind the credit limits" />

@@ -166,7 +166,7 @@ function Ran({ report, metrics }: { report: ClearingReport; metrics: EpochMetric
 
 function Members({ members }: { members: ReportMember[] }) {
   return (
-    <section className="ep-section" aria-labelledby="ep-members">
+    <section className="ep-section" data-tour="net" aria-labelledby="ep-members">
       <h2 id="ep-members" className="ep-h2">Status per member</h2>
       <p className="ep-sechint">Amounts in credit. Each member gets its own result code: 200 settled, 202 claimable, 402 due, 409 defaulted.</p>
       <div className="table-wrap ep-table ep-cards">

@@ -10,6 +10,7 @@ import { shortName, useAgents } from './agents'
 import { PALETTE_EVENT } from './CommandPalette'
 import { NavIcon } from './icons'
 import { Mascot } from './Mascot'
+import { startTour } from '../tour/state'
 
 const groupId = (group: string) => `nav-${group.replace(/\s+/g, '-')}`
 /** How many agents the Members group shows besides you; the rest are one click away on the agents page. */
@@ -112,6 +113,11 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
         <button type="button" className="rail-row" ref={allButton} aria-haspopup="dialog" aria-expanded={all} onClick={() => setAll(true)}>
           <NavIcon name="grid" />
           <span className="nav-label">All pages</span>
+        </button>
+        {/* FE-121: the guided tour of the dashboard */}
+        <button type="button" className="rail-row" aria-haspopup="dialog" onClick={() => startTour()}>
+          <NavIcon name="tour" />
+          <span className="nav-label">Take the tour</span>
         </button>
         {account && (
           <Link className="rail-me" to={{ pathname: agentPath(account), search }} title={account}>

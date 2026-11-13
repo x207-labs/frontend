@@ -60,7 +60,7 @@ function Floor({ data, settled }: { data: SceneData; settled: boolean }) {
 
   const reach = Math.min(4, Math.floor(until - 1e-6))
   return (
-    <section className="rp" aria-label={`Replay of epoch ${data.epoch}`}>
+    <section className="rp" data-tour="replay" aria-label={`Replay of epoch ${data.epoch}`}>
       <div className="rp-floor" ref={root} data-phase={Math.min(4, Math.floor(until + 1e-6))}>
         <div className="rp-say">
           <p className="rp-step" data-k="phase">{end.name}</p>

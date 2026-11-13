@@ -538,7 +538,7 @@ export function Marketplace() {
           ))}
         </div>
       </div>
-      <section className="market-pane" data-pane="browse" aria-label="Browse listings">
+      <section className="market-pane" data-pane="browse" data-tour="listings" aria-label="Browse listings">
       <h2>Listing</h2>
       <div className="filters">
         <label>

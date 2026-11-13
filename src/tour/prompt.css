@@ -1,0 +1,58 @@
+/* FE-121: the first-visit offer of the tour and its loading line. Part of the dashboard bundle (small); the tour's own styles load with its chunk. */
+
+.tour-prompt {
+  position: fixed;
+  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 45;
+  width: min(360px, calc(100vw - 32px));
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--ds-rule-2);
+  background: var(--ds-paper);
+  color: var(--ds-ink);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.22);
+  font-family: var(--ds-font-text);
+  font-size: 14px;
+  line-height: 1.45;
+  animation: tour-prompt-in 0.4s var(--ds-ease) both;
+}
+@keyframes tour-prompt-in { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .tour-prompt { animation: none; } }
+
+.tour-prompt-text { margin: 0; }
+.tour-prompt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.tour-prompt button {
+  font: inherit;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ds-rule-2);
+  background: transparent;
+  color: var(--ds-ink);
+  cursor: pointer;
+}
+.tour-prompt button:focus-visible { outline: 3px solid var(--ds-accent); outline-offset: 2px; }
+.tour-prompt .tour-prompt-go { background: var(--ds-accent); border-color: var(--ds-accent); color: #ffffff; font-weight: 600; }
+@media (prefers-color-scheme: dark) {
+  .tour-prompt .tour-prompt-go { color: #0b0b0b; }
+  .tour-prompt button:focus-visible { outline-color: var(--ds-focus); }
+}
+
+.tour-loading {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  translate: -50% 0;
+  z-index: 90;
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--ds-paper);
+  color: var(--ds-ink);
+  border: 1px solid var(--ds-rule-2);
+  font-family: var(--ds-font-text);
+  font-size: 14px;
+}

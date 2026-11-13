@@ -117,7 +117,7 @@ function DaoProposals() {
   const e = proposals.error
   if (proposals.data === undefined && e instanceof ApiError && e.code === 'dao_unavailable')
     return (
-      <section className="ax-section" aria-labelledby="gov-proposals">
+      <section className="ax-section" data-tour="dao" aria-labelledby="gov-proposals">
         <h2 id="gov-proposals" className="ax-h2">DAO proposals</h2>
         <div className="state" role="status" data-testid="dao-unavailable">
           <p>
@@ -128,7 +128,7 @@ function DaoProposals() {
       </section>
     )
   return (
-    <section className="ax-section" aria-labelledby="gov-proposals">
+    <section className="ax-section" data-tour="dao" aria-labelledby="gov-proposals">
       <h2 id="gov-proposals" className="ax-h2">DAO proposals</h2>
       <QueryState
         query={proposals}
