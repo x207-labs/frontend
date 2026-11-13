@@ -61,6 +61,8 @@ export function setDemoMode(on: boolean): void {
   const url = new URL(window.location.href)
   url.searchParams.delete('demo')
   window.history.replaceState(window.history.state, '', url)
+  // v6.4: the page comes back at the top, so the demo banner that goes away does not leave the title under the top bar
+  window.scrollTo(0, 0)
   window.location.reload()
 }
 

@@ -20,7 +20,7 @@
 .cl :is(.panel, .withdraw, .branch, .onboard-exit, .state-error) button:not(.ds-btn, .copy) { min-height: 44px; padding: 0 18px; border: 1px solid var(--ds-rule-2); border-radius: var(--ds-r-ctl); background: transparent; color: var(--ds-ink); font: 600 15px/1 var(--ds-font-text); }
 .cl :is(.panel, .withdraw, .branch, .onboard-exit, .state-error) button:not(.ds-btn, .copy):disabled { border-color: var(--ds-rule); color: var(--ds-ink-3); }
 @media (hover: hover) and (pointer: fine) {
-  .cl :is(.panel, .withdraw, .branch, .onboard-exit, .state-error) button:not(.ds-btn, .copy):hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); box-shadow: none; }
+  .cl :is(.panel, .withdraw, .branch, .onboard-exit, .state-error) button:not(.ds-btn, .copy):hover:not(:disabled) { background: rgb(var(--ds-tint) / 0.08); box-shadow: none; }
 }
 
 /* panels and forms: the quiet surface */
@@ -31,7 +31,7 @@
 .cl .form label.check input { background: var(--ds-surface-3); box-shadow: inset 0 0 0 1px var(--ds-rule-2); }
 .cl .form label.check input:checked { background: var(--ds-accent); box-shadow: none; }
 .cl .form label.check input:focus-visible { outline: 2px solid var(--ds-focus); }
-.cl .you-tag { margin-left: 8px; padding: 1px 8px; border: 1px solid rgba(169, 203, 255, 0.28); border-radius: var(--ds-r-chip); background: rgba(47, 91, 255, 0.18); color: var(--ds-soft); font: 500 11px/1.6 var(--ds-font-mono); }
+.cl .you-tag { margin-left: 8px; padding: 1px 8px; border: 1px solid rgb(var(--ds-tint) / 0.28); border-radius: var(--ds-r-chip); background: rgb(var(--ds-tint) / 0.11); color: var(--ds-soft); font: 500 11px/1.6 var(--ds-font-mono); }
 .cl .cl-party { display: inline-flex; align-items: center; }
 
 /* the Intents balance panel: the balance as one big figure, the label in small caps */
@@ -64,13 +64,13 @@
 .cl-floor { display: grid; gap: 12px; padding: var(--ds-s4); border-radius: var(--ds-r-floor); color: #fff; background: radial-gradient(120% 95% at 50% 42%, var(--ds-floor-a), var(--ds-floor-b)); }
 .cl-floor .flow-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 4px 4px 0 8px; }
 .cl-floor .flow-key { margin: 0; max-width: 58ch; font: 500 12px/1.5 var(--ds-font-mono); color: rgba(255, 255, 255, 0.9); }
-.cl-floor .segmented { margin-left: 0; background: rgba(8, 12, 60, 0.4); border-color: rgba(255, 255, 255, 0.28); }
+.cl-floor .segmented { margin-left: 0; background: rgba(0, 0, 0, 0.4); border-color: rgba(255, 255, 255, 0.28); }
 .cl-floor .segmented button { min-height: 2.5rem; padding: 0 16px; color: rgba(255, 255, 255, 0.92); font: 600 14px/1 var(--ds-font-text); }
 .cl-floor .segmented button[aria-pressed='true'] { background: linear-gradient(180deg, #ffffff, #dfe9f7); color: var(--ds-eye); }
 .cl-floor .segmented button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-.cl-floor .flow { padding: 0; border: 0; border-radius: 24px; background: rgba(8, 12, 60, 0.4); }
+.cl-floor .flow { padding: 0; border: 0; border-radius: 24px; background: rgba(0, 0, 0, 0.4); }
 .cl-floor .flow-title { padding: 14px 18px 0; font: 500 12px/1.4 var(--ds-font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255, 255, 255, 0.9); }
-.cl-floor .tooltip { padding: 8px 12px; border-color: rgba(255, 255, 255, 0.28); background: rgba(8, 12, 40, 0.96); font: 500 12.5px/1.4 var(--ds-font-text); }
+.cl-floor .tooltip { padding: 8px 12px; border-color: rgba(255, 255, 255, 0.28); background: rgba(0, 0, 0, 0.96); font: 500 12.5px/1.4 var(--ds-font-text); }
 /* the map: white is what is owed, lime is what the loops cancelled (the colours of the Tally blocks); nodes are the dark orbs of the replay, no colour per member */
 .cl-graph .flow .edge { stroke: var(--ds-ink); opacity: 0.92; }
 .cl-graph .flow .edge-dim { stroke: var(--ds-lime); opacity: 0.7; }
@@ -83,7 +83,7 @@
 .cl-graph .flow .node { fill: var(--ds-eye); stroke: var(--ds-orb-edge); stroke-width: 2; }
 .cl-graph .flow .node-halo { fill: #fff; opacity: 0.1; }
 .cl-graph .flow .node-initials { fill: var(--ds-ink); font: 600 14px/1 var(--ds-font-mono); }
-.cl-graph .flow .tick { fill: #fff; stroke: rgba(8, 12, 60, 0.9); stroke-width: 4px; font: 500 13px/1 var(--ds-font-mono); }
+.cl-graph .flow .tick { fill: #fff; stroke: rgba(0, 0, 0, 0.9); stroke-width: 4px; font: 500 13px/1 var(--ds-font-mono); }
 /* the loops that cancelled: lime-tinted chips, like the cancelled share of the map */
 .cl-graph .cycles { display: grid; gap: var(--ds-s2); }
 .cl-graph .cycles .ep-sechint { margin-top: 0; }
@@ -165,7 +165,7 @@
 .settings-note { color: var(--ds-settled); font-weight: 600; }
 .settings-actions { gap: 10px 16px; }
 @media (hover: hover) and (pointer: fine) {
-  .photo-pick:hover { background: rgba(255, 255, 255, 0.08); }
+  .photo-pick:hover { background: rgb(var(--ds-tint) / 0.08); }
 }
 
 /* ---------- a phone ---------- */

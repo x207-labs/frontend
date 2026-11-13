@@ -2,9 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useObligations, useReport } from '../api/queries'
 import { Button, Tally } from '../ds/components'
 import { EpochScene, type SceneState } from '../landing/v4/engine/scene.js'
-import { mountScene3D } from '../landing/v4/engine/scene3d.js'
+import { mountPlainScene3D } from './plainScene3d.js'
 import { fmt, type SceneData as EngineData } from '../landing/v4/engine/x207.js'
-import { formatTime } from '../lib/format'
 import { toSceneData, type SceneData } from './epochReplayData'
 import { Loading } from './QueryState'
 
@@ -50,9 +49,9 @@ function Floor({ data, settled }: { data: SceneData; settled: boolean }) {
   useEffect(() => {
     const el = root.current
     if (!el || !live) return
-    let scene: ReturnType<typeof mountScene3D> | null = null
+    let scene: ReturnType<typeof mountPlainScene3D> | null = null
     try {
-      scene = mountScene3D(el, { data: engine, subMoved })
+      scene = mountPlainScene3D(el, { data: engine, subMoved })
     } catch {
       scene = null // the figures and the captions stay; only the picture is missing
     }
@@ -64,10 +63,6 @@ function Floor({ data, settled }: { data: SceneData; settled: boolean }) {
     <section className="rp" aria-label={`Replay of epoch ${data.epoch}`}>
       <div className="rp-floor" ref={root} data-phase={Math.min(4, Math.floor(until + 1e-6))}>
         <div className="rp-say">
-          <p className="rp-meta">
-            {members} {members === 1 ? 'member' : 'members'} · {data.edges.length} {data.edges.length === 1 ? 'voucher' : 'vouchers'}
-            {data.committedAt ? ` · committed ${formatTime(data.committedAt)}` : ''}
-          </p>
           <p className="rp-step" data-k="phase">{end.name}</p>
           <p className="rp-caption" data-k="caption" aria-live="polite">{end.caption}</p>
         </div>
@@ -77,7 +72,6 @@ function Floor({ data, settled }: { data: SceneData; settled: boolean }) {
             <div className="scene-tip" hidden />
           </div>
           <p className="sr-only">{summary(data, end, members)}</p>
-          {live && <p className="rp-hint" aria-hidden="true">{members > 24 ? 'drag to turn · hover a member for its name' : 'drag to turn · hover a member'}</p>}
         </div>
         <Tally
           items={[
@@ -101,8 +95,7 @@ function Floor({ data, settled }: { data: SceneData; settled: boolean }) {
         )}
       </div>
       <p className="rp-unit">
-        Amounts in credit. Payments are mock USDT on NEAR testnet; no real funds move.
-        {!settled && ' The settlement results of this epoch could not be read, so the replay stops after clearing.'}
+        {!settled && 'The settlement results of this epoch could not be read, so the replay stops after clearing.'}
       </p>
     </section>
   )

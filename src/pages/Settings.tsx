@@ -3,12 +3,13 @@
 // FE-087: laid out like the settings of a consumer app: who you are on top (photo, name, account), then one group per subject, each with its own
 // save button and its own result line, in one centred column. The photo is new and stays in this browser (photo.ts says why).
 import { useState } from 'react'
+import { Mascot } from '../components/Mascot'
 import { readCache, useCachedAccount, writeCache } from '../account/cache'
 import { PhotoError, photoFromFile } from '../account/photo'
 import { UNSUPPORTED_MESSAGE, applyAccountData, describeAccountFailure, useAccountActions, useSigning } from '../account/useAccount'
 import type { AccountAction } from '../account/client'
 import { Button } from '../ds/components'
-import { displayAccount, initial } from '../lib/account'
+import { displayAccount } from '../lib/account'
 
 // FE-101: the same rules as the account service (backend/supabase/functions/x207-account/handler.ts `EMAIL`, `CONTROL`), so a value the form accepts is never
 // refused after the wallet has signed: at most 64 characters before the @, 190 between it and the last dot, and a domain end of 2 or more.
@@ -77,7 +78,7 @@ export function Settings() {
     <div className="settings cl">
       <section className="settings-hero" aria-label="Profile">
         <span className="settings-photo" data-photo={cached.photo ? 'true' : undefined}>
-          {cached.photo ? <img src={cached.photo} alt="Your profile photo" /> : <span aria-hidden="true">{initial(cached.displayName || who)}</span>}
+          {cached.photo ? <img src={cached.photo} alt="Your profile photo" /> : <Mascot id={who} size={64} mood="happy" />}
         </span>
         <div className="settings-who">
           <h2>{cached.displayName || displayAccount(who)}</h2>

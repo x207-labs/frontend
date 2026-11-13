@@ -83,10 +83,10 @@
 
 /* buttons: the global button hover is the old solid blue; a design-system button keeps its own look */
 @media (hover: hover) and (pointer: fine) {
-  button.ds-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); box-shadow: none; }
+  button.ds-btn:hover:not(:disabled) { background: rgb(var(--ds-tint) / 0.08); box-shadow: none; }
   button.ds-btn[data-variant='glow']:hover:not(:disabled) { background: linear-gradient(180deg, var(--ds-accent), var(--ds-accent-2)); box-shadow: var(--ds-glow); filter: brightness(1.08); }
   a.ds-btn:hover { text-decoration: none; }
-  a.ds-btn[data-variant='quiet']:hover { background: rgba(255, 255, 255, 0.08); }
+  a.ds-btn[data-variant='quiet']:hover { background: rgb(var(--ds-tint) / 0.08); }
   .palette-trigger:hover:not(:disabled), .account-trigger:hover:not(:disabled) { background: var(--ds-surface-2); color: var(--ds-ink); }
   .see-all:hover { background: var(--ds-surface-2); color: var(--ds-ink); }
 }
@@ -192,7 +192,7 @@ main { padding-top: 0; }
 .home .action::before { content: none; }
 .home .action > span:not(.ds-status) { flex: 1 1 14rem; min-width: 0; font-size: 14px; line-height: 1.5; }
 .home .action a { display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0 12px; border: 1px solid var(--ds-rule-2); border-radius: var(--ds-r-ctl); background: transparent; color: var(--ds-ink); font-size: 14px; font-weight: 600; text-decoration: none; }
-@media (hover: hover) and (pointer: fine) { .home .action:hover { transform: none; border-color: var(--ds-rule-2); } .home .action a:hover { background: rgba(255, 255, 255, 0.08); } }
+@media (hover: hover) and (pointer: fine) { .home .action:hover { transform: none; border-color: var(--ds-rule-2); } .home .action a:hover { background: rgb(var(--ds-tint) / 0.08); } }
 .kv { display: grid; margin: 0; }
 .kv > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; padding: 9px 0; border-bottom: 1px solid var(--ds-rule); }
 .kv > div:last-child { border-bottom: 0; }

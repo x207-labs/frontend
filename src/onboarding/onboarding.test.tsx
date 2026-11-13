@@ -67,7 +67,8 @@ describe('TC-FE-060-02 the wizard on the Onboarding page', () => {
 
   it('"I have the funds" moves the current step to join, is saved for the account, and survives a reload', async () => {
     const { user, unmount } = await open()
-    await user.click(within(step('funds')).getByRole('button', { name: 'I have the funds' }))
+    // the manual steps (and this button) show once the faucet check ends, as in the test above
+    await user.click(await within(step('funds')).findByRole('button', { name: 'I have the funds' }))
     expect(step('funds')).toHaveAttribute('data-status', 'done')
     expect(step('join')).toHaveAttribute('data-status', 'current')
     expect(readProgress(ACCOUNT)).toEqual({ funds: true, payment: false })

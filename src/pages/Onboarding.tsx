@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CircleLogo } from '../components/CircleLogo'
 import { Link } from 'react-router-dom'
 import { useMember, useMembers } from '../api/queries'
 import type { MemberResponse } from '../api/types'
@@ -207,6 +208,7 @@ export function Onboarding() {
       <section className="onboard-me" aria-labelledby="onboard-me">
         <header className="ep-head">
           <p className="ep-eyebrow">
+            <CircleLogo />
             {CIRCLE}
             {account ? ` · ${shortAccount(account)}` : ''}
             {memberQuery.data ? ` · ${memberQuery.data.status}` : ''}

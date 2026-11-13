@@ -1,19 +1,22 @@
 // FE-019: barter marketplace (F9). Browse listings, create voucher-signed listings, see asset class, discount, expiry.
 // The negotiation panel (FE-020) is in components/Negotiation.tsx and opens from the listing row.
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { Mascot } from '../components/Mascot'
+import { MascotCrowd } from '../components/MascotCrowd'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import { api } from '../api/client'
 import { useListing, useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { AppraisalBadge } from '../components/AppraisalBadge'
+import { CONTENT_ID } from '../lib/contentId'
 import { AssetTemplateForm, type TemplateCheck } from '../components/AssetTemplateForm'
 import { CopyButton } from '../components/CopyButton'
 import { ResourceListingForm } from '../components/ResourceListingForm'
 import { Negotiation } from '../components/Negotiation'
 import { OwnIntents } from '../components/OwnIntents'
 import { EmptyHint } from '../components/EmptyHint'
-import { AgentIcon } from '../components/icons'
 import { ErrorNotice, Loading, QueryState } from '../components/QueryState'
 import { SignInPrompt } from '../components/SignInPrompt'
 import { SortableTable, type Column } from '../components/SortableTable'
@@ -324,12 +327,53 @@ function timeLeft(iso: string): string {
   const h = Math.floor(ms / 3_600_000)
   return h >= 48 ? `${Math.floor(h / 24)} days left` : h >= 1 ? `${h} h left` : `${Math.max(1, Math.floor(ms / 60_000))} min left`
 }
+/** v6.4: the cover of the Marketplace, as the balance card of Home: one figure (the open listings), one line, one action, and the mascots of the circle. */
+function MarketCover({ onPost }: { onPost: () => void }) {
+  const open = useMarketStats().data?.listings.open
+  return (
+    <section className="home-hero market-cover" aria-label="Marketplace at a glance">
+      <div className="hero-main">
+        <p className="hero-label">Open listings</p>
+        <p className="hero-figure">{open ?? '…'}</p>
+        <p className="home-statement">Swap anything with value. Only the net is settled.</p>
+        <p className="home-cta">
+          <button type="button" className="tl-btn" onClick={onPost}>
+            Post a listing
+          </button>
+        </p>
+      </div>
+      <MascotCrowd />
+    </section>
+  )
+}
+
+function ListingSheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  const done = useRef(onClose)
+  done.current = onClose
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && done.current()
+    document.addEventListener('keydown', key)
+    return () => document.removeEventListener('keydown', key)
+  }, [])
+  // into <main>, not into the page column: fixed to the whole window (no ancestor box traps it), and still under `main .mk`, so the panel keeps its look
+  // the id comes from the one constant Layout also sets, so a rename cannot drop the sheet onto <body> outside `main .mk`; <body> stays only for a page rendered without Layout (tests)
+  const host = document.getElementById(CONTENT_ID) ?? document.body
+  return createPortal(
+    <div className="sheet-backdrop listing-sheet" data-center="" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="sheet market mk" role="dialog" aria-modal="true" aria-label="Listing">
+        {children}
+      </div>
+    </div>,
+    host,
+  )
+}
+
 function ListingRow({ listing, selected, onSelect }: { listing: ListingView; selected: boolean; onSelect: () => void }) {
   return (
     <tr aria-selected={selected} className="listing-row">
       <td>
         <div className="poster">
-          <span className="poster-avatar" aria-hidden="true">{AgentIcon({ account: listing.account, size: 16 }) ?? shortAccount(listing.account).charAt(0).toUpperCase()}</span>
+          <Mascot id={listing.account} size={36} />
           <code>{shortAccount(listing.account)}</code>
           {isHumanListing(listing.detail) && <span className="badge" data-testid="human-badge">human</span>}
         </div>
@@ -479,9 +523,12 @@ export function Marketplace() {
 
   return (
     <div className="market mk" data-mk="marketplace" data-view={view}>
-      <div className="market-top">
+      <MarketCover onPost={() => setView('post')} />
+      {/* v6.4 (KISS): the listings come first; the figures of the market fold away */}
+      <details className="more market-top">
+        <summary>Market stats</summary>
         <Stats />
-      </div>
+      </details>
       <div className="view-tabs">
         <div className="segmented market-views" role="group" aria-label="Marketplace view">
           {VIEWS.map(([v, label]) => (
@@ -519,7 +566,12 @@ export function Marketplace() {
           />
         )}
       </QueryState>
-      {shown && <Negotiation listing={shown} voucherKey={voucherKey} onVoucherKey={setVoucherKey} onClose={() => setSelected(null)} />}
+      {/* v6.4: a listing opens in a pop-up in the middle of the screen; Escape or a click outside closes it */}
+      {shown && (
+        <ListingSheet onClose={() => setSelected(null)}>
+          <Negotiation listing={shown} voucherKey={voucherKey} onVoucherKey={setVoucherKey} onClose={() => setSelected(null)} />
+        </ListingSheet>
+      )}
       </section>
       <section className="market-pane" data-pane="mine" aria-label="Your intents">
         <OwnIntents />

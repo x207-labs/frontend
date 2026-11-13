@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import { Mascot } from './Mascot'
 import { Link } from 'react-router-dom'
 import { useCachedAccount } from '../account/cache'
 import { Button } from '../ds/components'
-import { displayAccount, initial } from '../lib/account'
+import { displayAccount } from '../lib/account'
 import { useWallet } from '../wallet/WalletContext'
 import { NavIcon } from './icons'
 
@@ -73,7 +74,7 @@ export function AccountMenu() {
     <div className="account" ref={root} onKeyDown={onKeyDown}>
       <button type="button" className="account-trigger" ref={trigger} aria-haspopup="menu" aria-expanded={open} aria-label={`Account menu for ${account}`} title={account} onClick={() => setOpen((o) => !o)}>
         {/* FE-087: the photo set in Settings, when there is one */}
-        <span className="avatar" aria-hidden="true" data-photo={cached.photo ? 'true' : undefined}>{cached.photo ? <img src={cached.photo} alt="" /> : initial(cached.displayName || account)}</span>
+        <span className="avatar" aria-hidden="true" data-photo={cached.photo ? 'true' : undefined}>{cached.photo ? <img src={cached.photo} alt="" /> : <Mascot id={account} size={26} />}</span>
         <span className="wallet-account">{cached.displayName || displayAccount(account)}</span>
       </button>
       {open && (

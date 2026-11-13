@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Mascot } from './Mascot'
 
 // FE-086: every <select> in the app opens this menu instead of the browser's own list, on a device with a fine pointer (mouse or trackpad). The native select
 // stays in the page and keeps its value, its label and its change event, so forms, tests and screen readers see an ordinary select; the menu only
@@ -191,6 +192,8 @@ export function SelectMenu() {
             close()
           }}
         >
+          {/* an option may carry a logo: the mascot of the account in data-mascot (the circles) */}
+          {o.dataset.mascot && <Mascot id={o.dataset.mascot} size={22} mood="smile" />}
           <span>{o.text}</span>
           {i === select.selectedIndex && (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

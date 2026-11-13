@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CircleLogo } from '../components/CircleLogo'
 import { useEpochSettlements, useMemberLimits, useMembers } from '../api/queries'
 import type { Member, SettlementItem } from '../api/types'
 import { EvmBadge } from '../components/EvmBadge'
@@ -9,6 +10,7 @@ import { CIRCLE } from '../config'
 import { Kpi, StatusBadge } from '../ds/components'
 import { useEpochSelection, useSelectedEpoch } from '../epoch'
 import { formatCredit2, formatNumber, shortAccount } from '../lib/format'
+import { Mascot } from '../components/Mascot'
 import { MONEY } from '../lib/network'
 
 // Loss order (ADR-18): debtor stake, then the reserve fund, then haircut to direct creditors. The API carries stake and haircut;
@@ -186,10 +188,10 @@ function Headroom({ m }: { m: Member }) {
 
 /** The one sentence under the title, with the real numbers: who stands behind the credit, and whether anyone defaulted in the epoch. */
 function ledeOf(members: number, stake: bigint, epoch: number | null, defaulted: number | null): string {
-  const lead = epoch === null ? '' : `In epoch ${epoch}, `
-  const base = `${lead}${formatNumber(members, 0)} ${members === 1 ? 'member backs' : 'members back'} the circle with ${formatCredit2(stake.toString())} ${MONEY} of stake`
-  if (epoch === null || defaulted === null) return `${base}.`
-  return `${base}, and ${defaulted === 0 ? 'no member' : `${formatNumber(defaulted, 0)} ${defaulted === 1 ? 'member' : 'members'}`} defaulted.`
+  // v6.4 (KISS): two short facts, to the point
+  const base = `${formatCredit2(stake.toString())} ${MONEY} staked by ${formatNumber(members, 0)} ${members === 1 ? 'member' : 'members'}.`
+  if (epoch === null || defaulted === null) return base
+  return `${base} ${defaulted === 0 ? 'No defaults' : `${formatNumber(defaulted, 0)} ${defaulted === 1 ? 'default' : 'defaults'}`} in epoch ${epoch}.`
 }
 
 export function Risk() {
@@ -207,6 +209,7 @@ export function Risk() {
     <div className="risk ep cl">
       <header className="ep-head">
         <p className="ep-eyebrow">
+          <CircleLogo />
           {CIRCLE}
           {epoch !== null ? ` · epoch ${epoch}` : ''}
           {selected ? ` · ${phaseWord(selected.phase)}` : ''}
@@ -214,7 +217,6 @@ export function Risk() {
         {/* the page title is the h1 of the shell; this one names what the page is about */}
         <h2 className="ep-title">Stake, limits and defaults</h2>
         {ready && <p className="ep-lede">{ledeOf(list.length, total(list, 'stake'), epoch, defaulted)}</p>}
-        <p className="ep-sub">A loss is covered by the stake of the member who did not pay first, then by the reserve fund, then by a haircut to its direct creditors.</p>
       </header>
       {ready && (
         <section className="ep-section" aria-label="Headline figures">
@@ -252,7 +254,10 @@ export function Risk() {
               renderRow={(m) => (
                 <tr key={m.account}>
                   <td>
-                    <span title={m.account}>{shortAccount(m.account)}</span>
+                    <span className="member-cell" title={m.account}>
+                      <Mascot id={m.account} size={30} mood={m.status === 'suspended' ? 'sad' : undefined} />
+                      {shortAccount(m.account)}
+                    </span>
                     <EvmBadge account={m.account} />
                   </td>
                   <td>
@@ -270,7 +275,11 @@ export function Risk() {
           )}
         </QueryState>
       </section>
-      <LimitHistory />
+      {/* v6.3 (KISS): the block by block history of the limits is for an audit; it folds away */}
+      <details className="more ep-more">
+        <summary>Limit history</summary>
+        <LimitHistory />
+      </details>
       <Defaults />
     </div>
   )

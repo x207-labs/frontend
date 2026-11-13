@@ -1,54 +1,64 @@
-/* x207 design system tokens (v4, 2026-11-11). One source for the landing (`.lp`) and the app (`styles.css` maps its own names onto these).
+/* x207 design system tokens. v6 (2026-11-12): light by default and dark with the system, after the Grok Bot app. v5 (2026-11-12): the dark desk of Grok Bot (x.ai/bot): neutral greys, Apple's system type, pills, colour only for status.
+   v4 (2026-11-11) before that. One source for the landing (`.lp`) and the app (`styles.css` maps its own names onto these).
    Look: a calm night desk (groups A + C) with an electric floor and lime accents (group B), set in "Agent Console" type.
    Colour roles, not hues: code reads --ds-settled, never "green". Every text colour passes WCAG AA on --ds-paper and --ds-surface. */
 :root {
   /* surfaces, darkest to lightest */
-  --ds-paper: #060a14;
-  --ds-surface: #0d1424;
-  --ds-surface-2: #111a2e;
-  --ds-surface-3: #16213a;
-  --ds-glass: rgba(15, 23, 42, 0.58);
-  --ds-glass-strong: rgba(10, 16, 32, 0.82);
-  --ds-rule: rgba(190, 205, 235, 0.16);
-  --ds-rule-2: rgba(190, 205, 235, 0.26);
+  --ds-paper: #fafafa;
+  --ds-surface: #f2f2f2;
+  --ds-surface-2: #ebebeb;
+  --ds-surface-3: #e3e3e3;
+  --ds-glass: rgba(250, 250, 250, 0.8);
+  --ds-glass-strong: rgba(246, 246, 246, 0.92);
+  --ds-rule: rgba(0, 0, 0, 0.08);
+  --ds-rule-2: rgba(0, 0, 0, 0.14);
 
   /* ink */
-  --ds-ink: #eef3fb;
-  --ds-ink-2: #a9b6cc;
-  --ds-ink-3: #8593ab;
-  --ds-soft: #a9cbff;          /* the soft blue second line of a headline */
-  --ds-agent-ink: #9fe3c2;     /* text an agent signed or said */
+  --ds-ink: #141414;
+  --ds-ink-2: #5c5c5c;
+  --ds-ink-3: #616161;         /* 4.78:1 on the active sidebar row (#e2e2e2), the darkest surface it sits on */
+  --ds-soft: #4a5a78;          /* the soft blue second line of a headline */
+  --ds-agent-ink: #2e2e2e;     /* text an agent signed or said */
 
   /* status: the x207 result codes */
-  --ds-settled: #5be3a0;       /* 200: paid, settled */
-  --ds-claim: #8fd3ff;         /* 202: accepted, claimable */
-  --ds-due: #ffc25c;           /* 402: payment due */
-  --ds-default: #ff8a8a;       /* 409: conflict, default */
+  --ds-settled: #117236;       /* 200: paid, settled; 4.65:1 on #e2e2e2 (a pill or badge on the darkest light surface) */
+  --ds-claim: #0a63c9;         /* 202: accepted, claimable */
+  --ds-due: #9a5200;           /* 402: payment due */
+  --ds-default: #c62828;       /* 409: conflict, default */
 
   /* action and focus */
-  --ds-accent: #2f6cf0;
-  --ds-accent-2: #1338c4;
-  --ds-accent-ink: #a9cbff;
-  --ds-focus: #c8f53c;
+  --ds-accent: #0a6cdf;
+  --ds-accent-2: #0857b4;
+  --ds-accent-ink: #0a5fc4;
+  --ds-focus: #8db8ff;
 
   /* the floor (group B): bands, highlights and orbs */
-  --ds-floor-a: #3148ff;
-  --ds-floor-b: #1b2ad6;
-  --ds-lime: #c8f53c;
+  --ds-floor-a: #2a2a2a;
+  --ds-floor-b: #1f1f1f;
+  --ds-lime: #e8e8e8;
   --ds-sun: #ffc738;
   --ds-coral: #ff5a45;
   --ds-sky: #a6dcff;
-  --ds-orb-edge: #c9d2ff;
-  --ds-eye: #0e1330;
+  --ds-orb-edge: #d0d0d0;
+  --ds-eye: #141414;
+
+  /* the Grok Bot window (v6): desk around the window, sidebar, the tint every hairline and hover is drawn with (R G B), the main and the second button */
+  --ds-desk: #e9e9e9;
+  --ds-side: #f6f6f6;
+  --ds-tint: 0 0 0;
+  --ds-btn: #141414;
+  --ds-btn-ink: #ffffff;
+  --ds-btn-2: #ebebeb;
+  --ds-btn-2-hover: #e2e2e2;
 
   /* type */
-  --ds-font-display: 'Hubot Sans', system-ui, sans-serif;
-  --ds-font-text: 'Mona Sans', system-ui, sans-serif;
-  --ds-font-mono: 'Monaspace Neon', ui-monospace, monospace;
-  --ds-font-agent: 'Monaspace Krypton', ui-monospace, monospace;
-  --ds-display-weight: 760;
-  --ds-display-stretch: 112%;
-  --ds-display-tracking: -0.025em;
+  --ds-font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  --ds-font-text: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --ds-font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+  --ds-font-agent: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --ds-display-weight: 600;
+  --ds-display-stretch: 100%;
+  --ds-display-tracking: -0.02em;
   /* type scale (px at 16px root): display / h1 / h2 / h3 / body / small / micro */
   --ds-fs-display: clamp(40px, 6.2vw, 86px);
   --ds-fs-h1: clamp(30px, 3.6vw, 48px);
@@ -59,10 +69,10 @@
   --ds-fs-micro: 12px;
 
   /* shape */
-  --ds-r-panel: 14px;
-  --ds-r-card: 12px;
+  --ds-r-panel: 16px;
+  --ds-r-card: 14px;
   --ds-r-ctl: 10px;
-  --ds-r-chip: 8px;
+  --ds-r-chip: 999px;
   --ds-r-badge: 6px;
   --ds-r-floor: 32px;
 
@@ -77,10 +87,106 @@
   --ds-s8: 72px;
 
   /* depth */
-  --ds-shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.8);
-  --ds-glow: 0 0 0 1px rgba(169, 203, 255, 0.35) inset, 0 10px 30px -8px rgba(47, 108, 240, 0.75);
+  --ds-shadow-card: none;
+  --ds-glow: none;
 
   /* layout and motion */
+  --ds-col: 1120px;
+  --ds-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ds-dur: 220ms;
+}
+
+/* v6: the dark desk, when the system is dark */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ds-paper: #161616;
+    --ds-surface: #212121;
+    --ds-surface-2: #2a2a2a;
+    --ds-surface-3: #333333;
+    --ds-glass: rgba(33, 33, 33, 0.72);
+    --ds-glass-strong: rgba(20, 20, 20, 0.86);
+    --ds-rule: rgba(255, 255, 255, 0.08);
+    --ds-rule-2: rgba(255, 255, 255, 0.14);
+    --ds-ink: #f2f2f2;
+    --ds-ink-2: #a3a3a3;
+    --ds-ink-3: #9a9a9a;
+    --ds-soft: #c9d4e6;
+    --ds-agent-ink: #d6d6d6;
+    --ds-settled: #5be3a0;
+    --ds-claim: #8fd3ff;
+    --ds-due: #ffc25c;
+    --ds-default: #ff8a8a;
+    --ds-accent: #5b9bff;
+    --ds-accent-2: #3f7fe8;
+    --ds-accent-ink: #9ec1ff;
+    --ds-focus: #9ec1ff;
+    --ds-floor-a: #242424;
+    --ds-floor-b: #1c1c1c;
+    --ds-lime: #ececec;
+    --ds-orb-edge: #d9d9d9;
+    --ds-desk: #0b0b0b;
+    --ds-side: #121212;
+    --ds-tint: 255 255 255;
+    --ds-btn: #f0f0f0;
+    --ds-btn-ink: #141414;
+    --ds-btn-2: #262626;
+    --ds-btn-2-hover: #2f2f2f;
+  }
+}
+
+/* The landing (`html.is-landing`, set by src/landing/mount.tsx) is frozen as it is in production: it keeps the v4 values of the tokens above, in light and dark alike.
+   v6 changes the app only. Keep this block equal to the v4 :root (tokens.css before v5), less the tokens landing.css sets on html.is-landing itself
+   (paper, surface, ink, ink-2, ink-3, rule, rule-2 and the four fonts), which it must keep setting. It sits on html because the canvas engines read the tokens
+   from document.documentElement, not from `.lp`. */
+html.is-landing {
+  --ds-surface-2: #111a2e;
+  --ds-surface-3: #16213a;
+  --ds-glass: rgba(15, 23, 42, 0.58);
+  --ds-glass-strong: rgba(10, 16, 32, 0.82);
+  --ds-soft: #a9cbff;
+  --ds-agent-ink: #9fe3c2;
+  --ds-settled: #5be3a0;
+  --ds-claim: #8fd3ff;
+  --ds-due: #ffc25c;
+  --ds-default: #ff8a8a;
+  --ds-accent: #2f6cf0;
+  --ds-accent-2: #1338c4;
+  --ds-accent-ink: #a9cbff;
+  --ds-focus: #c8f53c;
+  --ds-floor-a: #3148ff;
+  --ds-floor-b: #1b2ad6;
+  --ds-lime: #c8f53c;
+  --ds-sun: #ffc738;
+  --ds-coral: #ff5a45;
+  --ds-sky: #a6dcff;
+  --ds-orb-edge: #c9d2ff;
+  --ds-eye: #0e1330;
+  --ds-display-weight: 760;
+  --ds-display-stretch: 112%;
+  --ds-display-tracking: -0.025em;
+  --ds-fs-display: clamp(40px, 6.2vw, 86px);
+  --ds-fs-h1: clamp(30px, 3.6vw, 48px);
+  --ds-fs-h2: clamp(24px, 2.6vw, 34px);
+  --ds-fs-h3: 20px;
+  --ds-fs-body: 16px;
+  --ds-fs-small: 14px;
+  --ds-fs-micro: 12px;
+  --ds-r-panel: 14px;
+  --ds-r-card: 12px;
+  --ds-r-ctl: 10px;
+  --ds-r-chip: 8px;
+  --ds-r-badge: 6px;
+  --ds-r-floor: 32px;
+  --ds-s1: 4px;
+  --ds-s2: 8px;
+  --ds-s3: 12px;
+  --ds-s4: 16px;
+  --ds-s5: 24px;
+  --ds-s6: 32px;
+  --ds-s7: 48px;
+  --ds-s8: 72px;
+  --ds-shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.8);
+  --ds-glow: 0 0 0 1px rgba(169, 203, 255, 0.35) inset, 0 10px 30px -8px rgba(47, 108, 240, 0.75);
   --ds-col: 1120px;
   --ds-ease: cubic-bezier(0.22, 0.78, 0.51, 0.94);
   --ds-dur: 220ms;

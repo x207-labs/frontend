@@ -13,14 +13,18 @@ describe('dashboard shell', () => {
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
   })
 
-  it('TC-FE-002-01 eighteen pages (Overview, My account, Marketplace, Governance and Help) open from one navigation', async () => {
+  it('TC-FE-002-01 eighteen pages open from the sidebar or from All pages (v6: the sidebar lists the circle and account pages, the rest are one click away)', async () => {
     const user = userEvent.setup()
     renderApp('/stats')
-    const nav = screen.getByRole('navigation', { name: 'Pages' })
-    expect(within(nav).getAllByRole('link')).toHaveLength(18)
     expect(pages).toHaveLength(18)
-    for (const { title } of pages) {
-      await user.click(within(nav).getByRole('link', { name: title }))
+    const nav = screen.getByRole('navigation', { name: 'Pages' })
+    for (const { title, group } of pages) {
+      if (group === 'Overview' || group === 'My account') {
+        await user.click(within(nav).getByRole('link', { name: title }))
+      } else {
+        await user.click(screen.getByRole('button', { name: 'All pages' }))
+        await user.click(within(screen.getByRole('dialog', { name: 'All pages' })).getByRole('link', { name: title }))
+      }
       expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument()
     }
   })

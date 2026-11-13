@@ -1,0 +1,570 @@
+/* v6 (2026-11-12): light and dark with the system (colours from src/ds/tokens.css: --ds-desk, --ds-side, --ds-tint, --ds-btn...). v5: the app as Grok Bot's dark desk (x.ai/bot). Loaded last, so it wins over styles.css and the v4 sheets.
+   A window on near-black: the sidebar a shade darker than the page, rows with 10px corners, a light pill for the main action and a dark pill for the
+   rest, cards at #212121 with a hairline ring, Apple's system type, no glow and no gradient. Colour only names an x207 result code. */
+
+body { background: var(--ds-desk); }
+
+/* ---------- the window: sidebar and page side by side, rounded, on near-black ---------- */
+@media (min-width: 840px) {
+  .shell { padding: 10px; }
+  .rail { top: 10px; height: calc(100vh - 20px); height: calc(100dvh - 20px); margin: 0; padding: 14px 8px; border: 0; border-radius: 16px 0 0 16px; background: var(--ds-side); box-shadow: inset -1px 0 0 rgb(var(--ds-tint) / 0.06); }
+  .stage { min-height: calc(100vh - 20px); min-height: calc(100dvh - 20px); border-radius: 0 16px 16px 0; background: var(--paper); box-shadow: inset 0 0 0 1px rgb(var(--ds-tint) / 0.06); }
+  .topbar { border-top-right-radius: 16px; }
+}
+/* the window's traffic lights above the logo */
+.rail::before { content: ''; display: block; width: 12px; height: 12px; margin: 2px 0 16px 8px; border-radius: 50%; background: #ff5f57; box-shadow: 20px 0 0 #febc2e, 40px 0 0 #28c840; }
+@media (min-width: 840px) and (max-width: 1199px) { .rail::before { margin-inline: auto; transform: translateX(-20px) scale(0.8); } }
+
+/* ---------- sidebar rows ---------- */
+.brand { margin-bottom: 14px; }
+.brand .brand-logo > span { display: inline; font: 600 17px/1 var(--ds-font-display); letter-spacing: -0.02em; color: var(--ds-ink); } /* the wordmark beside the agents, not the circle line under it */
+.brand .brand-logo img { width: 28px; height: 28px; }
+/* styles.css sets every span of .brand to block, the logo too, so the wordmark fell under the mark: put it back in line, centred beside the agents */
+@media (min-width: 1200px) { .brand .brand-logo { display: inline-flex; align-items: center; gap: 8px; } }
+.brand-compact .brand-logo { display: inline-flex; align-items: center; gap: 8px; }
+.brand-compact .brand-logo > span { display: inline; }
+.brand > span { font: 400 12px/1.3 var(--ds-font-text); letter-spacing: 0; color: var(--ds-ink-3); }
+.nav-group { margin: 16px 10px 4px; font: 500 12px/1.3 var(--ds-font-text); letter-spacing: 0; text-transform: none; color: var(--ds-ink-3); }
+.rail a, .sheet a { border-radius: 10px; color: rgb(var(--ds-tint) / 0.72); font-weight: 500; }
+.rail a.active, .sheet a.active { background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); font-weight: 500; }
+.rail a.active::before, .sheet a.active::before { content: none; }
+.tab[aria-current='page'] { background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); }
+.tab[aria-current='page']::before { content: none; }
+.tabbar, .sheet { background: var(--ds-side); border-color: rgb(var(--ds-tint) / 0.08); }
+@media (hover: hover) and (pointer: fine) { .rail a:hover:not(.active), .sheet a:hover:not(.active) { background: rgb(var(--ds-tint) / 0.05); color: var(--ds-ink); } }
+
+/* ---------- top bar ---------- */
+.topbar { background: var(--paper); border-bottom-color: rgb(var(--ds-tint) / 0.06); }
+.net-chip { border-radius: 999px; font: 500 12px/1.5 var(--ds-font-text); }
+.net-chip i { background: #28c840; }
+.palette-trigger, .demo-toggle, .account-trigger { border-radius: 999px; background: var(--ds-btn-2); border-color: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); }
+.palette-trigger kbd { font-family: var(--ds-font-text); }
+
+/* ---------- buttons: a light pill for the main action, a dark pill for the rest ---------- */
+:where(.shell, .sheet-backdrop, .palette-backdrop) button { border-radius: 999px; background: var(--ds-btn); color: var(--ds-btn-ink); font-weight: 500; }
+:where(.shell) button.quiet, :where(.shell) button.copy { background: var(--ds-btn-2); color: var(--ds-ink); border-color: rgb(var(--ds-tint) / 0.12); }
+:where(.shell) button:disabled { background: transparent; color: var(--ds-ink-3); border-color: rgb(var(--ds-tint) / 0.1); }
+:where(.shell) button.th-sort, :where(.shell) .tabbar button, :where(.shell) .palette-trigger, :where(.shell) .demo-toggle, :where(.shell) .account-trigger { background: transparent; }
+:where(.shell) .palette-trigger, :where(.shell) .demo-toggle, :where(.shell) .account-trigger { background: var(--ds-btn-2); color: var(--ds-ink); }
+.ds-btn { border-radius: 999px; border-color: rgb(var(--ds-tint) / 0.12); background: var(--ds-btn-2); font-weight: 500; }
+.ds-btn[data-variant='glow'], .ds-btn[data-variant='white'] { border-color: transparent; background: var(--ds-btn); color: var(--ds-btn-ink); box-shadow: none; }
+@media (hover: hover) and (pointer: fine) {
+  :where(.shell) button:hover:not(:disabled) { filter: brightness(0.94); }
+  button.ds-btn:hover:not(:disabled), a.ds-btn:hover { background-color: var(--ds-btn-2-hover); }
+  button.ds-btn[data-variant='glow']:hover:not(:disabled), a.ds-btn[data-variant='glow']:hover, .ds-btn[data-variant='white']:hover { background: var(--ds-btn); box-shadow: none; filter: none; }
+}
+
+/* ---------- cards: #212121, 16px corners, a hairline ring, no glass and no glow ---------- */
+.panel, .card, .ds-panel, .ds-kpi, .home-table, .form, .table-wrap { background: var(--sheet); border-color: rgb(var(--ds-tint) / 0.08); box-shadow: none; }
+.panel, .card, .ds-panel, .ds-kpi, .home-table { border-radius: 16px; }
+.ds-kpi::before { content: none; }
+.ds-kpi > header b { background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); }
+.ds-chip { background: rgb(var(--ds-tint) / 0.06); border-color: rgb(var(--ds-tint) / 0.1); color: var(--ds-ink); }
+.ds-eyebrow i { box-shadow: none; }
+.ds-tally > div[data-tone='paper'] { background: #f0f0f0; } /* fixed: a light tile in both themes */
+.ds-tally > div[data-tone='lime'] { background: var(--ds-surface-2); color: var(--ds-ink); box-shadow: inset 0 0 0 1px rgb(var(--ds-tint) / 0.08); }
+.ds-tally > div[data-tone='lime'] small { color: var(--ds-ink-2); }
+.ds-tally > div[data-tone='paper'] small { color: #555; }
+.ds-tally > div[data-tone='floor'] { background: #3a3a3a; }
+
+/* ---------- page header: a plain title, one plain sentence ---------- */
+.page-head h1 { font-size: clamp(26px, 2.6vw, 34px); font-weight: 600; letter-spacing: -0.02em; }
+.page-intro { font-family: var(--ds-font-text); color: var(--ds-ink-2); }
+.page-eyebrow { font: 500 13px/1.5 var(--ds-font-text); }
+.page-eyebrow[data-live]::before { background: #28c840; box-shadow: none; }
+.picker label { font: 500 12px/1 var(--ds-font-text); letter-spacing: 0; text-transform: none; }
+.picker select { border-radius: 999px; background-color: var(--ds-btn-2); border-color: rgb(var(--ds-tint) / 0.08); }
+.phases { background: var(--ds-surface); border-color: rgb(var(--ds-tint) / 0.08); }
+.phases li.now { background: var(--ds-btn); color: var(--ds-btn-ink); box-shadow: none; }
+.phases li.now::before, .phases li.now .phase-mark::before { background: var(--ds-btn-ink); }
+
+/* ---------- tables and facts: sentence-case labels, no mono caps ---------- */
+.home-table thead th, .home-facts dt, th { font-family: var(--ds-font-text); letter-spacing: 0; text-transform: none; }
+.home-facts dd { font-family: var(--ds-font-text); }
+.sechead h2, .home .ds-panel h2, .ds-panel h3 { font-weight: 600; font-stretch: 100%; }
+
+/* the labels the v4 pages set in mono caps: sentence case in the system type */
+.ep .kv.ep-facts dt,
+.ep-table thead th,
+.ep-more .facts dt,
+main .ax .ax-facts dt, main .ax .figures dt,
+main .ax .ax-dl dt,
+main .ax .row-sub,
+main .ax .ax-table thead th,
+main .ax .rule-next-title,
+main .ax-help .explore-label,
+.cl .figure-label,
+.cl .table-wrap:not(.ep-table) thead th,
+.cl .table-tools label span,
+.cl-floor .flow-title,
+.risk-pick > span,
+.risk-low,
+.settle-col > h3,
+main .mk .filters label,
+main .mk .side legend,
+main .mk .table-wrap thead th,
+main .mk dl.figures dt,
+main .mk dl.kv > dt,
+main .mk .deal-tag,
+main .mk .list-table tbody td[data-label]::before, main .mk .table-wrap table:is([aria-label='Milestones'], [aria-label='Installment schedule']) tbody td[data-label]::before, main .mk table[aria-label='Listings'] tbody td[data-label]::before,
+.step-badge { font-family: var(--ds-font-text); letter-spacing: 0; text-transform: none; }
+
+/* ---------- simpler, after Grok Bot: one type for everything, no ids in the chrome, a search row on top of the sidebar ---------- */
+/* the dashboard sets its numbers and ids in the system type too (tabular figures keep columns aligned); the mono type stays for code only */
+.shell, .sheet-backdrop, .palette-backdrop { --ds-font-mono: var(--ds-font-text); --mono: var(--ds-font-text); font-variant-numeric: tabular-nums; }
+.brand > span { display: none; } /* the circle id: the circle picker of each page already names it */
+.ds-kpi header b { display: none; } /* the one-letter badges said nothing the label does not */
+.home-facts > div:nth-child(2) { display: none; } /* the network id (x207:<circle>) is for integrators; the contract stays */
+
+.rail .rail-search { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; margin: 0 0 6px; padding: 0 10px; border: 0.5px solid rgb(var(--ds-tint) / 0.08); border-radius: 10px; background: rgb(var(--ds-tint) / 0.06); color: var(--ds-ink-3); font: 400 14px/1 var(--ds-font-text); text-align: left; box-shadow: none; }
+.rail .rail-search .nav-icon { flex: none; }
+@media (hover: hover) and (pointer: fine) { .rail .rail-search:hover { background: rgb(var(--ds-tint) / 0.09); color: var(--ds-ink); } }
+@media (min-width: 840px) { .topbar .palette-trigger { display: none; } .rail .rail-search { width: 2.75rem; justify-content: center; padding: 0; } }
+@media (min-width: 1200px) { .rail .rail-search { width: 100%; justify-content: flex-start; padding: 0 10px; } }
+
+/* each page icon sits on a small rounded tile, like the avatars of the Grok Bot list; the open page gets the light tile */
+.rail a .nav-icon, .sheet a .nav-icon { box-sizing: border-box; width: 24px; height: 24px; padding: 4px; border-radius: 7px; background: rgb(var(--ds-tint) / 0.06); }
+.rail a.active .nav-icon, .sheet a.active .nav-icon { background: var(--ds-btn); color: var(--ds-btn-ink); }
+@media (min-width: 840px) and (max-width: 1199px) { .rail a .nav-icon { width: 28px; height: 28px; padding: 5px; } .rail a.active { background: none; } }
+
+/* ================= v6 (2026-11-12): the Grok Bot app, light and dark: a grouped list in the sidebar, agents as mascots, timelines ================= */
+
+/* ---------- sidebar: rows with a tile or a mascot, a name and one plain line ---------- */
+.rail .nav-label { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.rail .nav-title { overflow: hidden; font: 500 14px/1.25 var(--ds-font-text); color: var(--ds-ink); text-overflow: ellipsis; white-space: nowrap; }
+.rail .nav-hint { overflow: hidden; font: 400 12.5px/1.3 var(--ds-font-text); color: var(--ds-ink-3); text-overflow: ellipsis; white-space: nowrap; }
+.rail .nav-hint[data-tone='todo'] { color: var(--ds-accent-ink); }
+.rail .nav-hint[data-tone='bad'] { color: var(--ds-default); }
+.rail .you-mark, .agent-head .you-mark, .agents-list .you-mark { font-weight: 400; color: var(--ds-ink-3); }
+.rail .nav-note { margin: 2px 10px 6px; font: 400 12.5px/1.3 var(--ds-font-text); color: var(--ds-ink-3); }
+.rail .mascot { flex: none; }
+.rail a.agent-row .mascot { width: 30px; height: 30px; }
+.rail a .nav-icon { width: 30px; height: 30px; padding: 6px; border-radius: 9px; }
+.rail a.active { background: rgb(var(--ds-tint) / 0.08); }
+.rail a.active .nav-icon { background: var(--ds-btn); color: var(--ds-btn-ink); }
+.rail .see-all-row .nav-label, .rail .rail-row .nav-label { font: 500 14px/1.25 var(--ds-font-text); color: var(--ds-ink-2); }
+/* the foot: the marketplace, every page, and you */
+.rail .rail-foot { display: flex; flex-direction: column; gap: 1px; margin-top: 14px; padding-top: 10px; border-top: 0.5px solid rgb(var(--ds-tint) / 0.08); }
+.rail .rail-row, .rail .rail-me { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; margin: 0; padding: 4px 10px; border: 0; border-radius: 10px; background: transparent; box-shadow: none; color: var(--ds-ink); font: 500 14px/1.25 var(--ds-font-text); text-align: left; text-decoration: none; }
+.rail .rail-row .nav-icon { box-sizing: border-box; width: 30px; height: 30px; padding: 6px; border-radius: 9px; background: rgb(var(--ds-tint) / 0.06); }
+.rail .rail-me .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rail .rail-me .mascot { margin-left: 2px; }
+@media (hover: hover) and (pointer: fine) { .rail .rail-row:hover, .rail .rail-me:hover { background: rgb(var(--ds-tint) / 0.05); filter: none; } }
+@media (min-width: 840px) {
+  .rail { display: flex; flex-direction: column; }
+  .rail::before, .rail > * { flex: none; } /* a flex column would squeeze the traffic lights to nothing */
+}
+@media (min-width: 840px) and (max-width: 1199px) {
+  .rail a, .rail .rail-row, .rail .rail-me { justify-content: center; width: 2.75rem; min-height: 2.75rem; margin-inline: auto; padding: 0; }
+  .rail a .nav-icon { width: 30px; height: 30px; padding: 6px; }
+  .rail .nav-note { display: none; }
+}
+@media (min-width: 1200px) {
+  .rail { width: auto; }
+  .rail a { min-height: 44px; padding: 5px 10px; gap: 10px; }
+  .rail a.see-all-row { min-height: 36px; }
+}
+
+/* ---------- under 840 px: the sidebar is a full-screen list (iOS), opened by the menu button of the top bar ---------- */
+.list-toggle { display: inline-grid; place-items: center; width: 36px; height: 36px; min-height: 36px; padding: 0; border: 0; border-radius: 999px; }
+.topbar .list-toggle { background: rgb(var(--ds-tint) / 0.06); color: var(--ds-ink); }
+@media (min-width: 840px) { .topbar .list-toggle { display: none; } }
+@media (max-width: 839px) {
+  .rail[data-open] { position: fixed; z-index: 40; inset: 0; display: flex; flex-direction: column; width: auto; height: 100vh; height: 100dvh; margin: 0; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); overflow-y: auto; border: 0; border-radius: 0; background: var(--ds-side); animation: list-in 0.32s var(--ds-ease); }
+  .rail[data-open]::before { margin-left: 2px; }
+  .rail[data-open] .nav-label { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+  .rail[data-open] .nav-group { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+  .rail[data-open] .brand > span { display: none; }
+  .rail[data-open] a { min-height: 52px; }
+  .rail[data-open]::before { display: none; }
+  .rail[data-open] .brand { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px; }
+  .rail[data-open] .brand-logo { display: inline-flex; align-items: center; gap: 8px; }
+  .rail[data-open] .brand-logo > span { display: inline; font: 600 19px/1 var(--ds-font-display); }
+  .rail[data-open] .list-done { min-height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); font: 600 15px/1 var(--ds-font-text); }
+  .rail[data-open] .nav-title { font-size: 16px; }
+  .rail[data-open] .nav-hint { font-size: 14px; }
+  .rail[data-open] a .nav-icon, .rail[data-open] .mascot { width: 38px; height: 38px; }
+  .rail[data-open] a .nav-icon { padding: 8px; border-radius: 11px; }
+  main { padding-bottom: calc(2.5rem + env(safe-area-inset-bottom)); }
+}
+@keyframes list-in { from { transform: translateX(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- an agent page: the mascot and the name on top, a timeline, a panel on the right, a quick action at the bottom ---------- */
+.agent-page { display: grid; gap: 16px; padding-top: 12px; }
+.agent-head { display: flex; align-items: center; gap: 12px; }
+.agent-head h1 { margin: 0; font: 600 clamp(22px, 2.2vw, 28px)/1.2 var(--ds-font-display); letter-spacing: -0.02em; color: var(--ds-ink); }
+.agent-account { margin: 2px 0 0; overflow: hidden; font: 400 13px/1.3 var(--ds-font-text); color: var(--ds-ink-3); text-overflow: ellipsis; white-space: nowrap; }
+.agent-body { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 1100px) { .agent-body { grid-template-columns: minmax(0, 1fr) 300px; } }
+.agent-feed { display: grid; gap: 12px; min-width: 0; }
+
+/* the timeline: a centred time, a grey bubble, then a card with the result and what to do */
+.tl { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.tl > li { display: grid; gap: 8px; }
+.tl-time { margin: 10px 0 2px; text-align: center; font: 400 13px/1.3 var(--ds-font-text); color: var(--ds-ink-3); }
+.tl-bubble { max-width: 640px; margin: 0; padding: 12px 16px; border-radius: 18px; background: var(--ds-surface); font: 400 15px/1.45 var(--ds-font-text); color: var(--ds-ink); }
+.tl-card { display: grid; gap: 6px; max-width: 640px; padding: 14px 16px; border-radius: 18px; background: var(--ds-surface); }
+.tl-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tl-card h3 { margin: 0; font: 500 15.5px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+.tl-meta { margin: 0; font: 400 14px/1.4 var(--ds-font-text); color: var(--ds-ink-2); }
+.tl-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; }
+.tl-btn { display: inline-flex; align-items: center; min-height: 36px; padding: 0 16px; border-radius: 10px; background: var(--ds-btn); color: var(--ds-btn-ink); font: 500 14px/1 var(--ds-font-text); text-decoration: none; }
+.tl-btn[data-variant='quiet'] { background: var(--ds-paper); color: var(--ds-ink); box-shadow: inset 0 0 0 1px rgb(var(--ds-tint) / 0.12); }
+@media (hover: hover) and (pointer: fine) { .tl-btn:hover { filter: brightness(0.92); text-decoration: none; } }
+.tl-pill { display: inline-flex; flex: none; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.06); font: 500 13px/1.3 var(--ds-font-text); color: var(--ds-ink-2); white-space: nowrap; }
+.tl-pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.tl-pill[data-tone='ok'] { color: var(--ds-settled); }
+.tl-pill[data-tone='todo'] { color: var(--ds-accent-ink); }
+.tl-pill[data-tone='bad'] { color: var(--ds-default); }
+
+/* the quick action where Grok Bot has its message box */
+.composer { position: sticky; bottom: 12px; display: flex; align-items: center; gap: 10px; max-width: 760px; margin-top: 12px; padding: 7px 7px 7px 8px; border-radius: 999px; background: var(--ds-paper); box-shadow: inset 0 0 0 1px rgb(var(--ds-tint) / 0.12), 0 6px 24px rgb(0 0 0 / 0.06); color: var(--ds-ink-3); font: 400 15px/1.3 var(--ds-font-text); text-decoration: none; }
+.composer-plus, .composer-send { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: 50%; }
+.composer-plus { background: rgb(var(--ds-tint) / 0.06); color: var(--ds-ink-2); }
+.composer-send { margin-left: auto; background: var(--ds-btn); color: var(--ds-btn-ink); }
+.composer-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (hover: hover) and (pointer: fine) { .composer:hover { color: var(--ds-ink); text-decoration: none; } }
+
+/* the panel on the right, as Grok Bot's routine panel: a status, one grouped list of facts (iOS), the history */
+.agent-panel { display: grid; gap: 12px; padding: 16px; border-radius: 18px; background: var(--ds-surface); }
+.agent-panel-head { display: flex; align-items: center; justify-content: space-between; }
+.agent-panel h2 { margin: 0; font: 600 16px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+.agent-panel .agent-panel-head button { min-height: 30px; padding: 0 12px; font-size: 13px; }
+.agent-state { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; font: 400 14px/1.4 var(--ds-font-text); color: var(--ds-ink-2); }
+.agent-facts { margin: 0; border-radius: 14px; background: var(--ds-paper); }
+.agent-facts > div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 0.5px solid rgb(var(--ds-tint) / 0.08); }
+.agent-facts > div:last-child { border-bottom: 0; }
+.agent-facts dt { font: 400 14px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.agent-facts dd { margin: 0; font: 500 14px/1.3 var(--ds-font-text); color: var(--ds-ink); text-align: right; }
+.agent-sub { margin: 4px 0 0; font: 500 13px/1.3 var(--ds-font-text); color: var(--ds-ink-3); }
+.agent-history { display: grid; margin: 0; padding: 0; list-style: none; border-radius: 14px; background: var(--ds-paper); }
+.agent-history li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 14px; border-bottom: 0.5px solid rgb(var(--ds-tint) / 0.08); font: 400 14px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+.agent-history li:last-child { border-bottom: 0; }
+.agent-none { margin: 0; font: 400 14px/1.4 var(--ds-font-text); color: var(--ds-ink-3); }
+
+/* every member: the rows of the sidebar, larger */
+.agents-filter { width: 100%; max-width: 560px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 10px; background: rgb(var(--ds-tint) / 0.06); color: var(--ds-ink); font: 400 15px/1 var(--ds-font-text); }
+.agents-list { display: grid; gap: 2px; max-width: 760px; margin: 0; padding: 0; list-style: none; }
+.agents-list a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; color: var(--ds-ink); text-decoration: none; }
+.agents-list a > span { display: grid; min-width: 0; }
+.agents-list b { font: 500 15px/1.3 var(--ds-font-text); }
+.agents-list a span span { overflow: hidden; font: 400 13.5px/1.3 var(--ds-font-text); color: var(--ds-ink-3); text-overflow: ellipsis; white-space: nowrap; }
+.agents-list [data-tone='todo'] { color: var(--ds-accent-ink); }
+.agents-list [data-tone='bad'] { color: var(--ds-default); }
+@media (hover: hover) and (pointer: fine) { .agents-list a:hover { background: rgb(var(--ds-tint) / 0.05); text-decoration: none; } }
+
+/* ---------- v6.1: a wide sidebar with large rows, as in the Grok Bot app (a quarter of the window, 40 px mascots, 16 px names) ---------- */
+@media (min-width: 1200px) {
+  .shell { grid-template-columns: 320px minmax(0, 1fr); }
+  .rail { padding: 14px 12px; }
+  .rail .rail-search { min-height: 40px; padding: 0 12px; font-size: 16px; }
+  .rail .nav-group { margin: 18px 12px 6px; font-size: 13.5px; }
+  .rail a { min-height: 58px; padding: 7px 10px; gap: 12px; border-radius: 12px; }
+  .rail a .nav-icon, .rail .rail-row .nav-icon { width: 40px; height: 40px; padding: 9px; border-radius: 12px; }
+  .rail a.agent-row .mascot { width: 40px; height: 40px; }
+  .rail .nav-title { font-size: 16px; line-height: 1.3; }
+  .rail .nav-hint { font-size: 14px; line-height: 1.35; }
+  .rail a.see-all-row { min-height: 44px; }
+  .rail .see-all-row .nav-label, .rail .rail-row .nav-label, .rail .rail-me .nav-label { font-size: 16px; }
+  .rail .rail-row, .rail .rail-me { min-height: 48px; gap: 12px; padding: 4px 10px; }
+  .rail .rail-me .mascot { width: 34px; height: 34px; margin-left: 3px; }
+  .brand .brand-logo > span { font-size: 19px; }
+  .brand .brand-logo img { width: 32px; height: 32px; }
+}
+/* larger reading type on every page */
+.page-intro { font-size: 16px; }
+.tl-bubble { font-size: 16px; }
+.tl-card h3 { font-size: 16.5px; }
+.tl-meta, .agent-facts dt, .agent-facts dd, .agent-history li, .agent-state { font-size: 15px; }
+.agents-list b { font-size: 16px; }
+.agents-list a span span { font-size: 14.5px; }
+.composer { font-size: 16px; }
+
+/* Home: the timeline sits in the page column; the facts of the circle fold away under "About this circle" */
+.home .tl { max-width: 760px; }
+.home-more { margin-top: 4px; }
+.home-more > summary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.06); font: 500 15px/1.3 var(--ds-font-text); color: var(--ds-ink-2); cursor: pointer; list-style: none; }
+.home-more > summary::-webkit-details-marker { display: none; }
+.home-more[open] > summary { margin-bottom: 12px; }
+
+/* ---------- v6.2: larger reading type and fewer technical strips ---------- */
+/* the pages were set at 11 to 13 px in many places; on a desktop the whole page column is drawn 10% larger (CSS zoom), so every label grows together */
+@media (min-width: 840px) { main, .detail { zoom: 1.1; } }
+/* the strip of the six epoch phases stays only where a member acts on it (Pay and claim); the eyebrow above each page already names the phase */
+main:not([data-group='My account']) .page-head .phases { display: none; }
+/* Phosphor icons are filled shapes: no stroke to thicken */
+.nav-icon { flex: none; }
+/* the menu button sits on the line of the logo, as the back button of an iOS bar */
+@media (max-width: 839px) { .topbar-id { display: flex; flex-direction: row; align-items: center; gap: 10px; } .topbar-id .net-chip { display: none; } }
+
+/* the network label: the NEAR mark with a live dot, a quiet pill */
+.net-chip { gap: 8px; padding: 4px 12px 4px 4px; border: 0; background: rgb(var(--ds-tint) / 0.06); color: var(--ds-ink); font: 500 13px/1.4 var(--ds-font-text); }
+.net-mark { position: relative; display: inline-grid; flex: none; }
+.net-mark img { width: 22px; height: 22px; border-radius: 50%; }
+.net-chip .net-mark i { position: absolute; right: -1px; bottom: -1px; width: 8px; height: 8px; border-radius: 50%; background: #28c840; box-shadow: 0 0 0 2px var(--ds-paper); }
+
+/* ================= v6.3 (2026-11-12): the iOS layout, after the iOS finance and report apps on Pinterest =================
+   A large title; one balance card that leads each page (a chip, a large figure with dimmed decimals, one sentence, pills with icons);
+   2x2 tiles with an icon; one bar with a legend for a split; grouped lists; 24 px corners, no borders. */
+.page-head h1 { font-size: clamp(30px, 3vw, 38px); font-weight: 700; letter-spacing: -0.025em; }
+.page-intro { font-size: 16.5px; }
+
+/* ---------- Home: the balance card ---------- */
+.home { display: grid; gap: 20px; }
+.home-hero { display: grid; gap: 24px; padding: 24px; border-radius: 24px; background: var(--ds-surface); }
+@media (min-width: 1100px) { .home-hero { grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr); align-items: center; padding: 28px; } }
+.home-hero .page-eyebrow { display: inline-flex; align-items: center; gap: 8px; width: fit-content; margin: 0 0 16px; padding: 5px 12px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 13.5px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.hero-label { margin: 0; font: 500 14.5px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.hero-figure { margin: 6px 0 12px; font: 700 clamp(46px, 5.2vw, 68px)/1 var(--ds-font-display); letter-spacing: -0.035em; color: var(--ds-ink); font-variant-numeric: tabular-nums; }
+.hero-cents { color: var(--ds-ink-3); }
+.hero-figure small { margin-left: 10px; font: 500 18px/1 var(--ds-font-text); letter-spacing: 0; color: var(--ds-ink-2); }
+.home-hero .home-statement { max-width: 46ch; margin: 0; font: 400 17px/1.45 var(--ds-font-text); letter-spacing: 0; color: var(--ds-ink-2); }
+.home-hero .home-statement b { font-weight: 600; color: var(--ds-ink); }
+.home-hero .home-sub { max-width: 52ch; margin: 6px 0 0; font: 400 14.5px/1.45 var(--ds-font-text); color: var(--ds-ink-3); }
+.home-hero .home-cta { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 0; }
+.home .ds-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 18px; font: 500 15px/1 var(--ds-font-text); }
+.home .ds-btn .nav-icon { width: 17px; height: 17px; padding: 0; background: none; }
+
+/* the split of what was owed: one bar and a legend, as a stacked bar of an iOS report */
+.hero-split { display: grid; gap: 14px; padding: 20px; border-radius: 20px; background: var(--ds-paper); }
+.split-bar { display: flex; gap: 4px; height: 16px; }
+.split-bar i { min-width: 4px; border-radius: 6px; }
+.split-legend { display: grid; margin: 0; padding: 0; list-style: none; }
+.split-legend li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid rgb(var(--ds-tint) / 0.08); font: 400 15px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.split-legend li:last-child { border-bottom: 0; padding-bottom: 0; }
+.split-legend li > i { width: 10px; height: 10px; border-radius: 3px; }
+.split-legend b { font-weight: 600; color: var(--ds-ink); font-variant-numeric: tabular-nums; }
+.split-legend small { min-width: 52px; padding: 2px 8px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 12.5px/1.4 var(--ds-font-text); color: var(--ds-ink-2); text-align: center; }
+[data-part='loops'] > i, .split-bar i[data-part='loops'] { background: var(--ds-settled); }
+[data-part='pairs'] > i, .split-bar i[data-part='pairs'] { background: var(--ds-claim); }
+[data-part='moved'] > i, .split-bar i[data-part='moved'] { background: var(--ds-due); }
+
+/* ---------- Home: you (a greeting, then three cards side by side) ---------- */
+.home-personal { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 1100px) { .home-personal { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); } }
+.home-personal .greet { margin: 0; font: 400 15px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.home-personal .greet strong { font-weight: 500; color: var(--ds-ink); }
+/* you: the mascot, the greeting, four figures in a row, one button */
+.home .home-you > header { justify-content: flex-start; }
+.home .home-you > header > div { flex: 1; min-width: 0; }
+.home .home-you > header h2 { font-size: 21px; }
+.home .ds-panel { padding: 20px; border: 0; border-radius: 24px; background: var(--ds-surface); }
+.home .ds-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.home .ds-panel > header h2 { margin: 0; font: 600 19px/1.3 var(--ds-font-text); letter-spacing: -0.01em; }
+.home .ds-panel .see-all { padding: 6px 12px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 13.5px/1 var(--ds-font-text); color: var(--ds-ink); text-decoration: none; }
+/* the figures of an account as tiles: the remaining limit across, the others two by two */
+.home .ds-panel .kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.home .ds-panel .kv > div { display: grid; align-content: start; gap: 4px; margin: 0; padding: 14px; border: 0; border-radius: 16px; background: var(--ds-paper); }
+.home .ds-panel .kv > div:first-child { grid-column: 1 / -1; }
+.home .ds-panel .kv dt { order: 0; font: 500 13.5px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.home .ds-panel .kv dd { order: 1; margin: 0; font: 600 22px/1.15 var(--ds-font-display); color: var(--ds-ink); text-align: left; }
+.home .ds-panel .kv dd .unit { font: 500 13px/1 var(--ds-font-text); color: var(--ds-ink-3); }
+.home .ds-panel .kv dd.kv-note { order: 2; font: 400 13px/1.35 var(--ds-font-text); color: var(--ds-ink-3); }
+.home .ds-panel .meter { margin: 12px 0 0; }
+.home .panel-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+/* to do: insight cards */
+.home .actions { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.home .actions .action { display: grid; gap: 8px; padding: 14px; border: 0; border-radius: 16px; background: var(--ds-paper); font: 400 15px/1.45 var(--ds-font-text); }
+.home .actions .action a { width: fit-content; padding: 8px 14px; border-radius: 10px; background: var(--ds-btn); color: var(--ds-btn-ink); font: 500 14px/1 var(--ds-font-text); text-decoration: none; }
+
+/* ---------- Home: the timeline with the circle in numbers beside it ---------- */
+.home-split { display: grid; gap: 20px; align-items: start; }
+@media (min-width: 1100px) { .home-split { grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); } .home-split .home-kpis { position: sticky; top: 84px; } }
+.home-split .home-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.home .sechead { display: grid; gap: 4px; margin-bottom: 8px; }
+.home .sechead h2 { margin: 0; font: 700 22px/1.25 var(--ds-font-display); letter-spacing: -0.015em; }
+.home .sechead p { margin: 0; max-width: 60ch; font: 400 14.5px/1.45 var(--ds-font-text); color: var(--ds-ink-3); }
+
+/* ---------- every page: tiles, tables and facts as iOS grouped cards ---------- */
+.ds-kpi { padding: 16px; border: 0; border-radius: 20px; background: var(--ds-surface); }
+.ds-kpi > header { display: flex; align-items: center; gap: 8px; }
+.ds-kpi > header > span:last-child { font: 500 14px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+.ds-kpi-icon { display: grid; flex: none; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: rgb(var(--ds-tint) / 0.07); color: var(--ds-ink); }
+.ds-kpi-icon .nav-icon { width: 18px; height: 18px; padding: 0; background: none; }
+.ds-kpi .ds-value { margin-top: 10px; font-weight: 700; letter-spacing: -0.025em; }
+.ds-kpi > p { font: 400 13.5px/1.4 var(--ds-font-text); color: var(--ds-ink-3); }
+.table-wrap { border: 0; border-radius: 20px; background: var(--ds-surface); }
+.table-wrap thead th { font: 500 13px/1.3 var(--ds-font-text); color: var(--ds-ink-3); }
+.table-wrap tbody th, .table-wrap tbody td { font-size: 15px; }
+
+/* v6.3 KISS: four figures of you in one row; the figures read large */
+@media (min-width: 1100px) { .home .home-you .kv { grid-template-columns: repeat(4, minmax(0, 1fr)); } .home .home-you .kv > div:first-child { grid-column: auto; } }
+.home .ds-panel .kv dd .ds-num { font: inherit; }
+.home-split .home-kpis { grid-template-columns: minmax(0, 1fr); }
+.home .actions .tl-pill { width: fit-content; }
+
+/* ---------- the epoch pages (Clearing results, Epoch report, Who owes whom, Risk): the head of the epoch as a balance card ---------- */
+main .ep-head { padding: 24px 28px; border-radius: 24px; background: var(--ds-surface); }
+main .ep-head .ep-eyebrow { display: inline-flex; align-items: center; gap: 8px; width: fit-content; padding: 5px 12px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 13.5px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+main .ep-head h2, main .ep-head h1 { font-weight: 700; letter-spacing: -0.025em; }
+/* the folded parts: one quiet pill each */
+main details.more > summary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 15px/1.3 var(--ds-font-text); color: var(--ds-ink); cursor: pointer; list-style: none; }
+main details.more > summary::-webkit-details-marker { display: none; }
+main details.more[open] > summary { margin-bottom: 14px; }
+/* a member in a table: its mascot, then the short name */
+.member-cell { display: inline-flex; align-items: center; gap: 10px; font-weight: 500; }
+.member-cell .mascot { flex: none; }
+/* the tables of the epoch pages sit in a card, as an iOS grouped list */
+main .ep-table, main .ep-section > .table-wrap { padding: 4px 16px; border-radius: 20px; background: var(--ds-surface); }
+
+/* the cover of the balance card: the agents as a crowd of mascots that bob gently */
+.hero-cover { position: relative; min-height: 220px; border-radius: 20px; background: var(--ds-paper); overflow: hidden; }
+.hero-cover > span { position: absolute; width: var(--s); height: var(--s); transform: translate(-50%, -50%); animation: bob 4.2s var(--ds-ease) var(--d) infinite alternate; }
+.hero-cover .mascot { width: 100%; height: 100%; filter: drop-shadow(0 6px 12px rgb(0 0 0 / 0.18)); }
+@keyframes bob { from { translate: 0 0; } to { translate: 0 -6px; } }
+@media (prefers-reduced-motion: reduce) { .hero-cover > span { animation: none; } }
+
+/* the circle picker: the logo of the circle inside the field, and beside each circle in the list */
+.picker-field { position: relative; display: inline-flex; min-width: 0; }
+.picker-field .picker-logo { position: absolute; z-index: 1; top: 50%; left: 10px; display: grid; transform: translateY(-50%); pointer-events: none; }
+.picker-field select { padding-left: 42px; }
+.select-menu li .mascot { flex: none; margin-right: 10px; }
+.select-menu li { display: flex; align-items: center; }
+.select-menu li > span { flex: 1; }
+
+/* All pages: a pop-up in the middle, the pages of each group as a grid of rows */
+.sheet-backdrop[data-center] { align-items: center; justify-content: center; padding: 24px; background: rgb(0 0 0 / 0.45); backdrop-filter: blur(6px); }
+.sheet-backdrop[data-center] .sheet { width: min(760px, 100%); max-height: min(80vh, 760px); padding: 22px 22px 18px; border: 0; border-radius: 24px; background: var(--ds-paper); box-shadow: 0 24px 80px rgb(0 0 0 / 0.35); animation: pop-in 0.22s var(--ds-ease); }
+.sheet-backdrop[data-center] .sheet::before { content: none; }
+.sheet-backdrop[data-center] .sheet-head h2 { font: 700 22px/1.2 var(--ds-font-display); }
+.sheet-backdrop[data-center] nav[aria-label='All pages'] div[role='group'] { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px; }
+.sheet-backdrop[data-center] .nav-group { grid-column: 1 / -1; margin: 14px 4px 4px; }
+.sheet-backdrop[data-center] .sheet a { min-height: 48px; padding: 6px 10px; border-radius: 12px; color: var(--ds-ink); font-weight: 500; }
+.sheet-backdrop[data-center] .sheet a .nav-icon { width: 34px; height: 34px; padding: 8px; border-radius: 10px; background: rgb(var(--ds-tint) / 0.07); }
+.sheet-backdrop[data-center] .sheet-feedback { width: auto; margin-top: 14px; }
+@keyframes pop-in { from { transform: scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sheet-backdrop[data-center] .sheet { animation: none; } }
+
+/* the epoch chip of the balance card: the logo of the circle, a live dot on it while the epoch is not finalized */
+.home-hero .page-eyebrow { padding: 4px 14px 4px 4px; }
+.home-hero .page-eyebrow::before { content: none; }
+.eyebrow-logo { position: relative; display: inline-grid; flex: none; }
+.eyebrow-logo i { position: absolute; right: -1px; bottom: -1px; display: none; width: 8px; height: 8px; border-radius: 50%; background: #28c840; box-shadow: 0 0 0 2px var(--ds-surface); }
+.page-eyebrow[data-live] .eyebrow-logo i { display: block; }
+main .ep-head .ep-eyebrow { padding: 4px 14px 4px 4px; }
+main .ep-eyebrow .eyebrow-logo { margin-right: 2px; }
+
+/* ================= v6.4 (2026-11-12): the Marketplace, after the iOS listing apps on Pinterest =================
+   The listings are cards in a grid, not a wide table: who posts it (a mascot) and its status on top, what it offers, what it wants in return,
+   the deal and the time left side by side, one full button. The table stays a table for sorting, the filter and screen readers. */
+:root main .mk .table-wrap:has(table[aria-label='Listings']) { padding: 0; overflow: visible; border: 0; border-radius: 0; background: none; }
+:root main .mk table[aria-label='Listings'] { display: block; width: 100%; }
+:root main .mk table[aria-label='Listings'] thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+:root main .mk table[aria-label='Listings'] tbody { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+:root main .mk table[aria-label='Listings'] tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'poster status' 'give give' 'want want' 'deal ends' 'open open'; align-content: start; gap: 14px 12px; padding: 18px; border: 0; border-radius: 22px; background: var(--ds-surface); box-shadow: none; }
+:root main .mk table[aria-label='Listings'] tbody tr[aria-selected='true'] { background: var(--ds-surface); box-shadow: inset 0 0 0 2px var(--ds-accent); }
+:root main .mk table[aria-label='Listings'] tbody td { display: block; min-width: 0; padding: 0; border: 0; background: none; text-align: left; white-space: normal; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(1) { grid-area: poster; align-self: center; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(2) { grid-area: give; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(3) { grid-area: want; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(4) { grid-area: deal; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(5) { grid-area: ends; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(6) { grid-area: status; align-self: center; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(7) { grid-area: open; }
+/* small sentence-case labels over the parts of a card */
+:root main .mk table[aria-label='Listings'] tbody td:is(:nth-child(2), :nth-child(3), :nth-child(4), :nth-child(5))::before { display: block; margin-bottom: 6px; font: 500 12.5px/1.2 var(--ds-font-text); letter-spacing: 0; text-transform: none; color: var(--ds-ink-3); }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(2)::before { content: 'Offers'; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(3)::before { content: 'In return'; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(4)::before { content: 'Deal'; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(5)::before { content: 'Ends'; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(6)::before { content: none; }
+:root main .mk table[aria-label='Listings'] tbody td:nth-child(2), :root main .mk table[aria-label='Listings'] tbody td:nth-child(3) { padding: 12px; border-radius: 16px; background: var(--ds-paper); }
+:root main .mk table[aria-label='Listings'] .poster { display: flex; align-items: center; gap: 10px; }
+:root main .mk table[aria-label='Listings'] .poster code { padding: 0; background: none; font: 600 16px/1.2 var(--ds-font-text); color: var(--ds-ink); }
+:root main .mk table[aria-label='Listings'] .asset-name { font: 600 16px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+:root main .mk table[aria-label='Listings'] .asset-meta { font: 400 13.5px/1.4 var(--ds-font-text); color: var(--ds-ink-3); }
+:root main .mk table[aria-label='Listings'] .appraisal { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 10px; }
+:root main .mk table[aria-label='Listings'] .appraisal-badge { padding: 3px 10px; border: 0; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 12.5px/1.3 var(--ds-font-text); color: var(--ds-settled); }
+:root main .mk table[aria-label='Listings'] .appraisal-proof-open { min-height: 28px; padding: 0 12px; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); color: var(--ds-ink); font: 500 12.5px/1 var(--ds-font-text); }
+:root main .mk table[aria-label='Listings'] td:nth-child(4) .pill { padding: 0; border: 0; background: none; font: 700 22px/1.2 var(--ds-font-display); color: var(--ds-ink); }
+:root main .mk table[aria-label='Listings'] td:nth-child(5) { font: 500 15px/1.3 var(--ds-font-text); color: var(--ds-ink); }
+:root main .mk table[aria-label='Listings'] td:nth-child(6) .pill { padding: 4px 12px; border: 0; border-radius: 999px; background: rgb(var(--ds-tint) / 0.07); font: 500 13px/1.2 var(--ds-font-text); }
+:root main .mk table[aria-label='Listings'] td:nth-child(7) button { width: 100%; min-height: 44px; border: 0; border-radius: 12px; background: var(--ds-btn); color: var(--ds-btn-ink); font: 500 15px/1 var(--ds-font-text); }
+:root main .mk table[aria-label='Listings'] td:nth-child(6) { justify-self: end; }
+:root main .mk table[aria-label='Listings'] td:nth-child(6) .pill::before { content: none; }
+:root main .mk table[aria-label='Listings'] .asset-side[data-role='want']::before { content: none; }
+:root main .mk table[aria-label='Listings'] .class-badge { border: 0; background: rgb(var(--ds-tint) / 0.08); font-family: var(--ds-font-text); font-weight: 600; color: var(--ds-ink); }
+/* the market figures, when opened: iOS tiles */
+main .mk .pulse-card { border: 0; border-radius: 20px; background: var(--ds-surface); }
+/* the filters: rounded fields in one row */
+main .mk .filters :is(input, select), main .mk .table-tools input { border-radius: 12px; }
+main .mk details.market-top > summary { margin-bottom: 0; }
+main .mk details.market-top[open] > summary { margin-bottom: 14px; }
+
+/* the demo banner: one quiet line with its exit, under the top bar with room around it */
+:root .demo-banner { display: flex; align-items: center; gap: 12px; width: fit-content; max-width: 100%; margin: 14px 0 6px; padding: 6px 6px 6px 14px; border: 0; border-radius: 999px; background: rgb(255 194 92 / 0.12); }
+:root .demo-banner p { margin: 0; font: 400 14px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
+:root .demo-banner strong { margin-right: 6px; font-weight: 600; color: var(--ds-due); }
+:root .demo-banner button { min-height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); font: 500 13px/1 var(--ds-font-text); }
+
+/* an empty page: a large mascot, a short title, one line */
+.state:has(> .empty-state) { margin: 0; padding: 0; }
+.empty-state { display: grid; justify-items: center; gap: 8px; padding: 40px 24px; border-radius: 24px; background: var(--ds-surface); text-align: center; }
+.empty-state .mascot { margin-bottom: 8px; animation: bob 4s var(--ds-ease) infinite alternate; }
+.empty-title { font: 700 24px/1.2 var(--ds-font-display); letter-spacing: -0.02em; color: var(--ds-ink); }
+.empty-line { max-width: 36ch; font: 400 16px/1.45 var(--ds-font-text); color: var(--ds-ink-2); }
+@media (prefers-reduced-motion: reduce) { .empty-state .mascot { animation: none; } }
+
+/* the replay: a flat floor, no gradient; an empty unit line takes no room */
+:root .rp-floor { background: var(--ds-surface); }
+:root .rp-ring { background: var(--ds-paper); }
+.rp-unit:empty { display: none; }
+/* the flat floor follows the theme, so its text and controls take the ink tokens, not the white of the old blue floor (AA in both themes) */
+:root .rp-floor { color: var(--ds-ink); }
+:root .rp-meta, :root .rp-caption, :root .rp-hint { color: var(--ds-ink-2); }
+:root .rp-time { background: rgb(var(--ds-tint) / 0.06); }
+:root .rp-floor .rp-chapters button { color: var(--ds-ink-2); }
+:root .rp-floor .rp-chapters button[aria-current='true'] { background: var(--ds-btn); color: var(--ds-btn-ink); }
+:root .rp-floor .rp-chapters button:disabled { color: var(--ds-ink-3); }
+:root .rp-floor .rp-play:focus-visible, :root .rp-track input[type='range']:focus-visible, :root .rp-floor .rp-chapters button:focus-visible { outline-color: var(--ds-ink); }
+:root .rp-track input[type='range']::-webkit-slider-runnable-track { background: rgb(var(--ds-tint) / 0.16); }
+:root .rp-track input[type='range']::-moz-range-track { background: rgb(var(--ds-tint) / 0.16); }
+:root .rp-floor .ds-tally > div[data-tone='floor'] { box-shadow: inset 0 0 0 1.5px var(--ds-rule); }
+@media (hover: hover) and (pointer: fine) {
+  :root .rp-floor .rp-chapters button:hover:not(:disabled) { background: rgb(var(--ds-tint) / 0.08); }
+  :root .rp-floor .rp-chapters button[aria-current='true']:hover:not(:disabled) { background: var(--ds-btn); }
+}
+
+/* room to breathe: the parts of the balance card and of the welcome card stand apart */
+.home-hero .hero-main { display: grid; align-content: center; gap: 14px; }
+.home-hero .hero-main > * { margin: 0; }
+.home-hero .page-eyebrow { margin: 0 0 6px; }
+.home-hero .hero-figure { margin: 0 0 4px; }
+.home-hero .home-statement { font-size: 19px; }
+.home-hero .home-cta { margin-top: 12px; }
+.home-welcome { padding: 32px; border-radius: 24px; }
+.home-welcome-copy { display: grid; align-content: center; gap: 16px; }
+.home-welcome-copy > * { margin: 0; }
+.home-welcome-copy h2 { font: 700 26px/1.25 var(--ds-font-display); letter-spacing: -0.02em; }
+.home-welcome-copy .cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.home > * + * { margin-top: 0; }
+
+/* ---------- v6.4: the Marketplace cover, the listing pop-up, and the sidebar that never cuts its search ---------- */
+main:has(.market-cover) .page-intro { display: none; }
+.market-cover { margin-bottom: 16px; }
+.market-cover .tl-btn { min-height: 42px; padding: 0 18px; border: 0; font-size: 15px; }
+/* a listing opens in a pop-up: no blue on the card that was opened */
+:root main .mk table[aria-label='Listings'] tbody tr[aria-selected='true'] { box-shadow: none; }
+:root main .mk table[aria-label='Listings'] tbody tr[aria-selected='true'] > * { background: none; box-shadow: none; }
+:root main .mk table[aria-label='Listings'] tbody tr[aria-selected='true'] td:is(:nth-child(2), :nth-child(3)) { background: var(--ds-paper); }
+.listing-sheet .sheet { width: min(860px, 100%); max-height: min(86vh, 900px); }
+.listing-sheet .sheet > * { margin-top: 0; }
+/* the sidebar: the logo and the search stay on top, only the list scrolls */
+@media (min-width: 840px) {
+  .rail { overflow: hidden; }
+  .rail nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+  .rail nav::-webkit-scrollbar { display: none; }
+}
+:root main .mk .market-cover .tl-btn { background: var(--ds-btn); color: var(--ds-btn-ink); }
+/* the listing pop-up: centred on the window, the page blurred behind it, the negotiation panel is the card */
+.listing-sheet { position: fixed; inset: 0; z-index: 60; }
+.listing-sheet .sheet { padding: 0; overflow-y: auto; background: none; box-shadow: none; }
+.listing-sheet .sheet > * { margin: 0; border-radius: 24px; box-shadow: 0 24px 80px rgb(0 0 0 / 0.4); }
+.sheet-backdrop.listing-sheet[data-center] .sheet { padding: 0; border: 0; background: none; box-shadow: none; }
+/* the logo is a plain link to the landing page: no hover fill */
+.rail a.brand-link, .rail a.brand-link:hover, .rail a.brand-link:active { background: none; box-shadow: none; transform: none; }
+/* the main button's text always follows the theme (an older rule set it to white, invisible on the light pill) */
+:root main a.ds-btn[data-variant='glow'], :root main button.ds-btn[data-variant='glow'] { color: var(--ds-btn-ink); }
+/* an avatar that is a mascot needs no tile behind it */
+.avatar[data-mascot], .account-trigger .avatar:not([data-photo]) { display: inline-grid; place-items: center; padding: 0; border: 0; background: none; box-shadow: none; }
+.settings-photo .mascot, .profile-photo .mascot { width: 64px; height: 64px; }

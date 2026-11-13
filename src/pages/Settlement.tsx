@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { CircleLogo } from '../components/CircleLogo'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { ApiError, api } from '../api/client'
@@ -15,7 +16,7 @@ import { CIRCLE, NEAR_NETWORK } from '../config'
 import { Button, Kpi, Num, StatusBadge, type StatusCode } from '../ds/components'
 import { useEpochSelection, useSelectedEpoch } from '../epoch'
 import { formatCredit2, formatNumber, shortAccount } from '../lib/format'
-import { MONEY, NETWORK_NAME } from '../lib/network'
+import { MONEY } from '../lib/network'
 import { useSignTransaction, useWallet } from '../wallet/WalletContext'
 import { resolveCircleTokens } from '../wallet/circleTokens'
 import { claimTx, settleTx } from '../wallet/transactions'
@@ -272,6 +273,7 @@ export function Settlement() {
     <div className="settle ep cl">
       <header className="ep-head">
         <p className="ep-eyebrow">
+          <CircleLogo />
           {CIRCLE}
           {account ? ` · ${shortAccount(account)}` : ''} · epoch {epoch}
           {selected ? ` · ${phaseWord(selected.phase)}` : ''}
@@ -284,7 +286,7 @@ export function Settlement() {
               You owe {formatCredit2(totals.owed.toString())} credit and can claim {formatCredit2(totals.toClaim.toString())} credit.
             </p>
             <p className="ep-sub">
-              The totals cover every epoch where you have a position, not only epoch {epoch}. Amounts are in credit; payments and claims move as {MONEY} on {NETWORK_NAME}.
+              Across all your epochs, in {MONEY}.
             </p>
           </>
         )}

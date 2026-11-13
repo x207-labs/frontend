@@ -17,9 +17,9 @@ main .mk h3 { margin: 0; font: 650 16px/1.3 var(--ds-font-text); font-stretch: 1
 main .mk h4 { margin: 0; font: 650 15px/1.3 var(--ds-font-text); letter-spacing: 0; color: var(--ds-ink); }
 main .mk .views-pane > h2:first-child, main .mk .market-pane > h2:first-child, main .mk .views-pane > h3:first-child { margin-top: 0; }
 main .mk h2 .pill { margin-left: 8px; vertical-align: middle; }
-main .mk code { padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.05); font: 500 0.86em/1.4 var(--ds-font-mono); overflow-wrap: anywhere; }
+main .mk code { padding: 1px 6px; border-radius: 6px; background: rgb(var(--ds-tint) / 0.05); font: 500 0.86em/1.4 var(--ds-font-mono); overflow-wrap: anywhere; }
 main .mk code.plain { font-weight: 400; color: var(--ds-ink-2); }
-main .mk a { color: var(--ds-accent-ink); text-decoration-color: rgba(169, 203, 255, 0.4); text-underline-offset: 0.2em; }
+main .mk a { color: var(--ds-accent-ink); text-decoration-color: rgb(var(--ds-tint) / 0.40); text-underline-offset: 0.2em; }
 main .mk .next-step { font-weight: 600; }
 main .mk .muted { color: var(--ds-ink-3); font-size: 13px; }
 
@@ -149,7 +149,7 @@ main .mk .intents li p { flex: 1 1 18rem; margin: 0; font-size: 14px; line-heigh
 main .mk .avatar { background: color-mix(in srgb, var(--hue, var(--ds-ink-3)) 16%, var(--ds-surface-3)); box-shadow: inset 0 0 0 1px var(--ds-rule-2); color: var(--ds-ink); }
 main .mk .party-name { font: 600 14px/1.3 var(--ds-font-text); }
 main .mk .party-pair::before { background: var(--ds-rule-2); }
-main .mk :is(.you-tag, .badge) { padding: 1px 7px; border-radius: var(--ds-r-badge); border: 1px solid rgba(169, 203, 255, 0.28); background: rgba(47, 91, 255, 0.18); font: 500 11px/1.5 var(--ds-font-mono); color: var(--ds-soft); }
+main .mk :is(.you-tag, .badge) { padding: 1px 7px; border-radius: var(--ds-r-badge); border: 1px solid rgb(var(--ds-tint) / 0.28); background: rgb(var(--ds-tint) / 0.11); font: 500 11px/1.5 var(--ds-font-mono); color: var(--ds-soft); }
 main .mk .tone-tile { color: var(--ds-soft); background: var(--ds-surface-2); border: 1px solid var(--ds-rule); }
 
 /* FE-111: the NEAR AI Cloud appraisal of a listing, and its proof (a modal over the page) */
@@ -183,7 +183,7 @@ main .mk .step-track > span[data-step='bad'] { background: var(--ds-default); }
 main .mk .step-count { font: 500 12.5px/1 var(--ds-font-mono); color: var(--ds-ink-2); }
 
 /* ---------- status: a pill is a status badge, code + word (src/ds/components.css .ds-status) ---------- */
-main .mk .pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: var(--ds-r-badge); border: 1px solid var(--ds-rule); background: rgba(255, 255, 255, 0.03); font: 500 12px/1.5 var(--ds-font-text); color: var(--ds-ink); white-space: nowrap; }
+main .mk .pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: var(--ds-r-badge); border: 1px solid var(--ds-rule); background: rgb(var(--ds-tint) / 0.03); font: 500 12px/1.5 var(--ds-font-text); color: var(--ds-ink); white-space: nowrap; }
 main .mk .pill[data-tone]::before { content: var(--code); flex: none; width: auto; height: auto; margin: 0; border-radius: 0; background: none; font: 500 11px/1 var(--ds-font-mono); color: var(--tone); }
 main .mk .pill[data-tone='ok'] { --tone: var(--ds-settled); --code: '200'; }
 main .mk .pill[data-tone='info'] { --tone: var(--ds-claim); --code: '202'; }
@@ -210,7 +210,7 @@ main .mk .market-top { display: block; margin: 0; }
 main .mk .pulse { gap: var(--ds-s3); }
 main .mk .pulse-card { position: relative; gap: var(--ds-s2); padding: 14px 16px 16px; border-radius: var(--ds-r-panel); border: 1px solid var(--ds-rule); background: var(--ds-glass); box-shadow: var(--ds-shadow-card); text-align: left; }
 main .mk .pulse-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
-  background: linear-gradient(160deg, rgba(169, 203, 255, 0.45), transparent 40%, transparent 70%, rgba(169, 203, 255, 0.18));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.45), transparent 40%, transparent 70%, rgba(255, 255, 255, 0.18));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
 main .mk .pulse-wide { background: var(--ds-glass); border-color: var(--ds-rule); }
 main .mk .pulse-card dt { font: 500 13px/1.3 var(--ds-font-text); color: var(--ds-ink-2); }
@@ -250,7 +250,7 @@ main .mk table[aria-label='Listings'] td:nth-child(5) { white-space: normal; }
 main .mk table[aria-label='Listings'] .asset-side { min-width: 0; }
 main .mk .asset-name { font: 600 14.5px/1.35 var(--ds-font-text); color: var(--ds-ink); }
 main .mk .asset-meta { margin-top: 2px; font-size: 12.5px; line-height: 1.4; color: var(--ds-ink-3); }
-main .mk .class-badge { width: 1.75rem; height: 1.75rem; border-radius: var(--ds-r-chip); border: 1px solid rgba(169, 203, 255, 0.28); background: rgba(47, 91, 255, 0.18); font: 500 12.5px/1 var(--ds-font-mono); color: var(--ds-soft); }
+main .mk .class-badge { width: 1.75rem; height: 1.75rem; border-radius: var(--ds-r-chip); border: 1px solid rgb(var(--ds-tint) / 0.28); background: rgb(var(--ds-tint) / 0.11); font: 500 12.5px/1 var(--ds-font-mono); color: var(--ds-soft); }
 main .mk .asset-side[data-role='want']::before { color: var(--ds-ink-3); }
 
 /* Marketplace: posting a listing is four steps: the open one is lime, done ones ink-2 with a check, the rest dim (the phase strip's idea) */
@@ -345,13 +345,13 @@ main .mk .deal-note { margin: 0; font-size: 14px; color: var(--ds-ink-2); }
 
 /* ---------- hover only where a pointer can hover ---------- */
 @media (hover: hover) and (pointer: fine) {
-  main .mk button:hover:not(:disabled) { border-color: var(--ds-rule-2); background: rgba(255, 255, 255, 0.08); color: var(--ds-ink); box-shadow: none; }
+  main .mk button:hover:not(:disabled) { border-color: var(--ds-rule-2); background: rgb(var(--ds-tint) / 0.08); color: var(--ds-ink); box-shadow: none; }
   main .mk :is(button.glow, button[type='submit']):hover:not(:disabled) { border-color: transparent; background: linear-gradient(180deg, var(--ds-accent), var(--ds-accent-2)); box-shadow: var(--ds-glow); filter: brightness(1.08); }
   main .mk .signin-card button:hover:not(:disabled) { background: linear-gradient(180deg, #ffffff, #dfe9f7); filter: brightness(0.96); box-shadow: none; }
-  main .mk .segmented button:hover:not(:disabled, [aria-pressed='true']) { background: rgba(255, 255, 255, 0.06); color: var(--ds-ink); }
+  main .mk .segmented button:hover:not(:disabled, [aria-pressed='true']) { background: rgb(var(--ds-tint) / 0.06); color: var(--ds-ink); }
   main .mk button.th-sort:hover:not(:disabled) { background: none; color: var(--ds-ink); }
   main .mk .stepper button:hover:not(:disabled) { background: none; color: var(--ds-ink); }
-  main .mk .table-wrap tbody tr:hover > * { background: rgba(255, 255, 255, 0.03); }
+  main .mk .table-wrap tbody tr:hover > * { background: rgb(var(--ds-tint) / 0.03); }
   main .mk .table-wrap tbody tr[aria-selected='true']:hover > * { background: rgba(47, 108, 240, 0.14); }
   main .mk table[aria-label='Listings'] tbody tr:hover { background: none; }
   main .mk .file-pick:hover .file-zone { border-color: var(--ds-ink-3); background: var(--ds-paper); }
