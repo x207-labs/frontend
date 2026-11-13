@@ -252,7 +252,12 @@ function EpochTimeline({ scan }: { scan: VoucherScan }) {
     <section className="home-epochs" aria-labelledby="home-epochs-h">
       <div className="sechead">
         <h2 id="home-epochs-h">Timeline</h2>
-        {ready && <p>Every epoch with trades, oldest first.</p>}
+        {ready && (
+          <p>
+            Every epoch with trades, oldest first.
+            {ready.older !== null ? ` The newest ${ready.scanned} epochs were checked, and epoch ${ready.older}, the latest with clearing.` : ''}
+          </p>
+        )}
       </div>
       {scan.state === 'loading' && <Loading label="Reading the newest epochs" />}
       {scan.state === 'error' && <ErrorNotice error={scan.error} onRetry={scan.retry} />}

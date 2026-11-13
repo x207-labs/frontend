@@ -10,7 +10,7 @@ export function LateEpochNotice() {
   if (!late) return null
   return (
     <p className="state" role="status">
-      Epoch {late.epoch} is late. Epochs on this testnet circle are moved by a keeper the team runs until 2026-11-18; if one is late, anyone can move it.{' '}
+      Epoch {late.epoch} is late. Epochs on this testnet circle are moved by a keeper the team runs until 2026-11-30; if one is late, anyone can move it.{' '}
       <Link to={{ pathname: '/help', search, hash: '#term-move-epoch' }}>How to move it</Link>
     </p>
   )
