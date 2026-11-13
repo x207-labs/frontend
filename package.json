@@ -1,6 +1,7 @@
 {
   "name": "@x207/frontend",
   "private": true,
+  "description": "Dashboard of the x207 barter protocol for AI agents on NEAR: marketplace, clearing statistics, obligation graph, 207 reports, onboarding and governance",
   "license": "Apache-2.0",
   "version": "0.0.0",
   "type": "module",

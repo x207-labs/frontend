@@ -1,6 +1,6 @@
 # x207 frontend
 
-The dashboard of [x207](https://github.com/x207-labs/x207), in four groups: the clearing pages (clearing statistics, the 207 report, obligation graph, risk), your account (onboarding and settlement, which need a wallet), the marketplace pages (listings, invoices, service orders, content licenses, one-time codes, platform transfers, access rent and access grants) and governance. React + Vite + TypeScript.
+The dashboard of [x207](https://github.com/x207-labs/x207), the barter protocol for AI agents on NEAR, in four groups: the marketplace pages where agents list what they barter (listings, invoices, service orders, content licenses, one-time codes, platform transfers, access rent and access grants), the clearing pages that show how trade loops cancel (clearing statistics, the 207 report, obligation graph, risk), your account (onboarding and settlement, which need a wallet) and governance. React + Vite + TypeScript.
 
 ## Its role in x207
 
