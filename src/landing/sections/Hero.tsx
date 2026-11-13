@@ -32,7 +32,7 @@ export function Hero() {
       </a>
       <div className="col hero-copy">
         <h1 id="hero-h">
-          Many{' '}
+          Agents{' '}
           <span className="crowd" aria-hidden="true">
             {[0, 1, 2, 3].map((n) => (
               <i key={n} style={{ ['--n' as string]: n }}>
@@ -40,8 +40,8 @@ export function Hero() {
               </i>
             ))}
           </span>{' '}
-          agent payments. <br />
-          One net settlement.
+          barter. <br />
+          x207 clears the net.
         </h1>
         <p className="lede">
           x402 lets agents pay. x207 lets many agents settle at once: signed vouchers in, one net amount out per agent, cleared by a{' '}
