@@ -24,10 +24,11 @@ function useFrames(frames: number, ms: number, still: boolean): number {
   return f
 }
 
-function Figure({ label, caption, children, still }: { label: string; caption?: ReactNode; children: ReactNode; still: boolean }) {
+function Figure({ label, caption, legend, children, still }: { label: string; caption?: ReactNode; legend?: ReactNode; children: ReactNode; still: boolean }) {
   return (
     <figure className="tour-fig" data-still={still ? '' : undefined}>
       <div role="img" aria-label={label}>{children}</div>
+      {legend}
       {caption && <figcaption>{caption}</figcaption>}
     </figure>
   )
@@ -120,16 +121,59 @@ export function Credit({ still }: { still: boolean }) {
 
 const NODES: Record<string, { x: number; y: number }> = { alice: { x: 150, y: 26 }, bob: { x: 262, y: 150 }, dan2: { x: 38, y: 150 } }
 
-/** Step 6: the ring of epoch 184; 24 cancels on every leg, the rest stays to settle. */
+/** What each leg of the ring owes before clearing and what is left of it after; the left-overs are what the net of the next step is made of. */
+export const RING_LEFT = RING.legs.map((leg) => ({ ...leg, left: leg.amount - RING.cancelledPerLeg }))
+const RING_LEFT_TOTAL = RING.gross - RING.cleared
+
+/** The words under each leg number, frame by frame: what was owed, what cancels, what is left after clearing. */
+export const RING_FRAME_UNITS = ['owed', 'cancels', 'left'] as const
+
+/** Step 7: the ring of epoch 184; 24 cancels on every leg, the rest stays to settle. */
 export function Ring({ still }: { still: boolean }) {
   const f = useFrames(3, 1100, still)
+  const owes = RING.legs.map((l) => `${l.from} owes ${l.to} ${l.amount}`).join(', ')
+  const left = RING_LEFT.map((l) => `${l.from} to ${l.to} ${l.left}`).join(', ')
   return (
     <Figure
       still={still}
-      label={`Epoch ${RING.epoch}: alice owes bob 32, bob owes dan2 25, dan2 owes alice 24. Clearing cancels 24 on each leg: ${RING.cleared} of ${RING.gross} credit, ${RING.clearedPct}. Left to settle: alice to bob 8, bob to dan2 1.`}
-      caption={<>Epoch {RING.epoch}, testnet: gross {RING.gross}, cleared {RING.cleared} ({RING.clearedPct}).</>}
+      label={`Epoch ${RING.epoch}, before clearing: ${owes}. Clearing cancels ${RING.cancelledPerLeg} on each leg: ${RING.cleared} of ${RING.gross} credit, ${RING.clearedPct}. Left after clearing: ${left}; ${RING_LEFT_TOTAL} in all.`}
+      legend={
+        <table className="tour-ring-table">
+          <caption className="tour-sr">Each debt of epoch {RING.epoch} before and after clearing</caption>
+          <thead>
+            <tr>
+              <th scope="col">Debt</th>
+              <th scope="col">Owed before</th>
+              <th scope="col">Cancelled</th>
+              <th scope="col" className="tour-ring-left">Left after clearing</th>
+            </tr>
+          </thead>
+          <tbody>
+            {RING_LEFT.map((l) => (
+              <tr key={l.from}>
+                <th scope="row">
+                  {l.from} <span aria-hidden="true">→</span>
+                  <span className="tour-sr">owes</span> {l.to}
+                </th>
+                <td>{l.amount}</td>
+                <td>−{RING.cancelledPerLeg}</td>
+                <td className="tour-ring-left" data-on={f >= 2 ? '' : undefined}>{l.left}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row">Total</th>
+              <td>{RING.gross}</td>
+              <td>−{RING.cleared}</td>
+              <td className="tour-ring-left" data-on={f >= 2 ? '' : undefined}>{RING_LEFT_TOTAL}</td>
+            </tr>
+          </tfoot>
+        </table>
+      }
+      caption={<>Epoch {RING.epoch}, testnet: gross {RING.gross}, cleared {RING.cleared} ({RING.clearedPct}). The {RING_LEFT_TOTAL} left is settled as one net amount per member.</>}
     >
-      <svg className="tour-ring-svg" viewBox="0 0 300 176" aria-hidden="true" focusable="false">
+      <svg className="tour-ring-svg" viewBox="0 0 300 190" aria-hidden="true" focusable="false">
         <defs>
           <marker id="tour-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M0 0L10 5L0 10z" fill="currentColor" />
@@ -143,14 +187,17 @@ export function Ring({ still }: { still: boolean }) {
           // pull the label out of the triangle, away from its centre
           const cx = 150
           const cy = 108
-          const lx = mx + (mx - cx) * 0.32
-          const ly = my + (my - cy) * 0.32
+          const lx = mx + (mx - cx) * 0.5
+          const ly = my + (my - cy) * 0.5
           const left = leg.amount - RING.cancelledPerLeg
           return (
-            <g key={leg.from} className="tour-leg" data-cleared={f >= 1 ? '' : undefined}>
+            <g key={leg.from} className="tour-leg" data-cleared={f >= 1 ? '' : undefined} data-frame={RING_FRAME_UNITS[f]}>
               <line x1={a.x + (b.x - a.x) * 0.16} y1={a.y + (b.y - a.y) * 0.16} x2={a.x + (b.x - a.x) * 0.82} y2={a.y + (b.y - a.y) * 0.82} markerEnd="url(#tour-head)" />
               <text x={lx} y={ly} textAnchor="middle">
                 {f === 0 ? leg.amount : f === 1 ? `${leg.amount} − ${RING.cancelledPerLeg}` : left}
+                <tspan className="tour-leg-unit" x={lx} dy="12">
+                  {RING_FRAME_UNITS[f]}
+                </tspan>
               </text>
             </g>
           )

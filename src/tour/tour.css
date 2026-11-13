@@ -160,6 +160,18 @@
 .tour-leg[data-cleared] { color: var(--ds-accent); }
 .tour-node circle { fill: var(--ds-paper); stroke: var(--ds-ink); stroke-width: 1.5; }
 .tour-node text { fill: var(--ds-ink); font-size: 11.5px; font-weight: 600; }
+/* FE-125: the word under each leg number (owed, cancels, left) and the before/after table under the ring */
+.tour-leg .tour-leg-unit { fill: var(--ds-ink-2); font-size: 10.5px; font-weight: 500; }
+.tour-ring-table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.tour-ring-table th, .tour-ring-table td { padding: 3px 4px; text-align: right; vertical-align: bottom; border-bottom: 1px solid var(--tour-line); font-size: 12.5px; letter-spacing: 0; text-transform: none; white-space: normal; color: var(--ds-ink); }
+.tour-ring-table th:first-child { padding-left: 0; text-align: left; white-space: nowrap; }
+.tour-ring-table th:last-child, .tour-ring-table td:last-child { padding-right: 0; }
+.tour-ring-table thead th { font-weight: 600; line-height: 1.25; color: var(--ds-ink-2); }
+.tour-ring-table tbody th, .tour-ring-table tfoot th { font-weight: 500; }
+.tour-ring-table tbody tr:last-child > * { border-bottom: 1px solid var(--tour-line); }
+.tour-ring-table tfoot th, .tour-ring-table tfoot td { border-bottom: 0; font-weight: 650; }
+.tour-ring-table .tour-ring-left { color: var(--ds-ink); transition: color 0.4s; }
+.tour-ring-table td.tour-ring-left[data-on] { color: var(--ds-accent-ink); font-weight: 700; }
 
 .tour-net { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13px; }
 .tour-net li { display: grid; grid-template-columns: 48px 1fr 64px; align-items: center; gap: 8px; }

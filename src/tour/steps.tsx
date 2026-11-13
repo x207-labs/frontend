@@ -219,7 +219,7 @@ export const STEPS: Step[] = [
       </>
     ),
     diagram: Ring,
-    say: `In epoch ${RING.epoch} on testnet, alice owed bob 32, bob owed dan2 25 and dan2 owed alice 24. Clearing cancelled 24 on each leg: ${RING.cleared} of ${RING.gross} credit, ${RING.clearedPct}.`,
+    say: `In epoch ${RING.epoch} on testnet, alice owed bob 32, bob owed dan2 25 and dan2 owed alice 24. Clearing cancelled 24 on each leg: ${RING.cleared} of ${RING.gross} credit, ${RING.clearedPct}. Left after clearing: alice owes bob 8, bob owes dan2 1, dan2 owes alice 0.`,
   },
   {
     id: 'net',
