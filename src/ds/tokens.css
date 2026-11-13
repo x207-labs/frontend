@@ -133,3 +133,61 @@
     --ds-btn-2-hover: #2f2f2f;
   }
 }
+
+/* The landing (`html.is-landing`, set by src/landing/mount.tsx) is frozen as it is in production: it keeps the v4 values of the tokens above, in light and dark alike.
+   v6 changes the app only. Keep this block equal to the v4 :root (tokens.css before v5), less the tokens landing.css sets on html.is-landing itself
+   (paper, surface, ink, ink-2, ink-3, rule, rule-2 and the four fonts), which it must keep setting. It sits on html because the canvas engines read the tokens
+   from document.documentElement, not from `.lp`. */
+html.is-landing {
+  --ds-surface-2: #111a2e;
+  --ds-surface-3: #16213a;
+  --ds-glass: rgba(15, 23, 42, 0.58);
+  --ds-glass-strong: rgba(10, 16, 32, 0.82);
+  --ds-soft: #a9cbff;
+  --ds-agent-ink: #9fe3c2;
+  --ds-settled: #5be3a0;
+  --ds-claim: #8fd3ff;
+  --ds-due: #ffc25c;
+  --ds-default: #ff8a8a;
+  --ds-accent: #2f6cf0;
+  --ds-accent-2: #1338c4;
+  --ds-accent-ink: #a9cbff;
+  --ds-focus: #c8f53c;
+  --ds-floor-a: #3148ff;
+  --ds-floor-b: #1b2ad6;
+  --ds-lime: #c8f53c;
+  --ds-sun: #ffc738;
+  --ds-coral: #ff5a45;
+  --ds-sky: #a6dcff;
+  --ds-orb-edge: #c9d2ff;
+  --ds-eye: #0e1330;
+  --ds-display-weight: 760;
+  --ds-display-stretch: 112%;
+  --ds-display-tracking: -0.025em;
+  --ds-fs-display: clamp(40px, 6.2vw, 86px);
+  --ds-fs-h1: clamp(30px, 3.6vw, 48px);
+  --ds-fs-h2: clamp(24px, 2.6vw, 34px);
+  --ds-fs-h3: 20px;
+  --ds-fs-body: 16px;
+  --ds-fs-small: 14px;
+  --ds-fs-micro: 12px;
+  --ds-r-panel: 14px;
+  --ds-r-card: 12px;
+  --ds-r-ctl: 10px;
+  --ds-r-chip: 8px;
+  --ds-r-badge: 6px;
+  --ds-r-floor: 32px;
+  --ds-s1: 4px;
+  --ds-s2: 8px;
+  --ds-s3: 12px;
+  --ds-s4: 16px;
+  --ds-s5: 24px;
+  --ds-s6: 32px;
+  --ds-s7: 48px;
+  --ds-s8: 72px;
+  --ds-shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.8);
+  --ds-glow: 0 0 0 1px rgba(169, 203, 255, 0.35) inset, 0 10px 30px -8px rgba(47, 108, 240, 0.75);
+  --ds-col: 1120px;
+  --ds-ease: cubic-bezier(0.22, 0.78, 0.51, 0.94);
+  --ds-dur: 220ms;
+}

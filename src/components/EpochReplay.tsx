@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useObligations, useReport } from '../api/queries'
 import { Button, Tally } from '../ds/components'
 import { EpochScene, type SceneState } from '../landing/v4/engine/scene.js'
-import { mountScene3D } from '../landing/v4/engine/scene3d.js'
+import { mountPlainScene3D } from './plainScene3d.js'
 import { fmt, type SceneData as EngineData } from '../landing/v4/engine/x207.js'
 import { toSceneData, type SceneData } from './epochReplayData'
 import { Loading } from './QueryState'
@@ -49,9 +49,9 @@ function Floor({ data, settled }: { data: SceneData; settled: boolean }) {
   useEffect(() => {
     const el = root.current
     if (!el || !live) return
-    let scene: ReturnType<typeof mountScene3D> | null = null
+    let scene: ReturnType<typeof mountPlainScene3D> | null = null
     try {
-      scene = mountScene3D(el, { data: engine, subMoved, plain: true })
+      scene = mountPlainScene3D(el, { data: engine, subMoved })
     } catch {
       scene = null // the figures and the captions stay; only the picture is missing
     }

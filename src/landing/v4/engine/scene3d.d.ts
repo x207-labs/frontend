@@ -10,4 +10,4 @@ export declare class EpochScene3D extends EpochScene {
 /** Mounts the scroll story: `story` holds `[data-scene3d]` (canvas, .scene-tip, [data-k] readouts, [data-chapter] buttons) and the `.chapter` captions. destroy() undoes everything. */
 export declare function mountStory3D(story: Element, opts?: { flat?: boolean }): EpochScene3D
 /** Mounts the 3D scene on `root` (canvas, .scene-tip, [data-k] readouts, [data-play], a range input and [data-chapter] buttons) and plays `opts.data`. destroy() undoes everything. */
-export declare function mountScene3D(root: Element, opts?: Pick<MountOptions, 'data' | 'subMoved'> & { /** solid colours only, no gradient and no glow (the v6 dashboard) */ plain?: boolean }): EpochScene3D
+export declare function mountScene3D(root: Element, opts?: Pick<MountOptions, 'data' | 'subMoved'>): EpochScene3D

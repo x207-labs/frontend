@@ -7,8 +7,8 @@ import { EpochReplay } from './EpochReplay'
 
 // The real engine needs a canvas, which jsdom does not have. These tests check what the component hands to it and what it shows without one.
 const engine = vi.hoisted(() => ({ mount: vi.fn(), destroy: vi.fn() }))
-vi.mock('../landing/v4/engine/scene3d.js', () => ({
-  mountScene3D: (...args: unknown[]) => {
+vi.mock('./plainScene3d.js', () => ({
+  mountPlainScene3D: (...args: unknown[]) => {
     engine.mount(...args)
     return { destroy: engine.destroy }
   },

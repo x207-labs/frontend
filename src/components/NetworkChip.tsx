@@ -1,6 +1,6 @@
 import { NEAR_NETWORK } from '../config'
 import { NETWORK_NAME } from '../lib/network'
-import nearLogo from '../landing/assets/near.jpg'
+import nearLogo from '../assets/near.jpg'
 
 /** The network the dashboard is on, in the top bar of every page, signed in or not, so nobody takes test tokens for money. */
 export function NetworkChip() {
