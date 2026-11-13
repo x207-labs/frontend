@@ -60,8 +60,10 @@ async function open(account: string | null, state: Parameters<typeof backend>[0]
   // FE-076: the listing row shows the asset name and its units/credit on two lines
   const offered = (await screen.findByText(listings[row].offer.assetType)).closest('.asset-side')
   expect(offered).toHaveTextContent('Class ' + listings[row].offer.assetClass + ', ' + new Intl.NumberFormat('en-US').format(listings[row].offer.quantity) + ' units, ' + (row === 0 ? '100' : '250') + ' credit')
-  if (account) await waitFor(() => expect(screen.getAllByRole('button', { name: /Open/ })[row]).toBeEnabled())
-  await user.click(screen.getAllByRole('button', { name: /^Open/ })[row])
+  // a listing's own Open button ("Open <hash>"); the top bar now has an "Open the list" button too
+  const rowOpen = /^Open [0-9a-f]{8}$/
+  if (account) await waitFor(() => expect(screen.getAllByRole('button', { name: rowOpen })[row]).toBeEnabled())
+  await user.click(screen.getAllByRole('button', { name: rowOpen })[row])
   return { ...view, user, wallet }
 }
 
