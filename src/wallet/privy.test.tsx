@@ -164,9 +164,10 @@ describe('TC-FE-059-05 the /sign route without Privy ids', () => {
   it('explains that the sign-in is off and does not error', async () => {
     const { renderApp } = await import('../test/render')
     renderApp('/sign')
-    // the route loads the Privy SDK and the Radix styles as a lazy chunk; the first load is slow
-    expect(await screen.findByRole('heading', { name: /not set up/ }, { timeout: 8000 })).toBeInTheDocument()
-  })
+    // the route loads the Privy SDK and the Radix styles as a lazy chunk; the first load is slow, and slower still when the full suite shares the workers.
+    // The wait (12 s) stays inside the test's own budget (20 s), so a slow transform ends in a pass or a real assertion error, never the 5 s default timeout.
+    expect(await screen.findByRole('heading', { name: /not set up/ }, { timeout: 12_000 })).toBeInTheDocument()
+  }, 20_000)
 })
 
 describe('TC-FE-059-04 helpers', () => {

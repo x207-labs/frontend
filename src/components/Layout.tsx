@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { EpochProvider, useEpochSelection } from '../epoch'
+import { CONTENT_ID } from '../lib/contentId'
 import { Logo } from '../landing/Logo'
 import { AGENTS_PATH, pages } from '../routes'
 import { Sidebar } from './AppNav'
@@ -61,7 +62,7 @@ export function Layout() {
   }, [pathname, title])
   return (
     <EpochProvider>
-      <a className="skip-link" href="#content" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
+      <a className="skip-link" href={`#${CONTENT_ID}`} onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
       <DetailSlotProvider>
         <div className="shell">
           <Sidebar open={listOpen} onClose={() => setList(null)} />
@@ -83,7 +84,7 @@ export function Layout() {
                 <AccountMenu />
               </div>
             </div>
-            <main id="content" ref={main} tabIndex={-1} data-group={group}>
+            <main id={CONTENT_ID} ref={main} tabIndex={-1} data-group={group}>
               <DemoBanner />
               <Header />
               {/* FE-067: a new key per page, so each page eases in (the CSS animates the blocks of .route one after the other) */}

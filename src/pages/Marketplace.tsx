@@ -10,6 +10,7 @@ import { api } from '../api/client'
 import { useListing, useListings, useMarketStats } from '../api/queries'
 import type { ListingView } from '../api/types'
 import { AppraisalBadge } from '../components/AppraisalBadge'
+import { CONTENT_ID } from '../lib/contentId'
 import { AssetTemplateForm, type TemplateCheck } from '../components/AssetTemplateForm'
 import { CopyButton } from '../components/CopyButton'
 import { ResourceListingForm } from '../components/ResourceListingForm'
@@ -355,7 +356,8 @@ function ListingSheet({ onClose, children }: { onClose: () => void; children: Re
     return () => document.removeEventListener('keydown', key)
   }, [])
   // into <main>, not into the page column: fixed to the whole window (no ancestor box traps it), and still under `main .mk`, so the panel keeps its look
-  const host = document.getElementById('content') ?? document.body
+  // the id comes from the one constant Layout also sets, so a rename cannot drop the sheet onto <body> outside `main .mk`; <body> stays only for a page rendered without Layout (tests)
+  const host = document.getElementById(CONTENT_ID) ?? document.body
   return createPortal(
     <div className="sheet-backdrop listing-sheet" data-center="" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="sheet market mk" role="dialog" aria-modal="true" aria-label="Listing">

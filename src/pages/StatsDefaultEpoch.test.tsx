@@ -82,7 +82,7 @@ describe('FE-118 /stats default epoch', () => {
   it('TC-FE-118-09 Home lists the latest epoch with clearing when the newest epochs are all empty', async () => {
     // Home lives at /app (the landing at / is not part of this)
     renderApp('/app', circleWith([35]))
-    expect(await screen.findByRole('link', { name: 'Epoch 35 statement' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Read the statement of epoch 35' })).toBeInTheDocument()
     await waitFor(() => expect(screen.getByText(/and epoch 35, the latest with clearing/)).toBeInTheDocument())
   })
 })

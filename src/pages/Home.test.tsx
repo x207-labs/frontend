@@ -184,7 +184,7 @@ describe('v4 home: the statement page', () => {
   it('v6: the epochs with vouchers are a timeline, oldest first: a sentence and a card with the outcome and a link to the statement', async () => {
     renderApp('/app', undefined, false)
     const list = await screen.findByRole('list', { name: 'Epochs with vouchers' })
-    expect(await within(list).findByRole('link', { name: 'Epoch 42 statement' })).toHaveAttribute('href', '/reports?epoch=42')
+    expect(await within(list).findByRole('link', { name: 'Read the statement of epoch 42' })).toHaveAttribute('href', '/reports?epoch=42')
     expect([...list.querySelectorAll('.tl-time')].map((t) => t.textContent)).toEqual(['Epoch 40 · finalized', 'Epoch 41 · finalized', 'Epoch 42 · payment window'])
     const items = within(list).getAllByRole('listitem')
     expect(items[2]).toHaveTextContent('2,563.38 credit owed, only 45.00 mock USDT to move.')

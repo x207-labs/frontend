@@ -16,12 +16,12 @@
   /* ink */
   --ds-ink: #141414;
   --ds-ink-2: #5c5c5c;
-  --ds-ink-3: #666666;
+  --ds-ink-3: #616161;         /* 4.78:1 on the active sidebar row (#e2e2e2), the darkest surface it sits on */
   --ds-soft: #4a5a78;          /* the soft blue second line of a headline */
   --ds-agent-ink: #2e2e2e;     /* text an agent signed or said */
 
   /* status: the x207 result codes */
-  --ds-settled: #137a3a;       /* 200: paid, settled */
+  --ds-settled: #117236;       /* 200: paid, settled; 4.65:1 on #e2e2e2 (a pill or badge on the darkest light surface) */
   --ds-claim: #0a63c9;         /* 202: accepted, claimable */
   --ds-due: #9a5200;           /* 402: payment due */
   --ds-default: #c62828;       /* 409: conflict, default */

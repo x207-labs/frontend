@@ -287,7 +287,7 @@ function EpochTimeline({ scan }: { scan: VoucherScan }) {
                     </span>
                   </div>
                   <p className="tl-actions">
-                    <Link className="tl-btn" to={{ pathname: '/reports', search: withEpoch(search, v.epoch) }} aria-label={`Epoch ${v.epoch} statement`}>
+                    <Link className="tl-btn" to={{ pathname: '/reports', search: withEpoch(search, v.epoch) }} aria-label={`Read the statement of epoch ${v.epoch}`}>
                       Read the statement
                     </Link>
                   </p>

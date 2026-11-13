@@ -509,6 +509,21 @@ main .mk details.market-top[open] > summary { margin-bottom: 14px; }
 :root .rp-floor { background: var(--ds-surface); }
 :root .rp-ring { background: var(--ds-paper); }
 .rp-unit:empty { display: none; }
+/* the flat floor follows the theme, so its text and controls take the ink tokens, not the white of the old blue floor (AA in both themes) */
+:root .rp-floor { color: var(--ds-ink); }
+:root .rp-meta, :root .rp-caption, :root .rp-hint { color: var(--ds-ink-2); }
+:root .rp-time { background: rgb(var(--ds-tint) / 0.06); }
+:root .rp-floor .rp-chapters button { color: var(--ds-ink-2); }
+:root .rp-floor .rp-chapters button[aria-current='true'] { background: var(--ds-btn); color: var(--ds-btn-ink); }
+:root .rp-floor .rp-chapters button:disabled { color: var(--ds-ink-3); }
+:root .rp-floor .rp-play:focus-visible, :root .rp-track input[type='range']:focus-visible, :root .rp-floor .rp-chapters button:focus-visible { outline-color: var(--ds-ink); }
+:root .rp-track input[type='range']::-webkit-slider-runnable-track { background: rgb(var(--ds-tint) / 0.16); }
+:root .rp-track input[type='range']::-moz-range-track { background: rgb(var(--ds-tint) / 0.16); }
+:root .rp-floor .ds-tally > div[data-tone='floor'] { box-shadow: inset 0 0 0 1.5px var(--ds-rule); }
+@media (hover: hover) and (pointer: fine) {
+  :root .rp-floor .rp-chapters button:hover:not(:disabled) { background: rgb(var(--ds-tint) / 0.08); }
+  :root .rp-floor .rp-chapters button[aria-current='true']:hover:not(:disabled) { background: var(--ds-btn); }
+}
 
 /* room to breathe: the parts of the balance card and of the welcome card stand apart */
 .home-hero .hero-main { display: grid; align-content: center; gap: 14px; }
