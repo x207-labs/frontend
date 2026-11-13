@@ -1,24 +1,33 @@
+import { DEPLOYMENTS } from './deployments.generated'
+
 const env = import.meta.env
+
+export type CircleOption = { key: string; label: string; contract: string; apiUrl: string }
+
+/** UM-208: the label of a circle in the picker. The active circle is the "main circle"; the others show their note from deployments.json. */
+export function circleLabel(c: { key: string; contract: string; interface: string; note: string }, active: string): string {
+  return `${c.contract.replace(/\.testnet$/, '')} (${c.key === active ? `main circle, ${c.interface}` : c.note})`
+}
 
 /**
  * FE-041: circles that have a public read API. The picker only exists where the build points at one of these (the deployed dashboard).
- * FE-045: v018 (contract 0.0.18, account sales through a locker) is the main circle; v013 stays as the circle of the epoch 8 history. v016 has no read API host
- * (the circle was never deployed to boxd), so it is not offered: add it back only when its host answers.
+ * UM-208: the list and the active circle come from `deployments.generated.ts`, a copy of the umbrella's `docs/deployments.json` written by
+ * `npm run sync:deployments`; do not list circles here. A circle without a read API host (v016) is not offered.
  */
-export const CIRCLE_OPTIONS = [
-  { key: 'v018', label: 'x207-v018 (main circle, 0.0.18)', contract: 'x207-v018.testnet', apiUrl: 'https://v018.x207.boxd.sh' },
-  { key: 'v017', label: 'x207-v017 (auto-settle, relayer fee)', contract: 'x207-v017.testnet', apiUrl: 'https://v017.x207.boxd.sh' },
-  { key: 'v015', label: 'x207-v015 (auto-settle)', contract: 'x207-v015.testnet', apiUrl: 'https://v015.x207.boxd.sh' },
-  { key: 'v014', label: 'x207-v014 (EVM agents)', contract: 'x207-v014.testnet', apiUrl: 'https://v014.x207.boxd.sh' },
-  { key: 'v013', label: 'x207-v013 (history, epoch 8)', contract: 'x207-v013.testnet', apiUrl: 'https://x207.boxd.sh' },
-] as const
-export type CircleKey = (typeof CIRCLE_OPTIONS)[number]['key']
+export const CIRCLE_OPTIONS: readonly CircleOption[] = DEPLOYMENTS.circles.flatMap((c) =>
+  c.apiUrl === null ? [] : [{ key: c.key, label: circleLabel(c, DEPLOYMENTS.active), contract: c.contract, apiUrl: c.apiUrl }],
+)
+export type CircleKey = string
+export const ACTIVE_CIRCLE: CircleOption = CIRCLE_OPTIONS.find((o) => o.key === DEPLOYMENTS.active) ?? CIRCLE_OPTIONS[0]
 
 const ENV_API_URL: string = env.VITE_X207_API_URL ?? 'http://localhost:8787'
 const ENV_CONTRACT_ID: string = env.VITE_X207_CONTRACT_ID ?? 'x207-circle.testnet'
 export const CIRCLE_PICKER = CIRCLE_OPTIONS.some((o) => o.apiUrl === ENV_API_URL)
-const chosen = CIRCLE_PICKER ? CIRCLE_OPTIONS.find((o) => o.key === new URLSearchParams(globalThis.location?.search ?? '').get('circle')) : undefined
-export const SELECTED_CIRCLE: CircleKey | null = chosen?.key ?? (CIRCLE_PICKER ? (CIRCLE_OPTIONS.find((o) => o.apiUrl === ENV_API_URL)?.key ?? null) : null)
+// UM-208: on a hosted build (the read API is one of the circles) `?circle=` picks a circle, and without it the dashboard opens on the active
+// circle of deployments.json, whatever circle VITE_X207_API_URL names. A local build (any other API) keeps its own API and contract.
+const fromQuery = CIRCLE_PICKER ? CIRCLE_OPTIONS.find((o) => o.key === new URLSearchParams(globalThis.location?.search ?? '').get('circle')) : undefined
+const chosen = CIRCLE_PICKER ? (fromQuery ?? ACTIVE_CIRCLE) : undefined
+export const SELECTED_CIRCLE: CircleKey | null = chosen?.key ?? null
 
 export const API_URL: string = chosen?.apiUrl ?? ENV_API_URL
 

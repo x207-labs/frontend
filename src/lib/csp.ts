@@ -3,6 +3,8 @@
 // `X-Content-Type-Options` cannot go through a meta element: both are host server headers (see docs/security-review.md).
 // Acknowledged limit: the wallet (`@hot-labs/near-connect`) loads a manifest and executors from the network; its origins are filled via VITE_X207_WALLET_ORIGINS and wallet login must be tried on
 // testnet before release. `VITE_X207_CSP=off` disables this policy as a temporary escape hatch.
+import { DEPLOYMENTS } from '../deployments.generated.ts'
+
 type Env = Record<string, string | undefined>
 
 const origin = (value: string | undefined): string | null => {
@@ -24,8 +26,8 @@ export const NEAR_CONNECT_ICON_ORIGINS = [
 ]
 
 // FE-041: the circle picker (config.ts CIRCLE_OPTIONS) switches the read API at run time, so a build that points at one of these APIs may also connect to the others.
-// FE-045: follows CIRCLE_OPTIONS (v018 and v017 in, v016 out: it has no host).
-export const CIRCLE_API_ORIGINS = ['https://v018.x207.boxd.sh', 'https://v017.x207.boxd.sh', 'https://v015.x207.boxd.sh', 'https://v014.x207.boxd.sh', 'https://x207.boxd.sh']
+// UM-208: the list comes from deployments.generated.ts (a copy of the umbrella's docs/deployments.json), like CIRCLE_OPTIONS; a circle without a host (v016) is left out.
+export const CIRCLE_API_ORIGINS: string[] = DEPLOYMENTS.circles.flatMap((c) => (c.apiUrl === null ? [] : [c.apiUrl]))
 
 // FE-097: a license buyer downloads the ciphertext of an `ipfs` source from these gateways (licenseFlow.ts IPFS_GATEWAYS; a test keeps the two lists equal). An `https` source is
 // any host the seller chose, so it is not added: connect-src stays a short list (the voucher key is in the page), and a blocked download tells the buyer to save the file by hand.
