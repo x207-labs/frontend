@@ -239,7 +239,8 @@ export const marketStats = {
   offersPending: 0,
 }
 
-export type FixtureReply = { status: number; body: unknown; delayMs?: number; headers?: Record<string, string> }
+// hold (FE-124): the reply waits until the promise settles, so a test can look at the loading state for as long as it needs, then let the answer through.
+export type FixtureReply = { status: number; body: unknown; delayMs?: number; hold?: Promise<unknown>; headers?: Record<string, string> }
 
 const notFound = (code: string, message: string): FixtureReply => ({
   status: 404,
@@ -397,6 +398,7 @@ export function fixtureFetch(overrides: (path: string, init?: RequestInit) => Fi
     const rpc = rpcParams?.request_type === 'call_function'
     const reply = overrides(path, init) ?? (rpc ? chainFixture(rpcParams!.method_name ?? '') : fixtureReply(path))
     if (reply.delayMs) await new Promise((r) => setTimeout(r, reply.delayMs))
+    if (reply.hold) await reply.hold
     return new Response(JSON.stringify(reply.body), {
       status: reply.status,
       headers: { 'Content-Type': 'application/json', ...reply.headers },

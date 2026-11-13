@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { members } from '../api/fixtures'
 import { apiError, renderApp } from '../test/render'
@@ -38,8 +38,13 @@ describe('risk', () => {
   })
 
   it('TC-FE-012-04 loading', async () => {
-    renderApp('/risk', (p) => (p.endsWith('/members') ? { status: 200, body: { items: members }, delayMs: 50 } : undefined))
+    // FE-124: held until the loading text was seen, as in TC-FE-007-05
+    let release = () => {}
+    const hold = new Promise<void>((r) => (release = r))
+    renderApp('/risk', (p) => (p.endsWith('/members') ? { status: 200, body: { items: members }, hold } : undefined))
     expect(await screen.findByText(/Loading members/)).toBeInTheDocument()
+    release()
+    await waitFor(() => expect(screen.queryByText(/Loading members/)).not.toBeInTheDocument())
   })
 
   it.each([

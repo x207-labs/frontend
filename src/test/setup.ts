@@ -1,7 +1,11 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { resetRateLimit } from '../api/client'
+
+// FE-124: findBy* and waitFor give up after 1 s by default. Under load a lazy page chunk or a voucher signature can take longer, and the test then fails
+// with "Unable to find" although the page is right. They still resolve as soon as the element is there; only a real absence waits the full 5 s.
+configure({ asyncUtilTimeout: 5_000 })
 
 // FE-049: the fixtures carry fixed dates (deadlines, expiries), so every test starts its clock at the same instant and never breaks with the calendar. Only Date
 // is faked and it keeps running (timers stay real). Set here too, not only before each test, so a date read while a test file is imported is the same.

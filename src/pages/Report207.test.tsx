@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { report42 } from '../api/fixtures'
 import { CONTRACT_ID } from '../config'
@@ -79,8 +79,13 @@ describe('207 report', () => {
   })
 
   it('TC-FE-007-05 loading', async () => {
-    renderApp('/reports', (p) => (/\/epochs\/\d+$/.test(p) ? { status: 207, body: report42, delayMs: 50 } : undefined))
+    // FE-124: the answer is held until the loading text was seen (a 50 ms delay could end between findByText and the assertion under load)
+    let release = () => {}
+    const hold = new Promise<void>((r) => (release = r))
+    renderApp('/reports', (p) => (/\/epochs\/\d+$/.test(p) ? { status: 207, body: report42, hold } : undefined))
     expect(await screen.findByText(/Loading report/)).toBeInTheDocument()
+    release()
+    await waitFor(() => expect(screen.queryByText(/Loading report/)).not.toBeInTheDocument())
   })
 
   it('TC-FE-007-06 202 claimable false: wait-for-finalization label, no claim button', async () => {

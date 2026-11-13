@@ -43,5 +43,9 @@ export default defineConfig(({ mode }) => ({
     server: { deps: { inline: ['motion', 'framer-motion', 'motion-dom', 'motion-utils'] } }, // FE-044: so the dedupe above applies to them in the tests too
     restoreMocks: true,
     unstubGlobals: true,
+    // FE-124: tests that sign vouchers or type into several fields take 2-5 s when the whole suite shares the workers (two suites at once: 5.1 s). The
+    // budget is a ceiling, not a wait: a test still ends at its first failed assertion.
+    testTimeout: 15_000,
+    hookTimeout: 15_000,
   },
 }))

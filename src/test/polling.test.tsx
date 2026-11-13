@@ -29,11 +29,17 @@ describe('FE-046 polling load on the read API', () => {
     const view = renderApp('/access?circle=v018', undefined, POLL)
     expect(await screen.findByRole('table', { name: 'Account sales' })).toBeInTheDocument()
     expect(await screen.findByText(/72 hours/)).toBeInTheDocument()
-    const polled = await pollWindow(view, POLL * 2.5)
+    const windowMs = POLL * 2.5
+    const polled = await pollWindow(view, windowMs)
     const paths = polled.filter((r) => !isRpc(r)).map((r) => pathOf(r.path))
     const cycles = paths.filter((p) => p.endsWith('/epochs')).length
     expect(cycles).toBeGreaterThanOrEqual(1)
-    expect(polled.length).toBeLessThanOrEqual(5 * cycles)
+    // FE-124: "at most 5 calls per cycle" = at most 5 reads are polled, and each one at most once per interval. Every query keeps its own timer, so in a
+    // window of 2.5 intervals one read can tick twice and another three times (under load the timers drift apart); counting against the ticks of
+    // /epochs alone failed then (12 > 10). A read polled twice per interval (two timers for the same data) still fails here.
+    const ticks = Math.ceil(windowMs / POLL)
+    for (const [p, n] of countBy(paths)) expect(n, p).toBeLessThanOrEqual(ticks)
+    expect(polled.length).toBeLessThanOrEqual(5 * ticks)
     expect(countBy(paths).size).toBeLessThanOrEqual(5)
     expect(polled.filter(isRpc)).toEqual([])
     expect(paths.filter((p) => /\/metrics$|\/account-escrows\/\d+$|\/grants$/.test(p))).toEqual([])
