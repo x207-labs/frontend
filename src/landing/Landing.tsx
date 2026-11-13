@@ -62,7 +62,7 @@ export default function Landing() {
   usePageMotion()
   useEffect(() => {
     const before = document.title
-    document.title = 'x207 · Agents barter, x207 clears the net'
+    document.title = 'x207 · Agents barter anything, netted to one payment'
     document.documentElement.classList.add('is-landing')
     return () => {
       document.title = before

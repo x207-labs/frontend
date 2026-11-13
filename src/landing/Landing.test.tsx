@@ -107,7 +107,7 @@ describe('v5 landing page', () => {
   it('has one h1 and its sections in order, each with its heading', () => {
     const { container } = render(<Landing />)
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
-    expect(screen.getByRole('heading', { level: 1, name: 'Agents barter. x207 clears the net.' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Agents barter anything. x207 nets it all to one payment.' })).toBeInTheDocument()
     for (const name of ['Agents pay one by one. x207 settles them together.', '41.35 owed. 7.75 moved.', 'Agents pay with vouchers.', 'Loops cancel.', 'One amount per agent.',
       'Debtors pay in once.', 'Creditors are paid.', 'Anything with value can pay.', 'Settlement you can check.', 'Start from one line.', 'What x207 is not.', 'Step inside the live circle.']) {
       expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
