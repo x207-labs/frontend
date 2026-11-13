@@ -9,6 +9,7 @@ import { PhotoError, photoFromFile } from '../account/photo'
 import { UNSUPPORTED_MESSAGE, applyAccountData, describeAccountFailure, useAccountActions, useSigning } from '../account/useAccount'
 import type { AccountAction } from '../account/client'
 import { Button } from '../ds/components'
+import { GuideActions } from '../components/GuideActions'
 import { displayAccount } from '../lib/account'
 
 // FE-101: the same rules as the account service (backend/supabase/functions/x207-account/handler.ts `EMAIL`, `CONTROL`), so a value the form accepts is never
@@ -205,6 +206,17 @@ export function Settings() {
           </Button>
           <NoteLine note={note} at="get" />
         </div>
+      </section>
+
+      {/* FE-122: walk the onboarding or the product tour again */}
+      <section className="settings-group" aria-labelledby="settings-guides">
+        <div className="settings-group-head">
+          <h3 id="settings-guides">Onboarding and tour</h3>
+          <p>
+            Replay the onboarding from step 1, or restart the product tour. Steps the chain already shows as done stay done. No signature is asked.
+          </p>
+        </div>
+        <GuideActions />
       </section>
     </div>
   )

@@ -5,6 +5,7 @@ import { Layout } from './components/Layout'
 import { LEGACY_ROUTES } from './legacyRoutes'
 import { RequireWallet } from './components/RequireWallet'
 import { TourLauncher } from './tour/TourLauncher'
+import { OnboardingLink } from './onboarding/OnboardingLink'
 import { Agent, Agents } from './pages/Agent'
 import { AGENTS_PATH, pages } from './routes'
 import { rootOpensDashboard } from './rootPath'
@@ -66,6 +67,7 @@ export function App() {
       </Route>
     </Routes>
     <TourLauncher /> {/* FE-121: the guided tour, its chunk loaded on first start */}
+    <OnboardingLink /> {/* FE-122: ?onboarding=1 replays the onboarding from step 1 */}
     <FeedbackButton /> {/* FE-068: last in the page, so the skip link stays the first stop of the keyboard */}
     </>
   )

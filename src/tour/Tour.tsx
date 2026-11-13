@@ -489,10 +489,18 @@ export default function Tour({ restart = false, onExit, steps = STEPS, timing }:
           <button type="button" className="tour-back" onClick={() => go(index - 1)} disabled={index === 0}>
             Back
           </button>
-          {index === last && (
+          {index === last ? (
             <button type="button" className="tour-again" onClick={() => go(0)}>
               Start over
             </button>
+          ) : (
+            // FE-122: a tour that opened where it was left can go back to the first step in one press (Home does the same)
+            start > 0 &&
+            index > 0 && (
+              <button type="button" className="tour-again" onClick={() => go(0)}>
+                Restart from step 1
+              </button>
+            )
           )}
           <button type="button" className="tour-next" ref={nextButton} onClick={() => (index === last ? exit(true) : go(index + 1))}>
             {index === last ? 'Finish' : 'Next'}

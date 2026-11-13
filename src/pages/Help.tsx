@@ -5,6 +5,7 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ExploreGrid } from '../components/ExploreGrid'
+import { GuideActions } from '../components/GuideActions'
 import { LoopMotif } from '../components/LoopMotif'
 import { StepGlyph, type Glyph } from '../components/StepGlyph'
 import { GROUPS } from '../routes'
@@ -116,6 +117,13 @@ export function Help() {
             </details>
           ))}
         </div>
+      </section>
+
+      {/* FE-122: the guides again, for anyone (no wallet needed for the tour) */}
+      <section className="ax-section" aria-labelledby="help-guides" id="guides">
+        <h2 id="help-guides" className="ax-h2">See the guides again</h2>
+        <p className="guide-copy">Walk the onboarding from step 1, or take the product tour again from the start.</p>
+        <GuideActions />
       </section>
 
       <section className="ax-section" aria-labelledby="help-pages">

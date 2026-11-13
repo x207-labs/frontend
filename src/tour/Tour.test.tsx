@@ -144,6 +144,19 @@ describe('tour engine', () => {
     expect(count()).toContain('Step 1 of 4')
   })
 
+  it('FE-122: a resumed tour offers "Restart from step 1", which goes to the first step; a fresh tour does not show it', async () => {
+    saveProgress({ step: 2, done: false })
+    mount()
+    fireEvent.click(screen.getByRole('button', { name: 'Restart from step 1' }))
+    expect(count()).toContain('Step 1 of 4')
+    expect(screen.queryByRole('button', { name: 'Restart from step 1' })).toBeNull()
+    cleanup()
+    mount({ restart: true })
+    key('ArrowRight')
+    expect(count()).toContain('Step 2 of 4')
+    expect(screen.queryByRole('button', { name: 'Restart from step 1' })).toBeNull()
+  })
+
   it('zooms the app onto the target', async () => {
     mount()
     key('ArrowRight')

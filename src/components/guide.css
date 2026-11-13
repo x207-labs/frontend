@@ -1,0 +1,8 @@
+/* FE-122: the "see the guides again" buttons (Settings, Help, All pages) */
+.guide-copy { margin: 0 0 0.75rem; max-width: 60ch; color: var(--ink-soft); line-height: 1.5; }
+.guide-actions .ds-btn { min-height: 2.75rem; }
+.sheet-guides { margin-top: 1rem; }
+.sheet-guides .nav-group { margin-bottom: 0.5rem; }
+@media (max-width: 480px) {
+  .guide-actions { flex-direction: column; align-items: stretch; }
+}

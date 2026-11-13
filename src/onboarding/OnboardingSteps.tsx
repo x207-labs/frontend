@@ -1,14 +1,15 @@
 // FE-060: the four-step stepper of the Onboarding page. Every step stays open (a visitor with funds can skip ahead); the status badge and the
 // "current" mark come from computeSteps, which reads the chain state through the read API, and from two saved answers.
-import { useEffect, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { onboardingPayload } from '../account/onboardingSync'
 import { describeAccountFailure, useAccountActions, useSigning } from '../account/useAccount'
 import { NEAR_NETWORK, NETWORK_TOKENS } from '../config'
 import { Button } from '../ds/components'
 import './onboarding.css'
 import { FaucetPanel } from './FaucetPanel'
-import { useProgress } from './progress'
+import { forgetProgress, useProgress } from './progress'
+import { isReplay } from './replay'
 import { STEP_IDS, computeSteps, type Acknowledged, type MemberState, type StepId, type StepStatus } from './steps'
 
 export const FAUCET_URL = 'https://near-faucet.io/'
@@ -92,6 +93,22 @@ export function OnboardingSteps({ account, member, children }: { account: string
   // (someone who already has funds can go straight to joining). `toggled` holds only what the person changed, so when the current step moves on,
   // the new current step opens and the finished one folds by itself.
   const [toggled, setToggled] = useState<Partial<Record<StepId, boolean>>>({})
+  // FE-122: "Replay onboarding" (or ?onboarding=1) arrives with a mark in the router state: forget this account's two answers, open step 1 and put
+  // the focus there. The mark is then dropped from the history entry, so a reload or Back does not reset again.
+  const location = useLocation()
+  const navigate = useNavigate()
+  const replay = isReplay(location.state)
+  const [replayed, setReplayed] = useState(false)
+  const firstStep = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!replay || !account) return
+    forgetProgress(account)
+    setToggled({ login: true })
+    setReplayed(true)
+    navigate({ pathname: location.pathname, search: location.search, hash: location.hash }, { replace: true, state: null })
+    // after the Layout, which moves the focus to the content on a change of page (FE-031); not cancelled when the mark is dropped above
+    window.setTimeout(() => firstStep.current?.focus(), 0)
+  }, [replay, account, navigate, location.pathname, location.search, location.hash])
   // The "Fill in the join form" link of the membership summary points at #join: open that step when the address asks for it.
   useEffect(() => {
     const onHash = () => {
@@ -107,6 +124,11 @@ export function OnboardingSteps({ account, member, children }: { account: string
   const doneCount = steps.filter((s) => s.status === 'done').length
   return (
     <section className="onboarding" aria-label="Onboarding steps">
+      {replayed && (
+        <p className="state onboarding-replayed" role="status" data-testid="onboarding-replayed">
+          Onboarding restarted at step 1. Steps the chain already shows as done, such as signing in or staking, stay done.
+        </p>
+      )}
       <div className="onboarding-progress">
         {finished ? (
           <p className="onboarding-ready" role="status">All four steps are done. Your account is ready.</p>
@@ -133,6 +155,7 @@ export function OnboardingSteps({ account, member, children }: { account: string
             >
               <details open={open}>
                 <summary
+                  ref={i === 0 ? firstStep : undefined}
                   onClick={(e) => {
                     e.preventDefault()
                     setToggled((t) => ({ ...t, [s.id]: !open }))

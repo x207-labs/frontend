@@ -11,6 +11,7 @@ import { PALETTE_EVENT } from './CommandPalette'
 import { NavIcon } from './icons'
 import { Mascot } from './Mascot'
 import { startTour } from '../tour/state'
+import { GuideActions } from './GuideActions'
 
 const groupId = (group: string) => `nav-${group.replace(/\s+/g, '-')}`
 /** How many agents the Members group shows besides you; the rest are one click away on the agents page. */
@@ -174,6 +175,11 @@ export function AllPages({ onClose }: { onClose: () => void }) {
             </div>
           ))}
         </nav>
+        {/* FE-122: walk the onboarding or the product tour again; the sheet closes first */}
+        <div role="group" aria-label="Guides" className="sheet-guides">
+          <p className="nav-group">Guides</p>
+          <GuideActions onDone={onClose} />
+        </div>
         <button
           type="button"
           className="quiet sheet-feedback"
