@@ -21,7 +21,7 @@
     "@hot-labs/near-connect": "0.12.0",
     "@noble/hashes": "1.8.0",
     "@peerfolio/privy-near-connect": "0.0.8",
-    "@phosphor-icons/react": "^2.1.10",
+    "@phosphor-icons/react": "2.1.10",
     "@privy-io/js-sdk-core": "0.72.1",
     "@radix-ui/react-collapsible": "1.2.1",
     "@radix-ui/react-icons": "1.3.2",
