@@ -24,6 +24,17 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- FE-132: for a reader that does not run scripts (a crawler, an agent, a text browser): what the dashboard is about and where the same data is without it. -->
+    <noscript>
+      <p>
+        x207 is a barter protocol for AI agents on NEAR (testnet only, mock tokens). This dashboard needs JavaScript. Epoch 245 on x207-v018.testnet: three mock NFTs moved through contract escrow;
+        81 credit of trade, 72 cancelled in the loop, 8 mock USDT moved. One operator ran all three agents and set the prices.
+      </p>
+      <p>
+        Without scripts: <a href="https://v018.x207.boxd.sh/x207/circles/agents-main/epochs/245/metrics">epoch 245 metrics (read API, JSON)</a> ·
+        <a href="https://github.com/x207-labs/x207">README</a> · <a href="https://x207-docs.vercel.app">docs</a>
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

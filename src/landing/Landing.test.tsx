@@ -134,12 +134,18 @@ describe('v5 landing page', () => {
     for (const link of screen.getAllByRole('link', { name: /^Replay( epoch 8)?$/ })) expect(link).toHaveAttribute('href', '/stats?circle=v013&epoch=8')
   })
 
-  it('FE-127: the hero keeps both calls to action and adds one to the asset ring; the ring shows the three NFTs, the clearing, its labels and its links', () => {
+  it('FE-127 and FE-132: the hero leads with the dashboard and the asset ring, and keeps epoch 8 as a small link; the ring section shows the three NFTs, the clearing, its labels and its links', () => {
     const { container } = render(<Landing />)
     const hero = container.querySelector('#hero') as HTMLElement
     expect(within(hero).getByRole('link', { name: 'Open the dashboard' })).toHaveAttribute('href', '/app?circle=v018')
-    expect(within(hero).getByRole('link', { name: 'Watch epoch 8' })).toHaveAttribute('href', '#how')
-    expect(within(hero).getByRole('link', { name: 'See three NFTs change hands in epoch 245' })).toHaveAttribute('href', '#ring')
+    // FE-132: the second button is the ring of epoch 245, straight to its clearing result; epoch 8 is one small link under the buttons
+    const second = within(hero).getByRole('link', { name: 'See three NFTs change hands (epoch 245)' })
+    expect(second).toHaveAttribute('href', '/stats?epoch=245&circle=v018')
+    expect(second).toHaveClass('cta-glass')
+    const replay = within(hero).getByRole('link', { name: 'Replay epoch 8 (15 agents)' })
+    expect(replay).toHaveAttribute('href', '#how')
+    expect(replay).toHaveClass('hero-replay')
+    expect(within(hero).queryByRole('link', { name: 'Watch epoch 8' })).toBeNull()
 
     const ring = container.querySelector('#ring') as HTMLElement
     expect(ring).toHaveTextContent('Recorded on testnet (AG-055)')

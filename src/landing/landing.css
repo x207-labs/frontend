@@ -392,8 +392,9 @@ html.is-landing body { margin: 0; color: var(--lp-ink); background: var(--lp-bg)
 .lp #ring-h { text-wrap: balance; }
 .lp .ring-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 40px; }
 .lp .ring-src { max-width: 72ch; margin: 22px auto 0; font-size: 13px; line-height: 1.55; text-align: center; color: var(--lp-ink-3); }
-.lp .hero-ring { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(10, 10, 10, 0.45); font-size: 14px; color: var(--lp-ink-2); text-decoration: none; }
-@media (hover: hover) and (pointer: fine) { .lp .hero-ring:hover { color: #fff; border-color: rgba(255, 255, 255, 0.22); } }
+/* FE-132: epoch 8 under the two buttons, as a small link */
+.lp .hero-replay { margin-top: 14px; font-size: 13.5px; color: var(--lp-ink-3); text-decoration: underline; text-decoration-color: rgba(255, 255, 255, 0.25); text-underline-offset: 4px; }
+@media (hover: hover) and (pointer: fine) { .lp .hero-replay:hover { color: #fff; text-decoration-color: rgba(255, 255, 255, 0.6); } }
 /* x.ai's "Give each Bot a job": copy, chips, one lead line and a link on the left; one picture card on the right */
 .lp .xsplit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 80px; align-items: center; }
 .lp .xsplit-copy { display: grid; justify-items: start; }

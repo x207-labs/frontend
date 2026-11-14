@@ -71,7 +71,7 @@ sequenceDiagram
 
 ## Quick start
 
-Live, read-only, no account: <https://x207.vercel.app/stats>. Or run it locally (Node 22.22.2 or newer):
+Live, no sign-in needed to read: <https://x207.vercel.app/stats>. Or run it locally (Node 22.22.2 or newer):
 
 ```bash
 cp .env.example .env
@@ -81,8 +81,9 @@ npm run dev        # http://localhost:5207
 
 > [!IMPORTANT]
 > **Honest limits.**
-> - Built for the circle `agents-main` on `x207-v018.testnet`: testnet, read-only static hosting on Vercel.
-> - The marketplace lists (listings, invoices, orders) are empty on the hosted circle and say so.
+> - Built for the circle `agents-main` on `x207-v018.testnet`: testnet, hosted on Vercel.
+> - The hosted marketplace of circle v018 has one appraised listing; the other lists are empty.
+> - Sign-in and account data go through third-party services (Privy, Supabase): see [Try it](#try-it).
 > - A real wallet through NEAR Connect has not been tried on it.
 > - The hosted read API answers only the dashboard origin (CORS), so a local page cannot read it.
 >
@@ -95,8 +96,12 @@ npm run dev        # http://localhost:5207
 - <https://x207.vercel.app> opens on the landing page; the dashboard starts at <https://x207.vercel.app/stats>.
 - An old dashboard link on the root with `?circle=` or `?epoch=` still opens the dashboard, at `/stats` with the query kept.
 - This app is built for the circle `agents-main` on `x207-v018.testnet` (read API `https://v018.x207.boxd.sh`).
-- It is read-only static hosting on Vercel; data comes from the hosted read API (CORS allows this origin only) and the testnet RPC.
-- The marketplace lists (listings, invoices, orders) are empty on the hosted circle and say so, with a link to the epoch 8 stats and to the join guide; the pages for licenses, codes, transfers and rent are forms for a signed-in wallet.
+- It is a static page hosted on Vercel. Chain data comes from the hosted read API (CORS allows this origin only) and the testnet RPC.
+- Third-party services the hosted page connects to (the list is `src/lib/csp.ts`):
+  - **Privy** (`auth.privy.io`): the "Email or Google" wallet option of the sign-in chooser. It is on when the build sets `VITE_PRIVY_APP_ID`, and it is on for the hosted page.
+  - **Supabase** (one Edge Function, `x207-account`): the profile name, onboarding steps, notification preferences and feedback of a signed-in account. Each action carries a NEP-413 signature of the wallet; money, credit and membership are not stored there.
+  - **NEAR Connect** fetches its wallet manifest from `raw.githubusercontent.com` and `cdn.jsdelivr.net`, and the wallet icons from a few more hosts; a license download reads `ipfs.io` or `dweb.link`.
+- The hosted marketplace of circle v018 has one appraised listing; the other lists are empty. Invoices and orders are empty and say so, with a link to the epoch 8 stats and to the join guide; the pages for licenses, codes, transfers and rent are forms for a signed-in wallet.
 - A real wallet through NEAR Connect has not been tried on it.
 
 **Locally:** this repository installs and runs on its own (it uses the published `@x207/core`); needs Node 22.22.2 or newer.

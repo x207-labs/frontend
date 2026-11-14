@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { LIVE, RING_245 } from '../facts'
+import { EPOCH8, LIVE, RING_245 } from '../facts'
 import { X207 } from '../v4/engine/x207.js'
 import { usePrefersReducedMotion } from '../v4/hooks'
 import nearLogo from '../assets/near.jpg' // the NEAR Protocol logo, as CoinGecko serves it (coins/images/10365)
@@ -51,13 +51,10 @@ export function Hero() {
           </span>{' '}
           contract every epoch.
         </p>
-        <Cta go={{ href: LIVE.dashboard, label: 'Open the dashboard' }} watch={{ href: '#how', label: `Watch epoch ${X207.epoch}` }} />
-        {/* FE-127: the second proof, three NFTs that moved in one loop, one click from the claim */}
-        <a className="hero-ring" href="#ring">
-          See three NFTs change hands in epoch {RING_245.epoch}
-          <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
-            <path d="M4.2 2 8.2 6l-4 4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        {/* FE-132: the second button is the strongest proof (three NFTs that moved in one loop, FE-127), straight to its clearing result; epoch 8 stays one small link below */}
+        <Cta go={{ href: LIVE.dashboard, label: 'Open the dashboard' }} watch={{ href: RING_245.stats, label: `See three NFTs change hands (epoch ${RING_245.epoch})` }} />
+        <a className="hero-replay" href="#how">
+          Replay epoch {X207.epoch} ({EPOCH8.members} agents)
         </a>
         <p className="sr">Behind the title, a sphere of agents turns. Now and then a few of them pay each other in a loop, and the loop is cancelled.</p>
       </div>
