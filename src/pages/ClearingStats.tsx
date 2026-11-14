@@ -4,6 +4,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAllMetrics } from '../api/queries'
 import type { EpochItem, EpochMetrics } from '../api/types'
 import { EpochReplay } from '../components/EpochReplay'
+import { RecordedAssets } from '../components/RecordedAssets'
+import { CONTRACT_ID } from '../config'
 import { ErrorNotice, Loading } from '../components/QueryState'
 import { Scatter } from '../components/Scatter'
 import { Button, Kpi } from '../ds/components'
@@ -222,6 +224,7 @@ export function ClearingStats() {
       <Statement m={current} selected={selected} pruned={pruned.has(current.epoch)} />
       <EpochReplay epoch={current.epoch} final={selected.phase === 'finalized'} />
       <Figures m={current} />
+      <RecordedAssets contract={CONTRACT_ID} circle={current.circle} epoch={current.epoch} />
       {/* v6.3 (KISS): the comparison with other epochs is for the curious; it folds away */}
       <details className="more ep-more">
         <summary>Compare with other epochs</summary>
