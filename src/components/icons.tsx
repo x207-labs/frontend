@@ -1,5 +1,5 @@
 import {
-  ArrowsLeftRight, ArrowUp, Bank, CaretLeft, ChartBar, Clock, Compass, Copy, DotsThree, FileText, Gear, Graph, HandCoins, Hash, House, Key, List, LockKey, MagnifyingGlass, Package,
+  ArrowsLeftRight, ArrowUp, Bank, BookOpenText, CaretLeft, ChartBar, Clock, Compass, Copy, DotsThree, FileText, Gear, Graph, HandCoins, Hash, House, Key, List, LockKey, MagnifyingGlass, Package,
   Plus, Question, Receipt, ShieldWarning, SignOut, SquaresFour, Storefront, User, UserPlus, X, type Icon as PhosphorIcon,
 } from '@phosphor-icons/react'
 import { agentGlyph, PROVIDER_GLYPHS } from './glyphs'
@@ -27,6 +27,7 @@ const ICONS: Record<string, PhosphorIcon> = {
   account: User,
   more: DotsThree,
   tour: Compass, // FE-121: the guided tour of the dashboard
+  docs: BookOpenText, // the docs site, opened from the sidebar
   search: MagnifyingGlass,
   copy: Copy,
   out: SignOut,

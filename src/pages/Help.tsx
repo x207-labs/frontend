@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ExploreGrid } from '../components/ExploreGrid'
 import { GuideActions } from '../components/GuideActions'
+import { LIVE } from '../landing/facts'
 import { LoopMotif } from '../components/LoopMotif'
 import { StepGlyph, type Glyph } from '../components/StepGlyph'
 import { GROUPS } from '../routes'
@@ -88,6 +89,7 @@ export function Help() {
           <p className="ax-cta">
             <Link className="ds-btn" data-variant="glow" to={{ pathname: '/onboarding', search }}>Join the circle</Link>
             <Link className="ds-btn" data-variant="quiet" to={{ pathname: '/stats', search }}>See a real epoch</Link>
+            <a className="ds-btn" data-variant="quiet" href={LIVE.docs} target="_blank" rel="noreferrer">Read the docs</a>
           </p>
         </div>
         <LoopMotif />

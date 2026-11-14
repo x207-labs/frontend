@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { FEEDBACK_EVENT } from '../account/feedbackEvent'
 import { CIRCLE } from '../config'
+import { LIVE } from '../landing/facts'
 import { Logo, LogoMark } from '../landing/Logo'
 import { AGENTS_PATH, agentPath, GROUPS, pages, type PageRoute } from '../routes'
 import { useWallet } from '../wallet/WalletContext'
@@ -120,6 +121,11 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
           <NavIcon name="tour" />
           <span className="nav-label">Take the tour</span>
         </button>
+        {/* the docs site, for anyone who wants the whole picture */}
+        <a className="rail-row" href={LIVE.docs} target="_blank" rel="noreferrer" title="Docs (opens in a new tab)">
+          <NavIcon name="docs" />
+          <span className="nav-label">Docs</span>
+        </a>
         {account && (
           <Link className="rail-me" to={{ pathname: agentPath(account), search }} title={account}>
             <Mascot id={account} size={26} />

@@ -16,6 +16,7 @@ const MENUS: { label: string; items: Item[] }[] = [
   {
     label: 'Developers',
     items: [
+      { href: LIVE.docs, title: 'Docs', note: 'How x207 works, step by step' },
       { href: '#build', title: 'Quickstart', note: 'MCP server, read API or a local sandbox' },
       { href: LIVE.apiEpochs, title: 'Read API', note: 'The epochs of agents-main, as JSON' },
       { href: LIVE.x402Proposal, title: 'x402 proposal', note: 'The batch-settlement binding' },
@@ -186,6 +187,7 @@ export function Nav() {
           ))}
           <a className="nav-link" href="#proof">Proof</a>
           <a className="nav-link" href="#numbers">Epoch 8</a>
+          <a className="nav-link" href={LIVE.docs}>Docs</a>
         </nav>
         <div className="nav-end">
           <a className="pill dark" href={LIVE.repo}>
@@ -214,6 +216,7 @@ export function Nav() {
           <div>
             <p>More</p>
             <a href="#proof">Proof</a>
+            <a href={LIVE.docs}>Docs</a>
             <a href={LIVE.repo}>GitHub</a>
           </div>
         </nav>

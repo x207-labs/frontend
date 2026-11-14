@@ -15,6 +15,8 @@ export const LIVE = {
   epoch8Stats: '/stats?circle=v013&epoch=8',
   github: 'https://github.com/x207-labs',
   repo: 'https://github.com/x207-labs/x207',
+  // the docs site: every "Docs" button of the landing and the dashboard opens it
+  docs: 'https://x207-docs.vercel.app',
   security: 'https://github.com/x207-labs/x207/blob/main/docs/security.md',
   claims: 'https://github.com/x207-labs/x207/blob/main/CLAIMS.md',
   barterEvidence: 'https://github.com/x207-labs/x207/blob/main/docs/barter-evidence.md',

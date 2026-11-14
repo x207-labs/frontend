@@ -124,6 +124,7 @@ export function Close() {
             </nav>
             <nav aria-label="Developers">
               <p>Developers</p>
+              <a href={LIVE.docs}>Docs</a>
               <a href="#build">Quickstart</a>
               <a href={LIVE.apiEpochs}>Read API</a>
               <a href={LIVE.mcpHealth}>MCP server</a>
@@ -140,6 +141,7 @@ export function Close() {
           <p className="foot-mark" aria-hidden="true">x207</p>
           <div className="foot-base">
             <span>x207 · hackathon prototype · NEAR testnet, mock USDT</span>
+            <a href={LIVE.docs}>Docs</a>
             <a href={LIVE.repo}>GitHub</a>
           </div>
         </div>
