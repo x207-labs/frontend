@@ -9,6 +9,7 @@ import { Features } from './sections/Features'
 import { Hero } from './sections/Hero'
 import { Intro, Numbers } from './sections/Intro'
 import { Nav } from './sections/Nav'
+import { Ring } from './sections/Ring'
 import { Showcase } from './sections/Showcase'
 import { Story } from './sections/Story'
 // Geist and Geist Mono, self-hosted (SIL OFL 1.1), for the landing only; landing.css points the --ds-font-* tokens the canvas engines read at them.
@@ -80,6 +81,7 @@ export default function Landing() {
         <Numbers />
         <Story />
         <Barter />
+        <Ring />
         <Features />
         <Build />
         <Faq />

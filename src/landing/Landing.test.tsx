@@ -112,12 +112,13 @@ describe('v5 landing page', () => {
     expect(container.querySelector('.hero .lede')).toHaveTextContent('x402 lets agents pay. x207 lets them pay with digital assets like API quota or licences: trades run on credit')
     expect(container.querySelector('.hero .lede')).not.toHaveTextContent('anything of value')
     for (const name of ['Agents pay one by one. x207 settles them together.', '41.35 owed. 7.75 moved.', 'Agents pay with vouchers.', 'Loops cancel.', 'One amount per agent.',
-      'Debtors pay in once.', 'Creditors are paid.', 'Anything with value can pay.', 'Settlement you can check.', 'Start from one line.', 'What x207 is not.', 'Step inside the live circle.']) {
+      'Debtors pay in once.', 'Creditors are paid.', 'Anything with value can pay.', 'Three NFTs changed hands. 8 mock USDT moved.', 'Settlement you can check.', 'Start from one line.', 'What x207 is not.', 'Step inside the live circle.']) {
       expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
     }
-    // the order: a full-screen hero, the window under it, two-column intro, the numbers, the pinned story, barter, the card grid, build, FAQ, the closing call and the footer
+    // the order: a full-screen hero, the window under it, two-column intro, the numbers, the pinned story, barter, the asset ring of epoch 245 (FE-127),
+    // the card grid, build, FAQ, the closing call and the footer
     const order = [...container.querySelectorAll('main > *')].map((e) => e.id || e.className.split(' ')[0])
-    expect(order).toEqual(['hero', 'showcase', 'intro', 'numbers', 'how', 'barter', 'section', 'build', 'faq', 'next', 'foot'])
+    expect(order).toEqual(['hero', 'showcase', 'intro', 'numbers', 'how', 'barter', 'ring', 'section', 'build', 'faq', 'next', 'foot'])
     expect(document.title).toContain('x207')
     // the first stop of the keyboard is the skip link, and it leads to the main content
     expect(screen.getByRole('link', { name: 'Skip to the content' })).toHaveAttribute('href', '#main')
@@ -131,6 +132,33 @@ describe('v5 landing page', () => {
     for (const link of links) expect(link).toHaveAttribute('href', '/app?circle=v018')
     expect(LIVE.dashboard).toBe('/app?circle=v018')
     for (const link of screen.getAllByRole('link', { name: /^Replay( epoch 8)?$/ })) expect(link).toHaveAttribute('href', '/stats?circle=v013&epoch=8')
+  })
+
+  it('FE-127: the hero keeps both calls to action and adds one to the asset ring; the ring shows the three NFTs, the clearing, its labels and its links', () => {
+    const { container } = render(<Landing />)
+    const hero = container.querySelector('#hero') as HTMLElement
+    expect(within(hero).getByRole('link', { name: 'Open the dashboard' })).toHaveAttribute('href', '/app?circle=v018')
+    expect(within(hero).getByRole('link', { name: 'Watch epoch 8' })).toHaveAttribute('href', '#how')
+    expect(within(hero).getByRole('link', { name: 'See three NFTs change hands in epoch 245' })).toHaveAttribute('href', '#ring')
+
+    const ring = container.querySelector('#ring') as HTMLElement
+    expect(ring).toHaveTextContent('Recorded on testnet (AG-055)')
+    expect(within(within(ring).getByRole('list', { name: 'What this run is' })).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'NEAR testnet', 'Mock NFTs', 'Mock USDT', 'Prices set by the operator, not by the appraiser', 'One operator played all three agents',
+    ])
+    const legs = within(within(ring).getByRole('list', { name: 'The three NFTs of epoch 245' })).getAllByRole('listitem')
+    expect(legs.map((li) => li.textContent)).toEqual([
+      'Software licence NFTalice → bob24 creditowner before alice · in escrow x207-v018.testnet · after bob',
+      'Event ticket NFTbob → dan232 creditowner before bob · in escrow x207-v018.testnet · after dan2',
+      'Game item NFTdan2 → alice25 creditowner before dan2 · in escrow x207-v018.testnet · after alice',
+    ])
+    const fall = within(ring).getByRole('img', { name: 'Of 81 credit owed: 72 cancelled in the loop, 1 netted, 8 mock USDT moved.' })
+    expect([...fall.querySelectorAll('.fall-col')].map((c) => c.textContent)).toEqual(['81Owed', '−72Loop', '−1Netted', '8Moved'])
+    expect(ring).toHaveTextContent('81 credit was owed. 72 cancelled in the loop, and the 9 left netted to 8 mock USDT: alice paid 1, dan2 paid 7, bob claimed 8.')
+    expect(ring).toHaveTextContent('so the prices 24, 32, 25 credit were set by the operator')
+    expect(within(ring).getByRole('link', { name: 'Replay epoch 245' })).toHaveAttribute('href', '/stats?epoch=245&circle=v018')
+    expect(within(ring).getByRole('link', { name: 'complete_escrow on NearBlocks' })).toHaveAttribute('href', 'https://testnet.nearblocks.io/txns/GWF3npguAhQALgfAjb7evpeDhGYHdWzD1yLwm3yGrp9K')
+    expect(within(ring).getByRole('link', { name: 'Read the run record' })).toHaveAttribute('href', 'https://github.com/x207-labs/agents/blob/main/docs/demo-barter-ring-assets.md')
   })
 
   it('the bar menus open on click, close on Escape and give focus back to their button', async () => {

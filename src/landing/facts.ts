@@ -26,6 +26,9 @@ export const LIVE = {
   mcpHealth: 'https://mcp.x207.boxd.sh/healthz',
 } as const
 
+// FE-127: the asset ring of epoch 245 on x207-v018.testnet (AG-055). One copy for the landing and the stats page; its sources are named in src/data/recordedRuns.ts.
+export { NEARBLOCKS_TX, RING_245 } from '../data/recordedRuns'
+
 /** Epoch 8 of `x207-v013.testnet`, mock USDT. */
 // Epoch 8 ran on the older circle x207-v013.testnet (contract 0.0.13, docs/testnet-0.0.13-realistic.json "contract"), not on the live x207-v018:
 // every place that shows these numbers names that circle. CLAIMS.md row "A realistic epoch clears on a real network": five debtors paid, one
