@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BARTER, KIND_CLASSES, LIVE } from '../facts'
+import { BARTER, KIND_CLASSES, KIND_NOTE, LIVE } from '../facts'
 import { BARTER_FIG } from '../v4/epoch'
 import nearLogo from '../assets/near.jpg'
 import { KindIcon } from './kindIcon'
@@ -46,19 +46,22 @@ export function Barter() {
         </div>
         <figure className="xcard xsplit-fig reveal">
           <ul className="kinds" aria-label={`${cls.name}: ${cls.kinds.length} kinds`} key={cls.key}>
-            {cls.kinds.map(([id, code, status]) => (
-              <li key={id} data-s={status} title={LABEL[status]}>
-                <span className="kind-box">
-                  {/^near(-rpc)?:/.test(code) ? <img src={nearLogo} alt="" width="16" height="16" /> : <KindIcon code={code} refused={status === 'refused'} />}
-                </span>
-                <span className="mono">{code}</span>
-                <span className="kind-st" aria-hidden="true">
-                  {status === 'testnet' && <img src={nearLogo} alt="" width="12" height="12" />}
-                  {SHORT[status]}
-                </span>
-                <span className="sr">: {LABEL[status]}</span>
-              </li>
-            ))}
+            {cls.kinds.map(([id, code, status]) => {
+              const note = KIND_NOTE[id]
+              return (
+                <li key={id} data-s={status} title={note?.label ?? LABEL[status]}>
+                  <span className="kind-box">
+                    {/^near(-rpc)?:/.test(code) ? <img src={nearLogo} alt="" width="16" height="16" /> : <KindIcon code={code} refused={status === 'refused'} />}
+                  </span>
+                  <span className="mono">{code}</span>
+                  <span className="kind-st" aria-hidden="true">
+                    {status === 'testnet' && <img src={nearLogo} alt="" width="12" height="12" />}
+                    {note?.short ?? SHORT[status]}
+                  </span>
+                  <span className="sr">: {note?.label ?? LABEL[status]}</span>
+                </li>
+              )
+            })}
           </ul>
           <div className="evidence">
             <div><b className="mono">{BARTER_FIG.offered}</b><span>kinds can be offered</span></div>

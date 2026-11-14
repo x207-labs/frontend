@@ -108,6 +108,9 @@ describe('v5 landing page', () => {
     const { container } = render(<Landing />)
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     expect(screen.getByRole('heading', { level: 1, name: 'Agents barter anything. x207 nets it all to one payment.' })).toBeInTheDocument()
+    // FE-130: the lede names the digital assets agents pay with, not "anything of value"
+    expect(container.querySelector('.hero .lede')).toHaveTextContent('x402 lets agents pay. x207 lets them pay with digital assets like API quota or licences: trades run on credit')
+    expect(container.querySelector('.hero .lede')).not.toHaveTextContent('anything of value')
     for (const name of ['Agents pay one by one. x207 settles them together.', '41.35 owed. 7.75 moved.', 'Agents pay with vouchers.', 'Loops cancel.', 'One amount per agent.',
       'Debtors pay in once.', 'Creditors are paid.', 'Anything with value can pay.', 'Settlement you can check.', 'Start from one line.', 'What x207 is not.', 'Step inside the live circle.']) {
       expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
@@ -190,6 +193,11 @@ describe('v5 landing page', () => {
     expect(chips.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false', 'false', 'false', 'false'])
     expect(floor.querySelectorAll('.kinds li')).toHaveLength(KIND_CLASSES[0].kinds.length)
     expect(floor.querySelector('.kinds li')).toHaveTextContent('nft:nep171NEAR: Ran on NEAR testnet')
+    // FE-130: #9 ran on testnet against a mock multi-token, not NEAR Intents; its chip says so, and its status (the counts) stays testnet
+    const mt = [...floor.querySelectorAll('.kinds li')].find((li) => li.textContent?.includes('intents:multi-token')) as HTMLElement
+    expect(mt).toHaveAttribute('data-s', 'testnet')
+    expect(mt).toHaveTextContent('intents:multi-tokenmock MT: Ran on NEAR testnet with a mock multi-token contract, not NEAR Intents (NEAR Intents ran only in near-sandbox)')
+    expect(mt).toHaveAttribute('title', 'Ran on NEAR testnet with a mock multi-token contract, not NEAR Intents (NEAR Intents ran only in near-sandbox)')
     await user.click(chips[5])
     expect(chips[5]).toHaveAttribute('aria-pressed', 'true')
     expect(floor.querySelectorAll('.kinds li[data-s="refused"]')).toHaveLength(9)

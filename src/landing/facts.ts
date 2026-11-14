@@ -80,6 +80,13 @@ export const BARTER = [
 
 export const BARTER_TOTAL = BARTER.reduce((sum, row) => sum + row.count, 0)
 
+/** FE-130: a kind whose status word alone would overclaim gets its own chip text. #9 `intents:multi-token` ran on NEAR testnet against a mock
+ * multi-token contract of ours (`probes/mock_mt`), not NEAR Intents; NEAR Intents itself ran only in near-sandbox (docs/barter-evidence.md, row 9).
+ * The status in KIND_CLASSES stays the one of the table, so the counts do not change. */
+export const KIND_NOTE: Readonly<Record<string, { short: string; label: string }>> = {
+  '9': { short: 'mock MT', label: 'Ran on NEAR testnet with a mock multi-token contract, not NEAR Intents (NEAR Intents ran only in near-sandbox)' },
+}
+
 type Status = (typeof BARTER)[number]['key']
 
 /** FE-051: every kind of the catalog, by class, as docs/barter-evidence.md "Table" lists it: row number, kind code, status.

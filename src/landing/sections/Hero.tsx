@@ -44,7 +44,7 @@ export function Hero() {
           x207 nets it all to one payment.
         </h1>
         <p className="lede">
-          x402 lets agents pay. x207 lets them pay with anything of value: trades run on credit, loops cancel, and many agents settle at once with one net payment each, cleared by a{' '}
+          x402 lets agents pay. x207 lets them pay with digital assets like API quota or licences: trades run on credit, loops cancel, and many agents settle at once with one net payment each, cleared by a{' '}
           <span className="near">
             <img src={nearLogo} alt="" width="18" height="18" />
             NEAR
