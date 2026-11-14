@@ -187,6 +187,24 @@ describe('plural and the default note (epoch 7 of the testnet circle: one vouche
     expect(screen.getByRole('link', { name: 'How they are computed' })).toHaveAttribute('href', expect.stringContaining('/help?epoch=42#term-transfers-avoided'))
   })
 
+  it('FE-129 an epoch that avoids no transfer leads with the cash and the cleared ratio; the count moves to More figures with the same number', async () => {
+    // the shape of epoch 245 of x207-v018 (AG-055): 3 vouchers, 3 members with a net position, 81 owed, 72 cancelled, 8 moved
+    const ring = { ...metrics[42], voucherCount: 3, residualTransfers: 3, totalVoucherValue: '81000000', cleared: '72000000', clearedRatio: 0.8889, netDebt: '8000000', transferSavings: 1 }
+    renderApp('/stats?epoch=42', (p) => (p.endsWith('/epochs/42/metrics') ? { status: 200, body: ring } : undefined))
+    await screen.findByText('Cash needed', { selector: '.ds-kpi header span' })
+    expect([...document.querySelectorAll('.ds-kpi header span')].map((s) => s.textContent)).toEqual(['Cash needed', 'Cleared ratio', 'Cleared value'])
+    expect(kpi('Cash needed')).toHaveTextContent('8.00credit9.88% of the 81.00 credit owed')
+    expect(kpi('Cleared ratio')).toHaveTextContent('89%')
+    expect(fact('Transfers avoided')).toHaveTextContent('0 of 3')
+  })
+
+  it('FE-129 an epoch that avoids transfers keeps that card first', async () => {
+    renderApp('/stats?epoch=42')
+    await screen.findByText('Transfers avoided', { selector: '.ds-kpi header span' })
+    expect([...document.querySelectorAll('.ds-kpi header span')].map((s) => s.textContent)).toEqual(['Transfers avoided', 'Cash needed', 'Cleared ratio', 'Cleared value'])
+    expect(screen.queryByText('Transfers avoided', { selector: 'dt' })).toBeNull()
+  })
+
   it('defaultNote says what a default rate above 0 is and is absent when nobody defaulted', async () => {
     const { defaultNote } = await import('./ClearingStats')
     const m = (over: object) => ({ netDebt: '20000', defaultRate: 1, ...over }) as never

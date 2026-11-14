@@ -115,15 +115,20 @@ function Figures({ m }: { m: EpochMetrics }) {
   const cleared = noClearing(m) || m.voucherCount === 0 ? null : m.clearedRatio
   // an epoch with no vouchers has nothing to clear: "yet" would promise a result that will never come
   const none = m.voucherCount === 0 ? 'No vouchers in this epoch' : 'No clearing result yet'
+  // FE-129: a small ring (3 vouchers, 3 members with a net position) avoids no transfer, though it cancels most of the value. Its first card then reads
+  // "0 of 3"; the value cards lead instead and the count moves to "More figures", with the same number.
+  const noneAvoided = eff !== null && eff.avoided === 0
   return (
     <section className="ep-section" aria-label="Headline figures">
       <div className="ds-kpis ep-kpis">
-        <Kpi
-          label="Transfers avoided"
-          value={eff ? formatNumber(eff.avoided, 0) : '—'}
-          unit={eff ? `of ${formatNumber(m.voucherCount, 0)}` : undefined}
-          note={eff ? `${formatPercent(eff.avoidedShare)} of the vouchers need no transfer` : none}
-        />
+        {!noneAvoided && (
+          <Kpi
+            label="Transfers avoided"
+            value={eff ? formatNumber(eff.avoided, 0) : '—'}
+            unit={eff ? `of ${formatNumber(m.voucherCount, 0)}` : undefined}
+            note={eff ? `${formatPercent(eff.avoidedShare)} of the vouchers need no transfer` : none}
+          />
+        )}
         <Kpi
           label="Cash needed"
           value={eff ? formatCredit2(eff.cashNeeded) : '—'}
@@ -136,6 +141,12 @@ function Figures({ m }: { m: EpochMetrics }) {
       <details className="more ep-more">
         <summary>More figures</summary>
         <dl className="facts">
+          {noneAvoided && (
+            <div>
+              <dt>Transfers avoided</dt>
+              <dd>{`${formatNumber(eff.avoided, 0)} of ${formatNumber(m.voucherCount, 0)}`}</dd>
+            </div>
+          )}
           <div>
             <dt>Transfer savings</dt>
             <dd>{formatNumber(m.transferSavings)}</dd>
